@@ -36,3 +36,21 @@ crashlytics-build.properties
 # Unity3D generated meta files
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+
+# === RunnerZone — доп. исключения ===
+Safe Zone Runner_BackUpThisFolder_ButDontShipItWithYourGame/
+Safe Zone Runner_BurstDebugInformation_DoNotShip/
+*.slnx
+*.sln
+.utmp/
+.plastic/
+ignore.conf
+
+# Unity
+Assets/_Recovery/
+Assets/_Recovery.meta
+
+# TMP Examples (не нужны для игры)
+Assets/TextMesh Pro/Examples & Extras/
+Assets/TextMesh Pro/Examples & Extras.meta

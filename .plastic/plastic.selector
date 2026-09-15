@@ -1,3 +1,0 @@
-repository "RunnerSafeZone/RunnerSafeZone@10171606171801@cloud"
-  path "/"
-    smartbranch "/main"
