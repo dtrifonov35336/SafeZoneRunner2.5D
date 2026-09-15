@@ -100,7 +100,7 @@ public class PickupSpawner : MonoBehaviour
     bool IsLaneClear(float laneX)
     {
         // Проверка препятствий
-        ObstacleMover[] obstacles = FindObjectsByType<ObstacleMover>(FindObjectsInactive.Exclude);
+        ObstacleMover[] obstacles = FindObjectsByType<ObstacleMover>(FindObjectsSortMode.None);
         foreach (var o in obstacles)
         {
             if (o == null) continue;
@@ -111,7 +111,7 @@ public class PickupSpawner : MonoBehaviour
         }
 
         // Проверка других пикапов
-        PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsInactive.Exclude);
+        PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsSortMode.None);
         foreach (var p in pickups)
         {
             if (p == null) continue;

@@ -100,7 +100,7 @@ public class ObstacleSpawner : MonoBehaviour
 
     private bool IsLaneClearOfPickups(float laneX)
     {
-        PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsInactive.Exclude);
+        PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsSortMode.None);
         foreach (var p in pickups)
         {
             if (p == null) continue;

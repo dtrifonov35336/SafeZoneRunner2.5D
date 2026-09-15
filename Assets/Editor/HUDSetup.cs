@@ -66,7 +66,7 @@ public class HUDSetup : EditorWindow
         Transform top = canvas.transform.Find("TopHUD");
         if (top != null) DestroyImmediate(top.gameObject);
 
-        HUDManager[] managers = FindObjectsByType<HUDManager>(FindObjectsInactive.Exclude);
+        HUDManager[] managers = FindObjectsByType<HUDManager>(FindObjectsSortMode.None);
         foreach (var m in managers) DestroyImmediate(m.gameObject);
 
         Debug.Log("HUD удалён");

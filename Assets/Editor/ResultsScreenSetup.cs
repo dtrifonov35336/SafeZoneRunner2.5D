@@ -45,7 +45,7 @@ public class ResultsScreenSetup : EditorWindow
         Transform t = canvas.transform.Find("ResultsPanel");
         if (t != null) DestroyImmediate(t.gameObject);
 
-        ResultsManager[] managers = FindObjectsByType<ResultsManager>(FindObjectsInactive.Exclude);
+        ResultsManager[] managers = FindObjectsByType<ResultsManager>(FindObjectsSortMode.None);
         foreach (var m in managers) DestroyImmediate(m.gameObject);
 
         Debug.Log("ResultsPanel удалён");

@@ -148,13 +148,13 @@ public class ChaseManager : MonoBehaviour
 
     void StopAllObstacles()
     {
-        ObstacleMover[] obstacles = FindObjectsByType<ObstacleMover>(FindObjectsInactive.Exclude);
+        ObstacleMover[] obstacles = FindObjectsByType<ObstacleMover>(FindObjectsSortMode.None);
         foreach (var obs in obstacles) obs.enabled = false;
     }
 
     void StopAllPickups()
     {
-        PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsInactive.Exclude);
+        PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsSortMode.None);
         foreach (var p in pickups) p.enabled = false;
     }
 

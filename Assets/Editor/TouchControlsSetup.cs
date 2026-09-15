@@ -40,7 +40,7 @@ public class TouchControlsSetup : EditorWindow
             if (safe != null) DestroyImmediate(safe.gameObject);
         }
 
-        TouchControls[] existing = FindObjectsByType<TouchControls>(FindObjectsInactive.Exclude);
+        TouchControls[] existing = FindObjectsByType<TouchControls>(FindObjectsSortMode.None);
         foreach (var t in existing) DestroyImmediate(t.gameObject);
 
         Debug.Log("TouchControls удалены");

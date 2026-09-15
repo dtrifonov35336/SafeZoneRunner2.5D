@@ -31,7 +31,7 @@ public class PickupSetup : EditorWindow
 
     private static void DeletePickups()
     {
-        PickupSpawner[] spawners = FindObjectsByType<PickupSpawner>(FindObjectsInactive.Exclude);
+        PickupSpawner[] spawners = FindObjectsByType<PickupSpawner>(FindObjectsSortMode.None);
         foreach (var s in spawners) DestroyImmediate(s.gameObject);
 
         Debug.Log("PickupSpawner удалён");

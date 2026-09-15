@@ -36,7 +36,7 @@ public class PauseSetup : EditorWindow
         Transform t = canvas.transform.Find("PausePanel");
         if (t != null) DestroyImmediate(t.gameObject);
 
-        PauseManager[] managers = FindObjectsByType<PauseManager>(FindObjectsInactive.Exclude);
+        PauseManager[] managers = FindObjectsByType<PauseManager>(FindObjectsSortMode.None);
         foreach (var m in managers) DestroyImmediate(m.gameObject);
 
         Debug.Log("PausePanel удалён");
