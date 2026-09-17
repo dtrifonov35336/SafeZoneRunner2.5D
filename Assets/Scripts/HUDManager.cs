@@ -34,6 +34,10 @@ public class HUDManager : MonoBehaviour
 
     private void Start()
     {
+        // Применяем бонус к максимальному HP
+        string charId = ProfileManager.GetSelectedCharacterId();
+        maxHealth = BonusCalculator.GetMaxHealth(charId);
+
         currentHealth = maxHealth;
         coins = 0;
         diamonds = 0;
@@ -42,6 +46,16 @@ public class HUDManager : MonoBehaviour
         UpdateDiamonds(diamonds);
         UpdateDistance(0);
         SetTask("Доберись до убежища");
+
+        Debug.Log($"[HUD] Макс. HP: {maxHealth}");
+    }
+
+    public void AddCoinsWithBonus(int baseAmount)
+    {
+        string charId = ProfileManager.GetSelectedCharacterId();
+        float mult = BonusCalculator.GetRewardMultiplier(charId);
+        int final = Mathf.RoundToInt(baseAmount * mult);
+        AddCoins(final);
     }
 
     private void Update()

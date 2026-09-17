@@ -11,6 +11,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MainRoad.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/CharacterSelect.unity
+    guid: 83a667e47968d9044aa3708c293f3aae
+  - enabled: 1
+    path: Assets/Scenes/Equipment.unity
+    guid: 44981a3894d6de843a66d2e36213d151
+  - enabled: 1
+    path: Assets/Scenes/Shop.unity
+    guid: e4b1bffa8b9d59c4e992578ea799314c
+  - enabled: 1
+    path: Assets/Scenes/Hangar.unity
+    guid: 1131a0e80b18b50438f0765eee47fb3f
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

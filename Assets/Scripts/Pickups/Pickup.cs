@@ -15,7 +15,7 @@ public class Pickup : MonoBehaviour
         switch (type)
         {
             case PickupType.Coin:
-                HUDManager.Instance.AddCoins(amount);
+                HUDManager.Instance.AddCoinsWithBonus(amount);
                 break;
             case PickupType.Heart:
                 HUDManager.Instance.AddHealth(amount);

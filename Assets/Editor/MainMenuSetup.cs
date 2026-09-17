@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
 using TMPro;
+using UnityEditor.SceneManagement;
 
 public class MainMenuSetup : EditorWindow
 {
@@ -10,7 +11,6 @@ public class MainMenuSetup : EditorWindow
     private static readonly Color Yellow = new Color(1f, 0.78f, 0.15f, 1f);
     private static readonly Color YellowBtn = new Color(1f, 0.72f, 0.05f, 1f);
     private static readonly Color Blue = new Color(0.30f, 0.75f, 1f, 1f);
-    private static readonly Color Red = new Color(0.88f, 0.15f, 0.15f, 1f);
     private static readonly Color Green = new Color(0.25f, 0.75f, 0.30f, 1f);
     private static readonly Color White = Color.white;
     private static readonly Color Gray = new Color(0.5f, 0.55f, 0.62f, 1f);
@@ -29,8 +29,8 @@ public class MainMenuSetup : EditorWindow
         GUILayout.Label(
             "Создаёт:\n" +
             "• Background\n" +
-            "• TopBar (профиль + XP + валюты с +\n" +
-            "• Заголовок-заглушка\n" +
+            "• TopBar (профиль + XP + валюты с +)\n" +
+            "• Логотип-заглушка\n" +
             "• Кнопка ИГРАТЬ\n" +
             "• Нижняя навигация (4 кнопки)",
             EditorStyles.helpBox);
@@ -52,6 +52,7 @@ public class MainMenuSetup : EditorWindow
             Transform t = canvas.transform.Find(n);
             if (t != null) DestroyImmediate(t.gameObject);
         }
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Debug.Log("MainMenu UI удалён");
     }
 
@@ -67,6 +68,9 @@ public class MainMenuSetup : EditorWindow
 
         // === Background ===
         Sprite bgSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/UI/MainMenuBackground.png");
+        if (bgSprite == null)
+            bgSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Menu/MainMenuBackground.png");
+
         GameObject bg = MakeImage("Background", canvas.transform,
             Vector2.zero, Vector2.zero, White, bgSprite,
             V(0, 0), V(1, 1), V(0.5f, 0.5f));
@@ -81,40 +85,34 @@ public class MainMenuSetup : EditorWindow
         topRT.anchoredPosition = Vector2.zero;
         topRT.sizeDelta = new Vector2(0, 300);
 
-        // === ProfileBox ===
+        // ProfileBox
         GameObject profile = MakeImage("ProfileBox", topBar.transform,
             new Vector2(Margin, -Margin), new Vector2(420, 160), PanelBG,
             panelSprite, V(0, 1), V(0, 1), V(0, 1));
 
-        // Avatar
         MakeImage("Avatar", profile.transform,
             new Vector2(70, 0), new Vector2(100, 100), Gray, null,
             V(0, 0.5f), V(0, 0.5f), V(0.5f, 0.5f));
 
-        // Name
         var nameTxt = MakeText("NameText", profile.transform,
             new Vector2(140, -22), new Vector2(260, 40),
             "Дима", 32, White, font,
             V(0, 1), V(0, 1), V(0, 1));
         nameTxt.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
-        // Level
         MakeText("LevelText", profile.transform,
             new Vector2(140, -58), new Vector2(260, 30),
             "Ур. 5", 22, Yellow, font,
             V(0, 1), V(0, 1), V(0, 1));
 
-        // XP Background
         GameObject xpBG = MakeImage("XPBarBG", profile.transform,
             new Vector2(140, 30), new Vector2(260, 16),
             new Color(0.15f, 0.18f, 0.25f, 1f), panelSprite,
             V(0, 0), V(0, 0), V(0, 0));
-        // XP Fill
         MakeImage("XPBarFill", xpBG.transform,
             Vector2.zero, new Vector2(140, 16), Yellow, panelSprite,
             V(0, 0.5f), V(0, 0.5f), V(0, 0.5f));
 
-        // XP Text под шкалой
         var xpTxt = MakeText("XPText", profile.transform,
             new Vector2(270, 10), new Vector2(260, 30),
             "320 / 600", 20, White, font,
@@ -122,12 +120,12 @@ public class MainMenuSetup : EditorWindow
         xpTxt.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Right;
         xpTxt.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
-        // === CoinsBox + Plus ===
-        GameObject coinsBox = MakeTopCurrency(topBar.transform, "CoinsBox",
+        // Coins
+        MakeTopCurrency(topBar.transform, "CoinsBox",
             -Margin, -Margin, Yellow, "1240", panelSprite, font);
 
-        // === DiamondsBox + Plus ===
-        GameObject diamBox = MakeTopCurrency(topBar.transform, "DiamondsBox",
+        // Diamonds
+        MakeTopCurrency(topBar.transform, "DiamondsBox",
             -Margin, -Margin - 100, Blue, "45", panelSprite, font);
 
         // === Title Box ===
@@ -206,9 +204,9 @@ public class MainMenuSetup : EditorWindow
 
         Debug.Log("✅ MainMenu создан!");
         Selection.activeGameObject = canvas.gameObject;
-    }
 
-    // ============ TOP CURRENCY WITH PLUS ============
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+    }
 
     private static GameObject MakeTopCurrency(Transform parent, string name,
         float posX, float posY, Color iconColor, string value,
@@ -218,12 +216,10 @@ public class MainMenuSetup : EditorWindow
             new Vector2(posX, posY), new Vector2(BoxW, BoxH), PanelBG,
             sprite, V(1, 1), V(1, 1), V(1, 1));
 
-        // Icon (монета/алмаз)
         MakeImage("Icon", box.transform,
             new Vector2(40, 0), new Vector2(50, 50), iconColor, null,
             V(0, 0.5f), V(0, 0.5f), V(0.5f, 0.5f));
 
-        // Text (число)
         var textGO = MakeText("Text", box.transform,
             new Vector2(-70, 0), new Vector2(120, 60),
             value, 34, White, font,
@@ -231,7 +227,6 @@ public class MainMenuSetup : EditorWindow
         textGO.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Right;
         textGO.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
-        // Plus Button (зелёный кружок с "+")
         GameObject plus = MakeImage("PlusButton", box.transform,
             new Vector2(-5, 0), new Vector2(56, 56), Green, sprite,
             V(1, 0.5f), V(1, 0.5f), V(1, 0.5f));
@@ -239,7 +234,6 @@ public class MainMenuSetup : EditorWindow
         Button plusBtn = plus.AddComponent<Button>();
         plusBtn.targetGraphic = plus.GetComponent<Image>();
 
-        // Text "+"
         var plusTxt = MakeText("PlusIcon", plus.transform,
             Vector2.zero, new Vector2(50, 50), "+", 44, White, font,
             V(0.5f, 0.5f), V(0.5f, 0.5f), V(0.5f, 0.5f));
@@ -249,8 +243,6 @@ public class MainMenuSetup : EditorWindow
         return box;
     }
 
-    // ============ HELPERS ============
-
     private static Vector2 V(float x, float y) => new Vector2(x, y);
 
     private static TMP_FontAsset FindFontAsset(string namePart)
@@ -258,8 +250,7 @@ public class MainMenuSetup : EditorWindow
         string[] guids = AssetDatabase.FindAssets($"t:TMP_FontAsset {namePart}");
         foreach (string guid in guids)
         {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            TMP_FontAsset asset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
+            TMP_FontAsset asset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(AssetDatabase.GUIDToAssetPath(guid));
             if (asset != null) return asset;
         }
         return null;
@@ -272,19 +263,10 @@ public class MainMenuSetup : EditorWindow
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image));
         go.transform.SetParent(parent, false);
         RectTransform rt = go.GetComponent<RectTransform>();
-
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.pivot = pivot;
-        rt.sizeDelta = size;
-        rt.anchoredPosition = pos;
-
+        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax; rt.pivot = pivot;
+        rt.sizeDelta = size; rt.anchoredPosition = pos;
         Image img = go.GetComponent<Image>();
-        if (sprite != null)
-        {
-            img.sprite = sprite;
-            img.type = Image.Type.Sliced;
-        }
+        if (sprite != null) { img.sprite = sprite; img.type = Image.Type.Sliced; }
         img.color = color;
         return go;
     }
@@ -296,17 +278,10 @@ public class MainMenuSetup : EditorWindow
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
         go.transform.SetParent(parent, false);
         RectTransform rt = go.GetComponent<RectTransform>();
-
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.pivot = pivot;
-        rt.sizeDelta = size;
-        rt.anchoredPosition = pos;
-
+        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax; rt.pivot = pivot;
+        rt.sizeDelta = size; rt.anchoredPosition = pos;
         var tmp = go.GetComponent<TextMeshProUGUI>();
-        tmp.text = text;
-        tmp.fontSize = fontSize;
-        tmp.color = color;
+        tmp.text = text; tmp.fontSize = fontSize; tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Left;
         if (font != null) tmp.font = font;
         return go;

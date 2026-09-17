@@ -34,8 +34,13 @@ public class PlayerCollision : MonoBehaviour
         // Зомби подтягиваются
         if (chase != null) chase.PushBack(1f);
 
-        // Откат игрока
-        if (playerMovement != null) playerMovement.Knockback(pushBackAmount);
+        // Откат игрока с учётом устойчивости
+        if (playerMovement != null)
+        {
+            string charId = ProfileManager.GetSelectedCharacterId();
+            float resist = BonusCalculator.GetKnockbackResistance(charId);
+            playerMovement.Knockback(pushBackAmount * resist);
+        }
 
         StartCoroutine(Invulnerability());
     }

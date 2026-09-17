@@ -26,6 +26,8 @@ public class PlayerMovement2D : MonoBehaviour
     [Header("Прыжок")]
     public float jumpHeight = 1.8f;
     public float jumpDuration = 0.7f;
+    [Tooltip("На какой высоте прыжка игрок становится неуязвимым (обычно 40% от jumpHeight)")]
+    public float jumpClearThreshold = 0.7f;
 
     [Header("Финальный удар (последний)")]
     public float finalKnockbackAmount = 1.8f;
@@ -60,6 +62,14 @@ public class PlayerMovement2D : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
+
+        // Применяем бонусы к скорости
+        string charId = ProfileManager.GetSelectedCharacterId();
+        sideSpeed *= BonusCalculator.GetSpeedMultiplier(charId);
+        recoverySpeed = BonusCalculator.GetRecoverySpeed(charId);
+
+        Debug.Log($"[Player] Скорость: {sideSpeed:F2}, восстановление: {recoverySpeed:F2}");
+
         currentY = baseY;
         targetY = baseY;
 
@@ -218,16 +228,29 @@ public class PlayerMovement2D : MonoBehaviour
         isJumping = true;
         float t = 0f;
 
+        Collider2D col = GetComponent<Collider2D>();
+
         while (t < jumpDuration)
         {
             t += Time.deltaTime;
             float p = Mathf.Clamp01(t / jumpDuration);
             jumpOffset = jumpHeight * Mathf.Sin(p * Mathf.PI);
+
+            // Отключаем коллайдер, когда игрок достаточно высоко
+            if (col != null)
+            {
+                bool highEnough = jumpOffset > jumpClearThreshold;
+                col.enabled = !highEnough;
+            }
+
             yield return null;
         }
 
         jumpOffset = 0f;
         isJumping = false;
+
+        // Включаем коллайдер обратно
+        if (col != null) col.enabled = true;
     }
 
     public void StopAnimation()

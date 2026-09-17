@@ -10,8 +10,8 @@ public class PickupSpawner : MonoBehaviour
     public float[] lanePositions = new float[] { -1.4f, 1.4f };
 
     [Header("Монетки")]
-    public float coinSpawnInterval = 1.4f;
-    [Range(0f, 1f)] public float coinSpawnChance = 0.75f;
+    public float coinSpawnInterval = 0.6f;   // было 1.4 — чаще
+    [Range(0f, 1f)] public float coinSpawnChance = 0.9f; // было 0.75
 
     [Header("Сердечки")]
     public float heartSpawnInterval = 20f;
@@ -26,6 +26,9 @@ public class PickupSpawner : MonoBehaviour
 
     [Tooltip("Y-координата, до которой проверяем на препятствия")]
     public float checkToY = -7f;
+
+    [Tooltip("Радиус проверки препятствий. 0.6 = одна монета")]
+    public float obstacleCheckRadius = 0.6f;
 
     [Header("Позиции")]
     public float spawnY = 2f;
@@ -99,25 +102,24 @@ public class PickupSpawner : MonoBehaviour
 
     bool IsLaneClear(float laneX)
     {
-        // Проверка препятствий
-        ObstacleMover[] obstacles = FindObjectsByType<ObstacleMover>(FindObjectsSortMode.None);
-        foreach (var o in obstacles)
+        Vector2 checkPos = new Vector2(laneX, spawnY);
+
+        // 1. Проверка препятствий (радиус 0.6 — примерно одна монета)
+        Collider2D[] obstacles = Physics2D.OverlapCircleAll(checkPos, obstacleCheckRadius);
+        foreach (var col in obstacles)
         {
-            if (o == null) continue;
-            Vector3 pos = o.transform.position;
-            if (Mathf.Abs(pos.x - laneX) < laneWidth &&
-                pos.y >= checkToY && pos.y <= checkFromY)
-                return false;
+            if (col == null) continue;
+            if (col.GetComponent<ObstacleMover>() != null) return false;
         }
 
-        // Проверка других пикапов
+        // 2. Проверка других пикапов (монет, сердечек)
         PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsSortMode.None);
         foreach (var p in pickups)
         {
             if (p == null) continue;
             Vector3 pos = p.transform.position;
-            if (Mathf.Abs(pos.x - laneX) < laneWidth &&
-                pos.y >= checkToY && pos.y <= checkFromY)
+            if (Mathf.Abs(pos.x - laneX) < 0.8f &&
+                pos.y >= -7f && pos.y <= 4f)
                 return false;
         }
 

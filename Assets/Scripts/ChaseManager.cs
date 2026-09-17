@@ -12,17 +12,15 @@ public class ChaseManager : MonoBehaviour
     public RectTransform zombieHorde;
     public float hiddenY = -40f;
     public float visibleY = -10f;
+    public float maxRiseY = -30f;
 
-    [Header("UI — старые панели (опционально)")]
+    [Header("UI — экраны")]
     public GameObject gameOverPanel;
     public GameObject gameWinPanel;
 
     [Header("Ссылки")]
     public ObstacleSpawner spawner;
     public PlayerMovement2D playerMovement;
-
-    [Tooltip("Максимальная Y-координата подъёма зомби (не выше этого значения)")]
-    public float maxRiseY = -30f;
 
     private float currentDistance;
     private bool gameOver = false;
@@ -31,34 +29,34 @@ public class ChaseManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
     }
 
-    void Start()
+    private void Start()
     {
         currentDistance = maxDistance;
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (gameWinPanel != null) gameWinPanel.SetActive(false);
     }
 
-    void Update()
+    private void Update()
     {
         if (gameOver) return;
 
-        // Восстановление дистанции
-        currentDistance = Mathf.Min(maxDistance, currentDistance + recoverySpeed * Time.deltaTime);
+        currentDistance = Mathf.Min(maxDistance,
+            currentDistance + recoverySpeed * Time.deltaTime);
 
-        // Толпа зомби
         if (zombieHorde != null)
         {
             float t = 1f - (currentDistance / maxDistance);
             Vector2 p = zombieHorde.anchoredPosition;
             float targetY = Mathf.Lerp(hiddenY, visibleY, t);
-
-            // Ограничение: зомби не поднимаются выше maxRiseY
             targetY = Mathf.Min(targetY, maxRiseY);
-
             p.y = targetY;
             zombieHorde.anchoredPosition = p;
         }
@@ -66,7 +64,9 @@ public class ChaseManager : MonoBehaviour
         // Смерть по HP
         if (HUDManager.Instance != null && HUDManager.Instance.GetHealth() <= 0f)
         {
-            if (playerMovement != null && !playerMovement.IsDying() && !playerMovement.IsDead())
+            if (playerMovement != null
+                && !playerMovement.IsDying()
+                && !playerMovement.IsDead())
             {
                 if (!killTriggered)
                 {
@@ -76,17 +76,14 @@ public class ChaseManager : MonoBehaviour
             }
 
             if (playerMovement == null || playerMovement.IsDead())
-            {
                 TriggerGameOver();
-            }
+
             return;
         }
 
-        // Смерть по дистанции (зомби догнали)
+        // Смерть по дистанции
         if (currentDistance <= 0f)
-        {
             TriggerGameOver();
-        }
     }
 
     public void PushBack(float amount)
@@ -94,7 +91,38 @@ public class ChaseManager : MonoBehaviour
         currentDistance = Mathf.Max(0f, currentDistance - amount);
     }
 
-    void TriggerGameOver()
+    private void GrantXP()
+    {
+        if (HUDManager.Instance == null) return;
+
+        string charId = ProfileManager.GetSelectedCharacterId();
+        int xpGained = Mathf.RoundToInt(HUDManager.Instance.GetDistance() / 10f);
+        if (xpGained <= 0) return;
+
+        int levels = ProfileManager.AddXP(charId, xpGained);
+        int newLevel = ProfileManager.GetLevel(charId);
+
+        if (levels > 0)
+        {
+            string bonusMsg = "";
+            for (int l = newLevel - levels + 1; l <= newLevel; l++)
+            {
+                string b = BonusCalculator.GetLevelThresholdBonus(l);
+                if (!string.IsNullOrEmpty(b)) bonusMsg += b + "\n";
+            }
+
+            if (!string.IsNullOrEmpty(bonusMsg))
+            {
+                PlayerPrefs.SetString("PendingLevelToast",
+                    $"Уровень {newLevel}!\n{bonusMsg.TrimEnd()}");
+                PlayerPrefs.Save();
+            }
+        }
+
+        Debug.Log($"[XP] +{xpGained} XP → {charId}, ур. {newLevel} (+{levels})");
+    }
+
+    private void TriggerGameOver()
     {
         if (gameOver) return;
         gameOver = true;
@@ -103,6 +131,8 @@ public class ChaseManager : MonoBehaviour
         StopAllObstacles();
         StopAllPickups();
 
+        GrantXP();
+
         if (HUDManager.Instance != null)
         {
             HUDManager.Instance.StopRun();
@@ -110,8 +140,6 @@ public class ChaseManager : MonoBehaviour
         }
 
         if (gameOverPanel != null) gameOverPanel.SetActive(true);
-
-        if (UIManager.Instance != null) UIManager.Instance.HideGameplayControls();
 
         Debug.Log("Game Over");
     }
@@ -133,6 +161,8 @@ public class ChaseManager : MonoBehaviour
             playerMovement.StopAnimation();
         }
 
+        GrantXP();
+
         if (HUDManager.Instance != null)
         {
             HUDManager.Instance.StopRun();
@@ -141,21 +171,21 @@ public class ChaseManager : MonoBehaviour
 
         if (gameWinPanel != null) gameWinPanel.SetActive(true);
 
-        if (UIManager.Instance != null) UIManager.Instance.HideGameplayControls();
-
         Debug.Log("Victory!");
     }
 
-    void StopAllObstacles()
+    private void StopAllObstacles()
     {
         ObstacleMover[] obstacles = FindObjectsByType<ObstacleMover>(FindObjectsSortMode.None);
-        foreach (var obs in obstacles) obs.enabled = false;
+        foreach (var o in obstacles)
+            if (o != null) o.enabled = false;
     }
 
-    void StopAllPickups()
+    private void StopAllPickups()
     {
         PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsSortMode.None);
-        foreach (var p in pickups) p.enabled = false;
+        foreach (var p in pickups)
+            if (p != null) p.enabled = false;
     }
 
     public void RestartLevel()
