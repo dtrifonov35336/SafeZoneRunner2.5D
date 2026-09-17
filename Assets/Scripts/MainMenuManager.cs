@@ -5,6 +5,8 @@ using TMPro;
 
 public class MainMenuManager : MonoBehaviour
 {
+    public static MainMenuManager Instance { get; private set; }
+
     [Header("Кнопки")]
     public Button playButton;
 
@@ -20,27 +22,34 @@ public class MainMenuManager : MonoBehaviour
 
     [Header("Профиль")]
     public Image profileAvatar;
+    public Button profileAvatarButton;   // ← клик по аватарке
     public TextMeshProUGUI profileNameText;
     public TextMeshProUGUI profileLevelText;
     public TextMeshProUGUI profileXPText;
     public RectTransform profileXPBarFill;
     public float profileXPBarMaxWidth = 260f;
 
+    [Header("Панель настроек профиля")]
+    public ProfileSettingsPanel profileSettingsPanel;
+
     [Header("Настройки")]
     public string gameSceneName = "MainRoad";
 
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
     private void Start()
     {
-        // Баланс
         int savedCoins = PlayerPrefs.GetInt("TotalCoins", 0);
         int savedDiamonds = PlayerPrefs.GetInt("TotalDiamonds", 0);
         if (coinsText != null) coinsText.text = savedCoins.ToString();
         if (diamondsText != null) diamondsText.text = savedDiamonds.ToString();
 
-        // Профиль
         UpdateProfileUI();
 
-        // Привязки кнопок
         if (playButton != null) playButton.onClick.AddListener(OnPlayClicked);
         if (charactersButton != null)
             charactersButton.onClick.AddListener(() => OnNavClicked("Персонажи"));
@@ -51,7 +60,11 @@ public class MainMenuManager : MonoBehaviour
         if (hangarButton != null)
             hangarButton.onClick.AddListener(() => OnNavClicked("Ангар"));
 
-        // Отложенный тост (с прошлого забега)
+        // Клик по аватарке → открыть панель настроек
+        if (profileAvatarButton != null)
+            profileAvatarButton.onClick.AddListener(OpenProfileSettings);
+
+        // Отложенный тост
         string pending = PlayerPrefs.GetString("PendingLevelToast", "");
         if (!string.IsNullOrEmpty(pending))
         {
@@ -63,20 +76,32 @@ public class MainMenuManager : MonoBehaviour
         }
     }
 
-    private void OnPlayClicked()
+    // ========== ПРОФИЛЬ ==========
+
+    private void OpenProfileSettings()
     {
-        SceneManager.LoadScene(gameSceneName);
+        if (profileSettingsPanel != null)
+            profileSettingsPanel.OpenPanel();
     }
 
-    private void OnNavClicked(string section)
+    public void RefreshProfileAvatar()
     {
-        switch (section)
+        if (profileAvatar == null) return;
+
+        Sprite s = ProfileSettingsPanel.GetCurrentAvatarSprite();
+        if (s != null)
         {
-            case "Персонажи": SceneManager.LoadScene("CharacterSelect"); break;
-            case "Снаряжение": SceneManager.LoadScene("Equipment"); break;
-            case "Магазин": SceneManager.LoadScene("Shop"); break;
-            case "Ангар": SceneManager.LoadScene("Hangar"); break;
+            profileAvatar.sprite = s;
+            profileAvatar.enabled = true;
+            profileAvatar.preserveAspect = true;
+            profileAvatar.color = Color.white;
         }
+    }
+
+    public void RefreshProfileName()
+    {
+        if (profileNameText != null)
+            profileNameText.text = ProfileSettingsPanel.GetCurrentName();
     }
 
     private void UpdateProfileUI()
@@ -86,8 +111,7 @@ public class MainMenuManager : MonoBehaviour
         int xp = ProfileManager.GetXP(charId);
         int needed = ProfileManager.XPForNextLevel(charId, level);
 
-        if (profileNameText != null)
-            profileNameText.text = GetCharacterDisplayName(charId);
+        RefreshProfileName();
 
         if (profileLevelText != null)
             profileLevelText.text = $"Ур. {level}";
@@ -103,37 +127,24 @@ public class MainMenuManager : MonoBehaviour
                 profileXPBarFill.sizeDelta.y);
         }
 
-        if (profileAvatar != null)
-        {
-            Sprite av = Resources.Load<Sprite>($"Characters/{charId}_avatar");
-            if (av == null) av = Resources.Load<Sprite>($"Characters/{charId}_front");
-            if (av == null) av = Resources.Load<Sprite>($"Characters/{charId}");
-
-            if (av != null)
-            {
-                profileAvatar.sprite = av;
-                profileAvatar.enabled = true;
-                profileAvatar.preserveAspect = true;
-                profileAvatar.color = Color.white;
-            }
-            else
-            {
-                profileAvatar.color = new Color(0.4f, 0.45f, 0.55f, 1f);
-            }
-        }
+        RefreshProfileAvatar();
     }
 
-    private string GetCharacterDisplayName(string id)
+    // ========== НАВИГАЦИЯ ==========
+
+    private void OnPlayClicked()
     {
-        switch (id)
+        SceneManager.LoadScene(gameSceneName);
+    }
+
+    private void OnNavClicked(string section)
+    {
+        switch (section)
         {
-            case "survivor": return "Дима";
-            case "military": return "Военный";
-            case "medic": return "Медик";
-            case "firefighter": return "Пожарный";
-            case "mechanic": return "Механик";
-            case "scout": return "Разведчик";
-            default: return "Выживший";
+            case "Персонажи": SceneManager.LoadScene("CharacterSelect"); break;
+            case "Снаряжение": SceneManager.LoadScene("Equipment"); break;
+            case "Магазин": SceneManager.LoadScene("Shop"); break;
+            case "Ангар": SceneManager.LoadScene("Hangar"); break;
         }
     }
 

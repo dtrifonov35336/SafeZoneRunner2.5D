@@ -354,6 +354,22 @@
       "dependencies": {},
       "hash": "ad95306866219140e1e8067788b4427e67abe747"
     },
+    "ru.rustore.core": {
+      "version": "10.5.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://nexus-external.vkteam.ru/repository/npm-unity-rustore-exposed"
+    },
+    "ru.rustore.pay": {
+      "version": "11.1.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "ru.rustore.core": "10.5.0"
+      },
+      "url": "https://nexus-external.vkteam.ru/repository/npm-unity-rustore-exposed"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
