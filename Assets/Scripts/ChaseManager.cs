@@ -131,6 +131,9 @@ public class ChaseManager : MonoBehaviour
         StopAllObstacles();
         StopAllPickups();
 
+        // ⬇️ ДОБАВИТЬ ЭТУ СТРОКУ
+        BackgroundStopper.StopAll();
+
         GrantXP();
 
         if (HUDManager.Instance != null)
@@ -153,6 +156,9 @@ public class ChaseManager : MonoBehaviour
         if (spawner != null) spawner.SetRunning(false);
         StopAllObstacles();
         StopAllPickups();
+
+        // ⬇️ ДОБАВИТЬ ЭТУ СТРОКУ
+        BackgroundStopper.StopAll();
 
         if (playerMovement != null)
         {

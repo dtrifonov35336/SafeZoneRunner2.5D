@@ -155,6 +155,7 @@ public class PlayerMovement2D : MonoBehaviour
 
         horizontalInput = 0f;
 
+        // Ввод и восстановление — только для живого игрока
         if (!isDying)
         {
             float kbInput = 0f;
@@ -177,12 +178,15 @@ public class PlayerMovement2D : MonoBehaviour
             }
 
             horizontalInput = kbInput != 0f ? kbInput : touchInput;
+
+            // Восстановление позиции — ТОЛЬКО для живого
+            if (currentY < baseY)
+                currentY = Mathf.Min(baseY, currentY + recoverySpeed * Time.deltaTime);
+
+            // Ограничение снизу — ТОЛЬКО для живого
+            currentY = Mathf.Max(currentY, minY);
         }
-
-        if (!isDying && currentY < baseY)
-            currentY = Mathf.Min(baseY, currentY + recoverySpeed * Time.deltaTime);
-
-        currentY = Mathf.Max(currentY, minY);
+        // Если isDying — НИЧЕГО не трогаем, корутина сама управляет currentY
     }
 
     private void LateUpdate()
@@ -266,6 +270,13 @@ public class PlayerMovement2D : MonoBehaviour
     {
         if (isDead) return;
         isDying = true;
+
+        // ⬇️ ДОБАВИТЬ ЭТУ СТРОКУ: запускаем смерть сразу
+        PlayerVisualController visualCtrl = GetComponentInChildren<PlayerVisualController>();
+        if (visualCtrl != null)
+            visualCtrl.TriggerDeath();
+
+        // Запускаем анимацию утаскивания
         StartCoroutine(DeathSlideRoutine());
     }
 
@@ -296,12 +307,6 @@ public class PlayerMovement2D : MonoBehaviour
         {
             rb.linearVelocity = Vector2.zero;
             rb.bodyType = RigidbodyType2D.Kinematic;
-        }
-
-        if (animator != null)
-        {
-            animator.speed = 1f;
-            animator.SetTrigger("Die");
         }
     }
 

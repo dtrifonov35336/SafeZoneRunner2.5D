@@ -44,11 +44,14 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Road
+    uniqueID: 3346024773
+    locked: 0
   - name: Background
     uniqueID: 65627519
     locked: 0
-  - name: Road
-    uniqueID: 3346024773
+  - name: Dust
+    uniqueID: 2913670249
     locked: 0
   - name: Pickups
     uniqueID: 4106207541
@@ -67,4 +70,3 @@ TagManager:
     locked: 0
   m_RenderingLayers:
   - Default
-  m_MigratedRenderPipelines: []

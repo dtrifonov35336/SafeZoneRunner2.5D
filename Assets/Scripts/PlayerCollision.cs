@@ -42,6 +42,10 @@ public class PlayerCollision : MonoBehaviour
             playerMovement.Knockback(pushBackAmount * resist);
         }
 
+        // Тряска камеры
+        if (CameraShake.Instance != null)
+            CameraShake.Instance.Shake(0.2f, 0.25f);
+
         StartCoroutine(Invulnerability());
     }
 

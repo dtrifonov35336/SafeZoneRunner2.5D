@@ -1306,7 +1306,7 @@ MonoBehaviour:
     discountPercent: 50
   - id: pack_weapons
     displayName: "\u041D\u0410\u0411\u041E\u0420 \u041E\u0420\u0423\u0416\u0418\u042F"
-    icon: {fileID: 21300000, guid: 15c3f6f01ef58c340966e47e2f71084c, type: 3}
+    icon: {fileID: 21300000, guid: 6d1bc97703deaf04884c21ce9686a515, type: 3}
     priceRub: 999
     discountPercent: 0
   - id: pack_coins
