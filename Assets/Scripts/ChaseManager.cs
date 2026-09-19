@@ -22,6 +22,10 @@ public class ChaseManager : MonoBehaviour
     public ObstacleSpawner spawner;
     public PlayerMovement2D playerMovement;
 
+    [Header("Награды")]
+    [Tooltip("XP за одного спасённого")]
+    public int xpPerRescued = 15;
+
     private float currentDistance;
     private bool gameOver = false;
     private bool victory = false;
@@ -61,7 +65,6 @@ public class ChaseManager : MonoBehaviour
             zombieHorde.anchoredPosition = p;
         }
 
-        // Смерть по HP
         if (HUDManager.Instance != null && HUDManager.Instance.GetHealth() <= 0f)
         {
             if (playerMovement != null
@@ -81,7 +84,6 @@ public class ChaseManager : MonoBehaviour
             return;
         }
 
-        // Смерть по дистанции
         if (currentDistance <= 0f)
             TriggerGameOver();
     }
@@ -91,12 +93,22 @@ public class ChaseManager : MonoBehaviour
         currentDistance = Mathf.Max(0f, currentDistance - amount);
     }
 
+    /// <summary>Сбрасывает флаг смертельного удара — для revive.</summary>
+    public void ResetKillTrigger()
+    {
+        killTriggered = false;
+    }
+
     private void GrantXP()
     {
         if (HUDManager.Instance == null) return;
 
         string charId = ProfileManager.GetSelectedCharacterId();
-        int xpGained = Mathf.RoundToInt(HUDManager.Instance.GetDistance() / 10f);
+
+        int distanceXP = Mathf.RoundToInt(HUDManager.Instance.GetDistance() / 10f);
+        int rescuedXP = HUDManager.Instance.GetRescued() * xpPerRescued;
+        int xpGained = distanceXP + rescuedXP;
+
         if (xpGained <= 0) return;
 
         int levels = ProfileManager.AddXP(charId, xpGained);
@@ -119,7 +131,7 @@ public class ChaseManager : MonoBehaviour
             }
         }
 
-        Debug.Log($"[XP] +{xpGained} XP → {charId}, ур. {newLevel} (+{levels})");
+        Debug.Log($"[XP] +{xpGained} XP (дистанция {distanceXP} + спасённые {rescuedXP}) → {charId}, ур. {newLevel} (+{levels})");
     }
 
     private void TriggerGameOver()
@@ -131,7 +143,6 @@ public class ChaseManager : MonoBehaviour
         StopAllObstacles();
         StopAllPickups();
 
-        // ⬇️ ДОБАВИТЬ ЭТУ СТРОКУ
         BackgroundStopper.StopAll();
 
         GrantXP();
@@ -157,7 +168,6 @@ public class ChaseManager : MonoBehaviour
         StopAllObstacles();
         StopAllPickups();
 
-        // ⬇️ ДОБАВИТЬ ЭТУ СТРОКУ
         BackgroundStopper.StopAll();
 
         if (playerMovement != null)
@@ -178,6 +188,35 @@ public class ChaseManager : MonoBehaviour
         if (gameWinPanel != null) gameWinPanel.SetActive(true);
 
         Debug.Log("Victory!");
+    }
+
+    /// <summary>Возрождение после рекламы/кристаллов.</summary>
+    public void ResumeAfterRevive()
+    {
+        gameOver = false;
+        victory = false;
+        killTriggered = false;
+
+        // Откат зомби на середину
+        currentDistance = maxDistance * 0.5f;
+
+        if (spawner != null) spawner.SetRunning(true);
+
+        ObstacleMover[] obstacles = FindObjectsByType<ObstacleMover>(FindObjectsSortMode.None);
+        foreach (var o in obstacles) if (o != null) o.enabled = true;
+
+        PickupMover[] pickups = FindObjectsByType<PickupMover>(FindObjectsSortMode.None);
+        foreach (var p in pickups) if (p != null) p.enabled = true;
+
+        BackgroundStopper.ResumeAll();
+
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (gameWinPanel != null) gameWinPanel.SetActive(false);
+
+        if (HUDManager.Instance != null)
+            HUDManager.Instance.ResumeRun();
+
+        Debug.Log("[Chase] Возрождение после revive");
     }
 
     private void StopAllObstacles()

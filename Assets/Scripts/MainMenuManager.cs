@@ -22,7 +22,7 @@ public class MainMenuManager : MonoBehaviour
 
     [Header("Профиль")]
     public Image profileAvatar;
-    public Button profileAvatarButton;   // ← клик по аватарке
+    public Button profileAvatarButton;
     public TextMeshProUGUI profileNameText;
     public TextMeshProUGUI profileLevelText;
     public TextMeshProUGUI profileXPText;
@@ -31,6 +31,10 @@ public class MainMenuManager : MonoBehaviour
 
     [Header("Панель настроек профиля")]
     public ProfileSettingsPanel profileSettingsPanel;
+
+    [Header("Спрайт игрока в центре сцены")]
+    [Tooltip("UI Image, куда подставляем спрайт выбранного персонажа")]
+    public Image playerImg;
 
     [Header("Настройки")]
     public string gameSceneName = "MainRoad";
@@ -49,6 +53,7 @@ public class MainMenuManager : MonoBehaviour
         if (diamondsText != null) diamondsText.text = savedDiamonds.ToString();
 
         UpdateProfileUI();
+        RefreshPlayerImg();
 
         if (playButton != null) playButton.onClick.AddListener(OnPlayClicked);
         if (charactersButton != null)
@@ -60,19 +65,42 @@ public class MainMenuManager : MonoBehaviour
         if (hangarButton != null)
             hangarButton.onClick.AddListener(() => OnNavClicked("Ангар"));
 
-        // Клик по аватарке → открыть панель настроек
         if (profileAvatarButton != null)
             profileAvatarButton.onClick.AddListener(OpenProfileSettings);
 
-        // Отложенный тост
         string pending = PlayerPrefs.GetString("PendingLevelToast", "");
         if (!string.IsNullOrEmpty(pending))
         {
             PlayerPrefs.DeleteKey("PendingLevelToast");
             PlayerPrefs.Save();
-
             if (ToastNotification.Instance != null)
                 ToastNotification.Instance.Show(pending, 4f);
+        }
+    }
+
+    // ========== ИГРОК В ЦЕНТРЕ ==========
+
+    /// <summary>
+    /// Подставляет спрайт выбранного персонажа из Resources/MenuPlayerImg/{charId}.
+    /// </summary>
+    public void RefreshPlayerImg()
+    {
+        if (playerImg == null) return;
+
+        string charId = ProfileManager.GetSelectedCharacterId();
+        Sprite s = Resources.Load<Sprite>($"MenuPlayerImg/{charId}");
+
+        if (s != null)
+        {
+            playerImg.sprite = s;
+            playerImg.enabled = true;
+            playerImg.preserveAspect = true;
+            playerImg.color = Color.white;
+        }
+        else
+        {
+            Debug.LogWarning($"[MainMenu] Не найден спрайт MenuPlayerImg/{charId}");
+            playerImg.color = new Color(0.4f, 0.45f, 0.55f, 1f);
         }
     }
 

@@ -9,13 +9,8 @@ public class PlayerMovement2D : MonoBehaviour
     public float sideSpeed = 3f;
 
     [Header("Лимиты (auto)")]
-    [Tooltip("Отступ от края экрана (в юнитах). Может быть 0 или отрицательным.")]
     public float edgeMargin = 0f;
-
-    [Tooltip("Использовать ручную полуширину игрока (если у спрайта много прозрачного места)")]
     public bool useManualHalfWidth = true;
-
-    [Tooltip("Ручная полуширина игрока (в юнитах). Подбирай вручную.")]
     public float manualHalfWidth = 0.4f;
 
     [Header("Позиция по Y")]
@@ -26,14 +21,13 @@ public class PlayerMovement2D : MonoBehaviour
     [Header("Прыжок")]
     public float jumpHeight = 1.8f;
     public float jumpDuration = 0.7f;
-    [Tooltip("На какой высоте прыжка игрок становится неуязвимым (обычно 40% от jumpHeight)")]
     public float jumpClearThreshold = 0.7f;
 
-    [Header("Финальный удар (последний)")]
+    [Header("Финальный удар")]
     public float finalKnockbackAmount = 1.8f;
     public float deathSlideDuration = 0.5f;
 
-    [Header("Победа — поза игрока в убежище")]
+    [Header("Победа")]
     public GameObject victoryPose;
     public SpriteRenderer mainSprite;
 
@@ -51,7 +45,6 @@ public class PlayerMovement2D : MonoBehaviour
     private bool isDying = false;
     private bool isVictory = false;
 
-    // Вычисляемые лимиты
     private float leftLimit = -3f;
     private float rightLimit = 3f;
     private float playerHalfWidth = 1f;
@@ -63,7 +56,6 @@ public class PlayerMovement2D : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
 
-        // Применяем бонусы к скорости
         string charId = ProfileManager.GetSelectedCharacterId();
         sideSpeed *= BonusCalculator.GetSpeedMultiplier(charId);
         recoverySpeed = BonusCalculator.GetRecoverySpeed(charId);
@@ -92,7 +84,6 @@ public class PlayerMovement2D : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null) return;
 
-        // Полуширина экрана в юнитах — через Screen, а не cam.aspect (в редакторе точнее)
         float aspect;
         if (Screen.height > 0)
             aspect = (float)Screen.width / Screen.height;
@@ -100,37 +91,28 @@ public class PlayerMovement2D : MonoBehaviour
             aspect = cam.aspect;
 
         float halfScreenW = cam.orthographicSize * aspect;
-
-        // Полуширина игрока (из SpriteRenderer или Collider2D)
         playerHalfWidth = GetPlayerHalfWidth();
 
         leftLimit = -halfScreenW + playerHalfWidth + edgeMargin;
         rightLimit = halfScreenW - playerHalfWidth - edgeMargin;
 
-        // Защита на случай кривых значений
         if (leftLimit > rightLimit)
         {
             leftLimit = -halfScreenW;
             rightLimit = halfScreenW;
         }
-
-        Debug.Log($"[Player] aspect={aspect:F2}, halfScreen={halfScreenW:F2}, " +
-                  $"playerHalfW={playerHalfWidth:F2}, limits={leftLimit:F2}..{rightLimit:F2}");
     }
 
     private float GetPlayerHalfWidth()
     {
-        if (useManualHalfWidth)
-            return manualHalfWidth;
+        if (useManualHalfWidth) return manualHalfWidth;
 
-        // 1) Из SpriteRenderer
         if (gameplaySprite != null && gameplaySprite.sprite != null)
         {
             float spriteW = gameplaySprite.bounds.size.x;
             if (spriteW > 0.01f) return spriteW / 2f;
         }
 
-        // 2) Из Collider2D
         Collider2D col = GetComponent<Collider2D>();
         if (col != null)
         {
@@ -145,7 +127,6 @@ public class PlayerMovement2D : MonoBehaviour
     {
         if (isDead || isVictory) return;
 
-        // Пересчёт лимитов при смене разрешения
         if (Screen.width != lastScreenW || Screen.height != lastScreenH)
         {
             lastScreenW = Screen.width;
@@ -155,7 +136,6 @@ public class PlayerMovement2D : MonoBehaviour
 
         horizontalInput = 0f;
 
-        // Ввод и восстановление — только для живого игрока
         if (!isDying)
         {
             float kbInput = 0f;
@@ -179,14 +159,11 @@ public class PlayerMovement2D : MonoBehaviour
 
             horizontalInput = kbInput != 0f ? kbInput : touchInput;
 
-            // Восстановление позиции — ТОЛЬКО для живого
             if (currentY < baseY)
                 currentY = Mathf.Min(baseY, currentY + recoverySpeed * Time.deltaTime);
 
-            // Ограничение снизу — ТОЛЬКО для живого
             currentY = Mathf.Max(currentY, minY);
         }
-        // Если isDying — НИЧЕГО не трогаем, корутина сама управляет currentY
     }
 
     private void LateUpdate()
@@ -240,7 +217,6 @@ public class PlayerMovement2D : MonoBehaviour
             float p = Mathf.Clamp01(t / jumpDuration);
             jumpOffset = jumpHeight * Mathf.Sin(p * Mathf.PI);
 
-            // Отключаем коллайдер, когда игрок достаточно высоко
             if (col != null)
             {
                 bool highEnough = jumpOffset > jumpClearThreshold;
@@ -253,7 +229,6 @@ public class PlayerMovement2D : MonoBehaviour
         jumpOffset = 0f;
         isJumping = false;
 
-        // Включаем коллайдер обратно
         if (col != null) col.enabled = true;
     }
 
@@ -271,12 +246,10 @@ public class PlayerMovement2D : MonoBehaviour
         if (isDead) return;
         isDying = true;
 
-        // ⬇️ ДОБАВИТЬ ЭТУ СТРОКУ: запускаем смерть сразу
         PlayerVisualController visualCtrl = GetComponentInChildren<PlayerVisualController>();
         if (visualCtrl != null)
             visualCtrl.TriggerDeath();
 
-        // Запускаем анимацию утаскивания
         StartCoroutine(DeathSlideRoutine());
     }
 
@@ -308,6 +281,38 @@ public class PlayerMovement2D : MonoBehaviour
             rb.linearVelocity = Vector2.zero;
             rb.bodyType = RigidbodyType2D.Kinematic;
         }
+    }
+
+    /// <summary>Возрождение после revive.</summary>
+    public void Revive()
+    {
+        StopAllCoroutines();
+
+        isDead = false;
+        isDying = false;
+        isVictory = false;
+
+        currentY = baseY;
+        targetY = baseY;
+        jumpOffset = 0f;
+
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.linearVelocity = Vector2.zero;
+        }
+
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = true;
+
+        if (mainSprite != null) mainSprite.enabled = true;
+        if (victorySprite != null) victorySprite.enabled = false;
+
+        PlayerVisualController visualCtrl = GetComponentInChildren<PlayerVisualController>();
+        if (visualCtrl != null)
+            visualCtrl.ReviveAnimation();
+
+        Debug.Log("[Player] Возрождён");
     }
 
     public bool IsDead() => isDead;

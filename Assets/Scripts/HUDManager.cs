@@ -20,11 +20,18 @@ public class HUDManager : MonoBehaviour
     [Header("Task")]
     public TextMeshProUGUI taskText;
 
+    [Header("Rescued (спасённые)")]
+    [Tooltip("Счётчик спасённых в TopHUD. Опционально.")]
+    public TextMeshProUGUI rescuedText;
+
     private float currentHealth;
     private int coins = 0;
     private int diamonds = 0;
     private float distance = 0f;
     private bool isRunning = true;
+
+    private int rescued = 0;
+    private int missedRescued = 0;
 
     private void Awake()
     {
@@ -34,17 +41,20 @@ public class HUDManager : MonoBehaviour
 
     private void Start()
     {
-        // Применяем бонус к максимальному HP
         string charId = ProfileManager.GetSelectedCharacterId();
         maxHealth = BonusCalculator.GetMaxHealth(charId);
 
         currentHealth = maxHealth;
         coins = 0;
         diamonds = 0;
+        rescued = 0;
+        missedRescued = 0;
+
         if (resetBarOnStart) UpdateBarVisual();
         UpdateCoins(coins);
         UpdateDiamonds(diamonds);
         UpdateDistance(0);
+        UpdateRescued(0);
         SetTask("Доберись до убежища");
 
         Debug.Log($"[HUD] Макс. HP: {maxHealth}");
@@ -84,7 +94,7 @@ public class HUDManager : MonoBehaviour
         barFill.sizeDelta = new Vector2(maxBarWidth * ratio, barFill.sizeDelta.y);
     }
 
-    // ========== COINS (per-run) ==========
+    // ========== COINS ==========
 
     public void UpdateCoins(int amount)
     {
@@ -94,10 +104,6 @@ public class HUDManager : MonoBehaviour
 
     public void AddCoins(int amount) { UpdateCoins(coins + amount); }
 
-    /// <summary>
-    /// Сохраняет монеты текущего забега в общий счётчик PlayerPrefs.
-    /// Вызывается при завершении (победа или смерть).
-    /// </summary>
     public void CommitCoinsToTotal()
     {
         if (coins <= 0) return;
@@ -130,10 +136,31 @@ public class HUDManager : MonoBehaviour
     }
 
     public void StopRun() { isRunning = false; }
+    public void ResumeRun() { isRunning = true; }
+
+    // ========== RESCUED ==========
+
+    public void AddRescued(int amount)
+    {
+        rescued += amount;
+        UpdateRescued(rescued);
+    }
+
+    public void RegisterMissedRescue()
+    {
+        missedRescued++;
+    }
+
+    private void UpdateRescued(int value)
+    {
+        if (rescuedText != null) rescuedText.text = value.ToString();
+    }
 
     // ========== GETTERS ==========
 
     public float GetDistance() => distance;
     public int GetCoins() => coins;
     public int GetDiamonds() => diamonds;
+    public int GetRescued() => rescued;
+    public int GetMissedRescued() => missedRescued;
 }

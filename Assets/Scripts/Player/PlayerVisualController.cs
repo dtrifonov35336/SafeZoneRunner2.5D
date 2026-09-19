@@ -28,7 +28,6 @@ public class PlayerVisualController : MonoBehaviour
         string charId = ProfileManager.GetSelectedCharacterId();
         int index = GetCharacterIndex(charId);
 
-        // Прямое переключение состояния — БЕЗ Any State
         string stateName = StateNames[index];
         animator.Play(stateName, 0, 0f);
         animator.speed = 1f;
@@ -47,14 +46,12 @@ public class PlayerVisualController : MonoBehaviour
         if (debugLog)
             Debug.Log("[PlayerVisual] Trigger Die");
 
-        // Запускаем заморозку после проигрывания смерти
         StopAllCoroutines();
         StartCoroutine(FreezeAfterDeath());
     }
 
     private System.Collections.IEnumerator FreezeAfterDeath()
     {
-        // Ждём, пока анимация смерти проиграется
         yield return new WaitForSeconds(1.0f);
 
         if (animator != null)
@@ -62,6 +59,20 @@ public class PlayerVisualController : MonoBehaviour
 
         if (debugLog)
             Debug.Log("[PlayerVisual] Анимация смерти заморожена");
+    }
+
+    /// <summary>Возвращает визуал в состояние бега после revive.</summary>
+    public void ReviveAnimation()
+    {
+        if (animator == null) return;
+
+        StopAllCoroutines();
+        animator.speed = 1f;
+        animator.ResetTrigger("Die");
+        ApplySelectedCharacter();
+
+        if (debugLog)
+            Debug.Log("[PlayerVisual] Анимация возрождена");
     }
 
     public void RefreshCharacter()

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: d291a2d4371483341ab3cce4647e3df2
+guid: cdaa79e6b8f21be4686b68fe5c3f7b2c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2973991017081566746
-    second: IconFlag_0
+      213: 120431379485475153
+    second: IconsHuman_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -109,30 +109,17 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: IconFlag_0
+      name: IconsHuman_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 221
-        height: 261
+        width: 469
+        height: 469
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6e986a54de24ab6d0800000000000000
-      internalID: -2973991017081566746
+      spriteID: 151ca0a93bbdba100800000000000000
+      internalID: 120431379485475153
       vertices: []
       indices: 
       edges: []
@@ -161,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      IconFlag_0: -2973991017081566746
+      IconsHuman_0: 120431379485475153
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
