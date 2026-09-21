@@ -107,11 +107,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RescuedPerson
   spawnZ: 60
-  despawnZ: -1
+  despawnZ: -3
   laneX: 0
   speed: 15
-  bobSpeed: 6
-  bobAmount: 0.1
+  bobSpeed: 3
+  bobAmount: 0.05
   coinReward: 15
 --- !u!65 &-4471644845992118613
 BoxCollider:

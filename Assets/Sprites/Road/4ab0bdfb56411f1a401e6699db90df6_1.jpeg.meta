@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 64d2a084ccdacbe40bb16f95561c90b4
+guid: c9a0d9cdfea0acb42bc4ff043b141ef3
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2275353153691741081
-    second: Texture_Road_0
+      213: 2637243544321110071
+    second: 4ab0bdfb56411f1a401e6699db90df6_1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -55,9 +55,9 @@ TextureImporter:
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
-  alphaIsTransparency: 1
+  alphaIsTransparency: 0
   spriteTessellationDetail: -1
-  textureType: 8
+  textureType: 0
   textureShape: 1
   singleChannelComponent: 0
   flipbookRows: 1
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Texture_Road_0
+      name: 4ab0bdfb56411f1a401e6699db90df6_1_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 76493afac525c60e0800000000000000
-      internalID: -2275353153691741081
+      spriteID: 730b375e70f599420800000000000000
+      internalID: 2637243544321110071
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Texture_Road_0: -2275353153691741081
+      4ab0bdfb56411f1a401e6699db90df6_1_0: 2637243544321110071
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
