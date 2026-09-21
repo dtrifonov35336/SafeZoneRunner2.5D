@@ -19,6 +19,9 @@ public class RunManager : MonoBehaviour
     [Header("Появление SafeZone")]
     public float safeZoneStartZ = 60f;
 
+    [Header("Появление убежища")]
+    public float safeZoneRevealZ = 40f;
+
     private float runTime = 0f;
     private bool spawnStopped = false;
     private bool obstaclesCleared = false;
@@ -63,7 +66,16 @@ public class RunManager : MonoBehaviour
         if (safeZonePrefab != null)
         {
             Vector3 pos = new Vector3(0f, 0.4f, safeZoneStartZ);
-            Instantiate(safeZonePrefab, pos, Quaternion.identity);
+            GameObject instance =
+                Instantiate(
+                    safeZonePrefab,
+                    pos,
+                    Quaternion.identity);
+
+            SpawnReveal3D reveal =
+                instance.AddComponent<SpawnReveal3D>();
+
+            reveal.Initialize(safeZoneRevealZ);
         }
     }
 

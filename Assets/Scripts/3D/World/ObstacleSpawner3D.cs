@@ -18,6 +18,9 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float spawnZ = 60f;
     public float spawnY = 0.4f;
 
+    [Header("Появление из-за горизонта")]
+    public float revealZ = 40f;
+
     [Range(1, 5)]
     public int maxObstaclesPerWave = 1;
 
@@ -120,6 +123,8 @@ public class ObstacleSpawner3D : MonoBehaviour
         GameObject prefab = obstaclePrefabs[Random.Range(0, obstaclePrefabs.Length)];
         Vector3 spawnPos = new Vector3(laneX, spawnY, spawnZ);
         GameObject instance = Instantiate(prefab, spawnPos, Quaternion.identity, transform);
+        SpawnReveal3D reveal = instance.AddComponent<SpawnReveal3D>();
+        reveal.Initialize(revealZ);
         instance.name = $"Obstacle3D_{obstacleCounter++}";
 
         ObstacleMover3D mover = instance.GetComponent<ObstacleMover3D>();

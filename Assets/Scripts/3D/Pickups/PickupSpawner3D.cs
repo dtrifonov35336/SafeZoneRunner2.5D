@@ -27,6 +27,9 @@ public class PickupSpawner3D : MonoBehaviour
     public float spawnZ = 60f;
     public float spawnY = 0.4f;
 
+    [Header("Появление из-за горизонта")]
+    public float revealZ = 40f;
+
     private float coinTimer;
     private float heartTimer;
 
@@ -115,6 +118,9 @@ public class PickupSpawner3D : MonoBehaviour
     {
         Vector3 pos = new Vector3(laneX, spawnY, spawnZ);
         GameObject inst = Instantiate(prefab, pos, Quaternion.identity, transform);
+
+        SpawnReveal3D reveal = inst.AddComponent<SpawnReveal3D>();
+        reveal.Initialize(revealZ);
 
         PickupMover3D mover = inst.GetComponent<PickupMover3D>();
         if (mover != null)

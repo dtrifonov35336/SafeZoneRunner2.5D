@@ -16,6 +16,9 @@ public class RescuedPersonSpawner : MonoBehaviour
     public float spawnZ = 60f;
     public float spawnY = 0.4f;
 
+    [Header("Появление из-за горизонта")]
+    public float revealZ = 40f;
+
     [Header("Проверка полосы")]
     public float laneCheckRadius = 0.4f;
     public float checkFromZ = 55f;
@@ -100,6 +103,9 @@ public class RescuedPersonSpawner : MonoBehaviour
 
         Vector3 spawnPos = new Vector3(laneX, spawnY, spawnZ);
         GameObject inst = Instantiate(rescuedPersonPrefab, spawnPos, Quaternion.identity, transform);
+
+        SpawnReveal3D reveal = inst.AddComponent<SpawnReveal3D>();
+        reveal.Initialize(revealZ);
 
         RescuedPerson person = inst.GetComponent<RescuedPerson>();
         if (person != null)

@@ -5,44 +5,77 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class RoadDashedLine : MonoBehaviour
 {
-    [Header("Длина разметки")]
+    [Header("Длина дороги")]
     [Min(1f)]
     public float roadLength = 300f;
 
-    [Header("Размер одного штриха")]
+    [Header("Разметка")]
     [Min(0.1f)]
-    public float dashLength = 2.4f;
+    public float dashLength = 2f;
 
-    [Header("Расстояние между штрихами")]
     [Min(0.1f)]
-    public float gapLength = 3.0f;
+    public float gapLength = 3f;
 
-    [Header("Ширина линии")]
     [Min(0.01f)]
     public float lineWidth = 0.12f;
+
+    [Header("Движение")]
+    [Min(0f)]
+    public float speed = 15f;
 
     private MeshFilter meshFilter;
     private Mesh generatedMesh;
 
+    private readonly List<Vector3> vertices = new List<Vector3>(512);
+    private readonly List<int> triangles = new List<int>(768);
+
+    private float scrollOffset;
+
+    private float CycleLength => dashLength + gapLength;
+    private float HalfLength => roadLength * 0.5f;
+
     private void OnEnable()
     {
-        Build();
+        BuildMesh();
     }
 
     private void Awake()
     {
-        Build();
+        BuildMesh();
     }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
         if (!Application.isPlaying)
-            Build();
+            BuildMesh();
     }
 #endif
 
-    private void Build()
+    private void Update()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        if (ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver())
+            return;
+
+        if (CycleLength <= 0.01f)
+            return;
+
+        // Двигаем рисунок разметки внутрь существующей длины дороги.
+        // Из-за поворота объекта X=-90 увеличение локального Y
+        // соответствует движению по мировому Z в сторону игрока.
+        scrollOffset += speed * Time.deltaTime;
+
+        while (scrollOffset >= CycleLength)
+            scrollOffset -= CycleLength;
+
+        UpdateMeshPositions();
+    }
+
+    private void BuildMesh()
     {
         if (meshFilter == null)
             meshFilter = GetComponent<MeshFilter>();
@@ -67,47 +100,92 @@ public class RoadDashedLine : MonoBehaviour
             name = "RoadDashedLineMesh"
         };
 
-        float halfLength = roadLength * 0.5f;
+        generatedMesh.MarkDynamic();
 
-        List<Vector3> vertices = new List<Vector3>();
-        List<int> triangles = new List<int>();
+        meshFilter.sharedMesh = generatedMesh;
 
-        float currentY = -halfLength;
+        scrollOffset = 0f;
 
-        while (currentY < halfLength)
+        UpdateMeshPositions();
+    }
+
+    private void UpdateMeshPositions()
+    {
+        if (generatedMesh == null)
+            return;
+
+        vertices.Clear();
+        triangles.Clear();
+
+        if (roadLength <= 0f || CycleLength <= 0f)
+            return;
+
+        int dashCount = Mathf.CeilToInt(roadLength / CycleLength);
+
+        float halfWidth = lineWidth * 0.5f;
+
+        for (int i = 0; i < dashCount; i++)
         {
-            float dashStart = currentY;
-            float dashEnd = Mathf.Min(currentY + dashLength, halfLength);
+            float start = -HalfLength + i * CycleLength + scrollOffset;
 
-            if (dashEnd > dashStart)
+            // Переносим штрих обратно в диапазон [-HalfLength, HalfLength].
+            while (start >= HalfLength)
+                start -= roadLength;
+
+            while (start < -HalfLength)
+                start += roadLength;
+
+            float end = start + dashLength;
+
+            // Обычный штрих, полностью внутри дороги.
+            if (end <= HalfLength)
             {
-                int index = vertices.Count;
-
-                float halfWidth = lineWidth * 0.5f;
-
-                // Quad в локальной XY-плоскости.
-                vertices.Add(new Vector3(-halfWidth, dashStart, 0f));
-                vertices.Add(new Vector3(halfWidth, dashStart, 0f));
-                vertices.Add(new Vector3(halfWidth, dashEnd, 0f));
-                vertices.Add(new Vector3(-halfWidth, dashEnd, 0f));
-
-                triangles.Add(index + 0);
-                triangles.Add(index + 1);
-                triangles.Add(index + 2);
-
-                triangles.Add(index + 0);
-                triangles.Add(index + 2);
-                triangles.Add(index + 3);
+                AddQuad(start, end, halfWidth);
             }
+            else
+            {
+                // Штрих пересёк конец дороги.
+                // Разрезаем его на две части:
+                //
+                // [start ----- конец]
+                // [начало ----- end]
+                //
+                // Поэтому никакого исчезновения на границе нет.
 
-            currentY += dashLength + gapLength;
+                AddQuad(start, HalfLength, halfWidth);
+
+                float wrappedEnd = end - roadLength;
+
+                if (wrappedEnd > -HalfLength)
+                    AddQuad(-HalfLength, wrappedEnd, halfWidth);
+            }
         }
 
+        generatedMesh.Clear();
         generatedMesh.SetVertices(vertices);
         generatedMesh.SetTriangles(triangles, 0);
         generatedMesh.RecalculateBounds();
         generatedMesh.RecalculateNormals();
+    }
 
-        meshFilter.sharedMesh = generatedMesh;
+    private void AddQuad(float start, float end, float halfWidth)
+    {
+        if (end <= start)
+            return;
+
+        int index = vertices.Count;
+
+        vertices.Add(new Vector3(-halfWidth, start, 0f));
+        vertices.Add(new Vector3(halfWidth, start, 0f));
+        vertices.Add(new Vector3(halfWidth, end, 0f));
+        vertices.Add(new Vector3(-halfWidth, end, 0f));
+
+        triangles.Add(index + 0);
+        triangles.Add(index + 1);
+        triangles.Add(index + 2);
+
+        triangles.Add(index + 0);
+        triangles.Add(index + 2);
+        triangles.Add(index + 3);
     }
 }
