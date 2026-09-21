@@ -12,9 +12,9 @@ GameObject:
   - component: {fileID: 7389039912991700893}
   - component: {fileID: 5156314745185107176}
   - component: {fileID: 4597126565698846586}
-  - component: {fileID: -1959837739356836637}
+  - component: {fileID: 7676153635878494130}
   m_Layer: 0
-  m_Name: Decor_Bush
+  m_Name: Decor_Bush3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: da945f1f76a200c489f4a2641ffccbac, type: 2}
+  - {fileID: 2100000, guid: bab10d6ca1805cd4f886f24fc9f50ae8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -114,7 +114,7 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &-1959837739356836637
+--- !u!114 &7676153635878494130
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
