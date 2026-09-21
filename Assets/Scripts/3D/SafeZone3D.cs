@@ -3,7 +3,7 @@ using UnityEngine;
 public class SafeZone : MonoBehaviour
 {
     [Header("Траектория (Z)")]
-    public float spawnZ = 60f;
+    public float spawnZ = 40f;
     public float despawnZ = -1f;
 
     [Header("Скорость")]

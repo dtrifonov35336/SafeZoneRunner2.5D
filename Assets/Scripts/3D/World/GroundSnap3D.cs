@@ -18,23 +18,48 @@ public class GroundSnap3D : MonoBehaviour
         Renderer[] renderers =
             GetComponentsInChildren<Renderer>(true);
 
-        if (renderers == null ||
-            renderers.Length == 0)
-            return;
+        Renderer mainRenderer = null;
 
-        Bounds bounds =
-            renderers[0].bounds;
-
-        for (int i = 1; i < renderers.Length; i++)
+        foreach (Renderer renderer in renderers)
         {
-            if (renderers[i] != null)
-                bounds.Encapsulate(
-                    renderers[i].bounds);
+            if (renderer == null)
+                continue;
+
+            // Игнорируем искусственные тени.
+            if (renderer.transform.name.Contains("Shadow"))
+                continue;
+
+            // Берём первый основной Renderer.
+            mainRenderer = renderer;
+            break;
         }
 
+        if (mainRenderer == null)
+            return;
+
+        Bounds bounds = mainRenderer.bounds;
+
+        // Если есть несколько основных Renderer,
+        // объединяем их, но Shadow не учитываем.
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+                continue;
+
+            if (renderer.transform.name.Contains("Shadow"))
+                continue;
+
+            if (renderer == mainRenderer)
+                continue;
+
+            bounds.Encapsulate(renderer.bounds);
+        }
+
+        float targetY =
+            groundY + heightOffset;
+
         float delta =
-            (groundY + heightOffset) -
-            bounds.min.y;
+            targetY - bounds.min.y;
 
         transform.position +=
             new Vector3(

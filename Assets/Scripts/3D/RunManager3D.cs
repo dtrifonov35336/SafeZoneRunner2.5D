@@ -12,15 +12,17 @@ public class RunManager : MonoBehaviour
     [Tooltip("За сколько секунд ДО убежища дочистить оставшиеся препятствия")]
     public float clearAhead = 1.5f;
 
-    [Header("Ссылки")]
+    [Header("Спавнеры")]
     public ObstacleSpawner3D obstacleSpawner;
+    public PickupSpawner3D pickupSpawner;
+    public RescuedPersonSpawner rescuedPersonSpawner;
+    public SideDecorationSpawner sideDecorationSpawner;
+
+    [Header("Убежище")]
     public GameObject safeZonePrefab;
 
     [Header("Появление SafeZone")]
     public float safeZoneStartZ = 60f;
-
-    [Header("Появление убежища")]
-    public float safeZoneRevealZ = 40f;
 
     private float runTime = 0f;
     private bool spawnStopped = false;
@@ -35,13 +37,27 @@ public class RunManager : MonoBehaviour
         runTime += Time.deltaTime;
 
         // 1) За N секунд до убежища — прекратить спавн
-        if (!spawnStopped && runTime >= (runDuration - stopSpawnAhead))
+        if (!spawnStopped &&
+            runTime >= (runDuration - stopSpawnAhead))
         {
             spawnStopped = true;
+
             if (obstacleSpawner != null)
                 obstacleSpawner.SetRunning(false);
 
-            Debug.Log("[RunManager] Спавн остановлен. Ждём, пока препятствия доедут.");
+            if (pickupSpawner != null)
+                pickupSpawner.SetRunning(false);
+
+            if (rescuedPersonSpawner != null)
+                rescuedPersonSpawner.SetRunning(false);
+
+            if (sideDecorationSpawner != null)
+                sideDecorationSpawner.SetRunning(false);
+
+            Debug.Log(
+                "[RunManager] Новый спавн остановлен. " +
+                "Существующие объекты продолжают движение. " +
+                "Ожидаем убежище.");
         }
 
         // 2) За 1.5 сек до убежища — дочистить остатки
@@ -65,17 +81,16 @@ public class RunManager : MonoBehaviour
 
         if (safeZonePrefab != null)
         {
-            Vector3 pos = new Vector3(0f, 0.4f, safeZoneStartZ);
+            Vector3 pos = new Vector3(
+                0f,
+                -0.04f,
+                safeZoneStartZ);
+
             GameObject instance =
                 Instantiate(
                     safeZonePrefab,
                     pos,
                     Quaternion.identity);
-
-            SpawnReveal3D reveal =
-                instance.AddComponent<SpawnReveal3D>();
-
-            reveal.Initialize(safeZoneRevealZ);
         }
     }
 

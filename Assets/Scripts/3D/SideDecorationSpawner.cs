@@ -34,6 +34,9 @@ public class SideDecorationSpawner : MonoBehaviour
     [Header("Скорость")]
     public float speed = 15f;
 
+    [Header("Runtime")]
+    public bool isRunning = true;
+
     private float timer;
     private float runTime;
 
@@ -44,6 +47,9 @@ public class SideDecorationSpawner : MonoBehaviour
 
     private void Update()
     {
+        if (!isRunning)
+            return;
+
         if (ChaseManager.Instance != null &&
             ChaseManager.Instance.IsGameOver())
             return;
@@ -182,5 +188,10 @@ public class SideDecorationSpawner : MonoBehaviour
         // Для неизвестного типа
         minX = 4.0f;
         maxX = 5.0f;
+    }
+
+    public void SetRunning(bool running)
+    {
+        isRunning = running;
     }
 }
