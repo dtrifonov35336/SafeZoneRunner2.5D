@@ -2,6 +2,10 @@ using UnityEngine;
 
 public class SpawnHeightOffset3D : MonoBehaviour
 {
-    [Tooltip("Индивидуальная поправка высоты этого префаба.")]
-    public float yOffset = 0f;
+    [Header("Высота появления")]
+    [Tooltip(
+        "Абсолютная мировая высота Y. " +
+        "Не прибавляется к Spawn Y спавнера."
+    )]
+    public float spawnY = 0f;
 }

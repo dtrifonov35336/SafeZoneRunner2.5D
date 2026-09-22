@@ -16,6 +16,11 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     [Header("Позиции")]
     public float spawnZ = 60f;
+
+    [Tooltip(
+        "Используется только для служебных проверок. " +
+        "Высота самого препятствия берётся из префаба."
+    )]
     public float spawnY = 0.4f;
 
     [Header("Появление из-за горизонта")]
@@ -42,10 +47,16 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private void Start()
     {
-        if (lanePositions == null || lanePositions.Length == 0)
-            lanePositions = new float[] { -0.7f, 0.7f };
+        if (lanePositions == null ||
+            lanePositions.Length == 0)
+        {
+            lanePositions =
+                new float[] { -0.7f, 0.7f };
+        }
 
-        int maxAllowed = lanePositions.Length - 1;
+        int maxAllowed =
+            lanePositions.Length - 1;
+
         if (maxObstaclesPerWave > maxAllowed)
             maxObstaclesPerWave = maxAllowed;
 
@@ -54,120 +65,287 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private void Update()
     {
-        if (!isRunning) return;
+        if (!isRunning)
+            return;
 
-        if (ChaseManager.Instance != null && ChaseManager.Instance.IsGameOver()) return;
+        if (ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver())
+        {
+            return;
+        }
 
         runTime += Time.deltaTime;
-        float t = Mathf.Clamp01(runTime / difficultyRampTime);
-        float currentInterval = Mathf.Lerp(startInterval, minInterval, t);
+
+        float t =
+            Mathf.Clamp01(
+                runTime / difficultyRampTime
+            );
+
+        float currentInterval =
+            Mathf.Lerp(
+                startInterval,
+                minInterval,
+                t
+            );
 
         spawnTimer -= Time.deltaTime;
-        if (spawnTimer > 0f) return;
+
+        if (spawnTimer > 0f)
+            return;
 
         spawnTimer = currentInterval;
+
         SpawnWave();
     }
 
     private void SpawnWave()
     {
-        if (obstaclePrefabs == null || obstaclePrefabs.Length == 0) return;
+        if (obstaclePrefabs == null ||
+            obstaclePrefabs.Length == 0)
+        {
+            return;
+        }
 
-        int laneCount = lanePositions.Length;
-        if (laneCount < 2) return;
+        int laneCount =
+            lanePositions.Length;
 
-        int maxForWave = Mathf.Min(maxObstaclesPerWave, laneCount - 1);
-        int obstaclesThisWave = Random.Range(1, maxForWave + 1);
+        if (laneCount < 2)
+            return;
 
-        List<int> availableLanes = new List<int>();
-        for (int i = 0; i < laneCount; i++) availableLanes.Add(i);
+        int maxForWave =
+            Mathf.Min(
+                maxObstaclesPerWave,
+                laneCount - 1
+            );
+
+        int obstaclesThisWave =
+            Random.Range(
+                1,
+                maxForWave + 1
+            );
+
+        List<int> availableLanes =
+            new List<int>();
+
+        for (int i = 0;
+             i < laneCount;
+             i++)
+        {
+            availableLanes.Add(i);
+        }
 
         // Shuffle
-        for (int i = 0; i < availableLanes.Count; i++)
+        for (int i = 0;
+             i < availableLanes.Count;
+             i++)
         {
-            int r = Random.Range(i, availableLanes.Count);
-            (availableLanes[i], availableLanes[r]) = (availableLanes[r], availableLanes[i]);
+            int r =
+                Random.Range(
+                    i,
+                    availableLanes.Count
+                );
+
+            (
+                availableLanes[i],
+                availableLanes[r]
+            ) =
+            (
+                availableLanes[r],
+                availableLanes[i]
+            );
         }
 
         int spawned = 0;
-        foreach (int laneIdx in availableLanes)
+
+        foreach (int laneIdx
+                 in availableLanes)
         {
-            if (spawned >= obstaclesThisWave) break;
+            if (spawned >= obstaclesThisWave)
+                break;
 
-            float laneX = lanePositions[laneIdx];
+            float laneX =
+                lanePositions[laneIdx];
 
-            if (checkPickups && !IsLaneClearOfPickups(laneX))
+            if (checkPickups &&
+                !IsLaneClearOfPickups(laneX))
+            {
                 continue;
+            }
 
             SpawnOne(laneX);
+
             spawned++;
         }
     }
 
-    private bool IsLaneClearOfPickups(float laneX)
+    private bool IsLaneClearOfPickups(
+        float laneX)
     {
-        PickupMover3D[] pickups = FindObjectsByType<PickupMover3D>(FindObjectsSortMode.None);
+        PickupMover3D[] pickups =
+            FindObjectsByType<PickupMover3D>(
+                FindObjectsSortMode.None
+            );
+
         foreach (var p in pickups)
         {
-            if (p == null) continue;
-            Vector3 pos = p.transform.position;
-            if (Mathf.Abs(pos.x - laneX) < pickupLaneWidth &&
-                pos.z >= pickupCheckToZ && pos.z <= pickupCheckFromZ)
+            if (p == null)
+                continue;
+
+            Vector3 pos =
+                p.transform.position;
+
+            if (
+                Mathf.Abs(pos.x - laneX)
+                < pickupLaneWidth &&
+                pos.z >= pickupCheckToZ &&
+                pos.z <= pickupCheckFromZ
+            )
+            {
                 return false;
+            }
         }
+
         return true;
     }
 
     private void SpawnOne(float laneX)
     {
-        GameObject prefab = obstaclePrefabs[Random.Range(0, obstaclePrefabs.Length)];
-        Vector3 spawnPos = new Vector3(laneX, spawnY, spawnZ);
-        GameObject instance = Instantiate(prefab, spawnPos, Quaternion.identity, transform);
+        GameObject prefab =
+            obstaclePrefabs[
+                Random.Range(
+                    0,
+                    obstaclePrefabs.Length
+                )
+            ];
 
-        SpawnHeightOffset3D heightOffset =
-            instance.GetComponent<SpawnHeightOffset3D>();
+        if (prefab == null)
+            return;
 
-        float y = spawnY;
+        // --------------------------------
+        // Определяем Y
+        // --------------------------------
 
-        if (heightOffset != null)
-            y += heightOffset.yOffset;
+        float targetY =
+            prefab.transform.position.y;
 
-        Vector3 position = instance.transform.position;
-        position.y = y;
-        instance.transform.position = position;
+        SpawnHeightOffset3D
+            heightOverride =
+                prefab.GetComponent<
+                    SpawnHeightOffset3D
+                >();
 
-        instance.name = $"Obstacle3D_{obstacleCounter++}";
+        if (heightOverride != null)
+        {
+            // Это АБСОЛЮТНЫЙ Y.
+            targetY =
+                heightOverride.spawnY;
+        }
 
-        ObstacleMover3D mover = instance.GetComponent<ObstacleMover3D>();
+        // --------------------------------
+        // Создание
+        // --------------------------------
+
+        Vector3 spawnPos =
+            new Vector3(
+                laneX,
+                targetY,
+                spawnZ
+            );
+
+        GameObject instance =
+            Instantiate(
+                prefab,
+                spawnPos,
+                Quaternion.identity,
+                transform
+            );
+
+        instance.name =
+            $"Obstacle3D_{obstacleCounter++}";
+
+        // --------------------------------
+        // Движение
+        // --------------------------------
+
+        ObstacleMover3D mover =
+            instance.GetComponent<
+                ObstacleMover3D
+            >();
+
         if (mover != null)
         {
             mover.laneX = laneX;
             mover.spawnZ = spawnZ;
+
             mover.ApplyInitialState();
         }
     }
 
-    public void SetRunning(bool running) { isRunning = running; }
+    public void SetRunning(bool running)
+    {
+        isRunning = running;
+    }
 
     public void ClearAllObstacles()
     {
-        for (int i = transform.childCount - 1; i >= 0; i--)
+        for (
+            int i = transform.childCount - 1;
+            i >= 0;
+            i--
+        )
         {
-            GameObject child = transform.GetChild(i).gameObject;
+            GameObject child =
+                transform.GetChild(i).gameObject;
+
             child.SetActive(false);
+
             Destroy(child);
         }
     }
 
     private void OnDrawGizmosSelected()
     {
-        if (!drawLaneGizmos || lanePositions == null) return;
+        if (!drawLaneGizmos ||
+            lanePositions == null)
+        {
+            return;
+        }
 
-        Gizmos.color = Color.yellow;
-        foreach (float x in lanePositions)
-            Gizmos.DrawLine(new Vector3(x, 0f, 0f), new Vector3(x, 0f, spawnZ));
+        Gizmos.color =
+            Color.yellow;
 
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(new Vector3(-3f, 0f, spawnZ), new Vector3(3f, 0f, spawnZ));
+        foreach (
+            float x
+            in lanePositions)
+        {
+            Gizmos.DrawLine(
+                new Vector3(
+                    x,
+                    0f,
+                    0f
+                ),
+                new Vector3(
+                    x,
+                    0f,
+                    spawnZ
+                )
+            );
+        }
+
+        Gizmos.color =
+            Color.green;
+
+        Gizmos.DrawLine(
+            new Vector3(
+                -3f,
+                0f,
+                spawnZ
+            ),
+            new Vector3(
+                3f,
+                0f,
+                spawnZ
+            )
+        );
     }
 }

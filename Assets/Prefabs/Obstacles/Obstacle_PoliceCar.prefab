@@ -172,4 +172,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed0f1cb03da30f84aa137811db86493f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnHeightOffset3D
-  yOffset: 1
+  spawnY: 1
