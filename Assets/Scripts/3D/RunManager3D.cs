@@ -22,7 +22,8 @@ public class RunManager : MonoBehaviour
     public GameObject safeZonePrefab;
 
     [Header("Появление SafeZone")]
-    public float safeZoneStartZ = 60f;
+    public float safeZoneSpawnZ = 40f;
+    public float safeZoneY = -0.5f;
 
     private float runTime = 0f;
     private bool spawnStopped = false;
@@ -81,16 +82,19 @@ public class RunManager : MonoBehaviour
 
         if (safeZonePrefab != null)
         {
-            Vector3 pos = new Vector3(
-                0f,
-                -0.04f,
-                safeZoneStartZ);
+            Vector3 spawnPosition = 
+                new Vector3(
+                    0f,
+                    safeZoneY,
+                    safeZoneSpawnZ
+                );
 
-            GameObject instance =
+            GameObject safeZone =
                 Instantiate(
                     safeZonePrefab,
-                    pos,
-                    Quaternion.identity);
+                    spawnPosition,
+                    Quaternion.identity
+                );
         }
     }
 

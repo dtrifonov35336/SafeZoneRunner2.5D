@@ -6,7 +6,7 @@ public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Движение в сторону")]
     public float sideSpeed = 3f;
-    public float sideLimit = 3.5f;
+    public float sideLimit = 10f;
 
     [Header("Позиция по Y")]
     public float baseY = 0.4f;

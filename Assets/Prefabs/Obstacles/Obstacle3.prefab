@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1460773507767964375}
   - component: {fileID: -2663774962016130286}
   - component: {fileID: 3080323901849341047}
+  - component: {fileID: 844448019098357984}
   m_Layer: 7
   m_Name: Obstacle3
   m_TagString: Obstacle
@@ -159,3 +160,16 @@ MonoBehaviour:
   despawnZ: -3
   speed: 15
   laneX: 0
+--- !u!114 &844448019098357984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8504888510931700835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed0f1cb03da30f84aa137811db86493f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnHeightOffset3D
+  yOffset: 0

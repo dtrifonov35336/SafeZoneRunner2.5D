@@ -37,12 +37,23 @@ public class SideDecorationSpawner : MonoBehaviour
     [Header("Runtime")]
     public bool isRunning = true;
 
-    private float timer;
+    private float leftTimer;
+    private float rightTimer;
+
+    private string lastLeftPrefab;
+    private string lastRightPrefab;
+
+    private string lastLeftType;
+    private string lastRightType;
     private float runTime;
 
     private void Start()
     {
-        timer = spawnInterval;
+        leftTimer =
+            Random.Range(0.2f, 1.0f);
+
+        rightTimer =
+            Random.Range(0.7f, 1.6f);
     }
 
     private void Update()
@@ -64,12 +75,32 @@ public class SideDecorationSpawner : MonoBehaviour
             minSpawnInterval,
             t);
 
-        timer -= Time.deltaTime;
+        leftTimer -= Time.deltaTime;
+        rightTimer -= Time.deltaTime;
 
-        if (timer > 0f)
-            return;
+        if (leftTimer <= 0f)
+        {
+            SpawnAtSideRandomZ(
+                true,
+                leftPrefabs,
+                ref lastLeftPrefab,
+                ref lastLeftType
+            );
 
-        timer = currentInterval;
+            leftTimer = Random.Range(0.9f, 1.7f);
+        }
+
+        if (rightTimer <= 0f)
+        {
+            SpawnAtSideRandomZ(
+                false,
+                rightPrefabs,
+                ref lastRightPrefab,
+                ref lastRightType
+            );
+
+            rightTimer = Random.Range(1.1f, 1.9f);
+        }
 
         if (Random.value < 0.7f)
             SpawnAtSide(true, leftPrefabs);
@@ -118,8 +149,11 @@ public class SideDecorationSpawner : MonoBehaviour
         localPosition.x =
             worldX - transform.position.x;
 
+        float randomZ =
+            spawnZ + Random.Range(-18f, 10f);
+
         localPosition.z =
-            spawnZ - transform.position.z;
+            randomZ - transform.position.z;
 
         // Y намеренно не меняем:
         // он берётся из prefab.

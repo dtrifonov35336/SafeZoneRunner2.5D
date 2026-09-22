@@ -123,6 +123,19 @@ public class ObstacleSpawner3D : MonoBehaviour
         GameObject prefab = obstaclePrefabs[Random.Range(0, obstaclePrefabs.Length)];
         Vector3 spawnPos = new Vector3(laneX, spawnY, spawnZ);
         GameObject instance = Instantiate(prefab, spawnPos, Quaternion.identity, transform);
+
+        SpawnHeightOffset3D heightOffset =
+            instance.GetComponent<SpawnHeightOffset3D>();
+
+        float y = spawnY;
+
+        if (heightOffset != null)
+            y += heightOffset.yOffset;
+
+        Vector3 position = instance.transform.position;
+        position.y = y;
+        instance.transform.position = position;
+
         SpawnReveal3D reveal = instance.AddComponent<SpawnReveal3D>();
         reveal.Initialize(revealZ);
         instance.name = $"Obstacle3D_{obstacleCounter++}";
