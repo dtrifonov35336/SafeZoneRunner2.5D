@@ -45,15 +45,15 @@ public class SideDecorationSpawner : MonoBehaviour
 
     private string lastLeftType;
     private string lastRightType;
+
     private float runTime;
 
     private void Start()
     {
-        leftTimer =
-            Random.Range(0.2f, 1.0f);
-
-        rightTimer =
-            Random.Range(0.7f, 1.6f);
+        // Левая и правая стороны начинают
+        // с разным временем.
+        leftTimer = Random.Range(0.2f, 1.0f);
+        rightTimer = Random.Range(0.7f, 1.6f);
     }
 
     private void Update()
@@ -68,16 +68,20 @@ public class SideDecorationSpawner : MonoBehaviour
         runTime += Time.deltaTime;
 
         float t = Mathf.Clamp01(
-            runTime / difficultyRampTime);
+            runTime / difficultyRampTime
+        );
 
         float currentInterval = Mathf.Lerp(
             spawnInterval,
             minSpawnInterval,
-            t);
+            t
+        );
 
+        // Таймеры сторон работают независимо.
         leftTimer -= Time.deltaTime;
         rightTimer -= Time.deltaTime;
 
+        // Левая сторона
         if (leftTimer <= 0f)
         {
             SpawnAtSideRandomZ(
@@ -87,9 +91,13 @@ public class SideDecorationSpawner : MonoBehaviour
                 ref lastLeftType
             );
 
-            leftTimer = Random.Range(0.9f, 1.7f);
+            leftTimer = Random.Range(
+                currentInterval * 0.75f,
+                currentInterval * 1.25f
+            );
         }
 
+        // Правая сторона
         if (rightTimer <= 0f)
         {
             SpawnAtSideRandomZ(
@@ -99,84 +107,207 @@ public class SideDecorationSpawner : MonoBehaviour
                 ref lastRightType
             );
 
-            rightTimer = Random.Range(1.1f, 1.9f);
+            rightTimer = Random.Range(
+                currentInterval * 0.75f,
+                currentInterval * 1.25f
+            );
         }
-
-        if (Random.value < 0.7f)
-            SpawnAtSide(true, leftPrefabs);
-
-        if (Random.value < 0.7f)
-            SpawnAtSide(false, rightPrefabs);
     }
 
-    private void SpawnAtSide(
+    private void SpawnAtSideRandomZ(
         bool leftSide,
-        GameObject[] pool)
+        GameObject[] pool,
+        ref string lastPrefab,
+        ref string lastType)
     {
         if (pool == null || pool.Length == 0)
             return;
 
-        GameObject prefab =
-            pool[Random.Range(0, pool.Length)];
+        GameObject prefab = ChoosePrefab(
+            pool,
+            lastPrefab,
+            lastType
+        );
 
-        GameObject inst =
-            Instantiate(prefab, transform);
+        if (prefab == null)
+            return;
+
+        // Запоминаем выбранный объект
+        lastPrefab = prefab.name;
+        lastType = GetDecorationType(prefab.name);
+
+        GameObject inst = Instantiate(
+            prefab,
+            transform
+        );
 
         inst.name = $"Decor_{prefab.name}";
 
+        // Получаем допустимый диапазон X
         float minX;
         float maxX;
 
         GetXRange(
             prefab.name,
             out minX,
-            out maxX);
+            out maxX
+        );
 
-        float distance =
-            Random.Range(minX, maxX);
+        float distance = Random.Range(
+            minX,
+            maxX
+        );
 
-        float worldX =
-            leftSide
-                ? -distance
-                : distance;
+        float worldX = leftSide
+            ? -distance
+            : distance;
 
-        // Спавнер находится внутри WORLD,
-        // поэтому переводим мировую X/Z
-        // обратно в локальные координаты объекта.
+        // Случайная глубина.
+        //
+        // Это убирает эффект:
+        //
+        // дерево
+        // дерево
+        // дерево
+        //
+        // и создаёт более естественную
+        // глубину расположения декораций.
+        float randomZ =
+            spawnZ +
+            Random.Range(-18f, 10f);
+
         Vector3 localPosition =
             inst.transform.localPosition;
 
+        // WORLD находится со смещением,
+        // поэтому переводим мировые координаты
+        // обратно в локальные координаты спавнера.
         localPosition.x =
-            worldX - transform.position.x;
-
-        float randomZ =
-            spawnZ + Random.Range(-18f, 10f);
+            worldX -
+            transform.position.x;
 
         localPosition.z =
-            randomZ - transform.position.z;
+            randomZ -
+            transform.position.z;
 
-        // Y намеренно не меняем:
-        // он берётся из prefab.
+        // Y намеренно не изменяем.
+        // GroundSnap3D после создания объекта
+        // установит его на поверхность.
         inst.transform.localPosition =
             localPosition;
+
+        // --------------------------------
+        // Прижимаем объект к земле
+        // --------------------------------
 
         GroundSnap3D snap =
             inst.GetComponent<GroundSnap3D>();
 
         if (snap == null)
-            snap = inst.AddComponent<GroundSnap3D>();
+        {
+            snap =
+                inst.AddComponent<GroundSnap3D>();
+        }
 
         snap.groundY = -0.04f;
         snap.heightOffset = 0f;
+
+        // --------------------------------
+        // Движение объекта
+        // --------------------------------
 
         SideDecorationMover mover =
             inst.GetComponent<SideDecorationMover>();
 
         if (mover == null)
-            mover = inst.AddComponent<SideDecorationMover>();
+        {
+            mover =
+                inst.AddComponent<SideDecorationMover>();
+        }
 
         mover.speed = speed;
         mover.despawnZ = despawnZ;
+    }
+
+    private GameObject ChoosePrefab(
+        GameObject[] pool,
+        string previousPrefab,
+        string previousType)
+    {
+        if (pool == null || pool.Length == 0)
+            return null;
+
+        // Если доступен только один prefab,
+        // просто используем его.
+        if (pool.Length == 1)
+            return pool[0];
+
+        // Несколько попыток подобрать объект,
+        // который не повторяет предыдущий тип.
+        for (int i = 0; i < 10; i++)
+        {
+            GameObject candidate =
+                pool[Random.Range(0, pool.Length)];
+
+            if (candidate == null)
+                continue;
+
+            string candidateType =
+                GetDecorationType(candidate.name);
+
+            // Не ставим подряд один и тот же тип:
+            //
+            // Tree -> Bush -> Tree
+            //
+            // но не:
+            //
+            // Tree -> Tree2
+            //
+            // поскольку Tree и Tree2 относятся
+            // к одному типу.
+            if (!string.IsNullOrEmpty(previousType) &&
+                candidateType == previousType)
+            {
+                continue;
+            }
+
+            // Дополнительная защита от полного
+            // повторения одного prefab.
+            if (!string.IsNullOrEmpty(previousPrefab) &&
+                candidate.name == previousPrefab)
+            {
+                continue;
+            }
+
+            return candidate;
+        }
+
+        // Если подобрать другой тип не удалось,
+        // возвращаем случайный prefab.
+        return pool[
+            Random.Range(0, pool.Length)
+        ];
+    }
+
+    private string GetDecorationType(
+        string prefabName)
+    {
+        if (prefabName.Contains("Tree"))
+            return "Tree";
+
+        if (prefabName.Contains("Bush"))
+            return "Bush";
+
+        if (prefabName.Contains("Car"))
+            return "Car";
+
+        if (prefabName.Contains("Debris"))
+            return "Debris";
+
+        if (prefabName.Contains("Building"))
+            return "Building";
+
+        return "Other";
     }
 
     private void GetXRange(
@@ -219,7 +350,7 @@ public class SideDecorationSpawner : MonoBehaviour
             return;
         }
 
-        // Для неизвестного типа
+        // Неизвестный тип
         minX = 4.0f;
         maxX = 5.0f;
     }

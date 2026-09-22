@@ -119,8 +119,6 @@ public class PickupSpawner3D : MonoBehaviour
         Vector3 pos = new Vector3(laneX, spawnY, spawnZ);
         GameObject inst = Instantiate(prefab, pos, Quaternion.identity, transform);
 
-        SpawnReveal3D reveal = inst.AddComponent<SpawnReveal3D>();
-        reveal.Initialize(revealZ);
 
         PickupMover3D mover = inst.GetComponent<PickupMover3D>();
         if (mover != null)

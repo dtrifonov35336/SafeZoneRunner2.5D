@@ -136,8 +136,6 @@ public class ObstacleSpawner3D : MonoBehaviour
         position.y = y;
         instance.transform.position = position;
 
-        SpawnReveal3D reveal = instance.AddComponent<SpawnReveal3D>();
-        reveal.Initialize(revealZ);
         instance.name = $"Obstacle3D_{obstacleCounter++}";
 
         ObstacleMover3D mover = instance.GetComponent<ObstacleMover3D>();

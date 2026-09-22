@@ -2,14 +2,30 @@ using UnityEngine;
 
 public class RunManager : MonoBehaviour
 {
-    [Header("Тайминг забега")]
-    [Tooltip("Через сколько секунд появляется убежище")]
-    public float runDuration = 40f;
+    [Header("Режим забега")]
+    [Tooltip(
+        "Если включено — забег бесконечный. " +
+        "Убежище автоматически не появляется, " +
+        "а фон не приближается."
+    )]
+    public bool infiniteRun = false;
 
-    [Tooltip("За сколько секунд ДО убежища перестать спавнить препятствия")]
+    [Header("Тайминг забега")]
+    [Tooltip(
+        "Продолжительность конечного забега в секундах."
+    )]
+    public float runDuration = 180f;
+
+    [Tooltip(
+        "За сколько секунд ДО убежища " +
+        "перестать спавнить новые объекты."
+    )]
     public float stopSpawnAhead = 6f;
 
-    [Tooltip("За сколько секунд ДО убежища дочистить оставшиеся препятствия")]
+    [Tooltip(
+        "За сколько секунд ДО убежища " +
+        "дочистить оставшиеся препятствия."
+    )]
     public float clearAhead = 1.5f;
 
     [Header("Спавнеры")]
@@ -26,20 +42,43 @@ public class RunManager : MonoBehaviour
     public float safeZoneY = -0.5f;
 
     private float runTime = 0f;
+
     private bool spawnStopped = false;
     private bool obstaclesCleared = false;
     private bool safeZoneSpawned = false;
 
-    void Update()
+    private void Update()
     {
-        if (safeZoneSpawned) return;
-        if (ChaseManager.Instance != null && ChaseManager.Instance.IsGameOver()) return;
+        if (ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver())
+        {
+            return;
+        }
 
+        // Время продолжаем считать даже
+        // в бесконечном режиме.
         runTime += Time.deltaTime;
 
-        // 1) За N секунд до убежища — прекратить спавн
+        // В бесконечном режиме:
+        //
+        // - ничего не останавливаем;
+        // - SafeZone не создаём;
+        // - RunManager продолжает считать время.
+        if (infiniteRun)
+        {
+            return;
+        }
+
+        if (safeZoneSpawned)
+            return;
+
+        // ----------------------------------------
+        // Остановка новых спавнов
+        // ----------------------------------------
+
         if (!spawnStopped &&
-            runTime >= (runDuration - stopSpawnAhead))
+            runTime >=
+            (runDuration - stopSpawnAhead))
         {
             spawnStopped = true;
 
@@ -56,47 +95,75 @@ public class RunManager : MonoBehaviour
                 sideDecorationSpawner.SetRunning(false);
 
             Debug.Log(
-                "[RunManager] Новый спавн остановлен. " +
-                "Существующие объекты продолжают движение. " +
-                "Ожидаем убежище.");
+                "[RunManager] Новый спавн остановлен."
+            );
         }
 
-        // 2) За 1.5 сек до убежища — дочистить остатки
-        if (!obstaclesCleared && runTime >= (runDuration - clearAhead))
+        // ----------------------------------------
+        // Очистка препятствий
+        // ----------------------------------------
+
+        if (!obstaclesCleared &&
+            runTime >=
+            (runDuration - clearAhead))
         {
             obstaclesCleared = true;
+
             if (obstacleSpawner != null)
+            {
                 obstacleSpawner.ClearAllObstacles();
+            }
         }
 
-        // 3) В момент тайминга — создать убежище
+        // ----------------------------------------
+        // Убежище
+        // ----------------------------------------
+
         if (runTime >= runDuration)
         {
             SpawnSafeZone();
         }
     }
 
-    void SpawnSafeZone()
+    private void SpawnSafeZone()
     {
+        if (safeZoneSpawned)
+            return;
+
         safeZoneSpawned = true;
 
-        if (safeZonePrefab != null)
-        {
-            Vector3 spawnPosition = 
-                new Vector3(
-                    0f,
-                    safeZoneY,
-                    safeZoneSpawnZ
-                );
+        if (safeZonePrefab == null)
+            return;
 
-            GameObject safeZone =
-                Instantiate(
-                    safeZonePrefab,
-                    spawnPosition,
-                    Quaternion.identity
-                );
-        }
+        Vector3 spawnPosition =
+            new Vector3(
+                0f,
+                safeZoneY,
+                safeZoneSpawnZ
+            );
+
+        Instantiate(
+            safeZonePrefab,
+            spawnPosition,
+            Quaternion.identity
+        );
     }
 
-    public float GetRunTime() => runTime;
+    public float GetRunTime()
+    {
+        return runTime;
+    }
+
+    public float GetRunProgress()
+    {
+        if (infiniteRun)
+            return 0f;
+
+        if (runDuration <= 0f)
+            return 1f;
+
+        return Mathf.Clamp01(
+            runTime / runDuration
+        );
+    }
 }

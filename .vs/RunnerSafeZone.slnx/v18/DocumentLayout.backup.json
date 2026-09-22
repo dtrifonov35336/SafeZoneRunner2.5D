@@ -3,6 +3,26 @@
   "WorkspaceRootPath": "C:\\Users\\Dmitriy\\RunnerSafeZone\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\sidedecorationspawner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\sidedecorationspawner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\runmanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\runmanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\obstaclespawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\world\\obstaclespawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\spawnheightoffset3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\world\\spawnheightoffset3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\player\\playermovement3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\player\\playermovement3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\backgroundparallax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\world\\backgroundparallax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -13,14 +33,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\safezone3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\safezone3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\runmanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\runmanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\sidedecorationspawner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\sidedecorationspawner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\groundsnap3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -37,10 +49,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\pickups\\pickupspawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\pickups\\pickupspawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\obstaclespawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\world\\obstaclespawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\spawnreveal3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -250,49 +258,37 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "PlayerScreenBounds3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAYAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "SpawnHeightOffset3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\SpawnHeightOffset3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\SpawnHeightOffset3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\SpawnHeightOffset3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\World\\SpawnHeightOffset3D.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-21T13:33:01.893Z",
+              "WhenOpened": "2026-09-22T14:58:20.551Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "SafeZone3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\SafeZone3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\SafeZone3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\SafeZone3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\SafeZone3D.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAbAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "PlayerMovement3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerMovement3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Player\\PlayerMovement3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerMovement3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\Player\\PlayerMovement3D.cs",
+              "ViewState": "AgIAAE0AAAAAAAAAAAAwwGoAAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-21T08:47:45.518Z",
+              "WhenOpened": "2026-09-22T14:52:43.01Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "RescuedPersonSpawner3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
-              "ViewState": "AgIAAEoAAAAAAAAAAAAowHAAAAAhAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-21T03:00:56.135Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "SpawnReveal3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\SpawnReveal3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\SpawnReveal3D.cs",
@@ -304,7 +300,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 9,
               "Title": "RoadTextureScroller.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\RoadTextureScroller.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\RoadTextureScroller.cs",
@@ -316,7 +312,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "RoadDashedLine.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\RoadDashedLine.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\RoadDashedLine.cs",
@@ -328,19 +324,70 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 0,
               "Title": "SideDecorationSpawner.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\SideDecorationSpawner.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\SideDecorationSpawner.cs",
               "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\SideDecorationSpawner.cs",
               "RelativeToolTip": "Assets\\Scripts\\3D\\SideDecorationSpawner.cs",
-              "ViewState": "AgIAAJcAAAAAAAAAAAAAwMMAAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAADoAAAAAAAAAAAA5wF4AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-20T06:05:30.062Z"
+              "WhenOpened": "2026-09-20T06:05:30.062Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
+              "Title": "ObstacleSpawner3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "ViewState": "AgIAAGYAAAAAAAAAAAAgwIcAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-19T18:18:26.739Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "RunManager3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\RunManager3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\RunManager3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\RunManager3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\RunManager3D.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAwwBwAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-21T03:01:50.768Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "RescuedPersonSpawner3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\Rescued\\RescuedPersonSpawner3D.cs",
+              "ViewState": "AgIAAEoAAAAAAAAAAAAowHAAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-21T03:00:56.135Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "SafeZone3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\SafeZone3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\SafeZone3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\SafeZone3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\SafeZone3D.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-21T08:47:45.518Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "BackgroundParallax.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\BackgroundParallax.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\BackgroundParallax.cs",
@@ -353,19 +400,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "RunManager3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\RunManager3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\RunManager3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\RunManager3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\RunManager3D.cs",
-              "ViewState": "AgIAADkAAAAAAAAAAAAiwBgAAAAmAAAAAAAAAA==",
+              "DocumentIndex": 6,
+              "Title": "PlayerScreenBounds3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\Player\\PlayerScreenBounds3D.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-21T03:01:50.768Z"
+              "WhenOpened": "2026-09-21T13:33:01.893Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 8,
               "Title": "GroundSnap3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\GroundSnap3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\GroundSnap3D.cs",
@@ -377,7 +424,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 15,
               "Title": "SkyUnlit.shader",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Shaders\\SkyUnlit.shader",
               "RelativeDocumentMoniker": "Assets\\Shaders\\SkyUnlit.shader",
@@ -389,7 +436,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 16,
               "Title": "Pickup3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Pickups\\Pickup3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Pickups\\Pickup3D.cs",
@@ -401,19 +448,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "ObstacleSpawner3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
-              "ViewState": "AgIAAGAAAAAAAAAAAAAgwH4AAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-19T18:18:26.739Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 11,
               "Title": "PickupSpawner3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Pickups\\PickupSpawner3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Pickups\\PickupSpawner3D.cs",
@@ -425,7 +460,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 14,
               "Title": "ShadowPulse.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\ShadowPulse.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Player\\ShadowPulse.cs",
@@ -437,7 +472,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 17,
               "Title": "PlayerCollision3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerCollision3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Player\\PlayerCollision3D.cs",
@@ -449,7 +484,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 18,
               "Title": "PickupMover3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Pickups\\PickupMover3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Pickups\\PickupMover3D.cs",
@@ -461,7 +496,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 19,
               "Title": "ObstacleMover3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\ObstacleMover3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\ObstacleMover3D.cs",
@@ -473,7 +508,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 20,
               "Title": "Billboard.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Billboard.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Billboard.cs",
@@ -485,7 +520,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 21,
               "Title": "ShopPack.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Shop\\ShopPack.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Shop\\ShopPack.cs",
@@ -497,7 +532,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 22,
               "Title": "ShopManager.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Shop\\ShopManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Shop\\ShopManager.cs",
@@ -509,7 +544,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 29,
               "Title": "CloudScroller.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\CloudScroller.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\CloudScroller.cs",
@@ -521,7 +556,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 28,
               "Title": "SideScroller.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\Background\\SideScroller.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\Background\\SideScroller.cs",
@@ -533,7 +568,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 27,
               "Title": "BackgroundStopper.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\Background\\BackgroundStopper.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\Background\\BackgroundStopper.cs",
@@ -545,7 +580,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 26,
               "Title": "DustController.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\DustController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\DustController.cs",
@@ -557,7 +592,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 23,
               "Title": "RoadMarkingScroller.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\RoadMarkingScroller.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\RoadMarkingScroller.cs",
@@ -569,7 +604,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 25,
               "Title": "BackgroundBreathing.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\Background\\BackgroundBreathing.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\Background\\BackgroundBreathing.cs",
@@ -581,7 +616,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 24,
               "Title": "BackgroundSway.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\Background\\BackgroundSway.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\Background\\BackgroundSway.cs",
@@ -593,7 +628,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 31,
               "Title": "ProfileSettings.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Progression\\ProfileSettings.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Progression\\ProfileSettings.cs",
@@ -605,7 +640,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 33,
               "Title": "BonusCalculator.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Progression\\BonusCalculator.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Progression\\BonusCalculator.cs",
@@ -617,7 +652,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 30,
               "Title": "ProfileSettingsPanel.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\UI\\ProfileSettingsPanel.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\ProfileSettingsPanel.cs",
@@ -629,7 +664,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 36,
               "Title": "ProfileManager.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Progression\\ProfileManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Progression\\ProfileManager.cs",
@@ -641,7 +676,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 35,
               "Title": "HangarManager.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Hangar\\HangarManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Hangar\\HangarManager.cs",
@@ -653,7 +688,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 34,
               "Title": "EquipmentManager.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Equipment\\EquipmentManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Equipment\\EquipmentManager.cs",
@@ -665,7 +700,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 32,
               "Title": "ProgressResetTool.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\ProgressResetTool.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\ProgressResetTool.cs",
@@ -677,7 +712,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 37,
               "Title": "CharacterSelectManager.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Characters\\CharacterSelectManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Characters\\CharacterSelectManager.cs",
@@ -689,7 +724,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 38,
               "Title": "ToastSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\ToastSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\ToastSetup.cs",
@@ -701,7 +736,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 39,
               "Title": "EquipmentItem.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Equipment\\EquipmentItem.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Equipment\\EquipmentItem.cs",
@@ -713,7 +748,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 40,
               "Title": "UpgradeRow.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\Hangar\\UpgradeRow.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Hangar\\UpgradeRow.cs",
@@ -725,7 +760,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 41,
               "Title": "AddProgressBarToEquipment.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\AddProgressBarToEquipment.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\AddProgressBarToEquipment.cs",
@@ -737,7 +772,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 44,
               "Title": "FixUpgradeRowPrefab.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\FixUpgradeRowPrefab.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\FixUpgradeRowPrefab.cs",
@@ -749,7 +784,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 45,
+              "DocumentIndex": 47,
               "Title": "CharactersSceneSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\CharactersSceneSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\CharactersSceneSetup.cs",
@@ -761,7 +796,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 43,
               "Title": "FixSectionLayouts.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\FixSectionLayouts.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\FixSectionLayouts.cs",
@@ -773,7 +808,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 42,
               "Title": "PlusButtonHandler.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\UI\\PlusButtonHandler.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\PlusButtonHandler.cs",
@@ -785,7 +820,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 44,
+              "DocumentIndex": 46,
               "Title": "PreviewAreaSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\PreviewAreaSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\PreviewAreaSetup.cs",
@@ -797,7 +832,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 45,
               "Title": "FixCharacterCardPrefab.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\FixCharacterCardPrefab.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\FixCharacterCardPrefab.cs",
@@ -809,7 +844,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 46,
+              "DocumentIndex": 48,
               "Title": "MainMenuSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\MainMenuSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\MainMenuSetup.cs",
@@ -821,7 +856,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 49,
+              "DocumentIndex": 51,
               "Title": "AspectFitter.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\AspectFitter.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\AspectFitter.cs",
@@ -833,7 +868,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 50,
+              "DocumentIndex": 52,
               "Title": "CameraAspectController.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\World\\CameraAspectController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\World\\CameraAspectController.cs",
@@ -845,7 +880,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 47,
+              "DocumentIndex": 49,
               "Title": "TouchControlsSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\TouchControlsSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\TouchControlsSetup.cs",
@@ -857,7 +892,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 52,
+              "DocumentIndex": 54,
               "Title": "TouchControls.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\UI\\TouchControls.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\TouchControls.cs",
@@ -869,7 +904,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 51,
+              "DocumentIndex": 53,
               "Title": "TouchButton.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\UI\\TouchButton.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\TouchButton.cs",
@@ -881,7 +916,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 48,
+              "DocumentIndex": 50,
               "Title": "BottomNavFix.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\BottomNavFix.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\BottomNavFix.cs",
@@ -893,7 +928,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 56,
+              "DocumentIndex": 58,
               "Title": "ZombieCrowdAnimator.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\UI\\ZombieCrowdAnimator.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\ZombieCrowdAnimator.cs",
@@ -905,7 +940,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 55,
+              "DocumentIndex": 57,
               "Title": "ZombieCrowdSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\ZombieCrowdSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\ZombieCrowdSetup.cs",
@@ -917,7 +952,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 53,
+              "DocumentIndex": 55,
               "Title": "SafeAreaFitter.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\UI\\SafeAreaFitter.cs",
               "RelativeDocumentMoniker": "Assets\\UI\\SafeAreaFitter.cs",
@@ -929,7 +964,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 54,
+              "DocumentIndex": 56,
               "Title": "SafeAreaSetup1.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\SafeAreaSetup1.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\SafeAreaSetup1.cs",
@@ -941,7 +976,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 57,
+              "DocumentIndex": 59,
               "Title": "PauseSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\PauseSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\PauseSetup.cs",
@@ -953,7 +988,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 58,
+              "DocumentIndex": 60,
               "Title": "ResultsScreenSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\ResultsScreenSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\ResultsScreenSetup.cs",
@@ -965,7 +1000,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 59,
+              "DocumentIndex": 61,
               "Title": "HUDSetup.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\HUDSetup.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\HUDSetup.cs",
