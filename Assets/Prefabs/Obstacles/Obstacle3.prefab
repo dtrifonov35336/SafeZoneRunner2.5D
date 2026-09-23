@@ -85,12 +85,12 @@ SpriteRenderer:
   m_SortingLayer: 5
   m_SortingOrder: 5
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: e17321e1330bee04c9d74cc53060b877, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d35591f632b40dc4494e6f7f4a9a7769, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 4.52, y: 1.98}
+  m_Size: {x: 4.05, y: 1.51}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -114,8 +114,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.8022768, y: 1.3179123, z: 2}
-  m_Center: {x: -0.23257543, y: 0.0415311, z: 0}
+  m_Size: {x: 3, y: 0.8, z: 2}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &-2663774962016130286
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -172,4 +172,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed0f1cb03da30f84aa137811db86493f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnHeightOffset3D
-  yOffset: 0
+  spawnY: 0.1
