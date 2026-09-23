@@ -6,7 +6,7 @@ public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Полосы движения")]
     [Tooltip("X-позиции трех полос: левая, центральная, правая.")]
-    public float[] lanePositions = new float[] { -1.4f, 0f, 1.4f };
+    public float[] lanePositions = new float[] { -0.8f, 0f, 0.8f };
 
     [Tooltip("Скорость перемещения игрока между полосами.")]
     public float laneChangeSpeed = 9f;
@@ -22,24 +22,14 @@ public class PlayerMovement3D : MonoBehaviour
     public float recoverySpeed = 0.5f;
 
     [Header("Обычный прыжок")]
-    [Tooltip("Высота первого прыжка.")]
     public float jumpHeight = 1.5f;
-
-    [Tooltip("Сила гравитации.")]
     public float gravity = 18f;
 
-    [Tooltip("Минимальная высота, на которой отключается Collider.")]
-    public float jumpClearThreshold = 0.4f;
-
     [Header("Двойной прыжок")]
-    [Tooltip("Высота второго прыжка.")]
     public float doubleJumpHeight = 1.7f;
-
-    [Tooltip("Можно ли выполнить второй прыжок в воздухе.")]
     public bool allowDoubleJump = true;
 
     [Header("Скольжение")]
-    [Tooltip("Продолжительность скольжения.")]
     public float slideDuration = 0.7f;
 
     [Header("Смертельный откат")]
@@ -73,7 +63,6 @@ public class PlayerMovement3D : MonoBehaviour
     private Animator animator;
     private Coroutine slideCoroutine;
 
-    // Запоминаем исходный поворот игрока.
     private Quaternion initialRotation;
 
     private void Awake()
@@ -82,35 +71,47 @@ public class PlayerMovement3D : MonoBehaviour
 
         string charId = ProfileManager.GetSelectedCharacterId();
 
-        laneChangeSpeed *= BonusCalculator.GetSpeedMultiplier(charId);
-        recoverySpeed = BonusCalculator.GetRecoverySpeed(charId);
+        laneChangeSpeed *=
+            BonusCalculator.GetSpeedMultiplier(charId);
+
+        recoverySpeed =
+            BonusCalculator.GetRecoverySpeed(charId);
 
         currentY = baseY;
         targetY = baseY;
 
-        if (lanePositions == null || lanePositions.Length != 3)
+        if (lanePositions == null ||
+            lanePositions.Length != 3)
         {
-            lanePositions = new float[] { -1.4f, 0f, 1.4f };
+            lanePositions =
+                new float[] { -0.8f, 0f, 0.8f };
         }
 
-        // Начинаем с центральной полосы.
         currentLane = 1;
         targetX = lanePositions[currentLane];
 
-        if (mainSprite == null && animator != null)
-            mainSprite = animator.GetComponent<SpriteRenderer>();
+        if (mainSprite == null &&
+            animator != null)
+        {
+            mainSprite =
+                animator.GetComponent<SpriteRenderer>();
+        }
 
         gameplaySprite = mainSprite;
 
         if (victoryPose != null)
+        {
             victorySprite =
-                victoryPose.GetComponentInChildren<SpriteRenderer>(true);
+                victoryPose.GetComponentInChildren<
+                    SpriteRenderer>(true);
+        }
 
-        // Запоминаем правильный поворот игрока.
-        initialRotation = transform.rotation;
+        initialRotation =
+            transform.rotation;
 
         Debug.Log(
-            $"[Player3D] Lane speed {laneChangeSpeed:F2}, recovery {recoverySpeed:F2}"
+            $"[Player3D] Lane speed {laneChangeSpeed:F2}, " +
+            $"recovery {recoverySpeed:F2}"
         );
     }
 
@@ -130,21 +131,17 @@ public class PlayerMovement3D : MonoBehaviour
         }
 
         ApplyPosition();
-
         KeepPlayerUpright();
     }
 
-    // =========================================================
-    // ФИКСИРУЕМ ПОВОРОТ ИГРОКА
-    // =========================================================
-
     private void KeepPlayerUpright()
     {
-        transform.rotation = initialRotation;
+        transform.rotation =
+            initialRotation;
     }
 
     // =========================================================
-    // УПРАВЛЕНИЕ С КЛАВИАТУРЫ
+    // INPUT
     // =========================================================
 
     private void ProcessKeyboardInput()
@@ -185,10 +182,6 @@ public class PlayerMovement3D : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // УПРАВЛЕНИЕ С ТЕЛЕФОНА
-    // =========================================================
-
     private void ProcessTouchInput()
     {
         if (TouchControls.Instance == null)
@@ -211,7 +204,7 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     // =========================================================
-    // ПЕРЕМЕЩЕНИЕ МЕЖДУ ПОЛОСАМИ
+    // LANES
     // =========================================================
 
     private void MoveLaneLeft()
@@ -224,11 +217,8 @@ public class PlayerMovement3D : MonoBehaviour
         if (currentLane < 0)
             currentLane = 0;
 
-        targetX = lanePositions[currentLane];
-
-        Debug.Log(
-            $"[Player3D] Перемещение влево. Полоса: {currentLane}"
-        );
+        targetX =
+            lanePositions[currentLane];
     }
 
     private void MoveLaneRight()
@@ -238,38 +228,40 @@ public class PlayerMovement3D : MonoBehaviour
 
         currentLane++;
 
-        if (currentLane > lanePositions.Length - 1)
-            currentLane = lanePositions.Length - 1;
+        if (currentLane >= lanePositions.Length)
+            currentLane =
+                lanePositions.Length - 1;
 
-        targetX = lanePositions[currentLane];
-
-        Debug.Log(
-            $"[Player3D] Перемещение вправо. Полоса: {currentLane}"
-        );
+        targetX =
+            lanePositions[currentLane];
     }
 
     private void UpdateLaneMovement()
     {
-        Vector3 pos = transform.position;
+        Vector3 pos =
+            transform.position;
 
-        pos.x = Mathf.SmoothDamp(
-            pos.x,
-            targetX,
-            ref laneVelocity,
-            laneChangeSmoothTime,
-            laneChangeSpeed
-        );
+        pos.x =
+            Mathf.SmoothDamp(
+                pos.x,
+                targetX,
+                ref laneVelocity,
+                laneChangeSmoothTime,
+                laneChangeSpeed
+            );
 
         transform.position = pos;
     }
 
     // =========================================================
-    // ПРЫЖКИ
+    // JUMP
     // =========================================================
 
     public void Jump()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
             return;
 
         if (isJumping)
@@ -283,18 +275,23 @@ public class PlayerMovement3D : MonoBehaviour
         isJumping = true;
         hasDoubleJumped = false;
 
-        verticalVelocity = Mathf.Sqrt(
-            2f * gravity * jumpHeight
+        verticalVelocity =
+            Mathf.Sqrt(
+                2f *
+                gravity *
+                jumpHeight
+            );
+
+        Debug.Log(
+            "[Player3D] Первый прыжок"
         );
-
-        SetColliderForJump(true);
-
-        Debug.Log("[Player3D] Первый прыжок");
     }
 
     public void DoubleJump()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
             return;
 
         if (!allowDoubleJump)
@@ -311,18 +308,22 @@ public class PlayerMovement3D : MonoBehaviour
 
         hasDoubleJumped = true;
 
-        verticalVelocity = Mathf.Sqrt(
-            2f * gravity * doubleJumpHeight
+        verticalVelocity =
+            Mathf.Sqrt(
+                2f *
+                gravity *
+                doubleJumpHeight
+            );
+
+        jumpOffset =
+            Mathf.Max(
+                jumpOffset,
+                0.05f
+            );
+
+        Debug.Log(
+            "[Player3D] ДВОЙНОЙ ПРЫЖОК"
         );
-
-        jumpOffset = Mathf.Max(
-            jumpOffset,
-            0.05f
-        );
-
-        SetColliderForJump(true);
-
-        Debug.Log("[Player3D] ДВОЙНОЙ ПРЫЖОК");
     }
 
     private void UpdateJump()
@@ -330,10 +331,13 @@ public class PlayerMovement3D : MonoBehaviour
         if (!isJumping)
             return;
 
-        verticalVelocity -= gravity * Time.deltaTime;
+        verticalVelocity -=
+            gravity *
+            Time.deltaTime;
 
         jumpOffset +=
-            verticalVelocity * Time.deltaTime;
+            verticalVelocity *
+            Time.deltaTime;
 
         if (jumpOffset <= 0f &&
             verticalVelocity < 0f)
@@ -344,36 +348,21 @@ public class PlayerMovement3D : MonoBehaviour
             isJumping = false;
             hasDoubleJumped = false;
 
-            SetColliderForJump(false);
-
-            Debug.Log("[Player3D] Приземление");
+            Debug.Log(
+                "[Player3D] Приземление"
+            );
         }
-        else
-        {
-            bool highEnough =
-                jumpOffset > jumpClearThreshold;
-
-            SetColliderForJump(highEnough);
-        }
-    }
-
-    private void SetColliderForJump(bool jumping)
-    {
-        Collider col = GetComponent<Collider>();
-
-        if (col == null)
-            return;
-
-        col.enabled = !jumping;
     }
 
     // =========================================================
-    // СКОЛЬЖЕНИЕ
+    // SLIDE
     // =========================================================
 
     public void Slide()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
             return;
 
         if (isSliding)
@@ -383,14 +372,18 @@ public class PlayerMovement3D : MonoBehaviour
             StopCoroutine(slideCoroutine);
 
         slideCoroutine =
-            StartCoroutine(SlideRoutine());
+            StartCoroutine(
+                SlideRoutine()
+            );
     }
 
     private IEnumerator SlideRoutine()
     {
         isSliding = true;
 
-        Debug.Log("[Player3D] СКОЛЬЖЕНИЕ");
+        Debug.Log(
+            "[Player3D] СКОЛЬЖЕНИЕ"
+        );
 
         float timer = 0f;
 
@@ -409,45 +402,53 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     // =========================================================
-    // ВОССТАНОВЛЕНИЕ ПО Y
+    // Y
     // =========================================================
 
     private void UpdateGroundRecovery()
     {
         if (currentY < baseY)
         {
-            currentY = Mathf.Min(
-                baseY,
-                currentY +
-                recoverySpeed * Time.deltaTime
-            );
+            currentY =
+                Mathf.Min(
+                    baseY,
+                    currentY +
+                    recoverySpeed *
+                    Time.deltaTime
+                );
         }
 
         currentY =
-            Mathf.Max(currentY, minY);
+            Mathf.Max(
+                currentY,
+                minY
+            );
     }
-
-    // =========================================================
-    // ПРИМЕНЕНИЕ ПОЗИЦИИ
-    // =========================================================
 
     private void ApplyPosition()
     {
-        Vector3 pos = transform.position;
+        Vector3 pos =
+            transform.position;
 
-        pos.y = currentY + jumpOffset;
+        pos.y =
+            currentY +
+            jumpOffset;
+
         pos.z = 0f;
 
-        transform.position = pos;
+        transform.position =
+            pos;
     }
 
     // =========================================================
-    // ОТКИДЫВАНИЕ
+    // KNOCKBACK
     // =========================================================
 
     public void Knockback(float amount)
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
             return;
 
         if (isJumping)
@@ -460,7 +461,68 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     // =========================================================
-    // ПОБЕДА
+    // FALL INTO PIT
+    // =========================================================
+
+    public void FallIntoPit()
+    {
+        if (isDead ||
+            isDying ||
+            isVictory)
+            return;
+
+        if (isJumping)
+            return;
+
+        if (slideCoroutine != null)
+            StopCoroutine(slideCoroutine);
+
+        isSliding = false;
+        isDying = true;
+
+        StartCoroutine(
+            FallIntoPitRoutine()
+        );
+    }
+
+    private IEnumerator FallIntoPitRoutine()
+    {
+        float startY =
+            currentY;
+
+        float targetFallY =
+            minY - 2.0f;
+
+        float duration = 0.45f;
+        float timer = 0f;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+
+            float p =
+                Mathf.Clamp01(
+                    timer / duration
+                );
+
+            currentY =
+                Mathf.Lerp(
+                    startY,
+                    targetFallY,
+                    p
+                );
+
+            yield return null;
+        }
+
+        currentY =
+            targetFallY;
+
+        Die();
+    }
+
+    // =========================================================
+    // VICTORY
     // =========================================================
 
     public void StopAnimation()
@@ -478,7 +540,7 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     // =========================================================
-    // СМЕРТЬ
+    // DEATH
     // =========================================================
 
     public void Kill()
@@ -489,7 +551,8 @@ public class PlayerMovement3D : MonoBehaviour
         isDying = true;
 
         PlayerVisualController visualCtrl =
-            GetComponentInChildren<PlayerVisualController>();
+            GetComponentInChildren<
+                PlayerVisualController>();
 
         if (visualCtrl != null)
             visualCtrl.TriggerDeath();
@@ -501,7 +564,8 @@ public class PlayerMovement3D : MonoBehaviour
 
     private IEnumerator DeathSlideRoutine()
     {
-        float startY = currentY;
+        float startY =
+            currentY;
 
         targetY =
             minY -
@@ -572,22 +636,27 @@ public class PlayerMovement3D : MonoBehaviour
                 lanePositions[currentLane];
         }
 
-        Vector3 pos = transform.position;
+        Vector3 pos =
+            transform.position;
 
         pos.x = targetX;
         pos.y = baseY;
         pos.z = 0f;
 
-        transform.position = pos;
+        transform.position =
+            pos;
 
         transform.rotation =
             initialRotation;
 
-        Collider col =
-            GetComponent<Collider>();
+        Collider[] colliders =
+            GetComponents<Collider>();
 
-        if (col != null)
-            col.enabled = true;
+        foreach (Collider col in colliders)
+        {
+            if (col != null)
+                col.enabled = true;
+        }
 
         if (mainSprite != null)
             mainSprite.enabled = true;
@@ -596,14 +665,11 @@ public class PlayerMovement3D : MonoBehaviour
             victorySprite.enabled = false;
 
         PlayerVisualController visualCtrl =
-            GetComponentInChildren<PlayerVisualController>();
+            GetComponentInChildren<
+                PlayerVisualController>();
 
         if (visualCtrl != null)
             visualCtrl.ReviveAnimation();
-
-        Debug.Log(
-            "[Player3D] Revived"
-        );
     }
 
     // =========================================================

@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Dmitriy\\RunnerSafeZone\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\obstaclespawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\world\\obstaclespawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\pickups\\pickupspawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\pickups\\pickupspawner3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\player\\playermovement3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\player\\playermovement3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -23,6 +31,32 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "ObstacleSpawner3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\World\\ObstacleSpawner3D.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T13:47:06.433Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PickupSpawner3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Pickups\\PickupSpawner3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Pickups\\PickupSpawner3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Pickups\\PickupSpawner3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\Pickups\\PickupSpawner3D.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T13:46:30.985Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "PlayerMovement3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerMovement3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Player\\PlayerMovement3D.cs",
@@ -35,7 +69,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "RunnerCameraController.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\RunnerCameraController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\RunnerCameraController.cs",
@@ -43,8 +77,7 @@
               "RelativeToolTip": "Assets\\Scripts\\3D\\World\\RunnerCameraController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-23T05:21:16.399Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-23T05:21:16.399Z"
             }
           ]
         }

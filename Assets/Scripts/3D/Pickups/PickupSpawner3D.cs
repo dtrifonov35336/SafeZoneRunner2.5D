@@ -8,7 +8,7 @@ public class PickupSpawner3D : MonoBehaviour
 
     [Header("Полосы")]
     public float[] lanePositions =
-        new float[] { -0.8f, 0.8f };
+        new float[] { -0.8f, 0f, 0.8f };
 
     [Header("Монетки")]
     public float coinSpawnInterval = 0.6f;

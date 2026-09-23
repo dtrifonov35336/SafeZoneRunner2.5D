@@ -6,8 +6,8 @@ public class ObstacleSpawner3D : MonoBehaviour
     [Header("Prefabs")]
     public GameObject[] obstaclePrefabs;
 
-    [Header("Lanes (2 полосы)")]
-    public float[] lanePositions = new float[] { -0.8f, 0.8f };
+    [Header("Lanes (3 полосы)")]
+    public float[] lanePositions = new float[] { -0.8f, 0f, 0.8f };
 
     [Header("Spawning — прогрессивная сложность")]
     public float startInterval = 5.0f;
@@ -51,7 +51,7 @@ public class ObstacleSpawner3D : MonoBehaviour
             lanePositions.Length == 0)
         {
             lanePositions =
-                new float[] { -0.7f, 0.7f };
+                new float[] { -0.8f, 0f, 0.8f };
         }
 
         int maxAllowed =
