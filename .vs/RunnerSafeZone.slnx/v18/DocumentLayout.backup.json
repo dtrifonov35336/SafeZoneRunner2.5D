@@ -1,12 +1,37 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\Dmitriy\\RunnerSafeZone\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\world\\runnercameracontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\world\\runnercameracontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "RunnerCameraController.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\RunnerCameraController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\World\\RunnerCameraController.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\World\\RunnerCameraController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\World\\RunnerCameraController.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAA8wEAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-23T05:21:16.399Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
