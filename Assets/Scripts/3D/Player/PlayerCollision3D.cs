@@ -16,38 +16,34 @@ public class PlayerCollision : MonoBehaviour
     private void Start()
     {
         if (playerMovement == null)
-        {
-            playerMovement =
-                GetComponent<PlayerMovement3D>();
-        }
+            playerMovement = GetComponent<PlayerMovement3D>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Obstacle"))
+        // Collider может находиться как на корне,
+        // так и на дочернем объекте префаба.
+        if (!other.CompareTag("Obstacle") &&
+            !other.transform.root.CompareTag("Obstacle"))
+        {
             return;
+        }
 
         if (isInvulnerable)
             return;
 
         ObstacleMover3D mover =
-            other.GetComponentInParent<
-                ObstacleMover3D>();
+            other.GetComponentInParent<ObstacleMover3D>();
 
-        if (mover != null &&
-            mover.hasHitPlayer)
-        {
+        if (mover != null && mover.hasHitPlayer)
             return;
-        }
 
         ObstacleType3D obstacle =
-            other.GetComponentInParent<
-                ObstacleType3D>();
+            other.GetComponentInParent<ObstacleType3D>();
 
+        // Если тип не задан — считаем препятствие обычным.
         if (obstacle == null)
         {
-            // Старые препятствия без типа
-            // считаем обычными.
             HandleNormalObstacle(mover);
             return;
         }
@@ -76,13 +72,12 @@ public class PlayerCollision : MonoBehaviour
     // NORMAL
     // =========================================================
 
-    private void HandleNormalObstacle(
-        ObstacleMover3D mover)
+    private void HandleNormalObstacle(ObstacleMover3D mover)
     {
         if (playerMovement != null &&
             playerMovement.IsJumping())
         {
-            // Любой прыжок проходит обычное препятствие.
+            // Обычный или двойной прыжок проходят препятствие.
             return;
         }
 
@@ -93,35 +88,44 @@ public class PlayerCollision : MonoBehaviour
     // PIT
     // =========================================================
 
-    private void HandlePit(
-        ObstacleMover3D mover)
+    private void HandlePit(ObstacleMover3D mover)
     {
         if (playerMovement == null)
             return;
 
-        // Прыжок полностью очищает яму.
+        // Любой прыжок очищает яму.
         if (playerMovement.IsJumping())
             return;
 
         MarkObstacleHit(mover);
 
+        // Яма = HP сразу 0.
+        if (HUDManager.Instance != null)
+            HUDManager.Instance.SetHealth(0f);
+
+        // Запускаем визуальное падение.
         playerMovement.FallIntoPit();
+
+        // Game Over показывается сразу,
+        // не дожидаясь окончания анимации падения.
+        if (chase != null)
+            chase.TriggerGameOverImmediate();
     }
 
     // =========================================================
     // SLIDE
     // =========================================================
 
-    private void HandleSlide(
-        ObstacleMover3D mover)
+    private void HandleSlide(ObstacleMover3D mover)
     {
         if (playerMovement != null &&
             playerMovement.IsSliding())
         {
-            // Игрок проскользнул под столбом.
+            // Игрок успешно проскользнул.
             return;
         }
 
+        // Прыжок здесь НЕ помогает.
         HitPlayer(mover);
     }
 
@@ -129,16 +133,16 @@ public class PlayerCollision : MonoBehaviour
     // DOUBLE JUMP
     // =========================================================
 
-    private void HandleDoubleJump(
-        ObstacleMover3D mover)
+    private void HandleDoubleJump(ObstacleMover3D mover)
     {
         if (playerMovement != null &&
             playerMovement.HasDoubleJumped())
         {
-            // Второй прыжок позволяет пройти автобус.
+            // Только настоящий второй прыжок проходит автобус.
             return;
         }
 
+        // Первый прыжок недостаточен.
         HitPlayer(mover);
     }
 
@@ -146,20 +150,15 @@ public class PlayerCollision : MonoBehaviour
     // СТОЛКНОВЕНИЕ
     // =========================================================
 
-    private void HitPlayer(
-        ObstacleMover3D mover)
+    private void HitPlayer(ObstacleMover3D mover)
     {
         MarkObstacleHit(mover);
 
         if (HUDManager.Instance != null)
-        {
             HUDManager.Instance.ReduceHealth(1f);
-        }
 
         if (chase != null)
-        {
             chase.PushBack(1f);
-        }
 
         if (playerMovement != null)
         {
@@ -167,9 +166,7 @@ public class PlayerCollision : MonoBehaviour
                 ProfileManager.GetSelectedCharacterId();
 
             float resist =
-                BonusCalculator.GetKnockbackResistance(
-                    charId
-                );
+                BonusCalculator.GetKnockbackResistance(charId);
 
             playerMovement.Knockback(
                 pushBackAmount * resist
@@ -184,22 +181,17 @@ public class PlayerCollision : MonoBehaviour
             );
         }
 
-        StartCoroutine(
-            Invulnerability()
-        );
+        StartCoroutine(Invulnerability());
     }
 
     // =========================================================
     // ПОМЕЧАЕМ ПРЕПЯТСТВИЕ
     // =========================================================
 
-    private void MarkObstacleHit(
-        ObstacleMover3D mover)
+    private void MarkObstacleHit(ObstacleMover3D mover)
     {
         if (mover != null)
-        {
             mover.hasHitPlayer = true;
-        }
     }
 
     // =========================================================
@@ -211,8 +203,7 @@ public class PlayerCollision : MonoBehaviour
         isInvulnerable = true;
 
         SpriteRenderer sr =
-            GetComponentInChildren<
-                SpriteRenderer>();
+            GetComponentInChildren<SpriteRenderer>();
 
         float elapsed = 0f;
 
@@ -221,9 +212,7 @@ public class PlayerCollision : MonoBehaviour
             if (sr != null)
                 sr.enabled = !sr.enabled;
 
-            yield return new WaitForSeconds(
-                0.15f
-            );
+            yield return new WaitForSeconds(0.15f);
 
             elapsed += 0.15f;
         }

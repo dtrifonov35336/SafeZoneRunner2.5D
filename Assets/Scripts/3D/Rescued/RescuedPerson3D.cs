@@ -88,7 +88,7 @@ public class RescuedPerson : MonoBehaviour
         }
 
         if (ToastNotification.Instance != null)
-            ToastNotification.Instance.Show($"Спасён выживший! +{gained} 🪙  (всего: {total})");
+            ToastNotification.Instance.Show($"Спасён выживший! +{gained}");
 
         Destroy(gameObject);
     }

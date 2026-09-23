@@ -134,6 +134,14 @@ public class ChaseManager : MonoBehaviour
         Debug.Log($"[XP] +{xpGained} XP (дистанция {distanceXP} + спасённые {rescuedXP}) → {charId}, ур. {newLevel} (+{levels})");
     }
 
+    public void TriggerGameOverImmediate()
+    {
+        if (gameOver)
+            return;
+
+        TriggerGameOver();
+    }
+
     private void TriggerGameOver()
     {
         if (gameOver) return;
