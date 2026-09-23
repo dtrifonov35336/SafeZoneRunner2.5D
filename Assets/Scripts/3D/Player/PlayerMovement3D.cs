@@ -9,7 +9,12 @@ public class PlayerMovement3D : MonoBehaviour
     public float[] lanePositions = new float[] { -1.4f, 0f, 1.4f };
 
     [Tooltip("Скорость перемещения игрока между полосами.")]
-    public float laneChangeSpeed = 12f;
+    public float laneChangeSpeed = 9f;
+
+    [Tooltip("Плавность разгона и торможения при смене полосы.")]
+    public float laneChangeSmoothTime = 0.08f;
+
+    private float laneVelocity;
 
     [Header("Позиция по Y")]
     public float baseY = 0.4f;
@@ -126,7 +131,6 @@ public class PlayerMovement3D : MonoBehaviour
 
         ApplyPosition();
 
-        // Игрок всегда остается вертикальным.
         KeepPlayerUpright();
     }
 
@@ -248,10 +252,12 @@ public class PlayerMovement3D : MonoBehaviour
     {
         Vector3 pos = transform.position;
 
-        pos.x = Mathf.MoveTowards(
+        pos.x = Mathf.SmoothDamp(
             pos.x,
             targetX,
-            laneChangeSpeed * Time.deltaTime
+            ref laneVelocity,
+            laneChangeSmoothTime,
+            laneChangeSpeed
         );
 
         transform.position = pos;
@@ -429,16 +435,7 @@ public class PlayerMovement3D : MonoBehaviour
     {
         Vector3 pos = transform.position;
 
-        pos.x = Mathf.MoveTowards(
-            pos.x,
-            targetX,
-            laneChangeSpeed * Time.deltaTime
-        );
-
-        pos.y =
-            currentY +
-            jumpOffset;
-
+        pos.y = currentY + jumpOffset;
         pos.z = 0f;
 
         transform.position = pos;
