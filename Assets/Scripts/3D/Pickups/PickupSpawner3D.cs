@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PickupSpawner3D : MonoBehaviour
@@ -8,10 +9,10 @@ public class PickupSpawner3D : MonoBehaviour
 
     [Header("Полосы")]
     public float[] lanePositions =
-        new float[] { -0.8f, 0f, 0.8f };
+        new float[] { -0.8f, 0.8f };
 
-    [Header("Монетки")]
-    public float coinSpawnInterval = 0.6f;
+    [Header("Монеты")]
+    public float coinSpawnInterval = 0.18f;
 
     [Range(0f, 1f)]
     public float coinSpawnChance = 0.9f;
@@ -22,220 +23,491 @@ public class PickupSpawner3D : MonoBehaviour
     [Range(0f, 1f)]
     public float heartSpawnChance = 0.5f;
 
-    [Header("Проверки")]
-    public float laneWidth = 0.4f;
-    public float checkFromZ = 55f;
-    public float checkToZ = 5f;
-    public float obstacleCheckRadius = 0.4f;
+    [Header("Дорожка монет")]
+    public float pathForward = 10f;
+    public float pathBackward = 6f;
+    public float coinSpacing = 1.5f;
 
-    [Header("Позиции")]
+    [Header("Обычная дуга")]
+    public float jumpArcHeight = 1.5f;
+    public float jumpArcRadius = 5f;
+
+    [Header("Дуга двойного прыжка")]
+    public float doubleJumpArcHeight = 2.2f;
+    public float doubleJumpArcRadius = 6f;
+
+    [Header("Монеты под Slide")]
+    public float slideCoinY = 0.35f;
+
+    [Header("Позиция спавна")]
     public float spawnZ = 60f;
-
-    [Tooltip(
-        "Используется только для проверки свободной " +
-        "позиции. Высота пикапа берётся из префаба."
-    )]
-    public float spawnY = 0.4f;
-
-    [Header("Runtime")]
-    public bool isRunning = true;
 
     private float coinTimer;
     private float heartTimer;
 
+    private readonly HashSet<int>
+        routedObstacles =
+            new HashSet<int>();
+
+    // Какая полоса сейчас выбрана для обычной
+    // прямой дорожки монет.
+    private int straightLane = 0;
+
     private void Start()
     {
+        if (lanePositions == null ||
+            lanePositions.Length != 2)
+        {
+            lanePositions =
+                new float[] { -0.8f, 0.8f };
+        }
+
         coinTimer =
             coinSpawnInterval;
 
         heartTimer =
             heartSpawnInterval;
+
+        straightLane =
+            Random.Range(
+                0,
+                lanePositions.Length
+            );
     }
 
     private void Update()
     {
-        if (!isRunning)
-            return;
-
         if (ChaseManager.Instance != null &&
             ChaseManager.Instance.IsGameOver())
         {
             return;
         }
 
+        UpdateCoinRoutes();
+        UpdateFreeCoinStream();
+        UpdateHeart();
+    }
+
+    // =========================================================
+    // ОБЫЧНАЯ ПРЯМАЯ ДОРОЖКА
+    // =========================================================
+
+    private void UpdateFreeCoinStream()
+    {
+        if (HasUpcomingObstacle())
+            return;
+
         coinTimer -= Time.deltaTime;
 
-        if (coinTimer <= 0f)
-        {
-            coinTimer =
-                coinSpawnInterval;
+        if (coinTimer > 0f)
+            return;
 
-            if (Random.value <
-                coinSpawnChance)
+        coinTimer =
+            coinSpawnInterval;
+
+        if (Random.value >
+            coinSpawnChance)
+        {
+            return;
+        }
+
+        // Одна дорожка монет.
+        SpawnCoinAt(
+            lanePositions[straightLane],
+            coinPrefab.transform.position.y,
+            spawnZ
+        );
+    }
+
+    // =========================================================
+    // ПРОВЕРКА ПРЕПЯТСТВИЙ ВПЕРЕДИ
+    // =========================================================
+
+    private bool HasUpcomingObstacle()
+    {
+        ObstacleMover3D[] obstacles =
+            FindObjectsByType<ObstacleMover3D>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (var obstacle in obstacles)
+        {
+            if (obstacle == null)
+                continue;
+
+            float z =
+                obstacle.transform.position.z;
+
+            if (z >= 5f &&
+                z <= 55f)
             {
-                SpawnCoin();
+                return true;
             }
         }
 
-        heartTimer -= Time.deltaTime;
+        return false;
+    }
 
-        if (heartTimer <= 0f)
+    // =========================================================
+    // СОЗДАНИЕ МАРШРУТОВ
+    // =========================================================
+
+    private void UpdateCoinRoutes()
+    {
+        ObstacleMover3D[] obstacles =
+            FindObjectsByType<ObstacleMover3D>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (var obstacle in obstacles)
         {
-            heartTimer =
-                heartSpawnInterval;
+            if (obstacle == null)
+                continue;
 
-            if (Random.value <
-                heartSpawnChance)
+            float z =
+                obstacle.transform.position.z;
+
+            if (z < 5f ||
+                z > 55f)
             {
-                SpawnHeart();
+                continue;
             }
+
+            int id =
+                obstacle.gameObject.GetInstanceID();
+
+            if (routedObstacles.Contains(id))
+                continue;
+
+            ObstacleType3D type =
+                obstacle.GetComponentInParent<
+                    ObstacleType3D>();
+
+            if (type == null)
+                continue;
+
+            routedObstacles.Add(id);
+
+            GenerateCoinRoute(
+                obstacle,
+                type.type
+            );
         }
     }
 
-    private void SpawnCoin()
+    // =========================================================
+    // МАРШРУТ НАД ПРЕПЯТСТВИЕМ
+    // =========================================================
+
+    private void GenerateCoinRoute(
+        ObstacleMover3D obstacle,
+        ObstacleType type)
     {
         if (coinPrefab == null)
             return;
 
-        int laneIdx =
-            GetFullyFreeLane();
+        float groundY =
+            coinPrefab.transform.position.y;
 
-        if (laneIdx == -1)
-            return;
+        float obstacleZ =
+            obstacle.transform.position.z;
 
-        SpawnPickup(
-            coinPrefab,
-            lanePositions[laneIdx]
-        );
-    }
+        // ---------------------------------------------------------
+        // SLIDE
+        // ---------------------------------------------------------
 
-    private void SpawnHeart()
-    {
-        if (heartPrefab == null)
-            return;
-
-        int laneIdx =
-            GetFullyFreeLane();
-
-        if (laneIdx == -1)
-            return;
-
-        SpawnPickup(
-            heartPrefab,
-            lanePositions[laneIdx]
-        );
-    }
-
-    private int GetFullyFreeLane()
-    {
-        int[] order =
-            new int[
-                lanePositions.Length
-            ];
-
-        for (
-            int i = 0;
-            i < order.Length;
-            i++
-        )
+        if (type == ObstacleType.Slide)
         {
-            order[i] = i;
-        }
-
-        for (
-            int i = 0;
-            i < order.Length;
-            i++
-        )
-        {
-            int r =
+            // Выбираем одну из двух полос.
+            int coinLane =
                 Random.Range(
-                    i,
-                    order.Length
+                    0,
+                    lanePositions.Length
                 );
 
-            (
-                order[i],
-                order[r]
-            ) =
-            (
-                order[r],
-                order[i]
-            );
+            // Прямая дорожка монет под препятствием.
+            for (
+                float offset = pathForward;
+                offset >= -pathBackward;
+                offset -= coinSpacing)
+            {
+                float z =
+                    obstacleZ + offset;
+
+                SpawnCoinAt(
+                    lanePositions[coinLane],
+                    slideCoinY,
+                    z
+                );
+            }
+
+            return;
         }
 
-        foreach (
-            int idx
-            in order)
+        // -----------------------------------------------------
+        // ОБЫЧНОЕ ПРЕПЯТСТВИЕ / ЯМА
+        // -----------------------------------------------------
+
+        if (type == ObstacleType.Normal ||
+            type == ObstacleType.Pit)
         {
-            if (
-                IsLaneClear(
-                    lanePositions[idx]
-                )
-            )
+            int blockedLane =
+                GetNearestLaneIndex(
+                    obstacle.laneX
+                );
+
+            // Только над препятствием.
+            for (
+                float offset = pathForward;
+                offset >= -pathBackward;
+                offset -= coinSpacing)
             {
-                return idx;
+                float z =
+                    obstacleZ + offset;
+
+                float y =
+                    groundY +
+                    GetArcHeight(
+                        offset,
+                        jumpArcRadius,
+                        jumpArcHeight
+                    );
+
+                SpawnCoinAt(
+                    lanePositions[blockedLane],
+                    y,
+                    z
+                );
             }
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // BUS / DOUBLE JUMP
+        // -----------------------------------------------------
+
+        if (type == ObstacleType.DoubleJump)
+        {
+            // Выбираем ОДНУ полосу для дуги.
+            int arcLane =
+                Random.Range(
+                    0,
+                    lanePositions.Length
+                );
+
+            for (
+                float offset = pathForward;
+                offset >= -pathBackward;
+                offset -= coinSpacing)
+            {
+                float z =
+                    obstacleZ + offset;
+
+                float y =
+                    groundY +
+                    GetArcHeight(
+                        offset,
+                        doubleJumpArcRadius,
+                        doubleJumpArcHeight
+                    );
+
+                SpawnCoinAt(
+                    lanePositions[arcLane],
+                    y,
+                    z
+                );
+            }
+        }
+    }
+
+    // =========================================================
+    // ВЫСОТА ДУГИ
+    // =========================================================
+
+    private float GetArcHeight(
+        float offset,
+        float radius,
+        float height)
+    {
+        if (Mathf.Abs(offset) > radius)
+            return 0f;
+
+        float t =
+            (offset + radius) /
+            (radius * 2f);
+
+        return
+            Mathf.Sin(
+                t * Mathf.PI
+            ) * height;
+    }
+
+    // =========================================================
+    // БЛИЖАЙШАЯ ПОЛОСА
+    // =========================================================
+
+    private int GetNearestLaneIndex(
+        float x)
+    {
+        float left =
+            Mathf.Abs(
+                x -
+                lanePositions[0]
+            );
+
+        float right =
+            Mathf.Abs(
+                x -
+                lanePositions[1]
+            );
+
+        return left < right
+            ? 0
+            : 1;
+    }
+
+    // =========================================================
+    // СОЗДАНИЕ МОНЕТЫ
+    // =========================================================
+
+    private void SpawnCoinAt(
+        float laneX,
+        float y,
+        float z)
+    {
+        if (coinPrefab == null)
+            return;
+
+        GameObject inst =
+            Instantiate(
+                coinPrefab,
+                new Vector3(
+                    laneX,
+                    y,
+                    z
+                ),
+                Quaternion.identity,
+                transform
+            );
+
+        PickupMover3D mover =
+            inst.GetComponent<
+                PickupMover3D>();
+
+        if (mover != null)
+        {
+            mover.laneX =
+                laneX;
+
+            mover.spawnZ =
+                z;
+
+            mover.ApplyInitialState();
+        }
+    }
+
+    // =========================================================
+    // СЕРДЕЧКО
+    // =========================================================
+
+    private void UpdateHeart()
+    {
+        heartTimer -= Time.deltaTime;
+
+        if (heartTimer > 0f)
+            return;
+
+        heartTimer =
+            heartSpawnInterval;
+
+        if (Random.value >
+            heartSpawnChance)
+        {
+            return;
+        }
+
+        int lane =
+            GetSafeLaneForHeart();
+
+        if (lane == -1)
+            return;
+
+        SpawnHeart(
+            lanePositions[lane]
+        );
+    }
+
+    private int GetSafeLaneForHeart()
+    {
+        int first =
+            Random.Range(
+                0,
+                lanePositions.Length
+            );
+
+        int second =
+            first == 0 ? 1 : 0;
+
+        if (IsLaneSafe(
+                lanePositions[first]
+            ))
+        {
+            return first;
+        }
+
+        if (IsLaneSafe(
+                lanePositions[second]
+            ))
+        {
+            return second;
         }
 
         return -1;
     }
 
-    private bool IsLaneClear(
+    private bool IsLaneSafe(
         float laneX)
     {
-        Vector3 checkPos =
-            new Vector3(
-                laneX,
-                spawnY,
-                spawnZ
-            );
-
-        Collider[] obstacles =
-            Physics.OverlapSphere(
-                checkPos,
-                obstacleCheckRadius
-            );
-
-        foreach (var col
-                 in obstacles)
-        {
-            if (col == null)
-                continue;
-
-            if (
-                col.GetComponent<
-                    ObstacleMover3D
-                >() != null
-            )
-            {
-                return false;
-            }
-        }
-
-        PickupMover3D[] pickups =
-            FindObjectsByType<
-                PickupMover3D
-            >(
+        ObstacleMover3D[] obstacles =
+            FindObjectsByType<ObstacleMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (var p
-                 in pickups)
+        foreach (var obstacle in obstacles)
         {
-            if (p == null)
+            if (obstacle == null)
                 continue;
 
-            Vector3 pos =
-                p.transform.position;
+            float z =
+                obstacle.transform.position.z;
 
-            if (
-                Mathf.Abs(
-                    pos.x - laneX
-                ) < laneWidth &&
-                pos.z >= checkToZ &&
-                pos.z <= checkFromZ
-            )
+            if (Mathf.Abs(
+                    z - spawnZ
+                ) > 3f)
+            {
+                continue;
+            }
+
+            ObstacleType3D type =
+                obstacle.GetComponentInParent<
+                    ObstacleType3D>();
+
+            if (type == null)
+                continue;
+
+            // Bus и Obstacle4 занимают обе полосы.
+            if (type.type ==
+                    ObstacleType.Slide ||
+                type.type ==
+                    ObstacleType.DoubleJump)
+            {
+                return false;
+            }
+
+            if (Mathf.Abs(
+                    obstacle.laneX - laneX
+                ) < 0.35f)
             {
                 return false;
             }
@@ -244,54 +516,30 @@ public class PickupSpawner3D : MonoBehaviour
         return true;
     }
 
-    private void SpawnPickup(
-        GameObject prefab,
+    private void SpawnHeart(
         float laneX)
     {
-        if (prefab == null)
+        if (heartPrefab == null)
             return;
 
-        // --------------------------------
-        // Y из самого префаба
-        // --------------------------------
-
-        float targetY =
-            prefab.transform.position.y;
-
-        // --------------------------------
-        // Не указываем Position в
-        // Instantiate, чтобы сначала
-        // получить правильный prefab Y.
-        // --------------------------------
+        float y =
+            heartPrefab.transform.position.y;
 
         GameObject inst =
             Instantiate(
-                prefab,
+                heartPrefab,
+                new Vector3(
+                    laneX,
+                    y,
+                    spawnZ
+                ),
+                Quaternion.identity,
                 transform
-            );
-
-        // Устанавливаем только X и Z.
-        // Y оставляем заданным префабом.
-        Vector3 position =
-            inst.transform.position;
-
-        position.x =
-            laneX;
-
-        position.z =
-            spawnZ;
-
-        inst.transform.position =
-            new Vector3(
-                laneX,
-                targetY,
-                spawnZ
             );
 
         PickupMover3D mover =
             inst.GetComponent<
-                PickupMover3D
-            >();
+                PickupMover3D>();
 
         if (mover != null)
         {
@@ -307,6 +555,6 @@ public class PickupSpawner3D : MonoBehaviour
 
     public void SetRunning(bool running)
     {
-        isRunning = running;
+        enabled = running;
     }
 }

@@ -5,8 +5,8 @@ using System.Collections;
 public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Полосы движения")]
-    [Tooltip("X-позиции трех полос: левая, центральная, правая.")]
-    public float[] lanePositions = new float[] { -0.8f, 0f, 0.8f };
+    [Tooltip("X-позиции двух полос: левая и правая.")]
+    public float[] lanePositions = new float[] { -0.8f, 0.8f };
 
     [Tooltip("Скорость перемещения игрока между полосами.")]
     public float laneChangeSpeed = 9f;
@@ -81,13 +81,14 @@ public class PlayerMovement3D : MonoBehaviour
         targetY = baseY;
 
         if (lanePositions == null ||
-            lanePositions.Length != 3)
+            lanePositions.Length != 2)
         {
             lanePositions =
-                new float[] { -0.8f, 0f, 0.8f };
+                new float[] { -0.8f, 0.8f };
         }
 
-        currentLane = 1;
+        // Стартуем на левой полосе.
+        currentLane = 0;
         targetX = lanePositions[currentLane];
 
         if (mainSprite == null &&
@@ -627,10 +628,10 @@ public class PlayerMovement3D : MonoBehaviour
         hasDoubleJumped = false;
         isSliding = false;
 
-        currentLane = 1;
+        currentLane = 0;
 
         if (lanePositions != null &&
-            lanePositions.Length == 3)
+            lanePositions.Length == 2)
         {
             targetX =
                 lanePositions[currentLane];

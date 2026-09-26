@@ -6,7 +6,7 @@ public class RescuedPersonSpawner : MonoBehaviour
     public GameObject rescuedPersonPrefab;
 
     [Header("Полосы")]
-    public float[] lanePositions = new float[] { -0.7f, 0.7f };
+    public float[] lanePositions = new float[] { -0.8f, 0.8f };
 
     [Header("Тайминг")]
     public float spawnInterval = 10f;
@@ -65,33 +65,111 @@ public class RescuedPersonSpawner : MonoBehaviour
 
     private bool IsLaneClear(float laneX)
     {
-        Vector3 checkPos = new Vector3(laneX, spawnY, spawnZ);
+        // Проверка препятствий.
+        // Не зависит от высоты коллайдера.
+        ObstacleMover3D[] obstacles =
+            FindObjectsByType<ObstacleMover3D>(
+                FindObjectsSortMode.None
+            );
 
-        Collider[] obstacles = Physics.OverlapSphere(checkPos, laneCheckRadius);
-        foreach (var c in obstacles)
+        foreach (var obstacle in obstacles)
         {
-            if (c == null) continue;
-            if (c.GetComponent<ObstacleMover3D>() != null) return false;
+            if (obstacle == null)
+                continue;
+
+            float z =
+                obstacle.transform.position.z;
+
+            if (Mathf.Abs(
+                    z - spawnZ
+                ) > 3f)
+            {
+                continue;
+            }
+
+            ObstacleType3D type =
+                obstacle.GetComponentInParent<
+                    ObstacleType3D>();
+
+            if (type == null)
+                continue;
+
+            // Bus и Obstacle4 занимают обе полосы.
+            if (type.type ==
+                    ObstacleType.Slide ||
+                type.type ==
+                    ObstacleType.DoubleJump)
+            {
+                return false;
+            }
+
+            // Обычное препятствие / яма
+            // занимает свою полосу.
+            if (Mathf.Abs(
+                    obstacle.laneX - laneX
+                ) < laneCheckRadius)
+            {
+                return false;
+            }
         }
 
-        PickupMover3D[] pickups = FindObjectsByType<PickupMover3D>(FindObjectsSortMode.None);
-        foreach (var p in pickups)
+        // Другие спасаемые.
+        RescuedPerson[] rescued =
+            FindObjectsByType<RescuedPerson>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (var person in rescued)
         {
-            if (p == null) continue;
-            Vector3 pos = p.transform.position;
-            if (Mathf.Abs(pos.x - laneX) < laneCheckRadius &&
-                pos.z >= checkToZ && pos.z <= checkFromZ)
+            if (person == null)
+                continue;
+
+            Vector3 pos =
+                person.transform.position;
+
+            if (Mathf.Abs(
+                    pos.x - laneX
+                ) < laneCheckRadius &&
+                Mathf.Abs(
+                    pos.z - spawnZ
+                ) < 3f)
+            {
                 return false;
+            }
         }
 
-        RescuedPerson[] rescued = FindObjectsByType<RescuedPerson>(FindObjectsSortMode.None);
-        foreach (var r in rescued)
+        // Сердечки.
+        PickupMover3D[] pickups =
+            FindObjectsByType<PickupMover3D>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (var pickup in pickups)
         {
-            if (r == null) continue;
-            Vector3 pos = r.transform.position;
-            if (Mathf.Abs(pos.x - laneX) < laneCheckRadius &&
-                pos.z >= checkToZ && pos.z <= checkFromZ)
+            if (pickup == null)
+                continue;
+
+            Pickup3D data =
+                pickup.GetComponent<Pickup3D>();
+
+            if (data == null ||
+                data.type != Pickup3DType.Heart)
+            {
+                continue;
+            }
+
+            Vector3 pos =
+                pickup.transform.position;
+
+            if (Mathf.Abs(
+                    pos.x - laneX
+                ) < laneCheckRadius &&
+                Mathf.Abs(
+                    pos.z - spawnZ
+                ) < 3f)
+            {
                 return false;
+            }
         }
 
         return true;

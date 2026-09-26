@@ -6,8 +6,9 @@ public class ObstacleSpawner3D : MonoBehaviour
     [Header("Prefabs")]
     public GameObject[] obstaclePrefabs;
 
-    [Header("Lanes (3 полосы)")]
-    public float[] lanePositions = new float[] { -0.8f, 0f, 0.8f };
+    [Header("Lanes (2 полосы)")]
+    public float[] lanePositions =
+    new float[] { -0.8f, 0.8f };
 
     [Header("Spawning — прогрессивная сложность")]
     public float startInterval = 5.0f;
@@ -48,10 +49,10 @@ public class ObstacleSpawner3D : MonoBehaviour
     private void Start()
     {
         if (lanePositions == null ||
-            lanePositions.Length == 0)
+            lanePositions.Length != 2)
         {
             lanePositions =
-                new float[] { -0.8f, 0f, 0.8f };
+                new float[] { -0.8f, 0.8f };
         }
 
         int maxAllowed =
@@ -106,76 +107,106 @@ public class ObstacleSpawner3D : MonoBehaviour
             return;
         }
 
-        int laneCount =
-            lanePositions.Length;
+        // Сначала выбираем конкретный префаб.
+        GameObject prefab =
+            obstaclePrefabs[
+                Random.Range(
+                    0,
+                    obstaclePrefabs.Length
+                )
+            ];
 
-        if (laneCount < 2)
+        if (prefab == null)
             return;
 
-        int maxForWave =
-            Mathf.Min(
-                maxObstaclesPerWave,
-                laneCount - 1
-            );
+        ObstacleType3D type =
+            prefab.GetComponentInChildren<ObstacleType3D>();
 
-        int obstaclesThisWave =
+        // Obstacle4 и Bus всегда в центре дороги.
+        if (type != null &&
+            (type.type == ObstacleType.Slide ||
+             type.type == ObstacleType.DoubleJump))
+        {
+            SpawnOne(prefab, 0f);
+            return;
+        }
+
+        // Обычные препятствия / яма —
+        // случайно левая или правая полоса.
+        int laneIdx =
             Random.Range(
-                1,
-                maxForWave + 1
+                0,
+                lanePositions.Length
             );
 
-        List<int> availableLanes =
-            new List<int>();
+        float laneX =
+            lanePositions[laneIdx];
 
-        for (int i = 0;
-             i < laneCount;
-             i++)
-        {
-            availableLanes.Add(i);
-        }
+        // Не ставим обычное препятствие поверх
+        // сердца или спасаемого персонажа.
+        if (!IsLaneClearOfSpecialObjects(laneX))
+            return;
 
-        // Shuffle
-        for (int i = 0;
-             i < availableLanes.Count;
-             i++)
-        {
-            int r =
-                Random.Range(
-                    i,
-                    availableLanes.Count
-                );
+        SpawnOne(
+            prefab,
+            laneX
+        );
+    }
 
-            (
-                availableLanes[i],
-                availableLanes[r]
-            ) =
-            (
-                availableLanes[r],
-                availableLanes[i]
+    private bool IsLaneClearOfSpecialObjects(float laneX)
+    {
+        // Сердечки
+        PickupMover3D[] pickups =
+            FindObjectsByType<PickupMover3D>(
+                FindObjectsSortMode.None
             );
-        }
 
-        int spawned = 0;
-
-        foreach (int laneIdx
-                 in availableLanes)
+        foreach (var pickup in pickups)
         {
-            if (spawned >= obstaclesThisWave)
-                break;
-
-            float laneX =
-                lanePositions[laneIdx];
-
-            if (checkPickups &&
-                !IsLaneClearOfPickups(laneX))
-            {
+            if (pickup == null)
                 continue;
+
+            Pickup3D pickupData =
+                pickup.GetComponent<Pickup3D>();
+
+            if (pickupData == null ||
+                pickupData.type != Pickup3DType.Heart)
+                continue;
+
+            Vector3 pos =
+                pickup.transform.position;
+
+            if (Mathf.Abs(pos.x - laneX) <
+                    pickupLaneWidth &&
+                Mathf.Abs(pos.z - spawnZ) < 2.5f)
+            {
+                return false;
             }
-
-            SpawnOne(laneX);
-
-            spawned++;
         }
+
+        // Спасаемые
+        RescuedPerson[] rescued =
+            FindObjectsByType<RescuedPerson>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (var person in rescued)
+        {
+            if (person == null)
+                continue;
+
+            Vector3 pos =
+                person.transform.position;
+
+            if (Mathf.Abs(pos.x - laneX) <
+                    pickupLaneWidth &&
+                Mathf.Abs(pos.z - spawnZ) < 2.5f)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private bool IsLaneClearOfPickups(
@@ -208,42 +239,21 @@ public class ObstacleSpawner3D : MonoBehaviour
         return true;
     }
 
-    private void SpawnOne(float laneX)
+    private void SpawnOne(
+    GameObject prefab,
+    float laneX)
     {
-        GameObject prefab =
-            obstaclePrefabs[
-                Random.Range(
-                    0,
-                    obstaclePrefabs.Length
-                )
-            ];
-
         if (prefab == null)
             return;
-
-        // --------------------------------
-        // Определяем Y
-        // --------------------------------
 
         float targetY =
             prefab.transform.position.y;
 
-        SpawnHeightOffset3D
-            heightOverride =
-                prefab.GetComponent<
-                    SpawnHeightOffset3D
-                >();
+        SpawnHeightOffset3D heightOverride =
+            prefab.GetComponent<SpawnHeightOffset3D>();
 
         if (heightOverride != null)
-        {
-            // Это АБСОЛЮТНЫЙ Y.
-            targetY =
-                heightOverride.spawnY;
-        }
-
-        // --------------------------------
-        // Создание
-        // --------------------------------
+            targetY = heightOverride.spawnY;
 
         Vector3 spawnPos =
             new Vector3(
@@ -263,20 +273,13 @@ public class ObstacleSpawner3D : MonoBehaviour
         instance.name =
             $"Obstacle3D_{obstacleCounter++}";
 
-        // --------------------------------
-        // Движение
-        // --------------------------------
-
         ObstacleMover3D mover =
-            instance.GetComponent<
-                ObstacleMover3D
-            >();
+            instance.GetComponent<ObstacleMover3D>();
 
         if (mover != null)
         {
             mover.laneX = laneX;
             mover.spawnZ = spawnZ;
-
             mover.ApplyInitialState();
         }
     }
