@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ObstacleSpawner3D : MonoBehaviour
@@ -6,25 +5,20 @@ public class ObstacleSpawner3D : MonoBehaviour
     [Header("Prefabs")]
     public GameObject[] obstaclePrefabs;
 
-    [Header("Lanes (2 полосы)")]
+    [Header("Lanes")]
     public float[] lanePositions =
         new float[] { -0.7f, 0.7f };
 
-    [Header("Spawning — прогрессивная сложность")]
+    [Header("Spawning")]
     public float startInterval = 5.0f;
     public float minInterval = 2.0f;
     public float difficultyRampTime = 60f;
 
-    [Header("Позиции")]
+    [Header("Position")]
     public float spawnZ = 60f;
-
-    [Tooltip(
-        "Используется только для служебных проверок. " +
-        "Высота самого препятствия берётся из префаба."
-    )]
     public float spawnY = 0.4f;
 
-    [Header("Появление из-за горизонта")]
+    [Header("Reveal")]
     public float revealZ = 40f;
 
     [Range(1, 5)]
@@ -36,6 +30,13 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float pickupCheckToZ = 5f;
     public float pickupLaneWidth = 0.4f;
 
+    [Header("Визуальная дистанция")]
+    [Tooltip("Резерв под продолжение маршрута монет за препятствием.")]
+    public float coinRouteReserve = 12f;
+
+    [Tooltip("Дополнительный пустой промежуток между объектами.")]
+    public float minVisualGap = 5f;
+
     [Header("Runtime")]
     public bool isRunning = true;
 
@@ -43,8 +44,8 @@ public class ObstacleSpawner3D : MonoBehaviour
     public bool drawLaneGizmos = true;
 
     private float spawnTimer;
-    private float runTime = 0f;
-    private int obstacleCounter = 0;
+    private float runTime;
+    private int obstacleCounter;
 
     private void Start()
     {
@@ -86,7 +87,7 @@ public class ObstacleSpawner3D : MonoBehaviour
                 difficultyRampTime
             );
 
-        float currentInterval =
+        float interval =
             Mathf.Lerp(
                 startInterval,
                 minInterval,
@@ -100,10 +101,14 @@ public class ObstacleSpawner3D : MonoBehaviour
             return;
 
         spawnTimer =
-            currentInterval;
+            interval;
 
         SpawnWave();
     }
+
+    // =========================================================
+    // WAVE
+    // =========================================================
 
     private void SpawnWave()
     {
@@ -112,6 +117,10 @@ public class ObstacleSpawner3D : MonoBehaviour
         {
             return;
         }
+
+        // Сначала проверяем общую визуальную дистанцию.
+        if (!CanSpawnAnotherObstacle())
+            return;
 
         GameObject prefab =
             obstaclePrefabs[
@@ -128,12 +137,9 @@ public class ObstacleSpawner3D : MonoBehaviour
             prefab.GetComponentInChildren<
                 ObstacleType3D>();
 
-        // -----------------------------------------------------
-        // OBSTACLE4 / BUS
-        // -----------------------------------------------------
-        // Эти препятствия занимают обе полосы
-        // и всегда стоят в центре.
-        // -----------------------------------------------------
+        // =====================================================
+        // BUS / SLIDE
+        // =====================================================
 
         if (type != null &&
             (type.type == ObstacleType.Slide ||
@@ -147,21 +153,24 @@ public class ObstacleSpawner3D : MonoBehaviour
             return;
         }
 
-        // -----------------------------------------------------
-        // ОБЫЧНОЕ ПРЕПЯТСТВИЕ / ЯМА / АВТОМОБИЛЬ
-        // -----------------------------------------------------
+        // =====================================================
+        // ОБЫЧНОЕ
+        // =====================================================
 
-        int laneIdx =
+        int lane =
             Random.Range(
                 0,
                 lanePositions.Length
             );
 
         float laneX =
-            lanePositions[laneIdx];
+            lanePositions[lane];
 
-        if (!IsLaneClearOfSpecialObjects(laneX))
+        if (!IsLaneClearOfSpecialObjects(
+                laneX))
+        {
             return;
+        }
 
         SpawnOne(
             prefab,
@@ -169,13 +178,179 @@ public class ObstacleSpawner3D : MonoBehaviour
         );
     }
 
+    // =========================================================
+    // ГЛОБАЛЬНАЯ ПРОВЕРКА ДИСТАНЦИИ
+    // =========================================================
+
+    private bool CanSpawnAnotherObstacle()
+    {
+        // -----------------------------------------------------
+        // Предыдущие препятствия
+        // -----------------------------------------------------
+
+        ObstacleMover3D[] obstacles =
+            FindObjectsByType<ObstacleMover3D>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (ObstacleMover3D obstacle in obstacles)
+        {
+            if (obstacle == null)
+                continue;
+
+            if (!TryGetWorldBounds(
+                    obstacle.gameObject,
+                    out Bounds bounds))
+            {
+                continue;
+            }
+
+            float requiredMinZ =
+                bounds.max.z +
+                coinRouteReserve +
+                minVisualGap;
+
+            // Если старое препятствие и его маршрут
+            // ещё слишком близко к точке появления,
+            // новое не создаём.
+            if (spawnZ <= requiredMinZ)
+                return false;
+        }
+
+        // -----------------------------------------------------
+        // Пикапы
+        // -----------------------------------------------------
+
+        if (checkPickups)
+        {
+            PickupMover3D[] pickups =
+                FindObjectsByType<PickupMover3D>(
+                    FindObjectsSortMode.None
+                );
+
+            foreach (PickupMover3D pickup in pickups)
+            {
+                if (pickup == null)
+                    continue;
+
+                if (!TryGetWorldBounds(
+                        pickup.gameObject,
+                        out Bounds bounds))
+                {
+                    continue;
+                }
+
+                if (spawnZ <=
+                    bounds.max.z +
+                    minVisualGap)
+                {
+                    return false;
+                }
+            }
+
+            // -------------------------------------------------
+            // Выжившие
+            // -------------------------------------------------
+
+            RescuedPerson[] rescued =
+                FindObjectsByType<RescuedPerson>(
+                    FindObjectsSortMode.None
+                );
+
+            foreach (RescuedPerson person in rescued)
+            {
+                if (person == null)
+                    continue;
+
+                if (!TryGetWorldBounds(
+                        person.gameObject,
+                        out Bounds bounds))
+                {
+                    continue;
+                }
+
+                if (spawnZ <=
+                    bounds.max.z +
+                    minVisualGap)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // =========================================================
+    // BOUNDS
+    // =========================================================
+
+    private bool TryGetWorldBounds(
+        GameObject obj,
+        out Bounds bounds)
+    {
+        bounds = default;
+
+        if (obj == null)
+            return false;
+
+        Renderer[] renderers =
+            obj.GetComponentsInChildren<Renderer>(
+                true
+            );
+
+        bool found = false;
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+                continue;
+
+            if (renderer is ParticleSystemRenderer)
+                continue;
+
+            if (!found)
+            {
+                bounds =
+                    renderer.bounds;
+
+                found = true;
+            }
+            else
+            {
+                bounds.Encapsulate(
+                    renderer.bounds
+                );
+            }
+        }
+
+        if (found)
+            return true;
+
+        Collider collider =
+            obj.GetComponent<Collider>();
+
+        if (collider == null)
+            collider =
+                obj.GetComponentInChildren<Collider>();
+
+        if (collider == null)
+            return false;
+
+        bounds =
+            collider.bounds;
+
+        return true;
+    }
+
+    // =========================================================
+    // SPECIAL OBJECTS
+    // =========================================================
+
     private bool IsLaneClearOfSpecialObjects(
         float laneX)
     {
-        // -----------------------------------------------------
-        // СЕРДЕЧКИ
-        // -----------------------------------------------------
-
+        // Сердечки
         PickupMover3D[] pickups =
             FindObjectsByType<PickupMover3D>(
                 FindObjectsSortMode.None
@@ -186,33 +361,36 @@ public class ObstacleSpawner3D : MonoBehaviour
             if (pickup == null)
                 continue;
 
-            Pickup3D pickupData =
+            Pickup3D data =
                 pickup.GetComponent<Pickup3D>();
 
-            if (pickupData == null ||
-                pickupData.type != Pickup3DType.Heart)
+            if (data == null ||
+                data.type != Pickup3DType.Heart)
             {
                 continue;
             }
 
-            Vector3 pos =
-                pickup.transform.position;
+            if (!TryGetWorldBounds(
+                    pickup.gameObject,
+                    out Bounds bounds))
+            {
+                continue;
+            }
 
             if (Mathf.Abs(
-                    pos.x - laneX
+                    pickup.transform.position.x -
+                    laneX
                 ) < pickupLaneWidth &&
                 Mathf.Abs(
-                    pos.z - spawnZ
-                ) < 2.5f)
+                    bounds.center.z -
+                    spawnZ
+                ) < 5f)
             {
                 return false;
             }
         }
 
-        // -----------------------------------------------------
-        // СПАСАЕМЫЕ
-        // -----------------------------------------------------
-
+        // Выжившие
         RescuedPerson[] rescued =
             FindObjectsByType<RescuedPerson>(
                 FindObjectsSortMode.None
@@ -223,15 +401,21 @@ public class ObstacleSpawner3D : MonoBehaviour
             if (person == null)
                 continue;
 
-            Vector3 pos =
-                person.transform.position;
+            if (!TryGetWorldBounds(
+                    person.gameObject,
+                    out Bounds bounds))
+            {
+                continue;
+            }
 
             if (Mathf.Abs(
-                    pos.x - laneX
+                    person.transform.position.x -
+                    laneX
                 ) < pickupLaneWidth &&
                 Mathf.Abs(
-                    pos.z - spawnZ
-                ) < 2.5f)
+                    bounds.center.z -
+                    spawnZ
+                ) < 5f)
             {
                 return false;
             }
@@ -240,36 +424,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         return true;
     }
 
-    private bool IsLaneClearOfPickups(
-        float laneX)
-    {
-        PickupMover3D[] pickups =
-            FindObjectsByType<PickupMover3D>(
-                FindObjectsSortMode.None
-            );
-
-        foreach (PickupMover3D p in pickups)
-        {
-            if (p == null)
-                continue;
-
-            Vector3 pos =
-                p.transform.position;
-
-            if (
-                Mathf.Abs(
-                    pos.x - laneX
-                ) < pickupLaneWidth &&
-                pos.z >= pickupCheckToZ &&
-                pos.z <= pickupCheckFromZ
-            )
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+    // =========================================================
+    // SPAWN
+    // =========================================================
 
     private void SpawnOne(
         GameObject prefab,
@@ -291,23 +448,26 @@ public class ObstacleSpawner3D : MonoBehaviour
                 heightOverride.spawnY;
         }
 
-        Vector3 spawnPos =
-            new Vector3(
-                laneX,
-                targetY,
-                spawnZ
-            );
-
         GameObject instance =
             Instantiate(
                 prefab,
-                spawnPos,
+                new Vector3(
+                    laneX,
+                    targetY,
+                    spawnZ
+                ),
                 Quaternion.identity,
                 transform
             );
 
         instance.name =
             $"Obstacle3D_{obstacleCounter++}";
+
+        if (instance.GetComponent<RunnerDepthSorter3D>() ==
+            null)
+        {
+            instance.AddComponent<RunnerDepthSorter3D>();
+        }
 
         ObstacleMover3D mover =
             instance.GetComponent<
@@ -325,7 +485,12 @@ public class ObstacleSpawner3D : MonoBehaviour
         }
     }
 
-    public void SetRunning(bool running)
+    // =========================================================
+    // RUNTIME
+    // =========================================================
+
+    public void SetRunning(
+        bool running)
     {
         isRunning =
             running;
@@ -347,6 +512,10 @@ public class ObstacleSpawner3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // GIZMOS
+    // =========================================================
+
     private void OnDrawGizmosSelected()
     {
         if (!drawLaneGizmos ||
@@ -359,8 +528,7 @@ public class ObstacleSpawner3D : MonoBehaviour
             Color.yellow;
 
         foreach (
-            float x
-            in lanePositions)
+            float x in lanePositions)
         {
             Gizmos.DrawLine(
                 new Vector3(

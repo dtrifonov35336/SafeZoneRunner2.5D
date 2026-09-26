@@ -23,22 +23,19 @@ public class PickupSpawner3D : MonoBehaviour
     [Range(0f, 1f)]
     public float heartSpawnChance = 0.5f;
 
-    [Header("Дорожка монет")]
-    [Tooltip("Сколько метров дорожка идёт ПЕРЕД препятствием, в сторону игрока.")]
-    public float pathForward = 10f;
-
-    [Tooltip("Сколько метров дорожка продолжается ПОСЛЕ препятствия.")]
+    [Header("Маршрут монет")]
+    public float pathForward = 8f;
     public float pathBackward = 6f;
-
     public float coinSpacing = 1.5f;
 
     [Header("Обычная дуга")]
     public float jumpArcHeight = 1.5f;
-    public float jumpArcRadius = 5f;
 
-    [Header("Дуга двойного прыжка")]
+    [Tooltip("Запас над верхней точкой препятствия.")]
+    public float obstacleClearance = 0.2f;
+
+    [Header("Двойной прыжок")]
     public float doubleJumpArcHeight = 2.2f;
-    public float doubleJumpArcRadius = 6f;
 
     [Header("Монеты под Slide")]
     public float slideCoinY = 0.35f;
@@ -46,14 +43,15 @@ public class PickupSpawner3D : MonoBehaviour
     [Header("Позиция спавна")]
     public float spawnZ = 60f;
 
+    [Header("Безопасность сердечек")]
+    public float heartSpawnGap = 5f;
+
     private float coinTimer;
     private float heartTimer;
 
     private readonly HashSet<int> routedObstacles =
         new HashSet<int>();
 
-    // Какая полоса используется для обычной
-    // свободной дорожки монет.
     private int straightLane = 0;
 
     private void Start()
@@ -92,17 +90,16 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // ОБЫЧНАЯ ПРЯМАЯ ДОРОЖКА
+    // ОБЫЧНЫЕ МОНЕТЫ
     // =========================================================
 
     private void UpdateFreeCoinStream()
     {
-        // Если впереди уже есть препятствие,
-        // новую свободную дорожку монет не создаём.
         if (HasUpcomingObstacle())
             return;
 
-        coinTimer -= Time.deltaTime;
+        coinTimer -=
+            Time.deltaTime;
 
         if (coinTimer > 0f)
             return;
@@ -116,18 +113,15 @@ public class PickupSpawner3D : MonoBehaviour
             return;
         }
 
+        if (coinPrefab == null)
+            return;
+
         SpawnCoinAt(
             lanePositions[straightLane],
-            coinPrefab != null
-                ? coinPrefab.transform.position.y
-                : 1f,
+            coinPrefab.transform.position.y,
             spawnZ
         );
     }
-
-    // =========================================================
-    // ПРОВЕРКА ПРЕПЯТСТВИЙ ВПЕРЕДИ
-    // =========================================================
 
     private bool HasUpcomingObstacle()
     {
@@ -136,7 +130,7 @@ public class PickupSpawner3D : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (var obstacle in obstacles)
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
                 continue;
@@ -155,7 +149,7 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // СОЗДАНИЕ МАРШРУТОВ
+    // ПОИСК НОВЫХ ПРЕПЯТСТВИЙ
     // =========================================================
 
     private void UpdateCoinRoutes()
@@ -165,16 +159,16 @@ public class PickupSpawner3D : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (var obstacle in obstacles)
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
                 continue;
 
-            float obstacleZ =
+            float z =
                 obstacle.transform.position.z;
 
-            if (obstacleZ < 5f ||
-                obstacleZ > 55f)
+            if (z < 5f ||
+                z > 55f)
             {
                 continue;
             }
@@ -202,25 +196,355 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // УДАЛЕНИЕ СТАРЫХ МОНЕТ ВОКРУГ ПРЕПЯТСТВИЯ
+    // ГРАНИЦЫ ПРЕПЯТСТВИЯ
+    // =========================================================
+
+    private bool TryGetObstacleBounds(
+        ObstacleMover3D obstacle,
+        out Bounds bounds)
+    {
+        bounds = default;
+
+        if (obstacle == null)
+            return false;
+
+        Renderer[] renderers =
+            obstacle.GetComponentsInChildren<Renderer>(
+                true
+            );
+
+        bool found = false;
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+                continue;
+
+            if (renderer is ParticleSystemRenderer)
+                continue;
+
+            if (!found)
+            {
+                bounds =
+                    renderer.bounds;
+
+                found = true;
+            }
+            else
+            {
+                bounds.Encapsulate(
+                    renderer.bounds
+                );
+            }
+        }
+
+        if (found)
+            return true;
+
+        Collider collider =
+            obstacle.GetComponent<Collider>();
+
+        if (collider == null)
+        {
+            collider =
+                obstacle.GetComponentInChildren<Collider>();
+        }
+
+        if (collider == null)
+            return false;
+
+        bounds =
+            collider.bounds;
+
+        return true;
+    }
+
+    private float GetCoinHalfHeight()
+    {
+        if (coinPrefab == null)
+            return 0.1f;
+
+        Renderer[] renderers =
+            coinPrefab.GetComponentsInChildren<Renderer>(
+                true
+            );
+
+        float result = 0.1f;
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+                continue;
+
+            if (renderer is ParticleSystemRenderer)
+                continue;
+
+            result =
+                Mathf.Max(
+                    result,
+                    renderer.bounds.extents.y
+                );
+        }
+
+        return result;
+    }
+
+    // =========================================================
+    // МАРШРУТ МОНЕТ
+    // =========================================================
+
+    private void GenerateCoinRoute(
+        ObstacleMover3D obstacle,
+        ObstacleType type)
+    {
+        if (coinPrefab == null)
+            return;
+
+        if (!TryGetObstacleBounds(
+                obstacle,
+                out Bounds obstacleBounds))
+        {
+            return;
+        }
+
+        RemoveCoinsAroundObstacle(
+            obstacleBounds
+        );
+
+        float groundY =
+            coinPrefab.transform.position.y;
+
+        // В нашей сцене меньший Z = ближе к игроку.
+        float nearZ =
+            obstacleBounds.min.z;
+
+        float farZ =
+            obstacleBounds.max.z;
+
+        float startZ =
+            nearZ -
+            pathForward;
+
+        float endZ =
+            farZ +
+            pathBackward;
+
+        float centerZ =
+            obstacleBounds.center.z;
+
+        // =====================================================
+        // SLIDE
+        // =====================================================
+
+        if (type == ObstacleType.Slide)
+        {
+            int lane =
+                Random.Range(
+                    0,
+                    lanePositions.Length
+                );
+
+            for (
+                float z = startZ;
+                z <= endZ;
+                z += coinSpacing)
+            {
+                float y =
+                    z < nearZ ||
+                    z > farZ
+                    ? groundY
+                    : slideCoinY;
+
+                SpawnCoinAt(
+                    lanePositions[lane],
+                    y,
+                    z
+                );
+            }
+
+            return;
+        }
+
+        // =====================================================
+        // NORMAL / PIT
+        // =====================================================
+
+        if (type == ObstacleType.Normal ||
+            type == ObstacleType.Pit)
+        {
+            int lane =
+                GetNearestLaneIndex(
+                    obstacle.laneX
+                );
+
+            float coinHalfHeight =
+                GetCoinHalfHeight();
+
+            float requiredPeak =
+                obstacleBounds.max.y +
+                coinHalfHeight +
+                obstacleClearance;
+
+            float requiredHeight =
+                requiredPeak -
+                groundY;
+
+            float finalHeight =
+                Mathf.Max(
+                    jumpArcHeight,
+                    requiredHeight
+                );
+
+            for (
+                float z = startZ;
+                z <= endZ;
+                z += coinSpacing)
+            {
+                float y =
+                    groundY +
+                    GetArcHeight(
+                        z,
+                        startZ,
+                        centerZ,
+                        endZ,
+                        finalHeight
+                    );
+
+                SpawnCoinAt(
+                    lanePositions[lane],
+                    y,
+                    z
+                );
+            }
+
+            return;
+        }
+
+        // =====================================================
+        // DOUBLE JUMP / BUS
+        // =====================================================
+
+        if (type == ObstacleType.DoubleJump)
+        {
+            int lane =
+                Random.Range(
+                    0,
+                    lanePositions.Length
+                );
+
+            float coinHalfHeight =
+                GetCoinHalfHeight();
+
+            float requiredPeak =
+                obstacleBounds.max.y +
+                coinHalfHeight +
+                obstacleClearance;
+
+            float requiredHeight =
+                requiredPeak -
+                groundY;
+
+            float finalHeight =
+                Mathf.Max(
+                    doubleJumpArcHeight,
+                    requiredHeight
+                );
+
+            for (
+                float z = startZ;
+                z <= endZ;
+                z += coinSpacing)
+            {
+                float y =
+                    groundY +
+                    GetArcHeight(
+                        z,
+                        startZ,
+                        centerZ,
+                        endZ,
+                        finalHeight
+                    );
+
+                SpawnCoinAt(
+                    lanePositions[lane],
+                    y,
+                    z
+                );
+            }
+        }
+    }
+
+    // =========================================================
+    // ДУГА
+    // =========================================================
+
+    private float GetArcHeight(
+        float z,
+        float startZ,
+        float centerZ,
+        float endZ,
+        float height)
+    {
+        if (z <= centerZ)
+        {
+            float length =
+                centerZ -
+                startZ;
+
+            if (length <= 0.001f)
+                return height;
+
+            float t =
+                Mathf.Clamp01(
+                    (z - startZ) /
+                    length
+                );
+
+            return
+                Mathf.Sin(
+                    t *
+                    Mathf.PI *
+                    0.5f
+                ) *
+                height;
+        }
+
+        float downLength =
+            endZ -
+            centerZ;
+
+        if (downLength <= 0.001f)
+            return 0f;
+
+        float downT =
+            Mathf.Clamp01(
+                (z - centerZ) /
+                downLength
+            );
+
+        return
+            Mathf.Sin(
+                (1f - downT) *
+                Mathf.PI *
+                0.5f
+            ) *
+            height;
+    }
+
+    // =========================================================
+    // УДАЛЕНИЕ СТАРЫХ МОНЕТ
     // =========================================================
 
     private void RemoveCoinsAroundObstacle(
-        ObstacleMover3D obstacle)
+        Bounds obstacleBounds)
     {
-        if (obstacle == null)
-            return;
-
-        float obstacleZ =
-            obstacle.transform.position.z;
-
         float minZ =
-            obstacleZ -
+            obstacleBounds.min.z -
             pathForward -
             2f;
 
         float maxZ =
-            obstacleZ +
+            obstacleBounds.max.z +
             pathBackward +
             2f;
 
@@ -229,20 +553,19 @@ public class PickupSpawner3D : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (var pickup in pickups)
+        foreach (PickupMover3D pickup in pickups)
         {
             if (pickup == null)
                 continue;
 
-            Pickup3D pickupData =
+            Pickup3D data =
                 pickup.GetComponent<Pickup3D>();
 
-            if (pickupData == null)
+            if (data == null ||
+                data.type != Pickup3DType.Coin)
+            {
                 continue;
-
-            // Удаляем только монеты.
-            if (pickupData.type != Pickup3DType.Coin)
-                continue;
+            }
 
             float z =
                 pickup.transform.position.z;
@@ -255,181 +578,6 @@ public class PickupSpawner3D : MonoBehaviour
                 );
             }
         }
-    }
-
-    // =========================================================
-    // СОЗДАНИЕ МАРШРУТА МОНЕТ
-    // =========================================================
-
-    private void GenerateCoinRoute(
-        ObstacleMover3D obstacle,
-        ObstacleType type)
-    {
-        if (coinPrefab == null)
-            return;
-
-        // Удаляем старые прямые монеты,
-        // которые могли бы проходить через препятствие.
-        RemoveCoinsAroundObstacle(obstacle);
-
-        float groundY =
-            coinPrefab.transform.position.y;
-
-        float obstacleZ =
-            obstacle.transform.position.z;
-
-        // -----------------------------------------------------
-        // SLIDE
-        // -----------------------------------------------------
-
-        if (type == ObstacleType.Slide)
-        {
-            int coinLane =
-                Random.Range(
-                    0,
-                    lanePositions.Length
-                );
-
-            // ВАЖНО:
-            // начинаем ПЕРЕД препятствием
-            // и заканчиваем ПОСЛЕ него.
-            for (
-                float offset = -pathForward;
-                offset <= pathBackward;
-                offset += coinSpacing)
-            {
-                float z =
-                    obstacleZ + offset;
-
-                SpawnCoinAt(
-                    lanePositions[coinLane],
-                    slideCoinY,
-                    z
-                );
-            }
-
-            return;
-        }
-
-        // -----------------------------------------------------
-        // ОБЫЧНОЕ ПРЕПЯТСТВИЕ / ЯМА
-        // -----------------------------------------------------
-
-        if (type == ObstacleType.Normal ||
-            type == ObstacleType.Pit)
-        {
-            int blockedLane =
-                GetNearestLaneIndex(
-                    obstacle.laneX
-                );
-
-            for (
-                float offset = -pathForward;
-                offset <= pathBackward;
-                offset += coinSpacing)
-            {
-                float z =
-                    obstacleZ + offset;
-
-                float y =
-                    groundY +
-                    GetArcHeight(
-                        offset,
-                        jumpArcRadius,
-                        jumpArcHeight
-                    );
-
-                SpawnCoinAt(
-                    lanePositions[blockedLane],
-                    y,
-                    z
-                );
-            }
-
-            return;
-        }
-
-        // -----------------------------------------------------
-        // BUS / DOUBLE JUMP
-        // -----------------------------------------------------
-
-        if (type == ObstacleType.DoubleJump)
-        {
-            int arcLane =
-                Random.Range(
-                    0,
-                    lanePositions.Length
-                );
-
-            for (
-                float offset = -pathForward;
-                offset <= pathBackward;
-                offset += coinSpacing)
-            {
-                float z =
-                    obstacleZ + offset;
-
-                float y =
-                    groundY +
-                    GetArcHeight(
-                        offset,
-                        doubleJumpArcRadius,
-                        doubleJumpArcHeight
-                    );
-
-                SpawnCoinAt(
-                    lanePositions[arcLane],
-                    y,
-                    z
-                );
-            }
-        }
-    }
-
-    // =========================================================
-    // ВЫСОТА ДУГИ
-    // =========================================================
-
-    private float GetArcHeight(
-        float offset,
-        float radius,
-        float height)
-    {
-        if (Mathf.Abs(offset) > radius)
-            return 0f;
-
-        float t =
-            (offset + radius) /
-            (radius * 2f);
-
-        return
-            Mathf.Sin(
-                t * Mathf.PI
-            ) * height;
-    }
-
-    // =========================================================
-    // БЛИЖАЙШАЯ ПОЛОСА
-    // =========================================================
-
-    private int GetNearestLaneIndex(
-        float x)
-    {
-        float left =
-            Mathf.Abs(
-                x -
-                lanePositions[0]
-            );
-
-        float right =
-            Mathf.Abs(
-                x -
-                lanePositions[1]
-            );
-
-        return left < right
-            ? 0
-            : 1;
     }
 
     // =========================================================
@@ -456,9 +604,14 @@ public class PickupSpawner3D : MonoBehaviour
                 transform
             );
 
+        if (inst.GetComponent<RunnerDepthSorter3D>() ==
+            null)
+        {
+            inst.AddComponent<RunnerDepthSorter3D>();
+        }
+
         PickupMover3D mover =
-            inst.GetComponent<
-                PickupMover3D>();
+            inst.GetComponent<PickupMover3D>();
 
         if (mover != null)
         {
@@ -473,12 +626,13 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // СЕРДЕЧКО
+    // HEART
     // =========================================================
 
     private void UpdateHeart()
     {
-        heartTimer -= Time.deltaTime;
+        heartTimer -=
+            Time.deltaTime;
 
         if (heartTimer > 0f)
             return;
@@ -541,40 +695,106 @@ public class PickupSpawner3D : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (var obstacle in obstacles)
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
                 continue;
 
-            float z =
-                obstacle.transform.position.z;
-
-            if (Mathf.Abs(
-                    z - spawnZ
-                ) > 3f)
+            if (!TryGetObstacleBounds(
+                    obstacle,
+                    out Bounds bounds))
             {
                 continue;
             }
+
+            bool occupiesBothLanes =
+                false;
 
             ObstacleType3D type =
                 obstacle.GetComponentInParent<
                     ObstacleType3D>();
 
-            if (type == null)
-                continue;
-
-            // Slide и DoubleJump занимают обе полосы.
-            if (type.type ==
+            if (type != null)
+            {
+                occupiesBothLanes =
+                    type.type ==
                     ObstacleType.Slide ||
-                type.type ==
-                    ObstacleType.DoubleJump)
+                    type.type ==
+                    ObstacleType.DoubleJump;
+            }
+
+            bool sameLane =
+                Mathf.Abs(
+                    obstacle.laneX -
+                    laneX
+                ) < 0.55f;
+
+            if (!occupiesBothLanes &&
+                !sameLane)
+            {
+                continue;
+            }
+
+            if (spawnZ <=
+                bounds.max.z +
+                heartSpawnGap)
             {
                 return false;
             }
+        }
+
+        // Не создаём сердце поверх другого сердца
+        // или выжившего.
+        RescuedPerson[] rescued =
+            FindObjectsByType<RescuedPerson>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (RescuedPerson person in rescued)
+        {
+            if (person == null)
+                continue;
 
             if (Mathf.Abs(
-                    obstacle.laneX - laneX
-                ) < 0.35f)
+                    person.transform.position.x -
+                    laneX
+                ) < 0.55f &&
+                Mathf.Abs(
+                    person.transform.position.z -
+                    spawnZ
+                ) < heartSpawnGap)
+            {
+                return false;
+            }
+        }
+
+        PickupMover3D[] pickups =
+            FindObjectsByType<PickupMover3D>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (PickupMover3D pickup in pickups)
+        {
+            if (pickup == null)
+                continue;
+
+            Pickup3D data =
+                pickup.GetComponent<Pickup3D>();
+
+            if (data == null ||
+                data.type != Pickup3DType.Heart)
+            {
+                continue;
+            }
+
+            if (Mathf.Abs(
+                    pickup.transform.position.x -
+                    laneX
+                ) < 0.55f &&
+                Mathf.Abs(
+                    pickup.transform.position.z -
+                    spawnZ
+                ) < heartSpawnGap)
             {
                 return false;
             }
@@ -604,9 +824,14 @@ public class PickupSpawner3D : MonoBehaviour
                 transform
             );
 
+        if (inst.GetComponent<RunnerDepthSorter3D>() ==
+            null)
+        {
+            inst.AddComponent<RunnerDepthSorter3D>();
+        }
+
         PickupMover3D mover =
-            inst.GetComponent<
-                PickupMover3D>();
+            inst.GetComponent<PickupMover3D>();
 
         if (mover != null)
         {
@@ -621,11 +846,37 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // УПРАВЛЕНИЕ РАБОТОЙ СПАВНЕРА
+    // ПОЛОСА
     // =========================================================
 
-    public void SetRunning(bool running)
+    private int GetNearestLaneIndex(
+        float x)
     {
-        enabled = running;
+        float left =
+            Mathf.Abs(
+                x -
+                lanePositions[0]
+            );
+
+        float right =
+            Mathf.Abs(
+                x -
+                lanePositions[1]
+            );
+
+        return left < right
+            ? 0
+            : 1;
+    }
+
+    // =========================================================
+    // RUN
+    // =========================================================
+
+    public void SetRunning(
+        bool running)
+    {
+        enabled =
+            running;
     }
 }

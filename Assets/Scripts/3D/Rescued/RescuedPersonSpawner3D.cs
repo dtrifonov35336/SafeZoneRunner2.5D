@@ -17,13 +17,16 @@ public class RescuedPersonSpawner : MonoBehaviour
     public float spawnZ = 60f;
     public float spawnY = 0.4f;
 
-    [Header("Появление из-за горизонта")]
+    [Header("Появление")]
     public float revealZ = 40f;
 
-    [Header("Проверка полосы")]
+    [Header("Проверка")]
     public float laneCheckRadius = 0.4f;
     public float checkFromZ = 55f;
     public float checkToZ = 5f;
+
+    [Header("Визуальная дистанция")]
+    public float minSpawnGap = 5f;
 
     private float timer;
 
@@ -57,14 +60,14 @@ public class RescuedPersonSpawner : MonoBehaviour
         timer =
             spawnInterval;
 
-        int laneIdx =
+        int lane =
             GetFreeLane();
 
-        if (laneIdx == -1)
+        if (lane == -1)
             return;
 
         SpawnOne(
-            lanePositions[laneIdx]
+            lanePositions[lane]
         );
     }
 
@@ -116,9 +119,9 @@ public class RescuedPersonSpawner : MonoBehaviour
     private bool IsLaneClear(
         float laneX)
     {
-        // -----------------------------------------------------
+        // =====================================================
         // ПРЕПЯТСТВИЯ
-        // -----------------------------------------------------
+        // =====================================================
 
         ObstacleMover3D[] obstacles =
             FindObjectsByType<ObstacleMover3D>(
@@ -130,12 +133,9 @@ public class RescuedPersonSpawner : MonoBehaviour
             if (obstacle == null)
                 continue;
 
-            float z =
-                obstacle.transform.position.z;
-
-            if (Mathf.Abs(
-                    z - spawnZ
-                ) > 3f)
+            if (!TryGetWorldBounds(
+                    obstacle.gameObject,
+                    out Bounds bounds))
             {
                 continue;
             }
@@ -144,30 +144,38 @@ public class RescuedPersonSpawner : MonoBehaviour
                 obstacle.GetComponentInParent<
                     ObstacleType3D>();
 
-            if (type == null)
-                continue;
-
-            // Bus и Obstacle4 занимают обе полосы.
-            if (type.type ==
+            bool occupiesBothLanes =
+                type != null &&
+                (
+                    type.type ==
                     ObstacleType.Slide ||
-                type.type ==
-                    ObstacleType.DoubleJump)
+                    type.type ==
+                    ObstacleType.DoubleJump
+                );
+
+            bool sameLane =
+                Mathf.Abs(
+                    obstacle.laneX -
+                    laneX
+                ) < laneCheckRadius;
+
+            if (!occupiesBothLanes &&
+                !sameLane)
             {
-                return false;
+                continue;
             }
 
-            // Обычное препятствие / яма.
-            if (Mathf.Abs(
-                    obstacle.laneX - laneX
-                ) < laneCheckRadius)
+            if (spawnZ <=
+                bounds.max.z +
+                minSpawnGap)
             {
                 return false;
             }
         }
 
-        // -----------------------------------------------------
-        // ДРУГИЕ СПАСАЕМЫЕ
-        // -----------------------------------------------------
+        // =====================================================
+        // ДРУГИЕ ВЫЖИВШИЕ
+        // =====================================================
 
         RescuedPerson[] rescued =
             FindObjectsByType<RescuedPerson>(
@@ -179,23 +187,22 @@ public class RescuedPersonSpawner : MonoBehaviour
             if (person == null)
                 continue;
 
-            Vector3 pos =
-                person.transform.position;
-
             if (Mathf.Abs(
-                    pos.x - laneX
+                    person.transform.position.x -
+                    laneX
                 ) < laneCheckRadius &&
                 Mathf.Abs(
-                    pos.z - spawnZ
-                ) < 3f)
+                    person.transform.position.z -
+                    spawnZ
+                ) < minSpawnGap)
             {
                 return false;
             }
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // СЕРДЕЧКИ
-        // -----------------------------------------------------
+        // =====================================================
 
         PickupMover3D[] pickups =
             FindObjectsByType<PickupMover3D>(
@@ -216,19 +223,75 @@ public class RescuedPersonSpawner : MonoBehaviour
                 continue;
             }
 
-            Vector3 pos =
-                pickup.transform.position;
-
             if (Mathf.Abs(
-                    pos.x - laneX
+                    pickup.transform.position.x -
+                    laneX
                 ) < laneCheckRadius &&
                 Mathf.Abs(
-                    pos.z - spawnZ
-                ) < 3f)
+                    pickup.transform.position.z -
+                    spawnZ
+                ) < minSpawnGap)
             {
                 return false;
             }
         }
+
+        return true;
+    }
+
+    private bool TryGetWorldBounds(
+        GameObject obj,
+        out Bounds bounds)
+    {
+        bounds = default;
+
+        if (obj == null)
+            return false;
+
+        Renderer[] renderers =
+            obj.GetComponentsInChildren<Renderer>(
+                true
+            );
+
+        bool found = false;
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+                continue;
+
+            if (!found)
+            {
+                bounds =
+                    renderer.bounds;
+
+                found = true;
+            }
+            else
+            {
+                bounds.Encapsulate(
+                    renderer.bounds
+                );
+            }
+        }
+
+        if (found)
+            return true;
+
+        Collider collider =
+            obj.GetComponent<Collider>();
+
+        if (collider == null)
+        {
+            collider =
+                obj.GetComponentInChildren<Collider>();
+        }
+
+        if (collider == null)
+            return false;
+
+        bounds =
+            collider.bounds;
 
         return true;
     }
@@ -253,6 +316,12 @@ public class RescuedPersonSpawner : MonoBehaviour
                 Quaternion.identity,
                 transform
             );
+
+        if (inst.GetComponent<RunnerDepthSorter3D>() ==
+            null)
+        {
+            inst.AddComponent<RunnerDepthSorter3D>();
+        }
 
         SpawnReveal3D reveal =
             inst.AddComponent<SpawnReveal3D>();

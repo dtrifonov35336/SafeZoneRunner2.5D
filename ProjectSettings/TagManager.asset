@@ -54,11 +54,11 @@ TagManager:
   - name: Dust
     uniqueID: 2913670249
     locked: 0
-  - name: Pickups
-    uniqueID: 4106207541
-    locked: 0
   - name: Obstacles
     uniqueID: 2758364475
+    locked: 0
+  - name: Pickups
+    uniqueID: 4106207541
     locked: 0
   - name: Player
     uniqueID: 848260883
