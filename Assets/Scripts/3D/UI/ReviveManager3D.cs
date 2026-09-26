@@ -43,7 +43,6 @@ public class ReviveManager : MonoBehaviour
 
         if (reviveAdButton != null) reviveAdButton.onClick.AddListener(OnReviveAd);
         if (reviveGemsButton != null) reviveGemsButton.onClick.AddListener(OnReviveGems);
-        if (closeButton != null) closeButton.onClick.AddListener(OnClose);
     }
 
     public void StartCountdown()
@@ -74,8 +73,16 @@ public class ReviveManager : MonoBehaviour
 
         if (timer <= 0f)
         {
-            active = false;
-            OnClose();
+            CancelCountdown();
+
+            if (resultsManager != null)
+                resultsManager.CancelResultsFlow();
+
+            Time.timeScale = 1f;
+
+            SceneManager.LoadScene(
+                menuSceneName
+            );
         }
     }
 
@@ -139,10 +146,9 @@ public class ReviveManager : MonoBehaviour
             ToastNotification.Instance.Show(toastMsg);
     }
 
-    private void OnClose()
+    public void CancelCountdown()
     {
         active = false;
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(menuSceneName);
+        timer = 0f;
     }
 }

@@ -44,16 +44,47 @@ public class RescuedPerson : MonoBehaviour
 
     void Update()
     {
-        if (isSaved) return;
+        if (isSaved)
+            return;
 
-        currentZ -= speed * Time.deltaTime;
+        float bob =
+            Mathf.Sin(
+                Time.time *
+                bobSpeed
+            ) * bobAmount;
 
-        float bob = Mathf.Sin(Time.time * bobSpeed) * bobAmount;
+        float currentY =
+            baseY + bob;
 
-        Vector3 p = transform.position;
-        p.z = currentZ;
-        p.y = baseY + bob;
-        transform.position = p;
+        float desiredZ =
+            currentZ -
+            speed *
+            Time.deltaTime;
+
+        desiredZ =
+            RunnerMovingObjectBlocker3D.ResolveZ(
+                gameObject,
+                currentZ,
+                desiredZ,
+                transform.position.x,
+                currentY,
+                0.03f
+            );
+
+        currentZ =
+            desiredZ;
+
+        Vector3 p =
+            transform.position;
+
+        p.z =
+            currentZ;
+
+        p.y =
+            currentY;
+
+        transform.position =
+            p;
 
         if (currentZ <= despawnZ)
         {

@@ -36,14 +36,42 @@ public class PickupMover3D : MonoBehaviour
 
     private void Update()
     {
-        currentZ -= speed * Time.deltaTime;
+        float desiredZ =
+            currentZ -
+            speed *
+            Time.deltaTime;
 
-        Vector3 p = transform.position;
-        p.z = currentZ;
-        transform.position = p;
+        desiredZ =
+            RunnerMovingObjectBlocker3D.ResolveZ(
+                gameObject,
+                currentZ,
+                desiredZ,
+                transform.position.x,
+                transform.position.y,
+                0.03f
+            );
+
+        currentZ =
+            desiredZ;
+
+        Vector3 p =
+            transform.position;
+
+        p.z =
+            currentZ;
+
+        transform.position =
+            p;
 
         if (spin)
-            transform.Rotate(Vector3.up, spinSpeed * Time.deltaTime, Space.World);
+        {
+            transform.Rotate(
+                Vector3.up,
+                spinSpeed *
+                Time.deltaTime,
+                Space.World
+            );
+        }
 
         if (currentZ <= despawnZ)
             Destroy(gameObject);

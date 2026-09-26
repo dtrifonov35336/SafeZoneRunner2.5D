@@ -62,6 +62,9 @@ public class ResultsManager : MonoBehaviour
 
         if (restartButton != null) restartButton.onClick.AddListener(OnRestart);
         if (menuButton != null) menuButton.onClick.AddListener(OnMenu);
+
+        if (closeButton != null)
+            closeButton.onClick.AddListener(OnClose);
     }
 
     private void Update()
@@ -184,12 +187,36 @@ public class ResultsManager : MonoBehaviour
 
     private void OnMenu()
     {
+        OnClose();
+    }
+
+    public void CancelResultsFlow()
+    {
+        shown = true;
+        gameOverTime = -1f;
+
+        if (resultsPanel != null)
+            resultsPanel.SetActive(false);
+
+        if (resultsBgRoot != null)
+            resultsBgRoot.SetActive(false);
+    }
+
+    private void OnClose()
+    {
+        if (reviveManager != null)
+            reviveManager.CancelCountdown();
+
+        CancelResultsFlow();
+
         Time.timeScale = 1f;
-        if (resultsPanel != null) resultsPanel.SetActive(false);
-        if (resultsBgRoot != null) resultsBgRoot.SetActive(false);
+
 #if UNITY_EDITOR
         UnityEditor.Selection.activeGameObject = null;
 #endif
-        SceneManager.LoadScene(menuSceneName);
+
+        SceneManager.LoadScene(
+            menuSceneName
+        );
     }
 }
