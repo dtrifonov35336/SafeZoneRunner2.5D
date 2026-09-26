@@ -30,7 +30,8 @@ public static class BackgroundStopper
         // =====================================================
 
         SideDecorationSpawner[] sideSpawners =
-            Object.FindObjectsByType<SideDecorationSpawner>(
+            Object.FindObjectsByType<
+                SideDecorationSpawner>(
                 FindObjectsSortMode.None
             );
 
@@ -48,12 +49,13 @@ public static class BackgroundStopper
         // УЖЕ СОЗДАННЫЙ ДЕКОР
         // =====================================================
 
-        SideDecorationMover[] decorationMovers =
-            Object.FindObjectsByType<SideDecorationMover>(
+        SideDecorationMover[] movers =
+            Object.FindObjectsByType<
+                SideDecorationMover>(
                 FindObjectsSortMode.None
             );
 
-        foreach (var mover in decorationMovers)
+        foreach (var mover in movers)
         {
             if (mover != null &&
                 mover.enabled)
@@ -151,7 +153,6 @@ public static class BackgroundStopper
 
     public static void ResumeAll()
     {
-        // SideScroller
         SideScroller[] sideScrollers =
             Object.FindObjectsByType<SideScroller>(
                 FindObjectsSortMode.None
@@ -163,9 +164,9 @@ public static class BackgroundStopper
                 s.enabled = true;
         }
 
-        // SideDecorationSpawner
         SideDecorationSpawner[] sideSpawners =
-            Object.FindObjectsByType<SideDecorationSpawner>(
+            Object.FindObjectsByType<
+                SideDecorationSpawner>(
                 FindObjectsSortMode.None
             );
 
@@ -175,19 +176,18 @@ public static class BackgroundStopper
                 s.enabled = true;
         }
 
-        // SideDecorationMover
-        SideDecorationMover[] decorationMovers =
-            Object.FindObjectsByType<SideDecorationMover>(
+        SideDecorationMover[] movers =
+            Object.FindObjectsByType<
+                SideDecorationMover>(
                 FindObjectsSortMode.None
             );
 
-        foreach (var mover in decorationMovers)
+        foreach (var mover in movers)
         {
             if (mover != null)
                 mover.enabled = true;
         }
 
-        // City
         CityApproach[] cityApproaches =
             Object.FindObjectsByType<CityApproach>(
                 FindObjectsSortMode.None
@@ -199,7 +199,6 @@ public static class BackgroundStopper
                 c.enabled = true;
         }
 
-        // Road
         RoadScroller[] roadScrollers =
             Object.FindObjectsByType<RoadScroller>(
                 FindObjectsSortMode.None
@@ -211,7 +210,6 @@ public static class BackgroundStopper
                 r.enabled = true;
         }
 
-        // Zombies
         ZombieCrowdAnimator[] zombies =
             Object.FindObjectsByType<ZombieCrowdAnimator>(
                 FindObjectsSortMode.None
@@ -223,7 +221,6 @@ public static class BackgroundStopper
                 z.enabled = true;
         }
 
-        // Particles
         ParticleSystem[] particles =
             Object.FindObjectsByType<ParticleSystem>(
                 FindObjectsSortMode.None

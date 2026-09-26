@@ -14,7 +14,6 @@ public class ReviveManager : MonoBehaviour
     [Header("Кнопки")]
     public Button reviveAdButton;
     public Button reviveGemsButton;
-    public Button closeButton;
 
     [Header("Таймер")]
     public TextMeshProUGUI timerText;
@@ -27,11 +26,8 @@ public class ReviveManager : MonoBehaviour
     public float reviveHealthAd = 1f;
     public float reviveHealthGems = -1f;
 
-    [Header("Сцена")]
+    [Header("Сцена после окончания таймера")]
     public string menuSceneName = "MainMenu";
-
-    [Header("Ссылки")]
-    public ResultsManager resultsManager;
 
     private float timer;
     private bool active;
@@ -61,15 +57,10 @@ public class ReviveManager : MonoBehaviour
                 OnReviveGems
             );
         }
-
-        // closeButton здесь НЕ подключаем.
-        //
-        // Основным владельцем кнопки является
-        // ResultsManager.
     }
 
     // =========================================================
-    // START COUNTDOWN
+    // TIMER START
     // =========================================================
 
     public void StartCountdown()
@@ -95,13 +86,7 @@ public class ReviveManager : MonoBehaviour
                 balance >= revivePriceGems;
         }
 
-        if (timerText != null)
-        {
-            timerText.text =
-                Mathf.CeilToInt(
-                    countdownSeconds
-                ).ToString();
-        }
+        UpdateTimerText();
     }
 
     // =========================================================
@@ -119,27 +104,30 @@ public class ReviveManager : MonoBehaviour
         timer -=
             Time.unscaledDeltaTime;
 
-        if (timerText != null)
-        {
-            timerText.text =
-                Mathf.CeilToInt(
-                    Mathf.Max(
-                        0f,
-                        timer
-                    )
-                ).ToString();
-        }
+        UpdateTimerText();
 
         if (timer <= 0f)
         {
-            // Используем тот же путь,
-            // что и у ручной кнопки.
-            OnClose();
+            ReturnToMenu();
         }
     }
 
+    private void UpdateTimerText()
+    {
+        if (timerText == null)
+            return;
+
+        timerText.text =
+            Mathf.CeilToInt(
+                Mathf.Max(
+                    0f,
+                    timer
+                )
+            ).ToString();
+    }
+
     // =========================================================
-    // AD REVIVE
+    // REVIVE AD
     // =========================================================
 
     private void OnReviveAd()
@@ -161,7 +149,7 @@ public class ReviveManager : MonoBehaviour
     }
 
     // =========================================================
-    // GEMS REVIVE
+    // REVIVE GEMS
     // =========================================================
 
     private void OnReviveGems()
@@ -199,10 +187,6 @@ public class ReviveManager : MonoBehaviour
 
         PlayerPrefs.Save();
 
-        Debug.Log(
-            $"[Revive] Возрождение за {revivePriceGems} 💎"
-        );
-
         DoRevive(
             reviveHealthGems,
             "Возрождение (полное HP)"
@@ -220,15 +204,28 @@ public class ReviveManager : MonoBehaviour
         revived = true;
         active = false;
 
+        if (ReviveManager.Instance == this)
+        {
+            // оставляем Instance
+        }
+
+        ResultsManager resultsManager =
+            FindFirstObjectByType<
+                ResultsManager>();
+
         if (resultsManager != null)
+        {
             resultsManager.HideForRevive();
+        }
 
         PlayerMovement3D player =
             FindFirstObjectByType<
                 PlayerMovement3D>();
 
         if (player != null)
+        {
             player.Revive();
+        }
 
         if (HUDManager.Instance != null)
         {
@@ -257,22 +254,17 @@ public class ReviveManager : MonoBehaviour
     }
 
     // =========================================================
-    // CLOSE
+    // TIMER END
     // =========================================================
 
-    // Сделан public специально:
-    // если старый Unity Button уже имеет
-    // persistent OnClick -> ReviveManager.OnClose,
-    // он тоже будет работать.
-    public void OnClose()
+    private void ReturnToMenu()
     {
-        CancelCountdown();
-
-        if (resultsManager != null)
-        {
-            resultsManager.OnClose();
+        if (!active)
             return;
-        }
+
+        active = false;
+        revived = false;
+        timer = 0f;
 
         Time.timeScale = 1f;
 

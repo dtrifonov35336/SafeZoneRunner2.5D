@@ -30,7 +30,6 @@ public class ResultsManager : MonoBehaviour
     [Header("Кнопки поражения")]
     public Button reviveAdButton;
     public Button reviveGemsButton;
-    public Button closeButton;
     public TextMeshProUGUI timerText;
 
     [Header("Revive")]
@@ -48,9 +47,9 @@ public class ResultsManager : MonoBehaviour
     public float delayBeforeShow = 2.2f;
 
     private bool shown = false;
-    private bool isClosing = false;
 
-    private float gameOverTime = -1f;
+    private float gameOverTime =
+        -1f;
 
     private void Awake()
     {
@@ -68,36 +67,24 @@ public class ResultsManager : MonoBehaviour
         }
 
         if (restartButton != null)
+        {
             restartButton.onClick.AddListener(
                 OnRestart
             );
+        }
 
         if (menuButton != null)
+        {
             menuButton.onClick.AddListener(
                 OnMenu
-            );
-
-        if (closeButton != null)
-        {
-            closeButton.interactable = true;
-
-            closeButton.onClick.RemoveListener(
-                OnClose
-            );
-
-            closeButton.onClick.AddListener(
-                OnClose
             );
         }
     }
 
     private void Update()
     {
-        if (shown ||
-            isClosing)
-        {
+        if (shown)
             return;
-        }
 
         if (ChaseManager.Instance == null)
             return;
@@ -106,8 +93,10 @@ public class ResultsManager : MonoBehaviour
             return;
 
         if (gameOverTime < 0f)
+        {
             gameOverTime =
                 Time.time;
+        }
 
         if (Time.time -
             gameOverTime >=
@@ -119,7 +108,7 @@ public class ResultsManager : MonoBehaviour
 
     private void Show()
     {
-        if (isClosing)
+        if (shown)
             return;
 
         shown = true;
@@ -141,14 +130,18 @@ public class ResultsManager : MonoBehaviour
             ChaseManager.Instance.IsVictory();
 
         if (victoryBg != null)
+        {
             victoryBg.gameObject.SetActive(
                 victory
             );
+        }
 
         if (defeatBg != null)
+        {
             defeatBg.gameObject.SetActive(
                 !victory
             );
+        }
 
         if (titleText != null)
         {
@@ -173,14 +166,14 @@ public class ResultsManager : MonoBehaviour
                     );
         }
 
-        float dist = 0f;
+        float distance = 0f;
         int coins = 0;
         int rescued = 0;
         int missed = 0;
 
         if (HUDManager.Instance != null)
         {
-            dist =
+            distance =
                 HUDManager.Instance.GetDistance();
 
             coins =
@@ -190,22 +183,28 @@ public class ResultsManager : MonoBehaviour
                 HUDManager.Instance.GetRescued();
 
             missed =
-                HUDManager.Instance
-                    .GetMissedRescued();
+                HUDManager.Instance.GetMissedRescued();
         }
 
         if (distanceValue != null)
+        {
             distanceValue.text =
-                Mathf.RoundToInt(dist) +
-                " м";
+                Mathf.RoundToInt(
+                    distance
+                ) + " м";
+        }
 
         if (coinsValue != null)
+        {
             coinsValue.text =
                 coins.ToString();
+        }
 
         if (savedValue != null)
+        {
             savedValue.text =
                 rescued.ToString();
+        }
 
         if (missedText != null)
         {
@@ -215,23 +214,26 @@ public class ResultsManager : MonoBehaviour
                 $"Не спасено людей: {missed}";
         }
 
-        int bestDist =
+        int bestDistance =
             PlayerPrefs.GetInt(
                 bestDistanceKey,
                 0
             );
 
-        int currentDist =
-            Mathf.RoundToInt(dist);
+        int currentDistance =
+            Mathf.RoundToInt(
+                distance
+            );
 
-        if (currentDist > bestDist)
+        if (currentDistance >
+            bestDistance)
         {
-            bestDist =
-                currentDist;
+            bestDistance =
+                currentDistance;
 
             PlayerPrefs.SetInt(
                 bestDistanceKey,
-                bestDist
+                bestDistance
             );
 
             PlayerPrefs.Save();
@@ -241,12 +243,12 @@ public class ResultsManager : MonoBehaviour
         {
             bestText.text =
                 "ЛУЧШИЙ РЕЗУЛЬТАТ: " +
-                bestDist +
+                bestDistance +
                 " м";
         }
 
         // =====================================================
-        // VICTORY
+        // ПОБЕДА
         // =====================================================
 
         if (victory)
@@ -266,9 +268,6 @@ public class ResultsManager : MonoBehaviour
             if (reviveGemsButton != null)
                 reviveGemsButton.gameObject.SetActive(false);
 
-            if (closeButton != null)
-                closeButton.gameObject.SetActive(false);
-
             if (timerText != null)
                 timerText.gameObject.SetActive(false);
 
@@ -276,7 +275,7 @@ public class ResultsManager : MonoBehaviour
         }
 
         // =====================================================
-        // DEFEAT
+        // ПОРАЖЕНИЕ
         // =====================================================
 
         if (bottomButtonsRoot != null)
@@ -291,20 +290,17 @@ public class ResultsManager : MonoBehaviour
         if (reviveGemsButton != null)
         {
             reviveGemsButton.gameObject.SetActive(true);
-            reviveGemsButton.interactable = true;
-        }
-
-        if (closeButton != null)
-        {
-            closeButton.gameObject.SetActive(true);
-            closeButton.interactable = true;
         }
 
         if (timerText != null)
+        {
             timerText.gameObject.SetActive(true);
+        }
 
         if (reviveManager != null)
+        {
             reviveManager.StartCountdown();
+        }
     }
 
     // =========================================================
@@ -313,7 +309,6 @@ public class ResultsManager : MonoBehaviour
 
     public void HideForRevive()
     {
-        isClosing = false;
         shown = false;
         gameOverTime = -1f;
 
@@ -336,11 +331,6 @@ public class ResultsManager : MonoBehaviour
 
     private void OnRestart()
     {
-        if (isClosing)
-            return;
-
-        isClosing = true;
-
         if (reviveManager != null)
             reviveManager.CancelCountdown();
 
@@ -358,54 +348,13 @@ public class ResultsManager : MonoBehaviour
 
     private void OnMenu()
     {
-        OnClose();
-    }
-
-    // =========================================================
-    // CLOSE
-    // =========================================================
-
-    public void OnClose()
-    {
-        if (isClosing)
-            return;
-
-        isClosing = true;
-
         if (reviveManager != null)
             reviveManager.CancelCountdown();
-
-        shown = true;
-        gameOverTime = -1f;
-
-        if (resultsPanel != null)
-            resultsPanel.SetActive(false);
-
-        if (resultsBgRoot != null)
-            resultsBgRoot.SetActive(false);
-
-        if (gameplayControlsUI != null)
-            gameplayControlsUI.SetActive(false);
-
-        if (topHud != null)
-            topHud.SetActive(false);
 
         Time.timeScale = 1f;
 
         SceneManager.LoadScene(
             menuSceneName
         );
-    }
-
-    public void CancelResultsFlow()
-    {
-        shown = true;
-        gameOverTime = -1f;
-
-        if (resultsPanel != null)
-            resultsPanel.SetActive(false);
-
-        if (resultsBgRoot != null)
-            resultsBgRoot.SetActive(false);
     }
 }

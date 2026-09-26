@@ -7,11 +7,25 @@ public class SideDecorationMover : MonoBehaviour
 
     private void Update()
     {
-        Vector3 p = transform.position;
-        p.z -= speed * Time.deltaTime;
-        transform.position = p;
+        if (ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver())
+        {
+            return;
+        }
+
+        Vector3 p =
+            transform.position;
+
+        p.z -=
+            speed *
+            Time.deltaTime;
+
+        transform.position =
+            p;
 
         if (p.z <= despawnZ)
+        {
             Destroy(gameObject);
+        }
     }
 }

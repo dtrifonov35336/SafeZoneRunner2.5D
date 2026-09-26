@@ -1,23 +1,20 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class RunnerDepthSorter3D : MonoBehaviour
 {
-    [Header("Сортировка глубины")]
-    [Tooltip("Чем меньше Z, тем объект ближе к игроку.")]
-    public float zMultiplier = 100f;
+    [Header("Глубина")]
+    [Tooltip("Чем меньше Z, тем ближе объект к игроку.")]
+    public float zMultiplier = 1000f;
 
-    [Tooltip("Небольшое влияние высоты Y на порядок.")]
-    public float yMultiplier = 5f;
-
-    [Tooltip("Базовое значение Sorting Order.")]
-    public int sortingBase = 10000;
+    [Tooltip("Базовый Sorting Order.")]
+    public int sortingBase = 100000;
 
     private SpriteRenderer[] spriteRenderers;
     private int[] originalOrders;
 
-    private SortingGroup sortingGroup;
-    private int originalGroupOrder;
+    // Общий Sorting Layer для всех дорожных объектов.
+    private static int sharedSortingLayerId = -1;
+    private static bool sharedLayerInitialized = false;
 
     private void Awake()
     {
@@ -40,41 +37,24 @@ public class RunnerDepthSorter3D : MonoBehaviour
             }
         }
 
-        sortingGroup =
-            GetComponent<SortingGroup>();
-
-        if (sortingGroup != null)
-        {
-            originalGroupOrder =
-                sortingGroup.sortingOrder;
-        }
+        TryInitializeSharedLayer();
     }
 
     private void LateUpdate()
     {
+        TryInitializeSharedLayer();
+
+        if (spriteRenderers == null)
+            return;
+
+        // Меньший Z = ближе к игроку = выше Sorting Order.
         int depthOrder =
-            sortingBase
-            - Mathf.RoundToInt(
+            sortingBase -
+            Mathf.RoundToInt(
                 transform.position.z *
                 zMultiplier
-            )
-            + Mathf.RoundToInt(
-                transform.position.y *
-                yMultiplier
             );
 
-        // Если на корне есть SortingGroup,
-        // сортируем всю группу целиком.
-        if (sortingGroup != null)
-        {
-            sortingGroup.sortingOrder =
-                originalGroupOrder +
-                depthOrder;
-
-            return;
-        }
-
-        // Обычные SpriteRenderer.
         for (int i = 0;
              i < spriteRenderers.Length;
              i++)
@@ -85,9 +65,51 @@ public class RunnerDepthSorter3D : MonoBehaviour
             if (sr == null)
                 continue;
 
+            // Все дорожные объекты находятся
+            // на одном Sorting Layer.
+            if (sharedLayerInitialized)
+            {
+                sr.sortingLayerID =
+                    sharedSortingLayerId;
+            }
+
             sr.sortingOrder =
                 originalOrders[i] +
                 depthOrder;
+        }
+    }
+
+    private void TryInitializeSharedLayer()
+    {
+        if (sharedLayerInitialized)
+            return;
+
+        // Ищем любое уже созданное препятствие.
+        ObstacleMover3D[] obstacles =
+            FindObjectsByType<ObstacleMover3D>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (ObstacleMover3D obstacle in obstacles)
+        {
+            if (obstacle == null)
+                continue;
+
+            SpriteRenderer renderer =
+                obstacle.GetComponentInChildren<SpriteRenderer>(
+                    true
+                );
+
+            if (renderer == null)
+                continue;
+
+            sharedSortingLayerId =
+                renderer.sortingLayerID;
+
+            sharedLayerInitialized =
+                true;
+
+            return;
         }
     }
 }

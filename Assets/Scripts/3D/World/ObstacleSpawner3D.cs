@@ -16,7 +16,16 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     [Header("Position")]
     public float spawnZ = 60f;
-    public float spawnY = 0.4f;
+
+    [Header("Высота дороги")]
+    [Tooltip("Высота поверхности дороги.")]
+    public float obstacleGroundY = -0.04f;
+
+    [Tooltip(
+        "Дополнительный вертикальный отступ после установки " +
+        "нижней точки объекта на дорогу."
+    )]
+    public float obstacleHeightOffset = 0f;
 
     [Header("Reveal")]
     public float revealZ = 40f;
@@ -30,11 +39,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float pickupCheckToZ = 5f;
     public float pickupLaneWidth = 0.4f;
 
-    [Header("Визуальная дистанция")]
-    [Tooltip("Резерв под продолжение маршрута монет за препятствием.")]
-    public float coinRouteReserve = 12f;
-
-    [Tooltip("Дополнительный пустой промежуток между объектами.")]
+    [Header("Безопасная дистанция")]
     public float minVisualGap = 5f;
 
     [Header("Runtime")]
@@ -55,13 +60,6 @@ public class ObstacleSpawner3D : MonoBehaviour
             lanePositions =
                 new float[] { -0.7f, 0.7f };
         }
-
-        int maxAllowed =
-            lanePositions.Length - 1;
-
-        if (maxObstaclesPerWave > maxAllowed)
-            maxObstaclesPerWave =
-                maxAllowed;
 
         spawnTimer =
             startInterval;
@@ -107,7 +105,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // WAVE
+    // SPAWN
     // =========================================================
 
     private void SpawnWave()
@@ -118,7 +116,6 @@ public class ObstacleSpawner3D : MonoBehaviour
             return;
         }
 
-        // Сначала проверяем общую визуальную дистанцию.
         if (!CanSpawnAnotherObstacle())
             return;
 
@@ -138,7 +135,7 @@ public class ObstacleSpawner3D : MonoBehaviour
                 ObstacleType3D>();
 
         // =====================================================
-        // BUS / SLIDE
+        // BUS / OBSTACLE4
         // =====================================================
 
         if (type != null &&
@@ -179,15 +176,11 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // ГЛОБАЛЬНАЯ ПРОВЕРКА ДИСТАНЦИИ
+    // ПРОВЕРКА ДИСТАНЦИИ
     // =========================================================
 
     private bool CanSpawnAnotherObstacle()
     {
-        // -----------------------------------------------------
-        // Предыдущие препятствия
-        // -----------------------------------------------------
-
         ObstacleMover3D[] obstacles =
             FindObjectsByType<ObstacleMover3D>(
                 FindObjectsSortMode.None
@@ -198,147 +191,15 @@ public class ObstacleSpawner3D : MonoBehaviour
             if (obstacle == null)
                 continue;
 
-            if (!TryGetWorldBounds(
-                    obstacle.gameObject,
-                    out Bounds bounds))
-            {
-                continue;
-            }
+            float z =
+                obstacle.transform.position.z;
 
-            float requiredMinZ =
-                bounds.max.z +
-                coinRouteReserve +
-                minVisualGap;
-
-            // Если старое препятствие и его маршрут
-            // ещё слишком близко к точке появления,
-            // новое не создаём.
-            if (spawnZ <= requiredMinZ)
+            // Не создаём следующее препятствие,
+            // если предыдущее ещё находится
+            // в зоне перед спавном.
+            if (spawnZ - z < minVisualGap)
                 return false;
         }
-
-        // -----------------------------------------------------
-        // Пикапы
-        // -----------------------------------------------------
-
-        if (checkPickups)
-        {
-            PickupMover3D[] pickups =
-                FindObjectsByType<PickupMover3D>(
-                    FindObjectsSortMode.None
-                );
-
-            foreach (PickupMover3D pickup in pickups)
-            {
-                if (pickup == null)
-                    continue;
-
-                if (!TryGetWorldBounds(
-                        pickup.gameObject,
-                        out Bounds bounds))
-                {
-                    continue;
-                }
-
-                if (spawnZ <=
-                    bounds.max.z +
-                    minVisualGap)
-                {
-                    return false;
-                }
-            }
-
-            // -------------------------------------------------
-            // Выжившие
-            // -------------------------------------------------
-
-            RescuedPerson[] rescued =
-                FindObjectsByType<RescuedPerson>(
-                    FindObjectsSortMode.None
-                );
-
-            foreach (RescuedPerson person in rescued)
-            {
-                if (person == null)
-                    continue;
-
-                if (!TryGetWorldBounds(
-                        person.gameObject,
-                        out Bounds bounds))
-                {
-                    continue;
-                }
-
-                if (spawnZ <=
-                    bounds.max.z +
-                    minVisualGap)
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    // =========================================================
-    // BOUNDS
-    // =========================================================
-
-    private bool TryGetWorldBounds(
-        GameObject obj,
-        out Bounds bounds)
-    {
-        bounds = default;
-
-        if (obj == null)
-            return false;
-
-        Renderer[] renderers =
-            obj.GetComponentsInChildren<Renderer>(
-                true
-            );
-
-        bool found = false;
-
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer == null)
-                continue;
-
-            if (renderer is ParticleSystemRenderer)
-                continue;
-
-            if (!found)
-            {
-                bounds =
-                    renderer.bounds;
-
-                found = true;
-            }
-            else
-            {
-                bounds.Encapsulate(
-                    renderer.bounds
-                );
-            }
-        }
-
-        if (found)
-            return true;
-
-        Collider collider =
-            obj.GetComponent<Collider>();
-
-        if (collider == null)
-            collider =
-                obj.GetComponentInChildren<Collider>();
-
-        if (collider == null)
-            return false;
-
-        bounds =
-            collider.bounds;
 
         return true;
     }
@@ -350,7 +211,6 @@ public class ObstacleSpawner3D : MonoBehaviour
     private bool IsLaneClearOfSpecialObjects(
         float laneX)
     {
-        // Сердечки
         PickupMover3D[] pickups =
             FindObjectsByType<PickupMover3D>(
                 FindObjectsSortMode.None
@@ -370,19 +230,12 @@ public class ObstacleSpawner3D : MonoBehaviour
                 continue;
             }
 
-            if (!TryGetWorldBounds(
-                    pickup.gameObject,
-                    out Bounds bounds))
-            {
-                continue;
-            }
-
             if (Mathf.Abs(
                     pickup.transform.position.x -
                     laneX
                 ) < pickupLaneWidth &&
                 Mathf.Abs(
-                    bounds.center.z -
+                    pickup.transform.position.z -
                     spawnZ
                 ) < 5f)
             {
@@ -390,7 +243,6 @@ public class ObstacleSpawner3D : MonoBehaviour
             }
         }
 
-        // Выжившие
         RescuedPerson[] rescued =
             FindObjectsByType<RescuedPerson>(
                 FindObjectsSortMode.None
@@ -401,19 +253,12 @@ public class ObstacleSpawner3D : MonoBehaviour
             if (person == null)
                 continue;
 
-            if (!TryGetWorldBounds(
-                    person.gameObject,
-                    out Bounds bounds))
-            {
-                continue;
-            }
-
             if (Mathf.Abs(
                     person.transform.position.x -
                     laneX
                 ) < pickupLaneWidth &&
                 Mathf.Abs(
-                    bounds.center.z -
+                    person.transform.position.z -
                     spawnZ
                 ) < 5f)
             {
@@ -425,7 +270,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // SPAWN
+    // СОЗДАНИЕ ПРЕПЯТСТВИЯ
     // =========================================================
 
     private void SpawnOne(
@@ -438,14 +283,14 @@ public class ObstacleSpawner3D : MonoBehaviour
         float targetY =
             prefab.transform.position.y;
 
-        SpawnHeightOffset3D heightOverride =
+        SpawnHeightOffset3D overrideHeight =
             prefab.GetComponent<
                 SpawnHeightOffset3D>();
 
-        if (heightOverride != null)
+        if (overrideHeight != null)
         {
             targetY =
-                heightOverride.spawnY;
+                overrideHeight.spawnY;
         }
 
         GameObject instance =
@@ -463,11 +308,45 @@ public class ObstacleSpawner3D : MonoBehaviour
         instance.name =
             $"Obstacle3D_{obstacleCounter++}";
 
-        if (instance.GetComponent<RunnerDepthSorter3D>() ==
-            null)
+        // =====================================================
+        // SORTING
+        // =====================================================
+
+        RunnerDepthSorter3D depthSorter =
+            instance.GetComponent<
+                RunnerDepthSorter3D>();
+
+        if (depthSorter == null)
         {
-            instance.AddComponent<RunnerDepthSorter3D>();
+            depthSorter =
+                instance.AddComponent<
+                    RunnerDepthSorter3D>();
         }
+
+        // =====================================================
+        // ПОСАДКА НА ДОРОГУ
+        // =====================================================
+
+        GroundSnap3D groundSnap =
+            instance.GetComponent<
+                GroundSnap3D>();
+
+        if (groundSnap == null)
+        {
+            groundSnap =
+                instance.AddComponent<
+                    GroundSnap3D>();
+        }
+
+        groundSnap.groundY =
+            obstacleGroundY;
+
+        groundSnap.heightOffset =
+            obstacleHeightOffset;
+
+        // =====================================================
+        // ДВИЖЕНИЕ
+        // =====================================================
 
         ObstacleMover3D mover =
             instance.GetComponent<
