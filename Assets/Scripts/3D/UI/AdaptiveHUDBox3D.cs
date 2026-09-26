@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class AdaptiveHudBox3D : MonoBehaviour
 {
@@ -10,6 +9,10 @@ public class AdaptiveHudBox3D : MonoBehaviour
 
     [Header("Размер")]
     public float minWidth = 260f;
+
+    // Оставлен для совместимости со старой настройкой.
+    // Ограничение больше не используется, чтобы длинные числа
+    // никогда не обрезались.
     public float maxWidth = 390f;
 
     [Header("Отступы")]
@@ -19,72 +22,96 @@ public class AdaptiveHudBox3D : MonoBehaviour
     public float textPadding = 8f;
 
     private RectTransform boxRect;
+
     private string lastText = "";
     private float lastPreferredWidth = -1f;
 
     private void Awake()
     {
-        boxRect = GetComponent<RectTransform>();
+        boxRect =
+            GetComponent<RectTransform>();
 
         if (valueText == null)
-            valueText = GetComponentInChildren<TMP_Text>();
+        {
+            valueText =
+                GetComponentInChildren<TMP_Text>(
+                    true
+                );
+        }
 
         if (iconRect == null)
         {
-            Transform icon = transform.Find("Icon");
+            Transform icon =
+                transform.Find("Icon");
 
             if (icon != null)
-                iconRect = icon.GetComponent<RectTransform>();
+            {
+                iconRect =
+                    icon.GetComponent<
+                        RectTransform
+                    >();
+            }
         }
     }
 
     private void Start()
     {
-        Refresh(true);
+        Refresh();
     }
 
     private void LateUpdate()
     {
-        if (valueText == null || boxRect == null)
+        if (valueText == null ||
+            boxRect == null)
+        {
             return;
+        }
 
-        string currentText = valueText.text;
+        string currentText =
+            valueText.text;
 
         valueText.ForceMeshUpdate();
 
         float preferredWidth =
             valueText.preferredWidth;
 
-        if (!RefreshNeeded(
-                currentText,
-                preferredWidth))
+        if (currentText == lastText &&
+            Mathf.Abs(
+                preferredWidth -
+                lastPreferredWidth
+            ) <= 0.5f)
         {
             return;
         }
 
-        Refresh(false);
+        Refresh();
     }
 
-    private bool RefreshNeeded(
-        string currentText,
-        float preferredWidth)
+    private void Refresh()
     {
-        return currentText != lastText ||
-               Mathf.Abs(
-                   preferredWidth -
-                   lastPreferredWidth
-               ) > 0.5f;
-    }
-
-    private void Refresh(bool force)
-    {
-        if (valueText == null || boxRect == null)
+        if (valueText == null ||
+            boxRect == null)
+        {
             return;
+        }
+
+        // Числа не должны переноситься.
+        valueText.textWrappingMode = 
+            TextWrappingModes.NoWrap;
+
+        valueText.overflowMode =
+            TextOverflowModes.Overflow;
 
         valueText.ForceMeshUpdate();
 
+        float preferredTextWidth =
+            Mathf.Max(
+                0f,
+                valueText.preferredWidth
+            );
+
         float textWidth =
-            valueText.preferredWidth +
+            preferredTextWidth +
             textPadding;
 
         float iconWidth =
@@ -92,6 +119,16 @@ public class AdaptiveHudBox3D : MonoBehaviour
                 ? iconRect.rect.width
                 : 0f;
 
+        /*
+         * Рассчитываем ширину поля так,
+         * чтобы внутри гарантированно помещались:
+         *
+         * [иконка] + число
+         *
+         * При этом само число будет
+         * визуально находиться по центру
+         * всего поля.
+         */
         float requiredWidth =
             leftPadding +
             iconWidth +
@@ -100,28 +137,10 @@ public class AdaptiveHudBox3D : MonoBehaviour
             rightPadding;
 
         float finalWidth =
-            Mathf.Clamp(
-                requiredWidth,
+            Mathf.Max(
                 minWidth,
-                maxWidth
+                requiredWidth
             );
-
-        // Текст должен занимать ровно необходимую ширину.
-        RectTransform textRect =
-            valueText.rectTransform;
-
-        Vector2 textSize =
-            textRect.sizeDelta;
-
-        textSize.x =
-            textWidth;
-
-        textRect.sizeDelta =
-            textSize;
-
-        // Числа справа — читаются аккуратнее.
-        valueText.alignment =
-            TextAlignmentOptions.Right;
 
         Vector2 boxSize =
             boxRect.sizeDelta;
@@ -131,6 +150,68 @@ public class AdaptiveHudBox3D : MonoBehaviour
 
         boxRect.sizeDelta =
             boxSize;
+
+        /*
+         * -------------------------------------------------
+         * ИКОНКА
+         * -------------------------------------------------
+         *
+         * Ничего не меняем в её anchor,
+         * pivot и anchoredPosition.
+         *
+         * Поэтому монета / кристалл / метр
+         * остаются именно там, где сейчас
+         * находятся слева внутри своей группы.
+         */
+        if (iconRect != null)
+        {
+            // Оставляем существующее положение.
+        }
+
+        /*
+         * -------------------------------------------------
+         * ТЕКСТ
+         * -------------------------------------------------
+         *
+         * Текст занимает всю ширину поля.
+         * Поэтому число всегда находится
+         * строго по центру самого поля.
+         */
+        RectTransform textRect =
+            valueText.rectTransform;
+
+        textRect.anchorMin =
+            new Vector2(
+                0f,
+                0.5f
+            );
+
+        textRect.anchorMax =
+            new Vector2(
+                1f,
+                0.5f
+            );
+
+        textRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        textRect.offsetMin =
+            new Vector2(
+                0f,
+                textRect.offsetMin.y
+            );
+
+        textRect.offsetMax =
+            new Vector2(
+                0f,
+                textRect.offsetMax.y
+            );
+
+        valueText.alignment =
+            TextAlignmentOptions.Center;
 
         lastText =
             valueText.text;
