@@ -6,7 +6,8 @@ public class RescuedPersonSpawner : MonoBehaviour
     public GameObject rescuedPersonPrefab;
 
     [Header("Полосы")]
-    public float[] lanePositions = new float[] { -0.8f, 0.8f };
+    public float[] lanePositions =
+        new float[] { -0.7f, 0.7f };
 
     [Header("Тайминг")]
     public float spawnInterval = 10f;
@@ -28,51 +29,103 @@ public class RescuedPersonSpawner : MonoBehaviour
 
     private void Start()
     {
-        timer = firstSpawnDelay;
+        if (lanePositions == null ||
+            lanePositions.Length != 2)
+        {
+            lanePositions =
+                new float[] { -0.7f, 0.7f };
+        }
+
+        timer =
+            firstSpawnDelay;
     }
 
     private void Update()
     {
-        if (ChaseManager.Instance != null && ChaseManager.Instance.IsGameOver()) return;
+        if (ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver())
+        {
+            return;
+        }
 
-        timer -= Time.deltaTime;
-        if (timer > 0f) return;
+        timer -=
+            Time.deltaTime;
 
-        timer = spawnInterval;
+        if (timer > 0f)
+            return;
 
-        int laneIdx = GetFreeLane();
-        if (laneIdx == -1) return;
+        timer =
+            spawnInterval;
 
-        SpawnOne(lanePositions[laneIdx]);
+        int laneIdx =
+            GetFreeLane();
+
+        if (laneIdx == -1)
+            return;
+
+        SpawnOne(
+            lanePositions[laneIdx]
+        );
     }
 
     private int GetFreeLane()
     {
-        int[] order = new int[lanePositions.Length];
-        for (int i = 0; i < order.Length; i++) order[i] = i;
-        for (int i = 0; i < order.Length; i++)
+        int[] order =
+            new int[lanePositions.Length];
+
+        for (int i = 0;
+             i < order.Length;
+             i++)
         {
-            int r = Random.Range(i, order.Length);
-            (order[i], order[r]) = (order[r], order[i]);
+            order[i] = i;
+        }
+
+        for (int i = 0;
+             i < order.Length;
+             i++)
+        {
+            int r =
+                Random.Range(
+                    i,
+                    order.Length
+                );
+
+            (
+                order[i],
+                order[r]
+            ) =
+            (
+                order[r],
+                order[i]
+            );
         }
 
         foreach (int idx in order)
         {
-            if (IsLaneClear(lanePositions[idx])) return idx;
+            if (IsLaneClear(
+                    lanePositions[idx]
+                ))
+            {
+                return idx;
+            }
         }
+
         return -1;
     }
 
-    private bool IsLaneClear(float laneX)
+    private bool IsLaneClear(
+        float laneX)
     {
-        // Проверка препятствий.
-        // Не зависит от высоты коллайдера.
+        // -----------------------------------------------------
+        // ПРЕПЯТСТВИЯ
+        // -----------------------------------------------------
+
         ObstacleMover3D[] obstacles =
             FindObjectsByType<ObstacleMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (var obstacle in obstacles)
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
                 continue;
@@ -103,8 +156,7 @@ public class RescuedPersonSpawner : MonoBehaviour
                 return false;
             }
 
-            // Обычное препятствие / яма
-            // занимает свою полосу.
+            // Обычное препятствие / яма.
             if (Mathf.Abs(
                     obstacle.laneX - laneX
                 ) < laneCheckRadius)
@@ -113,13 +165,16 @@ public class RescuedPersonSpawner : MonoBehaviour
             }
         }
 
-        // Другие спасаемые.
+        // -----------------------------------------------------
+        // ДРУГИЕ СПАСАЕМЫЕ
+        // -----------------------------------------------------
+
         RescuedPerson[] rescued =
             FindObjectsByType<RescuedPerson>(
                 FindObjectsSortMode.None
             );
 
-        foreach (var person in rescued)
+        foreach (RescuedPerson person in rescued)
         {
             if (person == null)
                 continue;
@@ -138,13 +193,16 @@ public class RescuedPersonSpawner : MonoBehaviour
             }
         }
 
-        // Сердечки.
+        // -----------------------------------------------------
+        // СЕРДЕЧКИ
+        // -----------------------------------------------------
+
         PickupMover3D[] pickups =
             FindObjectsByType<PickupMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (var pickup in pickups)
+        foreach (PickupMover3D pickup in pickups)
         {
             if (pickup == null)
                 continue;
@@ -175,24 +233,54 @@ public class RescuedPersonSpawner : MonoBehaviour
         return true;
     }
 
-    private void SpawnOne(float laneX)
+    private void SpawnOne(
+        float laneX)
     {
-        if (rescuedPersonPrefab == null) return;
+        if (rescuedPersonPrefab == null)
+            return;
 
-        Vector3 spawnPos = new Vector3(laneX, spawnY, spawnZ);
-        GameObject inst = Instantiate(rescuedPersonPrefab, spawnPos, Quaternion.identity, transform);
+        Vector3 spawnPos =
+            new Vector3(
+                laneX,
+                spawnY,
+                spawnZ
+            );
 
-        SpawnReveal3D reveal = inst.AddComponent<SpawnReveal3D>();
-        reveal.Initialize(revealZ);
+        GameObject inst =
+            Instantiate(
+                rescuedPersonPrefab,
+                spawnPos,
+                Quaternion.identity,
+                transform
+            );
 
-        RescuedPerson person = inst.GetComponent<RescuedPerson>();
+        SpawnReveal3D reveal =
+            inst.AddComponent<SpawnReveal3D>();
+
+        reveal.Initialize(
+            revealZ
+        );
+
+        RescuedPerson person =
+            inst.GetComponent<
+                RescuedPerson>();
+
         if (person != null)
         {
-            person.laneX = laneX;
-            person.spawnZ = spawnZ;
+            person.laneX =
+                laneX;
+
+            person.spawnZ =
+                spawnZ;
+
             person.ApplyInitialState();
         }
     }
 
-    public void SetRunning(bool running) => enabled = running;
+    public void SetRunning(
+        bool running)
+    {
+        enabled =
+            running;
+    }
 }

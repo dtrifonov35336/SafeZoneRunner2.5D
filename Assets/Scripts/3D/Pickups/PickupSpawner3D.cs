@@ -9,7 +9,7 @@ public class PickupSpawner3D : MonoBehaviour
 
     [Header("Полосы")]
     public float[] lanePositions =
-        new float[] { -0.8f, 0.8f };
+        new float[] { -0.7f, 0.7f };
 
     [Header("Монеты")]
     public float coinSpawnInterval = 0.18f;
@@ -24,8 +24,12 @@ public class PickupSpawner3D : MonoBehaviour
     public float heartSpawnChance = 0.5f;
 
     [Header("Дорожка монет")]
+    [Tooltip("Сколько метров дорожка идёт ПЕРЕД препятствием, в сторону игрока.")]
     public float pathForward = 10f;
+
+    [Tooltip("Сколько метров дорожка продолжается ПОСЛЕ препятствия.")]
     public float pathBackward = 6f;
+
     public float coinSpacing = 1.5f;
 
     [Header("Обычная дуга")]
@@ -45,12 +49,11 @@ public class PickupSpawner3D : MonoBehaviour
     private float coinTimer;
     private float heartTimer;
 
-    private readonly HashSet<int>
-        routedObstacles =
-            new HashSet<int>();
+    private readonly HashSet<int> routedObstacles =
+        new HashSet<int>();
 
-    // Какая полоса сейчас выбрана для обычной
-    // прямой дорожки монет.
+    // Какая полоса используется для обычной
+    // свободной дорожки монет.
     private int straightLane = 0;
 
     private void Start()
@@ -59,7 +62,7 @@ public class PickupSpawner3D : MonoBehaviour
             lanePositions.Length != 2)
         {
             lanePositions =
-                new float[] { -0.8f, 0.8f };
+                new float[] { -0.7f, 0.7f };
         }
 
         coinTimer =
@@ -94,6 +97,8 @@ public class PickupSpawner3D : MonoBehaviour
 
     private void UpdateFreeCoinStream()
     {
+        // Если впереди уже есть препятствие,
+        // новую свободную дорожку монет не создаём.
         if (HasUpcomingObstacle())
             return;
 
@@ -111,10 +116,11 @@ public class PickupSpawner3D : MonoBehaviour
             return;
         }
 
-        // Одна дорожка монет.
         SpawnCoinAt(
             lanePositions[straightLane],
-            coinPrefab.transform.position.y,
+            coinPrefab != null
+                ? coinPrefab.transform.position.y
+                : 1f,
             spawnZ
         );
     }
@@ -164,11 +170,11 @@ public class PickupSpawner3D : MonoBehaviour
             if (obstacle == null)
                 continue;
 
-            float z =
+            float obstacleZ =
                 obstacle.transform.position.z;
 
-            if (z < 5f ||
-                z > 55f)
+            if (obstacleZ < 5f ||
+                obstacleZ > 55f)
             {
                 continue;
             }
@@ -196,7 +202,63 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // МАРШРУТ НАД ПРЕПЯТСТВИЕМ
+    // УДАЛЕНИЕ СТАРЫХ МОНЕТ ВОКРУГ ПРЕПЯТСТВИЯ
+    // =========================================================
+
+    private void RemoveCoinsAroundObstacle(
+        ObstacleMover3D obstacle)
+    {
+        if (obstacle == null)
+            return;
+
+        float obstacleZ =
+            obstacle.transform.position.z;
+
+        float minZ =
+            obstacleZ -
+            pathForward -
+            2f;
+
+        float maxZ =
+            obstacleZ +
+            pathBackward +
+            2f;
+
+        PickupMover3D[] pickups =
+            FindObjectsByType<PickupMover3D>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (var pickup in pickups)
+        {
+            if (pickup == null)
+                continue;
+
+            Pickup3D pickupData =
+                pickup.GetComponent<Pickup3D>();
+
+            if (pickupData == null)
+                continue;
+
+            // Удаляем только монеты.
+            if (pickupData.type != Pickup3DType.Coin)
+                continue;
+
+            float z =
+                pickup.transform.position.z;
+
+            if (z >= minZ &&
+                z <= maxZ)
+            {
+                Destroy(
+                    pickup.gameObject
+                );
+            }
+        }
+    }
+
+    // =========================================================
+    // СОЗДАНИЕ МАРШРУТА МОНЕТ
     // =========================================================
 
     private void GenerateCoinRoute(
@@ -206,30 +268,35 @@ public class PickupSpawner3D : MonoBehaviour
         if (coinPrefab == null)
             return;
 
+        // Удаляем старые прямые монеты,
+        // которые могли бы проходить через препятствие.
+        RemoveCoinsAroundObstacle(obstacle);
+
         float groundY =
             coinPrefab.transform.position.y;
 
         float obstacleZ =
             obstacle.transform.position.z;
 
-        // ---------------------------------------------------------
+        // -----------------------------------------------------
         // SLIDE
-        // ---------------------------------------------------------
+        // -----------------------------------------------------
 
         if (type == ObstacleType.Slide)
         {
-            // Выбираем одну из двух полос.
             int coinLane =
                 Random.Range(
                     0,
                     lanePositions.Length
                 );
 
-            // Прямая дорожка монет под препятствием.
+            // ВАЖНО:
+            // начинаем ПЕРЕД препятствием
+            // и заканчиваем ПОСЛЕ него.
             for (
-                float offset = pathForward;
-                offset >= -pathBackward;
-                offset -= coinSpacing)
+                float offset = -pathForward;
+                offset <= pathBackward;
+                offset += coinSpacing)
             {
                 float z =
                     obstacleZ + offset;
@@ -256,11 +323,10 @@ public class PickupSpawner3D : MonoBehaviour
                     obstacle.laneX
                 );
 
-            // Только над препятствием.
             for (
-                float offset = pathForward;
-                offset >= -pathBackward;
-                offset -= coinSpacing)
+                float offset = -pathForward;
+                offset <= pathBackward;
+                offset += coinSpacing)
             {
                 float z =
                     obstacleZ + offset;
@@ -289,7 +355,6 @@ public class PickupSpawner3D : MonoBehaviour
 
         if (type == ObstacleType.DoubleJump)
         {
-            // Выбираем ОДНУ полосу для дуги.
             int arcLane =
                 Random.Range(
                     0,
@@ -297,9 +362,9 @@ public class PickupSpawner3D : MonoBehaviour
                 );
 
             for (
-                float offset = pathForward;
-                offset >= -pathBackward;
-                offset -= coinSpacing)
+                float offset = -pathForward;
+                offset <= pathBackward;
+                offset += coinSpacing)
             {
                 float z =
                     obstacleZ + offset;
@@ -447,7 +512,9 @@ public class PickupSpawner3D : MonoBehaviour
             );
 
         int second =
-            first == 0 ? 1 : 0;
+            first == 0
+                ? 1
+                : 0;
 
         if (IsLaneSafe(
                 lanePositions[first]
@@ -496,7 +563,7 @@ public class PickupSpawner3D : MonoBehaviour
             if (type == null)
                 continue;
 
-            // Bus и Obstacle4 занимают обе полосы.
+            // Slide и DoubleJump занимают обе полосы.
             if (type.type ==
                     ObstacleType.Slide ||
                 type.type ==
@@ -552,6 +619,10 @@ public class PickupSpawner3D : MonoBehaviour
             mover.ApplyInitialState();
         }
     }
+
+    // =========================================================
+    // УПРАВЛЕНИЕ РАБОТОЙ СПАВНЕРА
+    // =========================================================
 
     public void SetRunning(bool running)
     {

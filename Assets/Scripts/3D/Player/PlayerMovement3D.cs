@@ -6,7 +6,8 @@ public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Полосы движения")]
     [Tooltip("X-позиции двух полос: левая и правая.")]
-    public float[] lanePositions = new float[] { -0.8f, 0.8f };
+    public float[] lanePositions =
+        new float[] { -0.7f, 0.7f };
 
     [Tooltip("Скорость перемещения игрока между полосами.")]
     public float laneChangeSpeed = 9f;
@@ -53,7 +54,7 @@ public class PlayerMovement3D : MonoBehaviour
     private bool hasDoubleJumped;
     private bool isSliding;
 
-    private int currentLane = 1;
+    private int currentLane = 0;
     private float targetX;
 
     private bool isDead;
@@ -65,11 +66,16 @@ public class PlayerMovement3D : MonoBehaviour
 
     private Quaternion initialRotation;
 
+    // Свет на игроке.
+    private Light playerFillLight;
+
     private void Awake()
     {
-        animator = GetComponentInChildren<Animator>();
+        animator =
+            GetComponentInChildren<Animator>();
 
-        string charId = ProfileManager.GetSelectedCharacterId();
+        string charId =
+            ProfileManager.GetSelectedCharacterId();
 
         laneChangeSpeed *=
             BonusCalculator.GetSpeedMultiplier(charId);
@@ -80,16 +86,25 @@ public class PlayerMovement3D : MonoBehaviour
         currentY = baseY;
         targetY = baseY;
 
+        // -----------------------------------------------------
+        // 2 ПОЛОСЫ
+        // -----------------------------------------------------
+
         if (lanePositions == null ||
             lanePositions.Length != 2)
         {
             lanePositions =
-                new float[] { -0.8f, 0.8f };
+                new float[] { -0.7f, 0.7f };
         }
 
-        // Стартуем на левой полосе.
         currentLane = 0;
-        targetX = lanePositions[currentLane];
+
+        targetX =
+            lanePositions[currentLane];
+
+        // -----------------------------------------------------
+        // SPRITE
+        // -----------------------------------------------------
 
         if (mainSprite == null &&
             animator != null)
@@ -98,7 +113,8 @@ public class PlayerMovement3D : MonoBehaviour
                 animator.GetComponent<SpriteRenderer>();
         }
 
-        gameplaySprite = mainSprite;
+        gameplaySprite =
+            mainSprite;
 
         if (victoryPose != null)
         {
@@ -107,8 +123,44 @@ public class PlayerMovement3D : MonoBehaviour
                     SpriteRenderer>(true);
         }
 
+        // -----------------------------------------------------
+        // НАЧАЛЬНЫЙ ПОВОРОТ
+        // -----------------------------------------------------
+
         initialRotation =
             transform.rotation;
+
+        // -----------------------------------------------------
+        // СВЕТ PLAYERFILLLIGHT
+        // -----------------------------------------------------
+
+        Transform fillLightTransform =
+            transform.Find("PlayerFillLight");
+
+        if (fillLightTransform != null)
+        {
+            playerFillLight =
+                fillLightTransform.GetComponent<Light>();
+        }
+
+        if (playerFillLight == null)
+        {
+            Light[] lights =
+                GetComponentsInChildren<Light>(true);
+
+            foreach (Light light in lights)
+            {
+                if (light != null &&
+                    light.gameObject.name ==
+                    "PlayerFillLight")
+                {
+                    playerFillLight =
+                        light;
+
+                    break;
+                }
+            }
+        }
 
         Debug.Log(
             $"[Player3D] Lane speed {laneChangeSpeed:F2}, " +
@@ -210,7 +262,9 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void MoveLaneLeft()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
             return;
 
         currentLane--;
@@ -224,14 +278,18 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void MoveLaneRight()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
             return;
 
         currentLane++;
 
         if (currentLane >= lanePositions.Length)
+        {
             currentLane =
                 lanePositions.Length - 1;
+        }
 
         targetX =
             lanePositions[currentLane];
@@ -251,7 +309,8 @@ public class PlayerMovement3D : MonoBehaviour
                 laneChangeSpeed
             );
 
-        transform.position = pos;
+        transform.position =
+            pos;
     }
 
     // =========================================================
@@ -481,6 +540,15 @@ public class PlayerMovement3D : MonoBehaviour
         isSliding = false;
         isDying = true;
 
+        // -----------------------------------------------------
+        // СРАЗУ ОТКЛЮЧАЕМ СВЕТ
+        // -----------------------------------------------------
+
+        if (playerFillLight != null)
+        {
+            playerFillLight.enabled = false;
+        }
+
         StartCoroutine(
             FallIntoPitRoutine()
         );
@@ -593,7 +661,8 @@ public class PlayerMovement3D : MonoBehaviour
             yield return null;
         }
 
-        currentY = targetY;
+        currentY =
+            targetY;
 
         Die();
     }
@@ -649,6 +718,15 @@ public class PlayerMovement3D : MonoBehaviour
 
         transform.rotation =
             initialRotation;
+
+        // -----------------------------------------------------
+        // ВКЛЮЧАЕМ СВЕТ ОБРАТНО
+        // -----------------------------------------------------
+
+        if (playerFillLight != null)
+        {
+            playerFillLight.enabled = true;
+        }
 
         Collider[] colliders =
             GetComponents<Collider>();
