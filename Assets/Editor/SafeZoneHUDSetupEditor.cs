@@ -599,7 +599,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             label;
 
         progress.runManager =
-            GameObject.FindObjectOfType<RunManager>();
+            FindFirstObjectByType<RunManager>();
 
         root.transform.SetSiblingIndex(
             topHud.transform.childCount - 1

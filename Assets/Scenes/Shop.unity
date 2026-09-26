@@ -626,6 +626,7 @@ GameObject:
   - component: {fileID: 623005608}
   - component: {fileID: 623005610}
   - component: {fileID: 623005609}
+  - component: {fileID: 623005611}
   m_Layer: 0
   m_Name: DiamondsBox
   m_TagString: Untagged
@@ -693,6 +694,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 623005607}
   m_CullTransparentMesh: 1
+--- !u!114 &623005611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623005607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df7e3ac25eb47f344a7f546f016ef2f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdaptiveHudBox3D
+  valueText: {fileID: 1103561472}
+  iconRect: {fileID: 1639801133}
+  minWidth: 260
+  maxWidth: 390
+  leftPadding: 18
+  rightPadding: 18
+  iconGap: 10
+  textPadding: 8
 --- !u!1 &624109755
 GameObject:
   m_ObjectHideFlags: 0
@@ -704,6 +725,7 @@ GameObject:
   - component: {fileID: 624109756}
   - component: {fileID: 624109758}
   - component: {fileID: 624109757}
+  - component: {fileID: 624109759}
   m_Layer: 0
   m_Name: CoinsBox
   m_TagString: Untagged
@@ -771,6 +793,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 624109755}
   m_CullTransparentMesh: 1
+--- !u!114 &624109759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 624109755}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df7e3ac25eb47f344a7f546f016ef2f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdaptiveHudBox3D
+  valueText: {fileID: 359547664}
+  iconRect: {fileID: 1623146632}
+  minWidth: 260
+  maxWidth: 390
+  leftPadding: 18
+  rightPadding: 18
+  iconGap: 10
+  textPadding: 8
 --- !u!1 &1048948951
 GameObject:
   m_ObjectHideFlags: 0
