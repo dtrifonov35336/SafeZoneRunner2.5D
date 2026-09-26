@@ -4,29 +4,19 @@ public class RunManager : MonoBehaviour
 {
     [Header("Режим забега")]
     [Tooltip(
-        "Если включено — забег бесконечный. " +
-        "Убежище автоматически не появляется, " +
-        "а фон не приближается."
+        "Бесконечный режим. " +
+        "Убежище не появляется."
     )]
     public bool infiniteRun = false;
 
-    [Header("Тайминг забега")]
-    [Tooltip(
-        "Продолжительность конечного забега в секундах."
-    )]
+    [Header("Тайминг")]
     public float runDuration = 180f;
 
     [Tooltip(
-        "За сколько секунд ДО убежища " +
-        "перестать спавнить новые объекты."
+        "За сколько секунд до убежища " +
+        "остановить новые спавны."
     )]
     public float stopSpawnAhead = 6f;
-
-    [Tooltip(
-        "За сколько секунд ДО убежища " +
-        "дочистить оставшиеся препятствия."
-    )]
-    public float clearAhead = 1.5f;
 
     [Header("Спавнеры")]
     public ObstacleSpawner3D obstacleSpawner;
@@ -44,8 +34,34 @@ public class RunManager : MonoBehaviour
     private float runTime = 0f;
 
     private bool spawnStopped = false;
-    private bool obstaclesCleared = false;
     private bool safeZoneSpawned = false;
+
+    private const string INFINITE_RUN_KEY =
+        "RunMode_Infinite";
+
+    private void Awake()
+    {
+        // Режим выбран в MainMenu.
+        //
+        // Если ключ существует — используем его.
+        // Если его ещё нет — оставляем значение
+        // из Inspector.
+        if (PlayerPrefs.HasKey(
+                INFINITE_RUN_KEY))
+        {
+            infiniteRun =
+                PlayerPrefs.GetInt(
+                    INFINITE_RUN_KEY,
+                    0
+                ) == 1;
+        }
+
+        Debug.Log(
+            infiniteRun
+                ? "[RunManager] Режим: БЕСКОНЕЧНЫЙ"
+                : "[RunManager] Режим: ДО УБЕЖИЩА"
+        );
+    }
 
     private void Update()
     {
@@ -55,15 +71,13 @@ public class RunManager : MonoBehaviour
             return;
         }
 
-        // Время продолжаем считать даже
-        // в бесконечном режиме.
-        runTime += Time.deltaTime;
+        runTime +=
+            Time.deltaTime;
 
-        // В бесконечном режиме:
-        //
-        // - ничего не останавливаем;
-        // - SafeZone не создаём;
-        // - RunManager продолжает считать время.
+        // =====================================================
+        // INFINITE RUN
+        // =====================================================
+
         if (infiniteRun)
         {
             return;
@@ -72,52 +86,51 @@ public class RunManager : MonoBehaviour
         if (safeZoneSpawned)
             return;
 
-        // ----------------------------------------
-        // Остановка новых спавнов
-        // ----------------------------------------
+        // =====================================================
+        // ОСТАНОВКА НОВЫХ СПАВНОВ
+        // =====================================================
 
         if (!spawnStopped &&
             runTime >=
-            (runDuration - stopSpawnAhead))
+            (runDuration -
+             stopSpawnAhead))
         {
             spawnStopped = true;
 
             if (obstacleSpawner != null)
-                obstacleSpawner.SetRunning(false);
+            {
+                obstacleSpawner.SetRunning(
+                    false
+                );
+            }
 
             if (pickupSpawner != null)
-                pickupSpawner.SetRunning(false);
+            {
+                pickupSpawner.SetRunning(
+                    false
+                );
+            }
 
             if (rescuedPersonSpawner != null)
-                rescuedPersonSpawner.SetRunning(false);
+            {
+                rescuedPersonSpawner
+                    .SetRunning(false);
+            }
 
             if (sideDecorationSpawner != null)
-                sideDecorationSpawner.SetRunning(false);
+            {
+                sideDecorationSpawner
+                    .SetRunning(false);
+            }
 
             Debug.Log(
-                "[RunManager] Новый спавн остановлен."
+                "[RunManager] Новые объекты больше не спавнятся."
             );
         }
 
-        // ----------------------------------------
-        // Очистка препятствий
-        // ----------------------------------------
-
-        if (!obstaclesCleared &&
-            runTime >=
-            (runDuration - clearAhead))
-        {
-            obstaclesCleared = true;
-
-            if (obstacleSpawner != null)
-            {
-                obstacleSpawner.ClearAllObstacles();
-            }
-        }
-
-        // ----------------------------------------
-        // Убежище
-        // ----------------------------------------
+        // =====================================================
+        // SAFE ZONE
+        // =====================================================
 
         if (runTime >= runDuration)
         {
@@ -147,6 +160,10 @@ public class RunManager : MonoBehaviour
             spawnPosition,
             Quaternion.identity
         );
+
+        Debug.Log(
+            "[RunManager] SafeZone создан."
+        );
     }
 
     public float GetRunTime()
@@ -163,7 +180,8 @@ public class RunManager : MonoBehaviour
             return 1f;
 
         return Mathf.Clamp01(
-            runTime / runDuration
+            runTime /
+            runDuration
         );
     }
 }

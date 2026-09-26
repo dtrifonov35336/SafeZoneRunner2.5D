@@ -5,14 +5,10 @@ using System.Collections;
 public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Полосы движения")]
-    [Tooltip("X-позиции двух полос: левая и правая.")]
     public float[] lanePositions =
         new float[] { -0.7f, 0.7f };
 
-    [Tooltip("Скорость перемещения игрока между полосами.")]
     public float laneChangeSpeed = 9f;
-
-    [Tooltip("Плавность разгона и торможения при смене полосы.")]
     public float laneChangeSmoothTime = 0.08f;
 
     private float laneVelocity;
@@ -32,6 +28,13 @@ public class PlayerMovement3D : MonoBehaviour
 
     [Header("Скольжение")]
     public float slideDuration = 0.7f;
+
+    [Header("Откат после удара")]
+    [Tooltip("Скорость возвращения игрока вперёд после отката.")]
+    public float knockbackRecoverySpeed = 4f;
+
+    [Tooltip("Максимальное расстояние отката назад.")]
+    public float maxKnockbackZ = 1.5f;
 
     [Header("Смертельный откат")]
     public float finalKnockbackAmount = 1.5f;
@@ -61,12 +64,13 @@ public class PlayerMovement3D : MonoBehaviour
     private bool isDying;
     private bool isVictory;
 
+    private float knockbackZ;
+
     private Animator animator;
     private Coroutine slideCoroutine;
 
     private Quaternion initialRotation;
 
-    // Свет на игроке.
     private Light playerFillLight;
 
     private void Awake()
@@ -86,10 +90,6 @@ public class PlayerMovement3D : MonoBehaviour
         currentY = baseY;
         targetY = baseY;
 
-        // -----------------------------------------------------
-        // 2 ПОЛОСЫ
-        // -----------------------------------------------------
-
         if (lanePositions == null ||
             lanePositions.Length != 2)
         {
@@ -101,10 +101,6 @@ public class PlayerMovement3D : MonoBehaviour
 
         targetX =
             lanePositions[currentLane];
-
-        // -----------------------------------------------------
-        // SPRITE
-        // -----------------------------------------------------
 
         if (mainSprite == null &&
             animator != null)
@@ -123,16 +119,8 @@ public class PlayerMovement3D : MonoBehaviour
                     SpriteRenderer>(true);
         }
 
-        // -----------------------------------------------------
-        // НАЧАЛЬНЫЙ ПОВОРОТ
-        // -----------------------------------------------------
-
         initialRotation =
             transform.rotation;
-
-        // -----------------------------------------------------
-        // СВЕТ PLAYERFILLLIGHT
-        // -----------------------------------------------------
 
         Transform fillLightTransform =
             transform.Find("PlayerFillLight");
@@ -161,11 +149,6 @@ public class PlayerMovement3D : MonoBehaviour
                 }
             }
         }
-
-        Debug.Log(
-            $"[Player3D] Lane speed {laneChangeSpeed:F2}, " +
-            $"recovery {recoverySpeed:F2}"
-        );
     }
 
     private void Update()
@@ -181,6 +164,7 @@ public class PlayerMovement3D : MonoBehaviour
             UpdateLaneMovement();
             UpdateJump();
             UpdateGroundRecovery();
+            UpdateKnockback();
         }
 
         ApplyPosition();
@@ -262,9 +246,7 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void MoveLaneLeft()
     {
-        if (isDead ||
-            isDying ||
-            isVictory)
+        if (isDead || isDying || isVictory)
             return;
 
         currentLane--;
@@ -278,9 +260,7 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void MoveLaneRight()
     {
-        if (isDead ||
-            isDying ||
-            isVictory)
+        if (isDead || isDying || isVictory)
             return;
 
         currentLane++;
@@ -319,9 +299,7 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void Jump()
     {
-        if (isDead ||
-            isDying ||
-            isVictory)
+        if (isDead || isDying || isVictory)
             return;
 
         if (isJumping)
@@ -341,10 +319,6 @@ public class PlayerMovement3D : MonoBehaviour
                 gravity *
                 jumpHeight
             );
-
-        Debug.Log(
-            "[Player3D] Первый прыжок"
-        );
     }
 
     public void DoubleJump()
@@ -380,10 +354,6 @@ public class PlayerMovement3D : MonoBehaviour
                 jumpOffset,
                 0.05f
             );
-
-        Debug.Log(
-            "[Player3D] ДВОЙНОЙ ПРЫЖОК"
-        );
     }
 
     private void UpdateJump()
@@ -407,10 +377,6 @@ public class PlayerMovement3D : MonoBehaviour
 
             isJumping = false;
             hasDoubleJumped = false;
-
-            Debug.Log(
-                "[Player3D] Приземление"
-            );
         }
     }
 
@@ -441,10 +407,6 @@ public class PlayerMovement3D : MonoBehaviour
     {
         isSliding = true;
 
-        Debug.Log(
-            "[Player3D] СКОЛЬЖЕНИЕ"
-        );
-
         float timer = 0f;
 
         while (timer < slideDuration)
@@ -455,10 +417,6 @@ public class PlayerMovement3D : MonoBehaviour
 
         isSliding = false;
         slideCoroutine = null;
-
-        Debug.Log(
-            "[Player3D] Скольжение закончено"
-        );
     }
 
     // =========================================================
@@ -485,6 +443,27 @@ public class PlayerMovement3D : MonoBehaviour
             );
     }
 
+    // =========================================================
+    // ОТКАТ ПО Z
+    // =========================================================
+
+    private void UpdateKnockback()
+    {
+        if (Mathf.Abs(knockbackZ) <= 0.001f)
+        {
+            knockbackZ = 0f;
+            return;
+        }
+
+        knockbackZ =
+            Mathf.MoveTowards(
+                knockbackZ,
+                0f,
+                knockbackRecoverySpeed *
+                Time.deltaTime
+            );
+    }
+
     private void ApplyPosition()
     {
         Vector3 pos =
@@ -494,7 +473,10 @@ public class PlayerMovement3D : MonoBehaviour
             currentY +
             jumpOffset;
 
-        pos.z = 0f;
+        // Игрок может временно откатиться назад,
+        // но не проваливается в дорогу.
+        pos.z =
+            knockbackZ;
 
         transform.position =
             pos;
@@ -514,10 +496,12 @@ public class PlayerMovement3D : MonoBehaviour
         if (isJumping)
             return;
 
-        currentY -= amount;
-
-        if (currentY < minY)
-            currentY = minY;
+        knockbackZ =
+            Mathf.Max(
+                -maxKnockbackZ,
+                knockbackZ -
+                Mathf.Abs(amount)
+            );
     }
 
     // =========================================================
@@ -540,14 +524,8 @@ public class PlayerMovement3D : MonoBehaviour
         isSliding = false;
         isDying = true;
 
-        // -----------------------------------------------------
-        // СРАЗУ ОТКЛЮЧАЕМ СВЕТ
-        // -----------------------------------------------------
-
         if (playerFillLight != null)
-        {
             playerFillLight.enabled = false;
-        }
 
         StartCoroutine(
             FallIntoPitRoutine()
@@ -648,7 +626,8 @@ public class PlayerMovement3D : MonoBehaviour
 
             float p =
                 Mathf.Clamp01(
-                    t / deathSlideDuration
+                    t /
+                    deathSlideDuration
                 );
 
             currentY =
@@ -693,6 +672,8 @@ public class PlayerMovement3D : MonoBehaviour
         jumpOffset = 0f;
         verticalVelocity = 0f;
 
+        knockbackZ = 0f;
+
         isJumping = false;
         hasDoubleJumped = false;
         isSliding = false;
@@ -719,14 +700,8 @@ public class PlayerMovement3D : MonoBehaviour
         transform.rotation =
             initialRotation;
 
-        // -----------------------------------------------------
-        // ВКЛЮЧАЕМ СВЕТ ОБРАТНО
-        // -----------------------------------------------------
-
         if (playerFillLight != null)
-        {
             playerFillLight.enabled = true;
-        }
 
         Collider[] colliders =
             GetComponents<Collider>();
@@ -755,48 +730,26 @@ public class PlayerMovement3D : MonoBehaviour
     // GETTERS
     // =========================================================
 
-    public bool IsDead()
-    {
-        return isDead;
-    }
+    public bool IsDead() => isDead;
 
-    public bool IsDying()
-    {
-        return isDying;
-    }
+    public bool IsDying() => isDying;
 
-    public bool IsJumping()
-    {
-        return isJumping;
-    }
+    public bool IsJumping() => isJumping;
 
-    public bool IsSliding()
-    {
-        return isSliding;
-    }
+    public bool IsSliding() => isSliding;
 
-    public bool HasDoubleJumped()
-    {
-        return hasDoubleJumped;
-    }
+    public bool HasDoubleJumped() =>
+        hasDoubleJumped;
 
-    public float GetCurrentY()
-    {
-        return currentY;
-    }
+    public float GetCurrentY() =>
+        currentY;
 
-    public float GetJumpOffset()
-    {
-        return jumpOffset;
-    }
+    public float GetJumpOffset() =>
+        jumpOffset;
 
-    public int GetCurrentLane()
-    {
-        return currentLane;
-    }
+    public int GetCurrentLane() =>
+        currentLane;
 
-    public Vector3 GetWorldPosition()
-    {
-        return transform.position;
-    }
+    public Vector3 GetWorldPosition() =>
+        transform.position;
 }
