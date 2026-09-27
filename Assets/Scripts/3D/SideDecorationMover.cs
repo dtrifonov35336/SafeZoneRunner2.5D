@@ -13,11 +13,21 @@ public class SideDecorationMover : MonoBehaviour
             return;
         }
 
+        float moveSpeed =
+            speed;
+
+        if (ObstacleSpawner3D.Instance != null)
+        {
+            moveSpeed =
+                ObstacleSpawner3D.Instance
+                    .CurrentObstacleSpeed;
+        }
+
         Vector3 p =
             transform.position;
 
         p.z -=
-            speed *
+            moveSpeed *
             Time.deltaTime;
 
         transform.position =

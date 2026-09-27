@@ -10,16 +10,28 @@ public class SpawnReveal3D : MonoBehaviour
 
     private bool revealed;
 
-    public void Initialize(float targetRevealZ)
+    public void Initialize(
+        float targetRevealZ)
     {
-        revealZ = targetRevealZ;
+        revealZ =
+            targetRevealZ;
 
-        renderers = GetComponentsInChildren<Renderer>(true);
-        colliders = GetComponentsInChildren<Collider>(true);
+        renderers =
+            GetComponentsInChildren<
+                Renderer
+            >(true);
 
-        revealed = false;
+        colliders =
+            GetComponentsInChildren<
+                Collider
+            >(true);
 
-        SetVisible(false);
+        revealed =
+            false;
+
+        SetVisible(
+            false
+        );
     }
 
     private void Update()
@@ -29,19 +41,25 @@ public class SpawnReveal3D : MonoBehaviour
 
         if (transform.position.z <= revealZ)
         {
-            revealed = true;
-            SetVisible(true);
+            revealed =
+                true;
+
+            SetVisible(
+                true
+            );
         }
     }
 
-    private void SetVisible(bool value)
+    private void SetVisible(
+        bool value)
     {
         if (renderers != null)
         {
             foreach (Renderer r in renderers)
             {
                 if (r != null)
-                    r.enabled = value;
+                    r.enabled =
+                        value;
             }
         }
 
@@ -50,7 +68,8 @@ public class SpawnReveal3D : MonoBehaviour
             foreach (Collider c in colliders)
             {
                 if (c != null)
-                    c.enabled = value;
+                    c.enabled =
+                        value;
             }
         }
     }

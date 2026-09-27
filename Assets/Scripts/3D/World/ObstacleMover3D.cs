@@ -26,10 +26,14 @@ public class ObstacleMover3D : MonoBehaviour
         Vector3 p =
             transform.position;
 
-        p.x = laneX;
-        p.z = spawnZ;
+        p.x =
+            laneX;
 
-        transform.position = p;
+        p.z =
+            spawnZ;
+
+        transform.position =
+            p;
 
         initialised = true;
     }
@@ -44,16 +48,28 @@ public class ObstacleMover3D : MonoBehaviour
 
     private void Update()
     {
+        float moveSpeed =
+            speed;
+
+        if (ObstacleSpawner3D.Instance != null)
+        {
+            moveSpeed =
+                ObstacleSpawner3D.Instance
+                    .CurrentObstacleSpeed;
+        }
+
         currentZ -=
-            speed *
+            moveSpeed *
             Time.deltaTime;
 
         Vector3 p =
             transform.position;
 
-        p.z = currentZ;
+        p.z =
+            currentZ;
 
-        transform.position = p;
+        transform.position =
+            p;
 
         if (currentZ <= despawnZ)
         {

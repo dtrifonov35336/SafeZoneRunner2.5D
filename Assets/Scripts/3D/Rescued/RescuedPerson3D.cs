@@ -12,7 +12,7 @@ public class RescuedPerson : MonoBehaviour
     [Header("Скорость")]
     public float speed = 15f;
 
-    [Header("Покачивание (паника)")]
+    [Header("Покачивание")]
     public float bobSpeed = 6f;
     public float bobAmount = 0.05f;
 
@@ -21,44 +21,73 @@ public class RescuedPerson : MonoBehaviour
 
     private float currentZ;
     private float baseY;
+
     private bool isSaved = false;
     private bool initialised = false;
 
-    void Start()
+    private void Start()
     {
-        baseY = transform.position.y;
-        if (!initialised) ApplyInitialState();
+        baseY =
+            transform.position.y;
+
+        if (!initialised)
+        {
+            ApplyInitialState();
+        }
     }
 
     public void ApplyInitialState()
     {
-        currentZ = spawnZ;
-        baseY = transform.position.y;
+        currentZ =
+            spawnZ;
 
-        Vector3 p = transform.position;
-        p.x = laneX;
-        p.z = spawnZ;
-        transform.position = p;
+        baseY =
+            transform.position.y;
+
+        Vector3 p =
+            transform.position;
+
+        p.x =
+            laneX;
+
+        p.z =
+            spawnZ;
+
+        transform.position =
+            p;
+
         initialised = true;
     }
 
-    void Update()
+    private void Update()
     {
         if (isSaved)
             return;
+
+        float moveSpeed =
+            speed;
+
+        if (ObstacleSpawner3D.Instance != null)
+        {
+            moveSpeed =
+                ObstacleSpawner3D.Instance
+                    .CurrentObstacleSpeed;
+        }
 
         float bob =
             Mathf.Sin(
                 Time.time *
                 bobSpeed
-            ) * bobAmount;
+            ) *
+            bobAmount;
 
         float currentY =
-            baseY + bob;
+            baseY +
+            bob;
 
         float desiredZ =
             currentZ -
-            speed *
+            moveSpeed *
             Time.deltaTime;
 
         desiredZ =
@@ -89,37 +118,60 @@ public class RescuedPerson : MonoBehaviour
         if (currentZ <= despawnZ)
         {
             if (HUDManager.Instance != null)
-                HUDManager.Instance.RegisterMissedRescue();
+            {
+                HUDManager.Instance
+                    .RegisterMissedRescue();
+            }
 
             Destroy(gameObject);
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(
+        Collider other)
     {
-        if (isSaved) return;
-        if (!other.CompareTag("Player")) return;
+        if (isSaved)
+            return;
+
+        if (!other.CompareTag("Player"))
+            return;
 
         isSaved = true;
 
         int coinsBefore = 0;
+
         if (HUDManager.Instance != null)
         {
-            coinsBefore = HUDManager.Instance.GetCoins();
+            coinsBefore =
+                HUDManager.Instance.GetCoins();
+
             HUDManager.Instance.AddRescued(1);
-            HUDManager.Instance.AddCoinsWithBonus(coinReward);
+
+            // Только награда за спасение.
+            // Рюкзак сюда НЕ применяется.
+            HUDManager.Instance.AddCoinsWithBonus(
+                coinReward
+            );
         }
 
         int gained = 0;
-        int total = 0;
+
         if (HUDManager.Instance != null)
         {
-            total = HUDManager.Instance.GetCoins();
-            gained = total - coinsBefore;
+            int total =
+                HUDManager.Instance.GetCoins();
+
+            gained =
+                total -
+                coinsBefore;
         }
 
         if (ToastNotification.Instance != null)
-            ToastNotification.Instance.Show($"Спасён выживший! +{gained}");
+        {
+            ToastNotification.Instance.Show(
+                $"Спасён выживший! +{gained}"
+            );
+        }
 
         Destroy(gameObject);
     }

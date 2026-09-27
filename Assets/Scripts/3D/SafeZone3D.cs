@@ -11,37 +11,82 @@ public class SafeZone : MonoBehaviour
 
     private float currentZ;
     private bool isTriggered = false;
+    private bool initialized = false;
 
-    void Start()
+    private void Start()
     {
-        currentZ = spawnZ;
-        Vector3 p = transform.position;
-        p.z = spawnZ;
-        transform.position = p;
+        if (!initialized)
+        {
+            InitializeAt(
+                spawnZ
+            );
+        }
     }
 
-    void Update()
+    public void InitializeAt(
+        float newSpawnZ)
     {
-        if (isTriggered) return;
+        spawnZ =
+            newSpawnZ;
 
-        currentZ -= speed * Time.deltaTime;
+        currentZ =
+            newSpawnZ;
 
-        Vector3 p = transform.position;
-        p.z = currentZ;
-        transform.position = p;
+        Vector3 p =
+            transform.position;
+
+        p.z =
+            newSpawnZ;
+
+        transform.position =
+            p;
+
+        initialized =
+            true;
+    }
+
+    private void Update()
+    {
+        if (isTriggered)
+            return;
+
+        currentZ -=
+            speed *
+            Time.deltaTime;
+
+        Vector3 p =
+            transform.position;
+
+        p.z =
+            currentZ;
+
+        transform.position =
+            p;
 
         if (currentZ <= despawnZ)
-            Destroy(gameObject);
+        {
+            Destroy(
+                gameObject
+            );
+        }
     }
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(
+        Collider other)
     {
-        if (isTriggered) return;
-        if (!other.CompareTag("Player")) return;
+        if (isTriggered)
+            return;
 
-        isTriggered = true;
+        if (!other.CompareTag("Player"))
+            return;
+
+        isTriggered =
+            true;
 
         if (ChaseManager.Instance != null)
-            ChaseManager.Instance.TriggerVictory();
+        {
+            ChaseManager.Instance
+                .TriggerVictory();
+        }
     }
 }

@@ -9,10 +9,13 @@ public class RunManager : MonoBehaviour
     public bool infiniteRun = false;
 
     [Header("Тайминг")]
-    public float runDuration = 180f;
+    [Tooltip(
+        "Полная длительность забега до убежища."
+    )]
+    public float runDuration = 120f;
 
     [Tooltip(
-        "За сколько секунд до убежища остановить новые спавны."
+        "За сколько секунд до финиша прекратить новые спавны."
     )]
     public float stopSpawnAhead = 6f;
 
@@ -26,32 +29,17 @@ public class RunManager : MonoBehaviour
     public GameObject safeZonePrefab;
 
     [Header("Появление SafeZone")]
-    public float safeZoneSpawnZ = 40f;
+    public float safeZoneSpawnZ = 90f;
     public float safeZoneY = -0.5f;
 
     [Header("Возрождение перед убежищем")]
-    [Tooltip(
-        "На сколько единиц назад откатывать игрока после смерти."
-    )]
     public float reviveRewindDistance = 1.2f;
-
-    [Tooltip(
-        "Минимальный откат при поиске безопасной позиции."
-    )]
     public float reviveMinRewindDistance = 0.4f;
-
-    [Tooltip(
-        "Шаг поиска свободной позиции."
-    )]
     public float reviveSearchStep = 0.2f;
-
-    [Tooltip(
-        "Дополнительный запас вокруг игрока при проверке препятствий."
-    )]
     public float reviveObstacleClearance = 0.6f;
 
     [Tooltip(
-        "Z-позиция, на которой убежище заново появляется после возрождения."
+        "На каком Z заново появляется убежище после revive."
     )]
     public float safeZoneReviveSpawnZ = 12f;
 
@@ -100,38 +88,46 @@ public class RunManager : MonoBehaviour
             return;
         }
 
-        if (!spawnStopped &&
-            runTime >=
-            (
+        float stopTime =
+            Mathf.Max(
+                0f,
                 runDuration -
                 stopSpawnAhead
-            ))
+            );
+
+        if (!spawnStopped &&
+            runTime >= stopTime)
         {
-            spawnStopped = true;
+            spawnStopped =
+                true;
 
             if (obstacleSpawner != null)
             {
-                obstacleSpawner.SetRunning(false);
+                obstacleSpawner.SetRunning(
+                    false
+                );
             }
 
             if (pickupSpawner != null)
             {
-                pickupSpawner.SetRunning(false);
+                pickupSpawner.SetRunning(
+                    false
+                );
             }
 
             if (rescuedPersonSpawner != null)
             {
-                rescuedPersonSpawner.SetRunning(false);
+                rescuedPersonSpawner.SetRunning(
+                    false
+                );
             }
 
             if (sideDecorationSpawner != null)
             {
-                sideDecorationSpawner.SetRunning(false);
+                sideDecorationSpawner.SetRunning(
+                    false
+                );
             }
-
-            Debug.Log(
-                "[RunManager] Новые объекты больше не спавнятся."
-            );
         }
 
         float approachTime =
@@ -153,77 +149,73 @@ public class RunManager : MonoBehaviour
 
     private float GetSafeZoneApproachTime()
     {
-        SafeZone sourceSafeZone = null;
+        SafeZone source =
+            activeSafeZone;
 
-        if (activeSafeZone != null)
+        if (source == null &&
+            safeZonePrefab != null)
         {
-            sourceSafeZone =
-                activeSafeZone;
-        }
-        else if (safeZonePrefab != null)
-        {
-            sourceSafeZone =
-                safeZonePrefab.GetComponent<SafeZone>();
-        }
-
-        if (sourceSafeZone == null)
-        {
-            return 0f;
+            source =
+                safeZonePrefab
+                    .GetComponent<
+                        SafeZone
+                    >();
         }
 
-        if (sourceSafeZone.speed <= 0f)
+        if (source == null ||
+            source.speed <= 0f)
         {
             return 0f;
         }
 
-        return Mathf.Max(
-            0f,
-            sourceSafeZone.spawnZ /
-            sourceSafeZone.speed
-        );
+        return
+            Mathf.Max(
+                0f,
+                source.spawnZ /
+                source.speed
+            );
     }
 
     private void SpawnSafeZone()
     {
         if (safeZoneSpawned)
-        {
             return;
-        }
 
-        safeZoneSpawned = true;
+        safeZoneSpawned =
+            true;
 
         if (safeZonePrefab == null)
-        {
             return;
-        }
-
-        Vector3 spawnPosition =
-            new Vector3(
-                0f,
-                safeZoneY,
-                safeZoneSpawnZ
-            );
 
         GameObject instance =
             Instantiate(
                 safeZonePrefab,
-                spawnPosition,
+                new Vector3(
+                    0f,
+                    safeZoneY,
+                    safeZoneSpawnZ
+                ),
                 Quaternion.identity
             );
 
-        if (instance != null)
-        {
-            activeSafeZone =
-                instance.GetComponent<SafeZone>();
-        }
+        if (instance == null)
+            return;
 
-        Debug.Log(
-            "[RunManager] SafeZone создан."
-        );
+        activeSafeZone =
+            instance.GetComponent<
+                SafeZone
+            >();
+
+        if (activeSafeZone != null)
+        {
+            activeSafeZone.InitializeAt(
+                safeZoneSpawnZ
+            );
+        }
     }
 
     // =========================================================
-    // ВОЗРОЖДЕНИЕ
+    // REVIVE
     // =========================================================
 
     public bool IsShelterRun()
@@ -241,48 +233,45 @@ public class RunManager : MonoBehaviour
     public void PrepareSafeZoneForRevive()
     {
         if (!ShouldRewindOnRevive())
-        {
             return;
-        }
 
         if (safeZonePrefab == null)
-        {
             return;
-        }
 
         if (activeSafeZone != null)
         {
-            activeSafeZone.gameObject.SetActive(false);
-            Destroy(activeSafeZone.gameObject);
-            activeSafeZone = null;
-        }
-
-        Vector3 spawnPosition =
-            new Vector3(
-                0f,
-                safeZoneY,
-                safeZoneReviveSpawnZ
+            Destroy(
+                activeSafeZone.gameObject
             );
+
+            activeSafeZone =
+                null;
+        }
 
         GameObject instance =
             Instantiate(
                 safeZonePrefab,
-                spawnPosition,
+                new Vector3(
+                    0f,
+                    safeZoneY,
+                    safeZoneReviveSpawnZ
+                ),
                 Quaternion.identity
             );
 
         if (instance == null)
-        {
             return;
-        }
 
         SafeZone safeZone =
-            instance.GetComponent<SafeZone>();
+            instance.GetComponent<
+                SafeZone
+            >();
 
         if (safeZone != null)
         {
-            safeZone.spawnZ =
-                safeZoneReviveSpawnZ;
+            safeZone.InitializeAt(
+                safeZoneReviveSpawnZ
+            );
 
             activeSafeZone =
                 safeZone;
@@ -290,21 +279,18 @@ public class RunManager : MonoBehaviour
     }
 
     public float GetRevivePlayerZ(
-        PlayerMovement3D player
-    )
+        PlayerMovement3D player)
     {
         if (player == null)
-        {
             return 0f;
-        }
 
         if (!ShouldRewindOnRevive())
-        {
             return 0f;
-        }
 
         Collider playerCollider =
-            player.GetComponent<Collider>();
+            player.GetComponent<
+                Collider
+            >();
 
         Vector3 basePosition =
             player.transform.position;
@@ -321,28 +307,39 @@ public class RunManager : MonoBehaviour
                 reviveMinRewindDistance
             );
 
+        float step =
+            Mathf.Max(
+                0.01f,
+                reviveSearchStep
+            );
+
         for (
-            float distance = desiredDistance;
-            distance >= minDistance;
-            distance -= reviveSearchStep)
+            float distance =
+                desiredDistance;
+
+            distance >=
+                minDistance;
+
+            distance -=
+                step)
         {
             float candidateZ =
-                -Mathf.Abs(distance);
+                -Mathf.Abs(
+                    distance
+                );
 
             if (IsRevivePositionSafe(
                     player,
                     playerCollider,
                     basePosition.x,
                     basePosition.y,
-                    candidateZ))
+                    candidateZ
+                ))
             {
                 return candidateZ;
             }
         }
 
-        // Безопасного места не нашли.
-        // Возвращаем на обычную позицию,
-        // а защита после возрождения не даст сразу получить удар.
         return 0f;
     }
 
@@ -373,7 +370,7 @@ public class RunManager : MonoBehaviour
         halfExtents.z +=
             reviveObstacleClearance;
 
-        Vector3 checkPosition =
+        Vector3 position =
             new Vector3(
                 x,
                 y,
@@ -382,7 +379,7 @@ public class RunManager : MonoBehaviour
 
         Collider[] hits =
             Physics.OverlapBox(
-                checkPosition,
+                position,
                 halfExtents,
                 Quaternion.identity,
                 Physics.AllLayers,
@@ -392,9 +389,7 @@ public class RunManager : MonoBehaviour
         foreach (Collider hit in hits)
         {
             if (hit == null)
-            {
                 continue;
-            }
 
             if (playerCollider != null &&
                 hit == playerCollider)
@@ -403,7 +398,8 @@ public class RunManager : MonoBehaviour
             }
 
             if (hit.transform.IsChildOf(
-                    player.transform))
+                    player.transform
+                ))
             {
                 continue;
             }
@@ -434,14 +430,10 @@ public class RunManager : MonoBehaviour
     public float GetRunProgress()
     {
         if (infiniteRun)
-        {
             return 0f;
-        }
 
         if (runDuration <= 0f)
-        {
             return 1f;
-        }
 
         float approachTime =
             GetSafeZoneApproachTime();
@@ -455,15 +447,13 @@ public class RunManager : MonoBehaviour
 
         if (activeSafeZone != null)
         {
-            float beforeApproachProgress =
-                runDuration > 0f
-                    ? Mathf.Clamp01(
-                        safeZoneSpawnTime /
-                        runDuration
-                    )
-                    : 0f;
+            float beforeApproach =
+                Mathf.Clamp01(
+                    safeZoneSpawnTime /
+                    runDuration
+                );
 
-            float approachProgress =
+            float approach =
                 Mathf.InverseLerp(
                     activeSafeZone.spawnZ,
                     0f,
@@ -473,15 +463,15 @@ public class RunManager : MonoBehaviour
                         .z
                 );
 
-            approachProgress =
+            approach =
                 Mathf.Clamp01(
-                    approachProgress
+                    approach
                 );
 
             return Mathf.Lerp(
-                beforeApproachProgress,
+                beforeApproach,
                 1f,
-                approachProgress
+                approach
             );
         }
 

@@ -7,7 +7,6 @@ public class SurfaceTextureScroller3D : MonoBehaviour
     public float worldSpeed = 15f;
 
     [Header("Размер поверхности")]
-    [Tooltip("Фактическая длина поверхности по Z.")]
     public float surfaceLength = 320f;
 
     [Header("Tiling текстуры")]
@@ -23,10 +22,11 @@ public class SurfaceTextureScroller3D : MonoBehaviour
 
     private void Awake()
     {
-        surfaceRenderer = GetComponent<Renderer>();
+        surfaceRenderer =
+            GetComponent<Renderer>();
 
-        // Runtime-копия материала.
-        surfaceMaterial = surfaceRenderer.material;
+        surfaceMaterial =
+            surfaceRenderer.material;
 
         offsetY = 0f;
     }
@@ -45,33 +45,61 @@ public class SurfaceTextureScroller3D : MonoBehaviour
         if (surfaceLength <= 0.01f)
             return;
 
+        float moveSpeed =
+            worldSpeed;
+
+        if (ObstacleSpawner3D.Instance != null)
+        {
+            moveSpeed =
+                ObstacleSpawner3D.Instance
+                    .CurrentObstacleSpeed;
+        }
+
         float uvSpeed =
-            worldSpeed *
+            moveSpeed *
             textureTilingY /
             surfaceLength;
 
         if (reverseDirection)
-            offsetY += uvSpeed * Time.deltaTime;
+        {
+            offsetY +=
+                uvSpeed *
+                Time.deltaTime;
+        }
         else
-            offsetY -= uvSpeed * Time.deltaTime;
+        {
+            offsetY -=
+                uvSpeed *
+                Time.deltaTime;
+        }
 
-        offsetY = Mathf.Repeat(offsetY, 1f);
+        offsetY =
+            Mathf.Repeat(
+                offsetY,
+                1f
+            );
 
-        // URP Lit
-        if (surfaceMaterial.HasProperty("_BaseMap"))
+        if (surfaceMaterial.HasProperty(
+                "_BaseMap"))
         {
             surfaceMaterial.SetTextureOffset(
                 "_BaseMap",
-                new Vector2(0f, offsetY)
+                new Vector2(
+                    0f,
+                    offsetY
+                )
             );
         }
 
-        // Дополнительная совместимость
-        if (surfaceMaterial.HasProperty("_MainTex"))
+        if (surfaceMaterial.HasProperty(
+                "_MainTex"))
         {
             surfaceMaterial.SetTextureOffset(
                 "_MainTex",
-                new Vector2(0f, offsetY)
+                new Vector2(
+                    0f,
+                    offsetY
+                )
             );
         }
     }

@@ -24,25 +24,33 @@ public class PickupMover3D : MonoBehaviour
 
     public void ApplyInitialState()
     {
-        currentZ = spawnZ;
+        currentZ =
+            spawnZ;
 
-        Vector3 p = transform.position;
+        Vector3 p =
+            transform.position;
 
-        p.x = laneX;
-        p.z = spawnZ;
+        p.x =
+            laneX;
 
-        transform.position = p;
+        p.z =
+            spawnZ;
+
+        transform.position =
+            p;
 
         initialised = true;
     }
 
     private void Start()
     {
-        pickup = GetComponent<Pickup3D>();
+        pickup =
+            GetComponent<Pickup3D>();
 
         isCoin =
             pickup != null &&
-            pickup.type == Pickup3DType.Coin;
+            pickup.type ==
+            Pickup3DType.Coin;
 
         if (!initialised)
         {
@@ -52,11 +60,22 @@ public class PickupMover3D : MonoBehaviour
 
     private void Update()
     {
+        float moveSpeed =
+            speed;
+
+        if (ObstacleSpawner3D.Instance != null)
+        {
+            moveSpeed =
+                ObstacleSpawner3D.Instance
+                    .CurrentObstacleSpeed;
+        }
+
         currentZ -=
-            speed *
+            moveSpeed *
             Time.deltaTime;
 
-        float desiredZ = currentZ;
+        float desiredZ =
+            currentZ;
 
         if (!isCoin)
         {
@@ -69,21 +88,28 @@ public class PickupMover3D : MonoBehaviour
                 );
         }
 
-        currentZ = desiredZ;
+        currentZ =
+            desiredZ;
 
-        Vector3 p = transform.position;
+        Vector3 p =
+            transform.position;
 
-        p.x = laneX;
-        p.z = currentZ;
+        p.x =
+            laneX;
 
-        transform.position = p;
+        p.z =
+            currentZ;
 
-        // Вращаются только монеты.
-        if (isCoin && spin)
+        transform.position =
+            p;
+
+        if (isCoin &&
+            spin)
         {
             transform.Rotate(
                 0f,
-                spinSpeed * Time.deltaTime,
+                spinSpeed *
+                Time.deltaTime,
                 0f,
                 Space.Self
             );

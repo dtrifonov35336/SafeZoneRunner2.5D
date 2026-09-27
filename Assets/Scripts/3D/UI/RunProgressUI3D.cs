@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class RunProgressUI3D : MonoBehaviour
 {
@@ -10,49 +9,42 @@ public class RunProgressUI3D : MonoBehaviour
     [Header("UI")]
     public GameObject root;
     public Image fill;
-    public TextMeshProUGUI label;
 
-    [Header("Настройки")]
+    [Header("Предпросмотр")]
     [Range(0f, 1f)]
-    public float startFill = 0f;
+    public float previewProgress = 0.5f;
 
-    [Header("Флаг прогресса")]
+    [Header("Флаг")]
     public float flagSize = 48f;
 
-    [Tooltip(
-        "Отступ заполненной области Fill от краёв Background."
-    )]
-    public float fillInset = 3f;
+    [Header("Отступ")]
+    public float fillInset = 4f;
+
+    [Header("Цвет фона")]
+    public Color progressBackgroundColor =
+        new Color32(
+            48,
+            54,
+            53,
+            245
+        );
 
     [Header("Цвет Fill")]
     public Color fillColor =
         new Color32(
-            198,
-            166,
-            91,
+            222,
+            190,
+            102,
             255
-        );
-
-    [Header("Цвет текста")]
-    public Color labelColor =
-        new Color32(
-            224,
-            191,
-            120,
-            255
-        );
-
-    [Header("Обводка текста")]
-    public Color labelOutlineColor =
-        new Color32(
-            35,
-            40,
-            39,
-            210
         );
 
     private RectTransform backgroundRect;
+    private RectTransform trackRect;
+    private RectTransform fillRect;
     private RectTransform flagRect;
+
+    private Image backgroundImage;
+    private Image trackImage;
     private Image flagImage;
 
     private void Awake()
@@ -63,17 +55,21 @@ public class RunProgressUI3D : MonoBehaviour
                 FindFirstObjectByType<RunManager>();
         }
 
+        if (root == null)
+        {
+            root = gameObject;
+        }
+
         ResolveReferences();
+        SetupLayout();
         ApplyStyle();
-        SetupFlagParent();
     }
 
     private void Start()
     {
         ResolveReferences();
+        SetupLayout();
         ApplyStyle();
-        SetupFlagParent();
-
         UpdateVisual();
     }
 
@@ -89,26 +85,71 @@ public class RunProgressUI3D : MonoBehaviour
             root = gameObject;
         }
 
-        if (backgroundRect == null)
-        {
-            Transform background =
-                root.transform.Find(
-                    "Background"
-                );
+        Transform background =
+            root.transform.Find(
+                "Background"
+            );
 
-            if (background != null)
-            {
-                backgroundRect =
-                    background.GetComponent<
-                        RectTransform
-                    >();
-            }
+        if (background != null)
+        {
+            backgroundRect =
+                background.GetComponent<
+                    RectTransform
+                >();
+
+            backgroundImage =
+                background.GetComponent<
+                    Image
+                >();
         }
 
-        if (flagRect == null)
+        if (backgroundRect != null)
         {
+            Transform track =
+                backgroundRect.Find(
+                    "ProgressBackground"
+                );
+
+            if (track != null)
+            {
+                trackRect =
+                    track.GetComponent<
+                        RectTransform
+                    >();
+
+                trackImage =
+                    track.GetComponent<
+                        Image
+                    >();
+
+                Transform trackFill =
+                    track.Find(
+                        "Fill"
+                    );
+
+                if (trackFill != null)
+                {
+                    fillRect =
+                        trackFill.GetComponent<
+                            RectTransform
+                        >();
+
+                    Image foundFill =
+                        trackFill.GetComponent<
+                            Image
+                        >();
+
+                    if (foundFill != null)
+                    {
+                        fill =
+                            foundFill;
+                    }
+                }
+            }
+
+            // Флаг находится внутри Background.
             Transform flag =
-                root.transform.Find(
+                backgroundRect.Find(
                     "Flag"
                 );
 
@@ -119,140 +160,270 @@ public class RunProgressUI3D : MonoBehaviour
                         RectTransform
                     >();
 
-                if (flagRect != null)
-                {
-                    flagImage =
-                        flagRect.GetComponent<
-                            Image
-                        >();
-                }
+                flagImage =
+                    flag.GetComponent<
+                        Image
+                    >();
             }
         }
     }
 
-    private void ApplyStyle()
+    private void SetupLayout()
     {
-        if (fill != null)
+        if (backgroundRect == null)
         {
-            fill.color =
-                fillColor;
+            return;
         }
 
-        if (label != null)
+        backgroundRect.anchorMin =
+            new Vector2(
+                0f,
+                1f
+            );
+
+        backgroundRect.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        backgroundRect.pivot =
+            new Vector2(
+                0.5f,
+                1f
+            );
+
+        backgroundRect.anchoredPosition =
+            new Vector2(
+                0f,
+                -2f
+            );
+
+        backgroundRect.sizeDelta =
+            new Vector2(
+                -24f,
+                34f
+            );
+
+        if (trackRect != null)
         {
-            label.color =
-                labelColor;
+            trackRect.anchorMin =
+                Vector2.zero;
 
-            label.outlineColor =
-                labelOutlineColor;
+            trackRect.anchorMax =
+                Vector2.one;
 
-            label.outlineWidth =
-                0.18f;
+            trackRect.offsetMin =
+                new Vector2(
+                    fillInset,
+                    fillInset
+                );
+
+            trackRect.offsetMax =
+                new Vector2(
+                    -fillInset,
+                    -fillInset
+                );
+
+            trackRect.SetAsFirstSibling();
+        }
+
+        if (fillRect != null &&
+            trackRect != null)
+        {
+            if (fillRect.parent != trackRect)
+            {
+                fillRect.SetParent(
+                    trackRect,
+                    false
+                );
+            }
+
+            fillRect.anchorMin =
+                new Vector2(
+                    0f,
+                    0f
+                );
+
+            fillRect.anchorMax =
+                new Vector2(
+                    0f,
+                    1f
+                );
+
+            fillRect.pivot =
+                new Vector2(
+                    0f,
+                    0.5f
+                );
+
+            fillRect.anchoredPosition =
+                Vector2.zero;
+
+            fillRect.localScale =
+                Vector3.one;
+
+            fillRect.SetAsLastSibling();
         }
 
         if (flagRect != null)
         {
+            if (flagRect.parent != backgroundRect)
+            {
+                flagRect.SetParent(
+                    backgroundRect,
+                    false
+                );
+            }
+
+            flagRect.anchorMin =
+                new Vector2(
+                    0f,
+                    0.5f
+                );
+
+            flagRect.anchorMax =
+                new Vector2(
+                    0f,
+                    0.5f
+                );
+
+            flagRect.pivot =
+                new Vector2(
+                    0.5f,
+                    0.5f
+                );
+
             flagRect.sizeDelta =
                 new Vector2(
                     flagSize,
                     flagSize
                 );
+
+            flagRect.localScale =
+                Vector3.one;
+
+            flagRect.SetAsLastSibling();
+        }
+    }
+
+    private void ApplyStyle()
+    {
+        if (trackImage != null)
+        {
+            trackImage.color =
+                progressBackgroundColor;
+
+            if (trackImage.sprite == null &&
+                backgroundImage != null)
+            {
+                trackImage.sprite =
+                    backgroundImage.sprite;
+
+                trackImage.type =
+                    backgroundImage.type;
+            }
+
+            trackImage.raycastTarget =
+                false;
+        }
+
+        if (fill != null)
+        {
+            fill.color =
+                fillColor;
+
+            fill.raycastTarget =
+                false;
         }
 
         if (flagImage != null)
         {
             flagImage.preserveAspect =
                 true;
+
+            flagImage.raycastTarget =
+                false;
         }
-    }
-
-    private void SetupFlagParent()
-    {
-        if (backgroundRect == null ||
-            flagRect == null)
-        {
-            return;
-        }
-
-        /*
-         * Флаг должен находиться внутри Background,
-         * чтобы его координаты напрямую соответствовали
-         * длине самой полосы.
-         */
-        if (flagRect.parent != backgroundRect)
-        {
-            flagRect.SetParent(
-                backgroundRect,
-                false
-            );
-        }
-
-        flagRect.anchorMin =
-            new Vector2(
-                0f,
-                0.5f
-            );
-
-        flagRect.anchorMax =
-            new Vector2(
-                0f,
-                0.5f
-            );
-
-        flagRect.pivot =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        flagRect.sizeDelta =
-            new Vector2(
-                flagSize,
-                flagSize
-            );
     }
 
     private void UpdateVisual()
     {
-        if (runManager == null)
+        if (root == null)
         {
-            return;
-        }
-
-        bool visible =
-            !runManager.infiniteRun;
-
-        if (root != null &&
-            root.activeSelf != visible)
-        {
-            root.SetActive(
-                visible
-            );
-        }
-
-        if (!visible)
-        {
-            return;
+            root = gameObject;
         }
 
         ResolveReferences();
-        SetupFlagParent();
-        ApplyStyle();
 
-        float progress =
-            Mathf.Clamp01(
-                runManager.GetRunProgress()
-            );
+        bool inPlayMode =
+            Application.isPlaying;
 
-        if (fill != null)
+        float progress;
+
+        if (inPlayMode &&
+            runManager != null)
         {
-            fill.fillAmount =
-                progress;
+            bool visible =
+                !runManager.infiniteRun;
+
+            if (root.activeSelf != visible)
+            {
+                root.SetActive(
+                    visible
+                );
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            progress =
+                Mathf.Clamp01(
+                    runManager.GetRunProgress()
+                );
         }
+        else
+        {
+            progress =
+                Mathf.Clamp01(
+                    previewProgress
+                );
+        }
+
+        UpdateFill(
+            progress
+        );
 
         UpdateFlagPosition(
             progress
         );
+    }
+
+    private void UpdateFill(
+        float progress
+    )
+    {
+        if (fillRect == null ||
+            trackRect == null)
+        {
+            return;
+        }
+
+        float width =
+            trackRect.rect.width;
+
+        if (width <= 0.01f)
+        {
+            return;
+        }
+
+        fillRect.sizeDelta =
+            new Vector2(
+                width * progress,
+                0f
+            );
     }
 
     private void UpdateFlagPosition(
@@ -273,46 +444,38 @@ public class RunProgressUI3D : MonoBehaviour
             return;
         }
 
-        /*
-         * Fill находится внутри Background
-         * с отступами 3 px с каждой стороны.
-         */
-        float left =
+        float trackLeft =
             fillInset;
 
-        float right =
+        float trackWidth =
+            backgroundWidth -
+            fillInset * 2f;
+
+        trackWidth =
             Mathf.Max(
-                left,
-                backgroundWidth -
-                fillInset
+                0f,
+                trackWidth
             );
 
-        /*
-         * Учитываем размер самой иконки,
-         * чтобы флаг не вылезал за границы полосы.
-         */
         float halfFlag =
             flagSize * 0.5f;
 
         float minX =
-            left +
+            trackLeft +
             halfFlag;
 
         float maxX =
-            Mathf.Max(
-                minX,
-                right -
-                halfFlag
-            );
+            trackLeft +
+            trackWidth -
+            halfFlag;
 
-        /*
-         * Флаг движется строго вместе
-         * с концом Fill.
-         */
         float x =
             Mathf.Lerp(
                 minX,
-                maxX,
+                Mathf.Max(
+                    minX,
+                    maxX
+                ),
                 progress
             );
 

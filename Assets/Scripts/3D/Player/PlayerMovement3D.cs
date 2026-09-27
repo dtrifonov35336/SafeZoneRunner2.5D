@@ -73,35 +73,69 @@ public class PlayerMovement3D : MonoBehaviour
     private void Awake()
     {
         animator =
-            GetComponentInChildren<Animator>();
+            GetComponentInChildren<
+                Animator
+            >();
 
         string charId =
-            ProfileManager.GetSelectedCharacterId();
+            ProfileManager
+                .GetSelectedCharacterId();
 
+        // Ангар + уровни:
+        // увеличивают скорость смены полос.
         laneChangeSpeed *=
-            BonusCalculator.GetSpeedMultiplier(
-                charId
-            );
+            BonusCalculator
+                .GetSpeedMultiplier(
+                    charId
+                );
 
-        recoverySpeed =
-            BonusCalculator.GetRecoverySpeed(
-                charId
-            );
+        // Выносливость реально влияет
+        // на восстановление после удара.
+        knockbackRecoverySpeed =
+            BonusCalculator
+                .GetKnockbackRecoverySpeed(
+                    charId,
+                    knockbackRecoverySpeed
+                );
 
-        currentY = baseY;
-        targetY = baseY;
+        // Ускоритель реально влияет
+        // на прыжок.
+        float jumpMultiplier =
+            BonusCalculator
+                .GetJumpHeightMultiplier(
+                    charId
+                );
+
+        jumpHeight *=
+            jumpMultiplier;
+
+        doubleJumpHeight *=
+            jumpMultiplier;
+
+        currentY =
+            baseY;
+
+        targetY =
+            baseY;
 
         if (lanePositions == null ||
             lanePositions.Length != 2)
         {
             lanePositions =
-                new float[] { -0.7f, 0.7f };
+                new float[]
+                {
+                    -0.7f,
+                    0.7f
+                };
         }
 
-        currentLane = 0;
+        currentLane =
+            0;
 
         targetX =
-            lanePositions[currentLane];
+            lanePositions[
+                currentLane
+            ];
 
         if (mainSprite == null &&
             animator != null)
@@ -118,9 +152,10 @@ public class PlayerMovement3D : MonoBehaviour
         if (victoryPose != null)
         {
             victorySprite =
-                victoryPose.GetComponentInChildren<
-                    SpriteRenderer
-                >(true);
+                victoryPose
+                    .GetComponentInChildren<
+                        SpriteRenderer
+                    >(true);
         }
 
         initialRotation =
@@ -134,9 +169,8 @@ public class PlayerMovement3D : MonoBehaviour
         if (fillLightTransform != null)
         {
             playerFillLight =
-                fillLightTransform.GetComponent<
-                    Light
-                >();
+                fillLightTransform
+                    .GetComponent<Light>();
         }
 
         if (playerFillLight == null)
@@ -154,6 +188,7 @@ public class PlayerMovement3D : MonoBehaviour
                 {
                     playerFillLight =
                         light;
+
                     break;
                 }
             }
@@ -162,8 +197,11 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void Update()
     {
-        if (isDead || isVictory)
+        if (isDead ||
+            isVictory)
+        {
             return;
+        }
 
         if (!isDying)
         {
@@ -247,8 +285,12 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void MoveLaneLeft()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
+        {
             return;
+        }
 
         currentLane--;
 
@@ -256,24 +298,33 @@ public class PlayerMovement3D : MonoBehaviour
             currentLane = 0;
 
         targetX =
-            lanePositions[currentLane];
+            lanePositions[
+                currentLane
+            ];
     }
 
     private void MoveLaneRight()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
+        {
             return;
+        }
 
         currentLane++;
 
-        if (currentLane >= lanePositions.Length)
+        if (currentLane >=
+            lanePositions.Length)
         {
             currentLane =
                 lanePositions.Length - 1;
         }
 
         targetX =
-            lanePositions[currentLane];
+            lanePositions[
+                currentLane
+            ];
     }
 
     private void UpdateLaneMovement()
@@ -296,8 +347,12 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void Jump()
     {
-        if (isDead || isDying || isVictory)
+        if (isDead ||
+            isDying ||
+            isVictory)
+        {
             return;
+        }
 
         if (isJumping)
             return;
@@ -307,8 +362,11 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void StartFirstJump()
     {
-        isJumping = true;
-        hasDoubleJumped = false;
+        isJumping =
+            true;
+
+        hasDoubleJumped =
+            false;
 
         verticalVelocity =
             Mathf.Sqrt(
@@ -323,7 +381,9 @@ public class PlayerMovement3D : MonoBehaviour
         if (isDead ||
             isDying ||
             isVictory)
+        {
             return;
+        }
 
         if (!allowDoubleJump)
             return;
@@ -337,7 +397,8 @@ public class PlayerMovement3D : MonoBehaviour
         if (hasDoubleJumped)
             return;
 
-        hasDoubleJumped = true;
+        hasDoubleJumped =
+            true;
 
         verticalVelocity =
             Mathf.Sqrt(
@@ -369,11 +430,17 @@ public class PlayerMovement3D : MonoBehaviour
         if (jumpOffset <= 0f &&
             verticalVelocity < 0f)
         {
-            jumpOffset = 0f;
-            verticalVelocity = 0f;
+            jumpOffset =
+                0f;
 
-            isJumping = false;
-            hasDoubleJumped = false;
+            verticalVelocity =
+                0f;
+
+            isJumping =
+                false;
+
+            hasDoubleJumped =
+                false;
         }
     }
 
@@ -382,13 +449,19 @@ public class PlayerMovement3D : MonoBehaviour
         if (isDead ||
             isDying ||
             isVictory)
+        {
             return;
+        }
 
         if (isSliding)
             return;
 
         if (slideCoroutine != null)
-            StopCoroutine(slideCoroutine);
+        {
+            StopCoroutine(
+                slideCoroutine
+            );
+        }
 
         slideCoroutine =
             StartCoroutine(
@@ -398,9 +471,11 @@ public class PlayerMovement3D : MonoBehaviour
 
     private IEnumerator SlideRoutine()
     {
-        isSliding = true;
+        isSliding =
+            true;
 
-        float timer = 0f;
+        float timer =
+            0f;
 
         while (timer < slideDuration)
         {
@@ -410,8 +485,11 @@ public class PlayerMovement3D : MonoBehaviour
             yield return null;
         }
 
-        isSliding = false;
-        slideCoroutine = null;
+        isSliding =
+            false;
+
+        slideCoroutine =
+            null;
     }
 
     private void UpdateGroundRecovery()
@@ -436,9 +514,13 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void UpdateKnockback()
     {
-        if (Mathf.Abs(knockbackZ) <= 0.001f)
+        if (Mathf.Abs(
+                knockbackZ
+            ) <= 0.001f)
         {
-            knockbackZ = 0f;
+            knockbackZ =
+                0f;
+
             return;
         }
 
@@ -467,12 +549,15 @@ public class PlayerMovement3D : MonoBehaviour
             pos;
     }
 
-    public void Knockback(float amount)
+    public void Knockback(
+        float amount)
     {
         if (isDead ||
             isDying ||
             isVictory)
+        {
             return;
+        }
 
         if (isJumping)
             return;
@@ -486,7 +571,7 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     // =========================================================
-    // ПАДЕНИЕ В ЯМУ
+    // PIT
     // =========================================================
 
     public void FallIntoPit()
@@ -494,24 +579,37 @@ public class PlayerMovement3D : MonoBehaviour
         FallIntoPit(0f);
     }
 
-    public void FallIntoPit(float delay)
+    public void FallIntoPit(
+        float delay)
     {
         if (isDead ||
             isDying ||
             isVictory)
+        {
             return;
+        }
 
         if (isJumping)
             return;
 
         if (slideCoroutine != null)
-            StopCoroutine(slideCoroutine);
+        {
+            StopCoroutine(
+                slideCoroutine
+            );
+        }
 
-        isSliding = false;
-        isDying = true;
+        isSliding =
+            false;
+
+        isDying =
+            true;
 
         if (playerFillLight != null)
-            playerFillLight.enabled = false;
+        {
+            playerFillLight.enabled =
+                false;
+        }
 
         StartCoroutine(
             FallIntoPitRoutine(
@@ -524,26 +622,28 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     private IEnumerator FallIntoPitRoutine(
-        float delay
-    )
+        float delay)
     {
         if (delay > 0f)
         {
-            yield return new WaitForSeconds(
-                delay
-            );
+            yield return
+                new WaitForSeconds(
+                    delay
+                );
         }
 
         float startY =
             currentY;
 
         float targetFallY =
-            minY - 2.0f;
+            minY -
+            2.0f;
 
         float duration =
             0.45f;
 
-        float timer = 0f;
+        float timer =
+            0f;
 
         while (timer < duration)
         {
@@ -572,18 +672,26 @@ public class PlayerMovement3D : MonoBehaviour
         Die();
     }
 
+    // =========================================================
+    // DEATH
+    // =========================================================
+
     public void StopAnimation()
     {
-        isVictory = true;
+        isVictory =
+            true;
 
         if (animator != null)
-            animator.speed = 0f;
+            animator.speed =
+                0f;
 
         if (mainSprite != null)
-            mainSprite.enabled = false;
+            mainSprite.enabled =
+                false;
 
         if (victorySprite != null)
-            victorySprite.enabled = true;
+            victorySprite.enabled =
+                true;
     }
 
     public void Kill()
@@ -591,7 +699,8 @@ public class PlayerMovement3D : MonoBehaviour
         if (isDead)
             return;
 
-        isDying = true;
+        isDying =
+            true;
 
         PlayerVisualController visualCtrl =
             GetComponentInChildren<
@@ -599,7 +708,9 @@ public class PlayerMovement3D : MonoBehaviour
             >();
 
         if (visualCtrl != null)
+        {
             visualCtrl.TriggerDeath();
+        }
 
         StartCoroutine(
             DeathSlideRoutine()
@@ -615,7 +726,8 @@ public class PlayerMovement3D : MonoBehaviour
             minY -
             finalKnockbackAmount;
 
-        float t = 0f;
+        float t =
+            0f;
 
         while (t < deathSlideDuration)
         {
@@ -649,7 +761,8 @@ public class PlayerMovement3D : MonoBehaviour
         if (isDead)
             return;
 
-        isDead = true;
+        isDead =
+            true;
     }
 
     // =========================================================
@@ -662,20 +775,30 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     public void Revive(
-        float reviveZ
-    )
+        float reviveZ)
     {
         StopAllCoroutines();
 
-        isDead = false;
-        isDying = false;
-        isVictory = false;
+        isDead =
+            false;
 
-        currentY = baseY;
-        targetY = baseY;
+        isDying =
+            false;
 
-        jumpOffset = 0f;
-        verticalVelocity = 0f;
+        isVictory =
+            false;
+
+        currentY =
+            baseY;
+
+        targetY =
+            baseY;
+
+        jumpOffset =
+            0f;
+
+        verticalVelocity =
+            0f;
 
         reviveZ =
             Mathf.Clamp(
@@ -687,25 +810,38 @@ public class PlayerMovement3D : MonoBehaviour
         knockbackZ =
             reviveZ;
 
-        isJumping = false;
-        hasDoubleJumped = false;
-        isSliding = false;
+        isJumping =
+            false;
 
-        currentLane = 0;
+        hasDoubleJumped =
+            false;
+
+        isSliding =
+            false;
+
+        currentLane =
+            0;
 
         if (lanePositions != null &&
             lanePositions.Length == 2)
         {
             targetX =
-                lanePositions[currentLane];
+                lanePositions[
+                    currentLane
+                ];
         }
 
         Vector3 pos =
             transform.position;
 
-        pos.x = targetX;
-        pos.y = baseY;
-        pos.z = reviveZ;
+        pos.x =
+            targetX;
+
+        pos.y =
+            baseY;
+
+        pos.z =
+            reviveZ;
 
         transform.position =
             pos;
@@ -714,7 +850,10 @@ public class PlayerMovement3D : MonoBehaviour
             initialRotation;
 
         if (playerFillLight != null)
-            playerFillLight.enabled = true;
+        {
+            playerFillLight.enabled =
+                true;
+        }
 
         Collider[] colliders =
             GetComponents<Collider>();
@@ -722,14 +861,21 @@ public class PlayerMovement3D : MonoBehaviour
         foreach (Collider col in colliders)
         {
             if (col != null)
-                col.enabled = true;
+                col.enabled =
+                    true;
         }
 
         if (mainSprite != null)
-            mainSprite.enabled = true;
+        {
+            mainSprite.enabled =
+                true;
+        }
 
         if (victorySprite != null)
-            victorySprite.enabled = false;
+        {
+            victorySprite.enabled =
+                false;
+        }
 
         PlayerVisualController visualCtrl =
             GetComponentInChildren<
@@ -737,16 +883,22 @@ public class PlayerMovement3D : MonoBehaviour
             >();
 
         if (visualCtrl != null)
+        {
             visualCtrl.ReviveAnimation();
+        }
     }
 
-    public bool IsDead() => isDead;
+    public bool IsDead() =>
+        isDead;
 
-    public bool IsDying() => isDying;
+    public bool IsDying() =>
+        isDying;
 
-    public bool IsJumping() => isJumping;
+    public bool IsJumping() =>
+        isJumping;
 
-    public bool IsSliding() => isSliding;
+    public bool IsSliding() =>
+        isSliding;
 
     public bool HasDoubleJumped() =>
         hasDoubleJumped;

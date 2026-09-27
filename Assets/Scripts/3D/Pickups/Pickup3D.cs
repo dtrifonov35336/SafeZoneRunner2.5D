@@ -9,12 +9,15 @@ public enum Pickup3DType
 
 public class Pickup3D : MonoBehaviour
 {
-    public Pickup3DType type = Pickup3DType.Coin;
+    public Pickup3DType type =
+        Pickup3DType.Coin;
+
     public int amount = 1;
 
     private bool collected = false;
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(
+        Collider other)
     {
         if (collected)
             return;
@@ -27,21 +30,62 @@ public class Pickup3D : MonoBehaviour
 
         collected = true;
 
+        string charId =
+            ProfileManager.GetSelectedCharacterId();
+
         switch (type)
         {
             case Pickup3DType.Coin:
-                // Одна монета = одно начисление.
-                // Бонусный множитель здесь специально не применяется.
-                HUDManager.Instance.AddCoins(amount);
-                break;
+                {
+                    float multiplier =
+                        BonusCalculator
+                            .GetCoinPickupMultiplier(
+                                charId
+                            );
+
+                    int finalAmount =
+                        Mathf.Max(
+                            1,
+                            Mathf.RoundToInt(
+                                amount *
+                                multiplier
+                            )
+                        );
+
+                    HUDManager.Instance.AddCoins(
+                        finalAmount
+                    );
+
+                    break;
+                }
 
             case Pickup3DType.Heart:
-                HUDManager.Instance.AddHealth(amount);
-                break;
+                {
+                    float multiplier =
+                        BonusCalculator
+                            .GetHeartHealMultiplier(
+                                charId
+                            );
+
+                    float finalHeal =
+                        amount *
+                        multiplier;
+
+                    HUDManager.Instance.AddHealth(
+                        finalHeal
+                    );
+
+                    break;
+                }
 
             case Pickup3DType.Diamond:
-                HUDManager.Instance.AddDiamonds(amount);
-                break;
+                {
+                    HUDManager.Instance.AddDiamonds(
+                        amount
+                    );
+
+                    break;
+                }
         }
 
         Destroy(gameObject);

@@ -71,18 +71,16 @@ public class ReviveManager : MonoBehaviour
             countdownSeconds;
 
         if (reviveAdButton != null)
+        {
             reviveAdButton.interactable = true;
+        }
 
+        // Кнопка всегда нажимаемая.
+        // При нехватке кристаллов Toast покажется
+        // непосредственно в OnReviveGems().
         if (reviveGemsButton != null)
         {
-            int balance =
-                PlayerPrefs.GetInt(
-                    "TotalDiamonds",
-                    0
-                );
-
-            reviveGemsButton.interactable =
-                balance >= revivePriceGems;
+            reviveGemsButton.interactable = true;
         }
 
         UpdateTimerText();
@@ -149,13 +147,12 @@ public class ReviveManager : MonoBehaviour
                 0
             );
 
-        if (balance <
-            revivePriceGems)
+        if (balance < revivePriceGems)
         {
             if (ToastNotification.Instance != null)
             {
                 ToastNotification.Instance.Show(
-                    "Не хватает кристаллов"
+                    "Недостаточно кристаллов"
                 );
             }
 
@@ -207,9 +204,6 @@ public class ReviveManager : MonoBehaviour
 
         if (runManager != null)
         {
-            // Только режим с убежищем.
-            // Если SafeZone уже появилась,
-            // заново создаём её впереди игрока.
             runManager.PrepareSafeZoneForRevive();
 
             if (player != null)

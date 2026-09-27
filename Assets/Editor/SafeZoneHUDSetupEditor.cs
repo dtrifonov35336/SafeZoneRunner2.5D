@@ -1,5 +1,4 @@
 using System.IO;
-using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -45,7 +44,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
 
         EditorGUILayout.HelpBox(
             "Настраивает адаптивные поля баланса и " +
-            "создаёт шкалу прогресса до убежища в MainRoad.",
+            "пересоздаёт шкалу прогресса до убежища в MainRoad.",
             MessageType.Info
         );
 
@@ -68,13 +67,14 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             );
 
         if (GUILayout.Button(
-                "2. СОЗДАТЬ ШКАЛУ ПРОГРЕССА ДО УБЕЖИЩА",
+                "2. ПЕРЕСОЗДАТЬ ШКАЛУ ПРОГРЕССА",
                 GUILayout.Height(42)))
         {
-            CreateRunProgress();
+            RecreateRunProgress();
         }
 
-        GUI.backgroundColor = Color.white;
+        GUI.backgroundColor =
+            Color.white;
     }
 
     private void MakeBalanceBoxesAdaptive()
@@ -116,9 +116,9 @@ public class SafeZoneHUDSetupEditor : EditorWindow
                     continue;
                 }
 
-                TextMeshProUGUI text =
+                TMPro.TextMeshProUGUI text =
                     tr.GetComponentInChildren<
-                        TextMeshProUGUI
+                        TMPro.TextMeshProUGUI
                     >(true);
 
                 if (text == null)
@@ -139,7 +139,8 @@ public class SafeZoneHUDSetupEditor : EditorWindow
                     changed++;
                 }
 
-                adaptive.valueText = text;
+                adaptive.valueText =
+                    text;
 
                 Transform icon =
                     tr.Find("Icon");
@@ -147,24 +148,40 @@ public class SafeZoneHUDSetupEditor : EditorWindow
                 if (icon != null)
                 {
                     adaptive.iconRect =
-                        icon.GetComponent<RectTransform>();
+                        icon.GetComponent<
+                            RectTransform
+                        >();
                 }
 
-                if (tr.name == "DistanceBox")
+                if (tr.name ==
+                    "DistanceBox")
                 {
-                    adaptive.minWidth = 220f;
-                    adaptive.maxWidth = 360f;
+                    adaptive.minWidth =
+                        220f;
+
+                    adaptive.maxWidth =
+                        360f;
                 }
                 else
                 {
-                    adaptive.minWidth = 260f;
-                    adaptive.maxWidth = 390f;
+                    adaptive.minWidth =
+                        260f;
+
+                    adaptive.maxWidth =
+                        390f;
                 }
 
-                adaptive.leftPadding = 18f;
-                adaptive.rightPadding = 18f;
-                adaptive.iconGap = 10f;
-                adaptive.textPadding = 8f;
+                adaptive.leftPadding =
+                    18f;
+
+                adaptive.rightPadding =
+                    18f;
+
+                adaptive.iconGap =
+                    10f;
+
+                adaptive.textPadding =
+                    8f;
 
                 EditorUtility.SetDirty(
                     adaptive
@@ -191,7 +208,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
         );
     }
 
-    private void CreateRunProgress()
+    private void RecreateRunProgress()
     {
         if (!SaveCurrent())
             return;
@@ -216,22 +233,6 @@ public class SafeZoneHUDSetupEditor : EditorWindow
         if (!scene.IsValid())
             return;
 
-        GameObject existing =
-            GameObject.Find(
-                "RunProgressUI"
-            );
-
-        if (existing != null)
-        {
-            EditorUtility.DisplayDialog(
-                "Уже создано",
-                "RunProgressUI уже есть в MainRoad.",
-                "OK"
-            );
-
-            return;
-        }
-
         GameObject topHud =
             GameObject.Find(
                 "TopHUD"
@@ -246,6 +247,114 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             );
 
             return;
+        }
+
+        Sprite backgroundSprite = null;
+        Sprite fillSprite = null;
+        Sprite flagSprite = null;
+
+        GameObject oldRoot =
+            GameObject.Find(
+                "RunProgressUI"
+            );
+
+        if (oldRoot != null)
+        {
+            Transform oldBackground =
+                oldRoot.transform.Find(
+                    "Background"
+                );
+
+            if (oldBackground != null)
+            {
+                Image oldBackgroundImage =
+                    oldBackground.GetComponent<
+                        Image
+                    >();
+
+                if (oldBackgroundImage != null)
+                {
+                    backgroundSprite =
+                        oldBackgroundImage.sprite;
+                }
+
+                Transform oldTrack =
+                    oldBackground.Find(
+                        "ProgressBackground"
+                    );
+
+                if (oldTrack != null)
+                {
+                    Image oldTrackImage =
+                        oldTrack.GetComponent<
+                            Image
+                        >();
+
+                    if (oldTrackImage != null &&
+                        oldTrackImage.sprite != null)
+                    {
+                        backgroundSprite =
+                            oldTrackImage.sprite;
+                    }
+                }
+
+                Transform oldFill =
+                    oldBackground.Find(
+                        "Fill"
+                    );
+
+                if (oldFill == null &&
+                    oldTrack != null)
+                {
+                    oldFill =
+                        oldTrack.Find("Fill");
+                }
+
+                if (oldFill != null)
+                {
+                    Image oldFillImage =
+                        oldFill.GetComponent<
+                            Image
+                        >();
+
+                    if (oldFillImage != null)
+                    {
+                        fillSprite =
+                            oldFillImage.sprite;
+                    }
+                }
+            }
+
+            Transform oldFlag =
+                oldRoot.transform.Find(
+                    "Flag"
+                );
+
+            if (oldFlag != null)
+            {
+                Image oldFlagImage =
+                    oldFlag.GetComponent<
+                        Image
+                    >();
+
+                if (oldFlagImage != null)
+                {
+                    flagSprite =
+                        oldFlagImage.sprite;
+                }
+            }
+
+            Undo.DestroyObjectImmediate(
+                oldRoot
+            );
+        }
+
+        if (flagSprite == null)
+        {
+            flagSprite =
+                AssetDatabase.LoadAssetAtPath<Sprite>(
+                    FlagPath
+                );
         }
 
         // -------------------------------------------------
@@ -296,78 +405,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             );
 
         // -------------------------------------------------
-        // LABEL
-        // -------------------------------------------------
-
-        GameObject labelGO =
-            new GameObject(
-                "Label"
-            );
-
-        labelGO.transform.SetParent(
-            root.transform,
-            false
-        );
-
-        RectTransform labelRect =
-            labelGO.AddComponent<
-                RectTransform
-            >();
-
-        labelRect.anchorMin =
-            new Vector2(
-                0f,
-                1f
-            );
-
-        labelRect.anchorMax =
-            new Vector2(
-                1f,
-                1f
-            );
-
-        labelRect.offsetMin =
-            new Vector2(
-                0f,
-                -28f
-            );
-
-        labelRect.offsetMax =
-            Vector2.zero;
-
-        TextMeshProUGUI label =
-            labelGO.AddComponent<
-                TextMeshProUGUI
-            >();
-
-        label.text =
-            "ДО УБЕЖИЩА";
-
-        label.fontSize =
-            18f;
-
-        label.alignment =
-            TextAlignmentOptions.Center;
-
-        label.color =
-            new Color32(
-                205,
-                202,
-                194,
-                255
-            );
-
-        label.raycastTarget =
-            false;
-
-        if (TMP_Settings.defaultFontAsset != null)
-        {
-            label.font =
-                TMP_Settings.defaultFontAsset;
-        }
-
-        // -------------------------------------------------
-        // BAR BACKGROUND
+        // BACKGROUND
         // -------------------------------------------------
 
         GameObject backgroundGO =
@@ -388,30 +426,30 @@ public class SafeZoneHUDSetupEditor : EditorWindow
         bgRect.anchorMin =
             new Vector2(
                 0f,
-                0f
+                1f
             );
 
         bgRect.anchorMax =
             new Vector2(
                 1f,
-                0f
+                1f
             );
 
         bgRect.pivot =
             new Vector2(
                 0.5f,
-                0f
+                1f
             );
 
         bgRect.anchoredPosition =
             new Vector2(
-                -12f,
-                8f
+                0f,
+                -2f
             );
 
         bgRect.sizeDelta =
             new Vector2(
-                -56f,
+                -24f,
                 34f
             );
 
@@ -421,7 +459,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             >();
 
         background.sprite =
-            GetUISprite();
+            backgroundSprite;
 
         background.type =
             Image.Type.Sliced;
@@ -434,6 +472,68 @@ public class SafeZoneHUDSetupEditor : EditorWindow
                 235
             );
 
+        background.raycastTarget =
+            false;
+
+        // -------------------------------------------------
+        // PROGRESS BACKGROUND
+        // -------------------------------------------------
+
+        GameObject trackGO =
+            new GameObject(
+                "ProgressBackground"
+            );
+
+        trackGO.transform.SetParent(
+            backgroundGO.transform,
+            false
+        );
+
+        RectTransform trackRect =
+            trackGO.AddComponent<
+                RectTransform
+            >();
+
+        trackRect.anchorMin =
+            Vector2.zero;
+
+        trackRect.anchorMax =
+            Vector2.one;
+
+        trackRect.offsetMin =
+            new Vector2(
+                4f,
+                4f
+            );
+
+        trackRect.offsetMax =
+            new Vector2(
+                -4f,
+                -4f
+            );
+
+        Image track =
+            trackGO.AddComponent<
+                Image
+            >();
+
+        track.sprite =
+            backgroundSprite;
+
+        track.type =
+            Image.Type.Sliced;
+
+        track.color =
+            new Color32(
+                48,
+                54,
+                53,
+                245
+            );
+
+        track.raycastTarget =
+            false;
+
         // -------------------------------------------------
         // FILL
         // -------------------------------------------------
@@ -444,7 +544,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             );
 
         fillGO.transform.SetParent(
-            backgroundGO.transform,
+            trackGO.transform,
             false
         );
 
@@ -454,21 +554,34 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             >();
 
         fillRect.anchorMin =
-            Vector2.zero;
-
-        fillRect.anchorMax =
-            Vector2.one;
-
-        fillRect.offsetMin =
             new Vector2(
-                3f,
-                3f
+                0f,
+                0f
             );
 
-        fillRect.offsetMax =
+        fillRect.anchorMax =
             new Vector2(
-                -3f,
-                -3f
+                0f,
+                1f
+            );
+
+        fillRect.pivot =
+            new Vector2(
+                0f,
+                0.5f
+            );
+
+        float previewProgress =
+            0.5f;
+
+        float previewWidth =
+            trackRect.rect.width *
+            previewProgress;
+
+        fillRect.sizeDelta =
+            new Vector2(
+                previewWidth,
+                0f
             );
 
         Image fill =
@@ -477,25 +590,16 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             >();
 
         fill.sprite =
-            GetUISprite();
+            fillSprite;
 
         fill.type =
-            Image.Type.Filled;
-
-        fill.fillMethod =
-            Image.FillMethod.Horizontal;
-
-        fill.fillOrigin =
-            0;
-
-        fill.fillAmount =
-            0f;
+            Image.Type.Simple;
 
         fill.color =
             new Color32(
-                126,
-                145,
-                116,
+                222,
+                190,
+                102,
                 255
             );
 
@@ -506,25 +610,13 @@ public class SafeZoneHUDSetupEditor : EditorWindow
         // FLAG
         // -------------------------------------------------
 
-        Sprite flag =
-            AssetDatabase.LoadAssetAtPath<Sprite>(
-                FlagPath
-            );
-
-        if (flag == null)
-        {
-            Debug.LogWarning(
-                $"Не найден спрайт: {FlagPath}"
-            );
-        }
-
         GameObject flagGO =
             new GameObject(
                 "Flag"
             );
 
         flagGO.transform.SetParent(
-            root.transform,
+            backgroundGO.transform,
             false
         );
 
@@ -535,14 +627,14 @@ public class SafeZoneHUDSetupEditor : EditorWindow
 
         flagRect.anchorMin =
             new Vector2(
-                1f,
-                0f
+                0f,
+                0.5f
             );
 
         flagRect.anchorMax =
             new Vector2(
-                1f,
-                0f
+                0f,
+                0.5f
             );
 
         flagRect.pivot =
@@ -551,16 +643,29 @@ public class SafeZoneHUDSetupEditor : EditorWindow
                 0.5f
             );
 
-        flagRect.anchoredPosition =
-            new Vector2(
-                -2f,
-                25f
-            );
-
         flagRect.sizeDelta =
             new Vector2(
                 48f,
                 48f
+            );
+
+        float trackLeft = 4f;
+        float trackWidth =
+            Mathf.Max(
+                0f,
+                bgRect.rect.width -
+                8f
+            );
+
+        float flagX =
+            trackLeft +
+            trackWidth *
+            previewProgress;
+
+        flagRect.anchoredPosition =
+            new Vector2(
+                flagX,
+                0f
             );
 
         Image flagImage =
@@ -569,7 +674,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             >();
 
         flagImage.sprite =
-            flag;
+            flagSprite;
 
         flagImage.preserveAspect =
             true;
@@ -581,7 +686,7 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             false;
 
         // -------------------------------------------------
-        // RUNTIME COMPONENT
+        // RUNTIME
         // -------------------------------------------------
 
         RunProgressUI3D progress =
@@ -595,11 +700,19 @@ public class SafeZoneHUDSetupEditor : EditorWindow
         progress.fill =
             fill;
 
-        progress.label =
-            label;
+        progress.previewProgress =
+            previewProgress;
+
+        progress.flagSize =
+            48f;
+
+        progress.fillInset =
+            4f;
 
         progress.runManager =
-            FindFirstObjectByType<RunManager>();
+            FindFirstObjectByType<
+                RunManager
+            >();
 
         root.transform.SetSiblingIndex(
             topHud.transform.childCount - 1
@@ -617,19 +730,20 @@ public class SafeZoneHUDSetupEditor : EditorWindow
             scene
         );
 
+        Selection.activeGameObject =
+            root;
+
+        EditorGUIUtility.PingObject(
+            root
+        );
+
         EditorUtility.DisplayDialog(
             "Готово",
-            "Шкала прогресса добавлена в MainRoad.\n\n" +
-            "Она показывается только в режиме " +
-            "«Добраться до убежища».",
+            "Шкала прогресса пересоздана в MainRoad.\n\n" +
+            "Текст удалён.\n" +
+            "Шкала поднята на место текста.\n" +
+            "Предпросмотр установлен на 50%.",
             "OK"
-        );
-    }
-
-    private static Sprite GetUISprite()
-    {
-        return Resources.GetBuiltinResource<Sprite>(
-            "UI/Skin/UISprite.psd"
         );
     }
 

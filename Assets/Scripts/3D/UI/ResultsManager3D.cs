@@ -41,15 +41,19 @@ public class ResultsManager : MonoBehaviour
 
     [Header("Настройки")]
     public string menuSceneName = "MainMenu";
-    public string bestDistanceKey = "BestDistance";
 
     [Header("Задержка")]
     public float delayBeforeShow = 2.2f;
 
+    private const string SHELTER_BEST_KEY =
+        "BestDistance_Shelter";
+
+    private const string INFINITE_BEST_KEY =
+        "BestDistance_Infinite";
+
     private bool shown = false;
 
-    private float gameOverTime =
-        -1f;
+    private float gameOverTime = -1f;
 
     private void Awake()
     {
@@ -104,6 +108,23 @@ public class ResultsManager : MonoBehaviour
         {
             Show();
         }
+    }
+
+    private bool IsInfiniteRun()
+    {
+        RunManager runManager =
+            FindFirstObjectByType<RunManager>();
+
+        return
+            runManager != null &&
+            runManager.infiniteRun;
+    }
+
+    private string GetBestRecordKey()
+    {
+        return IsInfiniteRun()
+            ? INFINITE_BEST_KEY
+            : SHELTER_BEST_KEY;
     }
 
     private void Show()
@@ -211,15 +232,24 @@ public class ResultsManager : MonoBehaviour
 
         if (missedText != null)
         {
-            missedText.gameObject.SetActive(true);
+            missedText.gameObject.SetActive(
+                true
+            );
 
             missedText.text =
                 $"Не спасено людей: {missed}";
         }
 
+        // =====================================================
+        // РЕКОРД ТЕКУЩЕГО РЕЖИМА
+        // =====================================================
+
+        string bestKey =
+            GetBestRecordKey();
+
         int bestDistance =
             PlayerPrefs.GetInt(
-                bestDistanceKey,
+                bestKey,
                 0
             );
 
@@ -235,7 +265,7 @@ public class ResultsManager : MonoBehaviour
                 currentDistance;
 
             PlayerPrefs.SetInt(
-                bestDistanceKey,
+                bestKey,
                 bestDistance
             );
 
@@ -249,6 +279,10 @@ public class ResultsManager : MonoBehaviour
                 bestDistance +
                 " м";
         }
+
+        // =====================================================
+        // ПОБЕДА
+        // =====================================================
 
         if (victory)
         {
@@ -272,6 +306,10 @@ public class ResultsManager : MonoBehaviour
 
             return;
         }
+
+        // =====================================================
+        // ПОРАЖЕНИЕ
+        // =====================================================
 
         if (bottomButtonsRoot != null)
             bottomButtonsRoot.SetActive(false);
@@ -313,7 +351,6 @@ public class ResultsManager : MonoBehaviour
         if (resultsPanel != null)
             resultsPanel.SetActive(false);
 
-        // Старые экранные кнопки НЕ возвращаем.
         if (gameplayControlsUI != null)
             gameplayControlsUI.SetActive(false);
 
@@ -332,8 +369,7 @@ public class ResultsManager : MonoBehaviour
         Time.timeScale = 1f;
 
         SceneManager.LoadScene(
-            SceneManager.GetActiveScene()
-                .buildIndex
+            SceneManager.GetActiveScene().buildIndex
         );
     }
 

@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteAlways]
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+[RequireComponent(
+    typeof(MeshFilter),
+    typeof(MeshRenderer)
+)]
 public class RoadDashedLine : MonoBehaviour
 {
     [Header("Длина дороги")]
@@ -26,13 +29,31 @@ public class RoadDashedLine : MonoBehaviour
     private MeshFilter meshFilter;
     private Mesh generatedMesh;
 
-    private readonly List<Vector3> vertices = new List<Vector3>(512);
-    private readonly List<int> triangles = new List<int>(768);
+    private readonly List<Vector3> vertices =
+        new List<Vector3>(512);
+
+    private readonly List<int> triangles =
+        new List<int>(768);
 
     private float scrollOffset;
 
-    private float CycleLength => dashLength + gapLength;
-    private float HalfLength => roadLength * 0.5f;
+    private float CycleLength
+    {
+        get
+        {
+            return dashLength +
+                   gapLength;
+        }
+    }
+
+    private float HalfLength
+    {
+        get
+        {
+            return roadLength *
+                   0.5f;
+        }
+    }
 
     private void OnEnable()
     {
@@ -59,18 +80,34 @@ public class RoadDashedLine : MonoBehaviour
 
         if (ChaseManager.Instance != null &&
             ChaseManager.Instance.IsGameOver())
+        {
             return;
+        }
 
         if (CycleLength <= 0.01f)
             return;
 
-        // Двигаем рисунок разметки внутрь существующей длины дороги.
-        // Из-за поворота объекта X=-90 увеличение локального Y
-        // соответствует движению по мировому Z в сторону игрока.
-        scrollOffset += speed * Time.deltaTime;
+        float moveSpeed =
+            speed;
 
-        while (scrollOffset >= CycleLength)
-            scrollOffset -= CycleLength;
+        if (ObstacleSpawner3D.Instance != null)
+        {
+            moveSpeed =
+                ObstacleSpawner3D.Instance
+                    .CurrentObstacleSpeed;
+        }
+
+        scrollOffset +=
+            moveSpeed *
+            Time.deltaTime;
+
+        while (
+            scrollOffset >=
+            CycleLength)
+        {
+            scrollOffset -=
+                CycleLength;
+        }
 
         UpdateMeshPositions();
     }
@@ -78,7 +115,10 @@ public class RoadDashedLine : MonoBehaviour
     private void BuildMesh()
     {
         if (meshFilter == null)
-            meshFilter = GetComponent<MeshFilter>();
+        {
+            meshFilter =
+                GetComponent<MeshFilter>();
+        }
 
         if (meshFilter == null)
             return;
@@ -87,22 +127,29 @@ public class RoadDashedLine : MonoBehaviour
         {
 #if UNITY_EDITOR
             if (!Application.isPlaying)
-                DestroyImmediate(generatedMesh);
+                DestroyImmediate(
+                    generatedMesh
+                );
             else
-                Destroy(generatedMesh);
+                Destroy(
+                    generatedMesh
+                );
 #else
             Destroy(generatedMesh);
 #endif
         }
 
-        generatedMesh = new Mesh
-        {
-            name = "RoadDashedLineMesh"
-        };
+        generatedMesh =
+            new Mesh
+            {
+                name =
+                    "RoadDashedLineMesh"
+            };
 
         generatedMesh.MarkDynamic();
 
-        meshFilter.sharedMesh = generatedMesh;
+        meshFilter.sharedMesh =
+            generatedMesh;
 
         scrollOffset = 0f;
 
@@ -117,75 +164,161 @@ public class RoadDashedLine : MonoBehaviour
         vertices.Clear();
         triangles.Clear();
 
-        if (roadLength <= 0f || CycleLength <= 0f)
-            return;
-
-        int dashCount = Mathf.CeilToInt(roadLength / CycleLength);
-
-        float halfWidth = lineWidth * 0.5f;
-
-        for (int i = 0; i < dashCount; i++)
+        if (roadLength <= 0f ||
+            CycleLength <= 0f)
         {
-            float start = -HalfLength + i * CycleLength + scrollOffset;
+            return;
+        }
 
-            // Переносим штрих обратно в диапазон [-HalfLength, HalfLength].
-            while (start >= HalfLength)
-                start -= roadLength;
+        int dashCount =
+            Mathf.CeilToInt(
+                roadLength /
+                CycleLength
+            );
 
-            while (start < -HalfLength)
-                start += roadLength;
+        float halfWidth =
+            lineWidth *
+            0.5f;
 
-            float end = start + dashLength;
+        for (int i = 0;
+             i < dashCount;
+             i++)
+        {
+            float start =
+                -HalfLength +
+                i * CycleLength +
+                scrollOffset;
 
-            // Обычный штрих, полностью внутри дороги.
+            while (
+                start >= HalfLength)
+            {
+                start -=
+                    roadLength;
+            }
+
+            while (
+                start < -HalfLength)
+            {
+                start +=
+                    roadLength;
+            }
+
+            float end =
+                start +
+                dashLength;
+
             if (end <= HalfLength)
             {
-                AddQuad(start, end, halfWidth);
+                AddQuad(
+                    start,
+                    end,
+                    halfWidth
+                );
             }
             else
             {
-                // Штрих пересёк конец дороги.
-                // Разрезаем его на две части:
-                //
-                // [start ----- конец]
-                // [начало ----- end]
-                //
-                // Поэтому никакого исчезновения на границе нет.
+                AddQuad(
+                    start,
+                    HalfLength,
+                    halfWidth
+                );
 
-                AddQuad(start, HalfLength, halfWidth);
+                float wrappedEnd =
+                    end -
+                    roadLength;
 
-                float wrappedEnd = end - roadLength;
-
-                if (wrappedEnd > -HalfLength)
-                    AddQuad(-HalfLength, wrappedEnd, halfWidth);
+                if (wrappedEnd >
+                    -HalfLength)
+                {
+                    AddQuad(
+                        -HalfLength,
+                        wrappedEnd,
+                        halfWidth
+                    );
+                }
             }
         }
 
         generatedMesh.Clear();
-        generatedMesh.SetVertices(vertices);
-        generatedMesh.SetTriangles(triangles, 0);
+
+        generatedMesh.SetVertices(
+            vertices
+        );
+
+        generatedMesh.SetTriangles(
+            triangles,
+            0
+        );
+
         generatedMesh.RecalculateBounds();
         generatedMesh.RecalculateNormals();
     }
 
-    private void AddQuad(float start, float end, float halfWidth)
+    private void AddQuad(
+        float start,
+        float end,
+        float halfWidth)
     {
         if (end <= start)
             return;
 
-        int index = vertices.Count;
+        int index =
+            vertices.Count;
 
-        vertices.Add(new Vector3(-halfWidth, start, 0f));
-        vertices.Add(new Vector3(halfWidth, start, 0f));
-        vertices.Add(new Vector3(halfWidth, end, 0f));
-        vertices.Add(new Vector3(-halfWidth, end, 0f));
+        vertices.Add(
+            new Vector3(
+                -halfWidth,
+                start,
+                0f
+            )
+        );
 
-        triangles.Add(index + 0);
-        triangles.Add(index + 1);
-        triangles.Add(index + 2);
+        vertices.Add(
+            new Vector3(
+                halfWidth,
+                start,
+                0f
+            )
+        );
 
-        triangles.Add(index + 0);
-        triangles.Add(index + 2);
-        triangles.Add(index + 3);
+        vertices.Add(
+            new Vector3(
+                halfWidth,
+                end,
+                0f
+            )
+        );
+
+        vertices.Add(
+            new Vector3(
+                -halfWidth,
+                end,
+                0f
+            )
+        );
+
+        triangles.Add(
+            index + 0
+        );
+
+        triangles.Add(
+            index + 1
+        );
+
+        triangles.Add(
+            index + 2
+        );
+
+        triangles.Add(
+            index + 0
+        );
+
+        triangles.Add(
+            index + 2
+        );
+
+        triangles.Add(
+            index + 3
+        );
     }
 }

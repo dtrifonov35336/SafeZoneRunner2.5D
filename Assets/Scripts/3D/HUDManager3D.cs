@@ -20,130 +20,276 @@ public class HUDManager : MonoBehaviour
     [Header("Task")]
     public TextMeshProUGUI taskText;
 
-    [Header("Rescued (спасённые)")]
-    [Tooltip("Счётчик спасённых в TopHUD. Опционально.")]
+    [Header("Rescued")]
     public TextMeshProUGUI rescuedText;
 
     private float currentHealth;
+
     private int coins = 0;
     private int diamonds = 0;
+
     private float distance = 0f;
+
     private bool isRunning = true;
 
     private int rescued = 0;
     private int missedRescued = 0;
 
+    private int committedCoins = 0;
+
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null &&
+            Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
     }
 
     private void Start()
     {
-        string charId = ProfileManager.GetSelectedCharacterId();
-        maxHealth = BonusCalculator.GetMaxHealth(charId);
+        string charId =
+            ProfileManager.GetSelectedCharacterId();
 
-        currentHealth = maxHealth;
+        maxHealth =
+            BonusCalculator.GetMaxHealth(
+                charId
+            );
+
+        currentHealth =
+            maxHealth;
+
         coins = 0;
         diamonds = 0;
         rescued = 0;
         missedRescued = 0;
+        committedCoins = 0;
 
-        if (resetBarOnStart) UpdateBarVisual();
+        if (resetBarOnStart)
+            UpdateBarVisual();
+
         UpdateCoins(coins);
         UpdateDiamonds(diamonds);
         UpdateDistance(0);
         UpdateRescued(0);
-        SetTask("Доберись до убежища");
 
-        Debug.Log($"[HUD] Макс. HP: {maxHealth}");
-    }
+        SetTask(
+            "Доберись до убежища"
+        );
 
-    public void AddCoinsWithBonus(int baseAmount)
-    {
-        string charId = ProfileManager.GetSelectedCharacterId();
-        float mult = BonusCalculator.GetRewardMultiplier(charId);
-        int final = Mathf.RoundToInt(baseAmount * mult);
-        AddCoins(final);
+        Debug.Log(
+            $"[HUD] Макс. HP: {maxHealth}"
+        );
     }
 
     private void Update()
     {
-        if (!isRunning) return;
-        distance += Time.deltaTime * 10f;
+        if (!isRunning)
+            return;
+
+        distance +=
+            Time.deltaTime * 10f;
+
         UpdateDistance(distance);
     }
 
-    // ========== HEALTH ==========
+    // =========================================================
+    // HEALTH
+    // =========================================================
 
     public void SetHealth(float hp)
     {
-        currentHealth = Mathf.Clamp(hp, 0f, maxHealth);
+        currentHealth =
+            Mathf.Clamp(
+                hp,
+                0f,
+                maxHealth
+            );
+
         UpdateBarVisual();
     }
 
-    public void ReduceHealth(float amount) { SetHealth(currentHealth - amount); }
-    public void AddHealth(float amount) { SetHealth(currentHealth + amount); }
-    public float GetHealth() => currentHealth;
+    public void ReduceHealth(float amount)
+    {
+        SetHealth(
+            currentHealth - amount
+        );
+    }
+
+    public void AddHealth(float amount)
+    {
+        SetHealth(
+            currentHealth + amount
+        );
+    }
+
+    public float GetHealth()
+    {
+        return currentHealth;
+    }
 
     private void UpdateBarVisual()
     {
-        if (barFill == null) return;
-        float ratio = currentHealth / maxHealth;
-        barFill.sizeDelta = new Vector2(maxBarWidth * ratio, barFill.sizeDelta.y);
+        if (barFill == null)
+            return;
+
+        float ratio =
+            maxHealth > 0f
+                ? currentHealth / maxHealth
+                : 0f;
+
+        barFill.sizeDelta =
+            new Vector2(
+                maxBarWidth * ratio,
+                barFill.sizeDelta.y
+            );
     }
 
-    // ========== COINS ==========
+    // =========================================================
+    // COINS
+    // =========================================================
 
     public void UpdateCoins(int amount)
     {
         coins = amount;
-        if (coinsText != null) coinsText.text = amount.ToString();
+
+        if (coinsText != null)
+        {
+            coinsText.text =
+                amount.ToString();
+        }
     }
 
-    public void AddCoins(int amount) { UpdateCoins(coins + amount); }
+    public void AddCoins(int amount)
+    {
+        UpdateCoins(
+            coins + amount
+        );
+    }
+
+    // Только награда за спасённого.
+    // Рюкзак здесь специально НЕ применяется.
+    public void AddCoinsWithBonus(
+        int baseAmount)
+    {
+        string charId =
+            ProfileManager.GetSelectedCharacterId();
+
+        float multiplier =
+            BonusCalculator.GetRewardMultiplier(
+                charId
+            );
+
+        int finalAmount =
+            Mathf.Max(
+                1,
+                Mathf.RoundToInt(
+                    baseAmount *
+                    multiplier
+                )
+            );
+
+        AddCoins(
+            finalAmount
+        );
+    }
 
     public void CommitCoinsToTotal()
     {
-        if (coins <= 0) return;
-        int total = PlayerPrefs.GetInt("TotalCoins", 0) + coins;
-        PlayerPrefs.SetInt("TotalCoins", total);
+        int newCoins =
+            coins - committedCoins;
+
+        if (newCoins <= 0)
+            return;
+
+        int total =
+            PlayerPrefs.GetInt(
+                "TotalCoins",
+                0
+            );
+
+        total += newCoins;
+
+        PlayerPrefs.SetInt(
+            "TotalCoins",
+            total
+        );
+
         PlayerPrefs.Save();
-        Debug.Log($"[HUD] Coins committed. Session = {coins}, Total = {total}");
+
+        committedCoins =
+            coins;
+
+        Debug.Log(
+            $"[HUD] Coins committed. New = {newCoins}, Total = {total}"
+        );
     }
 
-    // ========== DIAMONDS ==========
+    // =========================================================
+    // DIAMONDS
+    // =========================================================
 
     public void UpdateDiamonds(int amount)
     {
         diamonds = amount;
-        if (diamondsText != null) diamondsText.text = amount.ToString();
+
+        if (diamondsText != null)
+        {
+            diamondsText.text =
+                amount.ToString();
+        }
     }
 
-    public void AddDiamonds(int amount) { UpdateDiamonds(diamonds + amount); }
+    public void AddDiamonds(int amount)
+    {
+        UpdateDiamonds(
+            diamonds + amount
+        );
+    }
 
-    // ========== DISTANCE / TASK ==========
+    // =========================================================
+    // DISTANCE
+    // =========================================================
 
     public void UpdateDistance(float meters)
     {
-        if (distanceText != null) distanceText.text = $"{Mathf.RoundToInt(meters)} м";
+        if (distanceText != null)
+        {
+            distanceText.text =
+                $"{Mathf.RoundToInt(meters)} м";
+        }
     }
 
     public void SetTask(string text)
     {
-        if (taskText != null) taskText.text = text;
+        if (taskText != null)
+            taskText.text = text;
     }
 
-    public void StopRun() { isRunning = false; }
-    public void ResumeRun() { isRunning = true; }
+    public void StopRun()
+    {
+        isRunning = false;
+    }
 
-    // ========== RESCUED ==========
+    public void ResumeRun()
+    {
+        isRunning = true;
+    }
+
+    // =========================================================
+    // RESCUED
+    // =========================================================
 
     public void AddRescued(int amount)
     {
         rescued += amount;
-        UpdateRescued(rescued);
+
+        UpdateRescued(
+            rescued
+        );
     }
 
     public void RegisterMissedRescue()
@@ -151,16 +297,42 @@ public class HUDManager : MonoBehaviour
         missedRescued++;
     }
 
-    private void UpdateRescued(int value)
+    private void UpdateRescued(
+        int value)
     {
-        if (rescuedText != null) rescuedText.text = value.ToString();
+        if (rescuedText != null)
+        {
+            rescuedText.text =
+                value.ToString();
+        }
     }
 
-    // ========== GETTERS ==========
+    // =========================================================
+    // GETTERS
+    // =========================================================
 
-    public float GetDistance() => distance;
-    public int GetCoins() => coins;
-    public int GetDiamonds() => diamonds;
-    public int GetRescued() => rescued;
-    public int GetMissedRescued() => missedRescued;
+    public float GetDistance()
+    {
+        return distance;
+    }
+
+    public int GetCoins()
+    {
+        return coins;
+    }
+
+    public int GetDiamonds()
+    {
+        return diamonds;
+    }
+
+    public int GetRescued()
+    {
+        return rescued;
+    }
+
+    public int GetMissedRescued()
+    {
+        return missedRescued;
+    }
 }
