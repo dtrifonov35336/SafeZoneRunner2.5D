@@ -67,7 +67,7 @@ struct Void_t4861ACF8F4594C3437BB48B6E56783494B843915
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-// Method Definition Index: 73066
+// Method Definition Index: 73124
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void RenderAs2DUtil_InitializeCanRenderAs2D_mE5CB68451AF6AE5EBC965EE700A067DA8CF5EEA5 (const RuntimeMethod* method) 
 {
 	//<source_info:<no-source>:1>
@@ -77,7 +77,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void RenderAs2DUtil_InitializeCanRenderAs2D_m
 	_il2cpp_icall_func = (RenderAs2DUtil_InitializeCanRenderAs2D_mE5CB68451AF6AE5EBC965EE700A067DA8CF5EEA5_ftn)il2cpp_codegen_resolve_icall ("UnityEngine.RenderAs2DUtil::InitializeCanRenderAs2D()");
 	_il2cpp_icall_func();
 }
-// Method Definition Index: 73067
+// Method Definition Index: 73125
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void RenderAs2DUtil_DisposeCanRenderAs2D_mBCFB3191DF91EBE61CF3A915D17EA2B0121B2997 (const RuntimeMethod* method) 
 {
 	//<source_info:<no-source>:1>

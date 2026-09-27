@@ -4,22 +4,37 @@ public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
 
-    [Header("Скрывать при панелях")]
+    [Header("Старые экранные кнопки")]
     public GameObject touchControlsUI;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+
+        // Старые кнопки никогда не должны быть видимы.
+        HideGameplayControls();
     }
 
     public void HideGameplayControls()
     {
-        if (touchControlsUI != null) touchControlsUI.SetActive(false);
+        if (touchControlsUI != null)
+        {
+            touchControlsUI.SetActive(false);
+        }
     }
 
     public void ShowGameplayControls()
     {
-        if (touchControlsUI != null) touchControlsUI.SetActive(true);
+        // Старые кнопки больше никогда не включаем.
+        if (touchControlsUI != null)
+        {
+            touchControlsUI.SetActive(false);
+        }
     }
 }

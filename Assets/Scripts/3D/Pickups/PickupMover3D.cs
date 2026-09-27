@@ -12,19 +12,21 @@ public class PickupMover3D : MonoBehaviour
     [Header("Полоса")]
     public float laneX = 0f;
 
+    [Header("Вращение монеты")]
+    public bool spin = true;
+    public float spinSpeed = 180f;
+
     private float currentZ;
     private bool initialised = false;
 
-    // =========================================================
-    // НАЧАЛЬНОЕ СОСТОЯНИЕ
-    // =========================================================
+    private Pickup3D pickup;
+    private bool isCoin;
 
     public void ApplyInitialState()
     {
         currentZ = spawnZ;
 
-        Vector3 p =
-            transform.position;
+        Vector3 p = transform.position;
 
         p.x = laneX;
         p.z = spawnZ;
@@ -34,21 +36,19 @@ public class PickupMover3D : MonoBehaviour
         initialised = true;
     }
 
-    // =========================================================
-    // START
-    // =========================================================
-
     private void Start()
     {
+        pickup = GetComponent<Pickup3D>();
+
+        isCoin =
+            pickup != null &&
+            pickup.type == Pickup3DType.Coin;
+
         if (!initialised)
         {
             ApplyInitialState();
         }
     }
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
 
     private void Update()
     {
@@ -56,31 +56,10 @@ public class PickupMover3D : MonoBehaviour
             speed *
             Time.deltaTime;
 
-        float desiredZ =
-            currentZ;
-
-        // -----------------------------------------------------
-        // МОНЕТЫ
-        // -----------------------------------------------------
-        // Монеты специально должны проходить через область
-        // препятствия по заданной траектории.
-        //
-        // Поэтому НЕ применяем к ним
-        // RunnerMovingObjectBlocker3D.
-        // -----------------------------------------------------
-
-        Pickup3D pickup =
-            GetComponent<Pickup3D>();
-
-        bool isCoin =
-            pickup != null &&
-            pickup.type ==
-            Pickup3DType.Coin;
+        float desiredZ = currentZ;
 
         if (!isCoin)
         {
-            // Сердечки и другие движущиеся pickup'ы
-            // не должны накладываться на другие объекты.
             desiredZ =
                 RunnerMovingObjectBlocker3D.ResolveZ(
                     gameObject,
@@ -90,24 +69,25 @@ public class PickupMover3D : MonoBehaviour
                 );
         }
 
-        currentZ =
-            desiredZ;
+        currentZ = desiredZ;
 
-        Vector3 p =
-            transform.position;
+        Vector3 p = transform.position;
 
-        p.x =
-            laneX;
+        p.x = laneX;
+        p.z = currentZ;
 
-        p.z =
-            currentZ;
+        transform.position = p;
 
-        transform.position =
-            p;
-
-        // -----------------------------------------------------
-        // УДАЛЕНИЕ
-        // -----------------------------------------------------
+        // Вращаются только монеты.
+        if (isCoin && spin)
+        {
+            transform.Rotate(
+                0f,
+                spinSpeed * Time.deltaTime,
+                0f,
+                Space.Self
+            );
+        }
 
         if (currentZ <= despawnZ)
         {
