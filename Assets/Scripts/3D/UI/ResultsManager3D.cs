@@ -125,6 +125,9 @@ public class ResultsManager : MonoBehaviour
         if (topHud != null)
             topHud.SetActive(false);
 
+        if (UIManager.Instance != null)
+            UIManager.Instance.HideGameplayControls();
+
         bool victory =
             ChaseManager.Instance != null &&
             ChaseManager.Instance.IsVictory();
@@ -247,10 +250,6 @@ public class ResultsManager : MonoBehaviour
                 " м";
         }
 
-        // =====================================================
-        // ПОБЕДА
-        // =====================================================
-
         if (victory)
         {
             if (bottomButtonsRoot != null)
@@ -273,10 +272,6 @@ public class ResultsManager : MonoBehaviour
 
             return;
         }
-
-        // =====================================================
-        // ПОРАЖЕНИЕ
-        // =====================================================
 
         if (bottomButtonsRoot != null)
             bottomButtonsRoot.SetActive(false);
@@ -318,16 +313,16 @@ public class ResultsManager : MonoBehaviour
         if (resultsPanel != null)
             resultsPanel.SetActive(false);
 
+        // Старые экранные кнопки НЕ возвращаем.
         if (gameplayControlsUI != null)
-            gameplayControlsUI.SetActive(true);
+            gameplayControlsUI.SetActive(false);
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.HideGameplayControls();
 
         if (topHud != null)
             topHud.SetActive(true);
     }
-
-    // =========================================================
-    // RESTART
-    // =========================================================
 
     private void OnRestart()
     {
@@ -341,10 +336,6 @@ public class ResultsManager : MonoBehaviour
                 .buildIndex
         );
     }
-
-    // =========================================================
-    // MENU
-    // =========================================================
 
     private void OnMenu()
     {

@@ -7,6 +7,10 @@ public class PlayerCollision : MonoBehaviour
     public float pushBackAmount = 0.5f;
     public float invulnerabilityTime = 1.5f;
 
+    [Header("Яма")]
+    [Tooltip("Максимальная задержка перед началом падения.")]
+    public float maxPitFallDelay = 0.5f;
+
     [Header("Ссылки")]
     public ChaseManager chase;
     public PlayerMovement3D playerMovement;
@@ -16,13 +20,12 @@ public class PlayerCollision : MonoBehaviour
     private void Start()
     {
         if (playerMovement == null)
-            playerMovement = GetComponent<PlayerMovement3D>();
+            playerMovement =
+                GetComponent<PlayerMovement3D>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // Collider может находиться как на корне,
-        // так и на дочернем объекте префаба.
         if (!other.CompareTag("Obstacle") &&
             !other.transform.root.CompareTag("Obstacle"))
         {
@@ -33,15 +36,21 @@ public class PlayerCollision : MonoBehaviour
             return;
 
         ObstacleMover3D mover =
-            other.GetComponentInParent<ObstacleMover3D>();
+            other.GetComponentInParent<
+                ObstacleMover3D
+            >();
 
-        if (mover != null && mover.hasHitPlayer)
+        if (mover != null &&
+            mover.hasHitPlayer)
+        {
             return;
+        }
 
         ObstacleType3D obstacle =
-            other.GetComponentInParent<ObstacleType3D>();
+            other.GetComponentInParent<
+                ObstacleType3D
+            >();
 
-        // Если тип не задан — считаем препятствие обычным.
         if (obstacle == null)
         {
             HandleNormalObstacle(mover);
@@ -55,7 +64,10 @@ public class PlayerCollision : MonoBehaviour
                 break;
 
             case ObstacleType.Pit:
-                HandlePit(mover);
+                HandlePit(
+                    mover,
+                    other
+                );
                 break;
 
             case ObstacleType.Slide:
@@ -68,89 +80,99 @@ public class PlayerCollision : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // NORMAL
-    // =========================================================
-
-    private void HandleNormalObstacle(ObstacleMover3D mover)
+    private void HandleNormalObstacle(
+        ObstacleMover3D mover
+    )
     {
         if (playerMovement != null &&
             playerMovement.IsJumping())
         {
-            // Обычный или двойной прыжок проходят препятствие.
             return;
         }
 
         HitPlayer(mover);
     }
 
-    // =========================================================
-    // PIT
-    // =========================================================
-
-    private void HandlePit(ObstacleMover3D mover)
+    private void HandlePit(
+        ObstacleMover3D mover,
+        Collider pitCollider
+    )
     {
         if (playerMovement == null)
             return;
 
-        // Любой прыжок очищает яму.
         if (playerMovement.IsJumping())
             return;
 
         MarkObstacleHit(mover);
 
-        // Яма = HP сразу 0.
         if (HUDManager.Instance != null)
             HUDManager.Instance.SetHealth(0f);
 
-        // Запускаем визуальное падение.
-        playerMovement.FallIntoPit();
+        float pitCenterZ =
+            pitCollider.bounds.center.z;
 
-        // Game Over показывается сразу,
-        // не дожидаясь окончания анимации падения.
+        float playerZ =
+            transform.position.z;
+
+        float distance =
+            pitCenterZ - playerZ;
+
+        float fallDelay = 0f;
+
+        if (mover != null &&
+            mover.speed > 0f &&
+            distance > 0f)
+        {
+            fallDelay =
+                distance /
+                mover.speed;
+        }
+
+        fallDelay =
+            Mathf.Clamp(
+                fallDelay,
+                0f,
+                maxPitFallDelay
+            );
+
+        playerMovement.FallIntoPit(
+            fallDelay
+        );
+
         if (chase != null)
             chase.TriggerGameOverImmediate();
     }
 
-    // =========================================================
-    // SLIDE
-    // =========================================================
-
-    private void HandleSlide(ObstacleMover3D mover)
+    private void HandleSlide(
+        ObstacleMover3D mover
+    )
     {
         if (playerMovement != null &&
             playerMovement.IsSliding())
         {
-            // Игрок успешно проскользнул.
             return;
         }
 
-        // Прыжок здесь НЕ помогает.
         HitPlayer(mover);
     }
 
-    // =========================================================
-    // DOUBLE JUMP
-    // =========================================================
-
-    private void HandleDoubleJump(ObstacleMover3D mover)
+    private void HandleDoubleJump(
+        ObstacleMover3D mover
+    )
     {
         if (playerMovement != null &&
             playerMovement.HasDoubleJumped())
         {
-            // Только настоящий второй прыжок проходит автобус.
             return;
         }
 
-        // Первый прыжок недостаточен.
         HitPlayer(mover);
     }
 
-    // =========================================================
-    // СТОЛКНОВЕНИЕ
-    // =========================================================
-
-    private void HitPlayer(ObstacleMover3D mover)
+    private void HitPlayer(
+        ObstacleMover3D mover
+    )
     {
         MarkObstacleHit(mover);
 
@@ -166,10 +188,13 @@ public class PlayerCollision : MonoBehaviour
                 ProfileManager.GetSelectedCharacterId();
 
             float resist =
-                BonusCalculator.GetKnockbackResistance(charId);
+                BonusCalculator.GetKnockbackResistance(
+                    charId
+                );
 
             playerMovement.Knockback(
-                pushBackAmount * resist
+                pushBackAmount *
+                resist
             );
         }
 
@@ -181,29 +206,27 @@ public class PlayerCollision : MonoBehaviour
             );
         }
 
-        StartCoroutine(Invulnerability());
+        StartCoroutine(
+            Invulnerability()
+        );
     }
 
-    // =========================================================
-    // ПОМЕЧАЕМ ПРЕПЯТСТВИЕ
-    // =========================================================
-
-    private void MarkObstacleHit(ObstacleMover3D mover)
+    private void MarkObstacleHit(
+        ObstacleMover3D mover
+    )
     {
         if (mover != null)
             mover.hasHitPlayer = true;
     }
-
-    // =========================================================
-    // НЕУЯЗВИМОСТЬ
-    // =========================================================
 
     private IEnumerator Invulnerability()
     {
         isInvulnerable = true;
 
         SpriteRenderer sr =
-            GetComponentInChildren<SpriteRenderer>();
+            GetComponentInChildren<
+                SpriteRenderer
+            >();
 
         float elapsed = 0f;
 
@@ -212,7 +235,9 @@ public class PlayerCollision : MonoBehaviour
             if (sr != null)
                 sr.enabled = !sr.enabled;
 
-            yield return new WaitForSeconds(0.15f);
+            yield return new WaitForSeconds(
+                0.15f
+            );
 
             elapsed += 0.15f;
         }

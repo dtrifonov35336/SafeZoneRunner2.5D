@@ -116,7 +116,8 @@ public class PlayerMovement3D : MonoBehaviour
         {
             victorySprite =
                 victoryPose.GetComponentInChildren<
-                    SpriteRenderer>(true);
+                    SpriteRenderer
+                >(true);
         }
 
         initialRotation =
@@ -177,10 +178,6 @@ public class PlayerMovement3D : MonoBehaviour
             initialRotation;
     }
 
-    // =========================================================
-    // INPUT
-    // =========================================================
-
     private void ProcessKeyboardInput()
     {
         if (Keyboard.current == null)
@@ -240,10 +237,6 @@ public class PlayerMovement3D : MonoBehaviour
             Slide();
     }
 
-    // =========================================================
-    // LANES
-    // =========================================================
-
     private void MoveLaneLeft()
     {
         if (isDead || isDying || isVictory)
@@ -292,10 +285,6 @@ public class PlayerMovement3D : MonoBehaviour
         transform.position =
             pos;
     }
-
-    // =========================================================
-    // JUMP
-    // =========================================================
 
     public void Jump()
     {
@@ -380,10 +369,6 @@ public class PlayerMovement3D : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // SLIDE
-    // =========================================================
-
     public void Slide()
     {
         if (isDead ||
@@ -419,10 +404,6 @@ public class PlayerMovement3D : MonoBehaviour
         slideCoroutine = null;
     }
 
-    // =========================================================
-    // Y
-    // =========================================================
-
     private void UpdateGroundRecovery()
     {
         if (currentY < baseY)
@@ -442,10 +423,6 @@ public class PlayerMovement3D : MonoBehaviour
                 minY
             );
     }
-
-    // =========================================================
-    // ОТКАТ ПО Z
-    // =========================================================
 
     private void UpdateKnockback()
     {
@@ -473,18 +450,12 @@ public class PlayerMovement3D : MonoBehaviour
             currentY +
             jumpOffset;
 
-        // Игрок может временно откатиться назад,
-        // но не проваливается в дорогу.
         pos.z =
             knockbackZ;
 
         transform.position =
             pos;
     }
-
-    // =========================================================
-    // KNOCKBACK
-    // =========================================================
 
     public void Knockback(float amount)
     {
@@ -505,10 +476,15 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     // =========================================================
-    // FALL INTO PIT
+    // ПАДЕНИЕ В ЯМУ
     // =========================================================
 
     public void FallIntoPit()
+    {
+        FallIntoPit(0f);
+    }
+
+    public void FallIntoPit(float delay)
     {
         if (isDead ||
             isDying ||
@@ -528,28 +504,44 @@ public class PlayerMovement3D : MonoBehaviour
             playerFillLight.enabled = false;
 
         StartCoroutine(
-            FallIntoPitRoutine()
+            FallIntoPitRoutine(
+                Mathf.Max(0f, delay)
+            )
         );
     }
 
-    private IEnumerator FallIntoPitRoutine()
+    private IEnumerator FallIntoPitRoutine(
+        float delay
+    )
     {
+        if (delay > 0f)
+        {
+            yield return new WaitForSeconds(
+                delay
+            );
+        }
+
         float startY =
             currentY;
 
         float targetFallY =
             minY - 2.0f;
 
-        float duration = 0.45f;
-        float timer = 0f;
+        float duration =
+            0.45f;
+
+        float timer =
+            0f;
 
         while (timer < duration)
         {
-            timer += Time.deltaTime;
+            timer +=
+                Time.deltaTime;
 
             float p =
                 Mathf.Clamp01(
-                    timer / duration
+                    timer /
+                    duration
                 );
 
             currentY =
@@ -568,10 +560,6 @@ public class PlayerMovement3D : MonoBehaviour
         Die();
     }
 
-    // =========================================================
-    // VICTORY
-    // =========================================================
-
     public void StopAnimation()
     {
         isVictory = true;
@@ -586,10 +574,6 @@ public class PlayerMovement3D : MonoBehaviour
             victorySprite.enabled = true;
     }
 
-    // =========================================================
-    // DEATH
-    // =========================================================
-
     public void Kill()
     {
         if (isDead)
@@ -599,7 +583,8 @@ public class PlayerMovement3D : MonoBehaviour
 
         PlayerVisualController visualCtrl =
             GetComponentInChildren<
-                PlayerVisualController>();
+                PlayerVisualController
+            >();
 
         if (visualCtrl != null)
             visualCtrl.TriggerDeath();
@@ -622,7 +607,8 @@ public class PlayerMovement3D : MonoBehaviour
 
         while (t < deathSlideDuration)
         {
-            t += Time.deltaTime;
+            t +=
+                Time.deltaTime;
 
             float p =
                 Mathf.Clamp01(
@@ -653,10 +639,6 @@ public class PlayerMovement3D : MonoBehaviour
 
         isDead = true;
     }
-
-    // =========================================================
-    // REVIVE
-    // =========================================================
 
     public void Revive()
     {
@@ -720,15 +702,12 @@ public class PlayerMovement3D : MonoBehaviour
 
         PlayerVisualController visualCtrl =
             GetComponentInChildren<
-                PlayerVisualController>();
+                PlayerVisualController
+            >();
 
         if (visualCtrl != null)
             visualCtrl.ReviveAnimation();
     }
-
-    // =========================================================
-    // GETTERS
-    // =========================================================
 
     public bool IsDead() => isDead;
 
