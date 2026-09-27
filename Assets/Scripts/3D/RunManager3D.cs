@@ -4,8 +4,7 @@ public class RunManager : MonoBehaviour
 {
     [Header("Режим забега")]
     [Tooltip(
-        "Бесконечный режим. " +
-        "Убежище не появляется."
+        "Бесконечный режим. Убежище не появляется."
     )]
     public bool infiniteRun = false;
 
@@ -13,8 +12,7 @@ public class RunManager : MonoBehaviour
     public float runDuration = 180f;
 
     [Tooltip(
-        "За сколько секунд до убежища " +
-        "остановить новые спавны."
+        "За сколько секунд до убежища остановить новые спавны."
     )]
     public float stopSpawnAhead = 6f;
 
@@ -31,6 +29,32 @@ public class RunManager : MonoBehaviour
     public float safeZoneSpawnZ = 40f;
     public float safeZoneY = -0.5f;
 
+    [Header("Возрождение перед убежищем")]
+    [Tooltip(
+        "На сколько единиц назад откатывать игрока после смерти."
+    )]
+    public float reviveRewindDistance = 1.2f;
+
+    [Tooltip(
+        "Минимальный откат при поиске безопасной позиции."
+    )]
+    public float reviveMinRewindDistance = 0.4f;
+
+    [Tooltip(
+        "Шаг поиска свободной позиции."
+    )]
+    public float reviveSearchStep = 0.2f;
+
+    [Tooltip(
+        "Дополнительный запас вокруг игрока при проверке препятствий."
+    )]
+    public float reviveObstacleClearance = 0.6f;
+
+    [Tooltip(
+        "Z-позиция, на которой убежище заново появляется после возрождения."
+    )]
+    public float safeZoneReviveSpawnZ = 12f;
+
     private float runTime = 0f;
 
     private bool spawnStopped = false;
@@ -43,9 +67,6 @@ public class RunManager : MonoBehaviour
 
     private void Awake()
     {
-        /*
-         * Режим выбран в MainMenu.
-         */
         if (PlayerPrefs.HasKey(
                 INFINITE_RUN_KEY))
         {
@@ -74,60 +95,44 @@ public class RunManager : MonoBehaviour
         runTime +=
             Time.deltaTime;
 
-        // =====================================================
-        // INFINITE RUN
-        // =====================================================
-
         if (infiniteRun)
         {
             return;
         }
 
-        // =====================================================
-        // ОСТАНОВКА НОВЫХ СПАВНОВ
-        // =====================================================
-
         if (!spawnStopped &&
             runTime >=
-            (runDuration -
-             stopSpawnAhead))
+            (
+                runDuration -
+                stopSpawnAhead
+            ))
         {
             spawnStopped = true;
 
             if (obstacleSpawner != null)
             {
-                obstacleSpawner.SetRunning(
-                    false
-                );
+                obstacleSpawner.SetRunning(false);
             }
 
             if (pickupSpawner != null)
             {
-                pickupSpawner.SetRunning(
-                    false
-                );
+                pickupSpawner.SetRunning(false);
             }
 
             if (rescuedPersonSpawner != null)
             {
-                rescuedPersonSpawner
-                    .SetRunning(false);
+                rescuedPersonSpawner.SetRunning(false);
             }
 
             if (sideDecorationSpawner != null)
             {
-                sideDecorationSpawner
-                    .SetRunning(false);
+                sideDecorationSpawner.SetRunning(false);
             }
 
             Debug.Log(
                 "[RunManager] Новые объекты больше не спавнятся."
             );
         }
-
-        // =====================================================
-        // SAFE ZONE
-        // =====================================================
 
         float approachTime =
             GetSafeZoneApproachTime();
@@ -139,13 +144,6 @@ public class RunManager : MonoBehaviour
                 approachTime
             );
 
-        /*
-         * SafeZone появляется настолько раньше конца забега,
-         * сколько ей требуется для прохождения пути до игрока.
-         *
-         * Поэтому момент её достижения совпадает
-         * с окончанием runDuration.
-         */
         if (!safeZoneSpawned &&
             runTime >= safeZoneSpawnTime)
         {
@@ -155,30 +153,33 @@ public class RunManager : MonoBehaviour
 
     private float GetSafeZoneApproachTime()
     {
-        if (safeZonePrefab == null)
+        SafeZone sourceSafeZone = null;
+
+        if (activeSafeZone != null)
+        {
+            sourceSafeZone =
+                activeSafeZone;
+        }
+        else if (safeZonePrefab != null)
+        {
+            sourceSafeZone =
+                safeZonePrefab.GetComponent<SafeZone>();
+        }
+
+        if (sourceSafeZone == null)
         {
             return 0f;
         }
 
-        SafeZone safeZone =
-            safeZonePrefab.GetComponent<
-                SafeZone
-            >();
-
-        if (safeZone == null)
-        {
-            return 0f;
-        }
-
-        if (safeZone.speed <= 0f)
+        if (sourceSafeZone.speed <= 0f)
         {
             return 0f;
         }
 
         return Mathf.Max(
             0f,
-            safeZone.spawnZ /
-            safeZone.speed
+            sourceSafeZone.spawnZ /
+            sourceSafeZone.speed
         );
     }
 
@@ -213,15 +214,217 @@ public class RunManager : MonoBehaviour
         if (instance != null)
         {
             activeSafeZone =
-                instance.GetComponent<
-                    SafeZone
-                >();
+                instance.GetComponent<SafeZone>();
         }
 
         Debug.Log(
             "[RunManager] SafeZone создан."
         );
     }
+
+    // =========================================================
+    // ВОЗРОЖДЕНИЕ
+    // =========================================================
+
+    public bool IsShelterRun()
+    {
+        return !infiniteRun;
+    }
+
+    public bool ShouldRewindOnRevive()
+    {
+        return
+            !infiniteRun &&
+            safeZoneSpawned;
+    }
+
+    public void PrepareSafeZoneForRevive()
+    {
+        if (!ShouldRewindOnRevive())
+        {
+            return;
+        }
+
+        if (safeZonePrefab == null)
+        {
+            return;
+        }
+
+        if (activeSafeZone != null)
+        {
+            activeSafeZone.gameObject.SetActive(false);
+            Destroy(activeSafeZone.gameObject);
+            activeSafeZone = null;
+        }
+
+        Vector3 spawnPosition =
+            new Vector3(
+                0f,
+                safeZoneY,
+                safeZoneReviveSpawnZ
+            );
+
+        GameObject instance =
+            Instantiate(
+                safeZonePrefab,
+                spawnPosition,
+                Quaternion.identity
+            );
+
+        if (instance == null)
+        {
+            return;
+        }
+
+        SafeZone safeZone =
+            instance.GetComponent<SafeZone>();
+
+        if (safeZone != null)
+        {
+            safeZone.spawnZ =
+                safeZoneReviveSpawnZ;
+
+            activeSafeZone =
+                safeZone;
+        }
+    }
+
+    public float GetRevivePlayerZ(
+        PlayerMovement3D player
+    )
+    {
+        if (player == null)
+        {
+            return 0f;
+        }
+
+        if (!ShouldRewindOnRevive())
+        {
+            return 0f;
+        }
+
+        Collider playerCollider =
+            player.GetComponent<Collider>();
+
+        Vector3 basePosition =
+            player.transform.position;
+
+        float desiredDistance =
+            Mathf.Max(
+                reviveMinRewindDistance,
+                reviveRewindDistance
+            );
+
+        float minDistance =
+            Mathf.Max(
+                0f,
+                reviveMinRewindDistance
+            );
+
+        for (
+            float distance = desiredDistance;
+            distance >= minDistance;
+            distance -= reviveSearchStep)
+        {
+            float candidateZ =
+                -Mathf.Abs(distance);
+
+            if (IsRevivePositionSafe(
+                    player,
+                    playerCollider,
+                    basePosition.x,
+                    basePosition.y,
+                    candidateZ))
+            {
+                return candidateZ;
+            }
+        }
+
+        // Безопасного места не нашли.
+        // Возвращаем на обычную позицию,
+        // а защита после возрождения не даст сразу получить удар.
+        return 0f;
+    }
+
+    private bool IsRevivePositionSafe(
+        PlayerMovement3D player,
+        Collider playerCollider,
+        float x,
+        float y,
+        float z)
+    {
+        Vector3 halfExtents;
+
+        if (playerCollider != null)
+        {
+            halfExtents =
+                playerCollider.bounds.extents;
+        }
+        else
+        {
+            halfExtents =
+                new Vector3(
+                    0.5f,
+                    1f,
+                    0.5f
+                );
+        }
+
+        halfExtents.z +=
+            reviveObstacleClearance;
+
+        Vector3 checkPosition =
+            new Vector3(
+                x,
+                y,
+                z
+            );
+
+        Collider[] hits =
+            Physics.OverlapBox(
+                checkPosition,
+                halfExtents,
+                Quaternion.identity,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Collide
+            );
+
+        foreach (Collider hit in hits)
+        {
+            if (hit == null)
+            {
+                continue;
+            }
+
+            if (playerCollider != null &&
+                hit == playerCollider)
+            {
+                continue;
+            }
+
+            if (hit.transform.IsChildOf(
+                    player.transform))
+            {
+                continue;
+            }
+
+            ObstacleMover3D obstacle =
+                hit.GetComponentInParent<
+                    ObstacleMover3D
+                >();
+
+            if (obstacle != null)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // =========================================================
+    // GETTERS
+    // =========================================================
 
     public float GetRunTime()
     {
@@ -250,14 +453,6 @@ public class RunManager : MonoBehaviour
                 approachTime
             );
 
-        /*
-         * -----------------------------------------------------
-         * SAFE ZONE УЖЕ ДВИЖЕТСЯ
-         * -----------------------------------------------------
-         *
-         * Прогресс рассчитывается по реальному положению
-         * убежища, а не только по таймеру.
-         */
         if (activeSafeZone != null)
         {
             float beforeApproachProgress =
@@ -268,11 +463,6 @@ public class RunManager : MonoBehaviour
                     )
                     : 0f;
 
-            /*
-             * SafeZone.spawnZ — начальная дистанция.
-             * Когда Z = spawnZ -> только появилась.
-             * Когда Z = 0      -> дошла до игрока.
-             */
             float approachProgress =
                 Mathf.InverseLerp(
                     activeSafeZone.spawnZ,
@@ -288,12 +478,6 @@ public class RunManager : MonoBehaviour
                     approachProgress
                 );
 
-            /*
-             * Продолжаем с той же точки,
-             * на которой остановился обычный таймер,
-             * и доводим прогресс до 1.0
-             * по реальному движению SafeZone.
-             */
             return Mathf.Lerp(
                 beforeApproachProgress,
                 1f,
@@ -301,11 +485,6 @@ public class RunManager : MonoBehaviour
             );
         }
 
-        /*
-         * -----------------------------------------------------
-         * SAFE ZONE ЕЩЁ НЕ ПОЯВИЛАСЬ
-         * -----------------------------------------------------
-         */
         return Mathf.Clamp01(
             runTime /
             runDuration

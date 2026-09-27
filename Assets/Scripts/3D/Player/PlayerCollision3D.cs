@@ -8,8 +8,7 @@ public class PlayerCollision : MonoBehaviour
     public float invulnerabilityTime = 1.5f;
 
     [Header("Яма")]
-    [Tooltip("Максимальная задержка перед началом падения.")]
-    public float maxPitFallDelay = 0.5f;
+    public float pitCheckTolerance = 0.05f;
 
     [Header("Ссылки")]
     public ChaseManager chase;
@@ -17,14 +16,21 @@ public class PlayerCollision : MonoBehaviour
 
     private bool isInvulnerable = false;
 
+    private Coroutine pitRoutine;
+    private Coroutine reviveInvulnerabilityRoutine;
+
     private void Start()
     {
         if (playerMovement == null)
+        {
             playerMovement =
                 GetComponent<PlayerMovement3D>();
+        }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(
+        Collider other
+    )
     {
         if (!other.CompareTag("Obstacle") &&
             !other.transform.root.CompareTag("Obstacle"))
@@ -80,6 +86,10 @@ public class PlayerCollision : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // NORMAL
+    // =========================================================
+
     private void HandleNormalObstacle(
         ObstacleMover3D mover
     )
@@ -93,56 +103,129 @@ public class PlayerCollision : MonoBehaviour
         HitPlayer(mover);
     }
 
+    // =========================================================
+    // PIT
+    // =========================================================
+
     private void HandlePit(
         ObstacleMover3D mover,
         Collider pitCollider
     )
     {
-        if (playerMovement == null)
-            return;
-
-        if (playerMovement.IsJumping())
-            return;
-
-        MarkObstacleHit(mover);
-
-        if (HUDManager.Instance != null)
-            HUDManager.Instance.SetHealth(0f);
-
-        float pitCenterZ =
-            pitCollider.bounds.center.z;
-
-        float playerZ =
-            transform.position.z;
-
-        float distance =
-            pitCenterZ - playerZ;
-
-        float fallDelay = 0f;
-
-        if (mover != null &&
-            mover.speed > 0f &&
-            distance > 0f)
+        if (playerMovement == null ||
+            pitCollider == null)
         {
-            fallDelay =
-                distance /
-                mover.speed;
+            return;
         }
 
-        fallDelay =
-            Mathf.Clamp(
-                fallDelay,
-                0f,
-                maxPitFallDelay
+        if (playerMovement.IsJumping())
+        {
+            return;
+        }
+
+        if (pitRoutine != null)
+        {
+            return;
+        }
+
+        pitRoutine =
+            StartCoroutine(
+                WaitForRealPitEntry(
+                    mover,
+                    pitCollider
+                )
             );
-
-        playerMovement.FallIntoPit(
-            fallDelay
-        );
-
-        if (chase != null)
-            chase.TriggerGameOverImmediate();
     }
+
+    private IEnumerator WaitForRealPitEntry(
+        ObstacleMover3D mover,
+        Collider pitCollider
+    )
+    {
+        while (true)
+        {
+            if (playerMovement == null ||
+                playerMovement.IsJumping() ||
+                playerMovement.IsDead() ||
+                playerMovement.IsDying())
+            {
+                pitRoutine = null;
+                yield break;
+            }
+
+            if (mover == null ||
+                !mover.isActiveAndEnabled ||
+                pitCollider == null ||
+                !pitCollider.enabled ||
+                !pitCollider.gameObject.activeInHierarchy)
+            {
+                pitRoutine = null;
+                yield break;
+            }
+
+            Bounds pitBounds =
+                pitCollider.bounds;
+
+            Vector3 playerPosition =
+                transform.position;
+
+            bool insideX =
+                playerPosition.x >=
+                    pitBounds.min.x -
+                    pitCheckTolerance &&
+                playerPosition.x <=
+                    pitBounds.max.x +
+                    pitCheckTolerance;
+
+            bool insideZ =
+                playerPosition.z >=
+                    pitBounds.min.z -
+                    pitCheckTolerance &&
+                playerPosition.z <=
+                    pitBounds.max.z +
+                    pitCheckTolerance;
+
+            // Позиция игрока реально находится
+            // внутри площади ямы.
+            if (insideX &&
+                insideZ)
+            {
+                MarkObstacleHit(mover);
+
+                if (HUDManager.Instance != null)
+                {
+                    HUDManager.Instance.SetHealth(
+                        0f
+                    );
+                }
+
+                playerMovement.FallIntoPit();
+
+                if (chase != null)
+                {
+                    chase.TriggerGameOverImmediate();
+                }
+
+                pitRoutine = null;
+                yield break;
+            }
+
+            // Яма уже полностью прошла мимо игрока.
+            if (pitBounds.max.z <
+                playerPosition.z -
+                pitCheckTolerance)
+            {
+                pitRoutine = null;
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    // =========================================================
+    // SLIDE
+    // =========================================================
 
     private void HandleSlide(
         ObstacleMover3D mover
@@ -157,6 +240,10 @@ public class PlayerCollision : MonoBehaviour
         HitPlayer(mover);
     }
 
+    // =========================================================
+    // DOUBLE JUMP
+    // =========================================================
+
     private void HandleDoubleJump(
         ObstacleMover3D mover
     )
@@ -170,6 +257,10 @@ public class PlayerCollision : MonoBehaviour
         HitPlayer(mover);
     }
 
+    // =========================================================
+    // СТОЛКНОВЕНИЕ
+    // =========================================================
+
     private void HitPlayer(
         ObstacleMover3D mover
     )
@@ -177,10 +268,16 @@ public class PlayerCollision : MonoBehaviour
         MarkObstacleHit(mover);
 
         if (HUDManager.Instance != null)
-            HUDManager.Instance.ReduceHealth(1f);
+        {
+            HUDManager.Instance.ReduceHealth(
+                1f
+            );
+        }
 
         if (chase != null)
+        {
             chase.PushBack(1f);
+        }
 
         if (playerMovement != null)
         {
@@ -216,8 +313,14 @@ public class PlayerCollision : MonoBehaviour
     )
     {
         if (mover != null)
+        {
             mover.hasHitPlayer = true;
+        }
     }
+
+    // =========================================================
+    // ОБЫЧНАЯ НЕУЯЗВИМОСТЬ
+    // =========================================================
 
     private IEnumerator Invulnerability()
     {
@@ -230,10 +333,14 @@ public class PlayerCollision : MonoBehaviour
 
         float elapsed = 0f;
 
-        while (elapsed < invulnerabilityTime)
+        while (elapsed <
+               invulnerabilityTime)
         {
             if (sr != null)
-                sr.enabled = !sr.enabled;
+            {
+                sr.enabled =
+                    !sr.enabled;
+            }
 
             yield return new WaitForSeconds(
                 0.15f
@@ -243,8 +350,66 @@ public class PlayerCollision : MonoBehaviour
         }
 
         if (sr != null)
+        {
             sr.enabled = true;
+        }
 
         isInvulnerable = false;
+    }
+
+    // =========================================================
+    // НЕУЯЗВИМОСТЬ ПОСЛЕ REVIVE
+    // =========================================================
+
+    public void ActivateReviveInvulnerability(
+        float duration
+    )
+    {
+        if (reviveInvulnerabilityRoutine != null)
+        {
+            StopCoroutine(
+                reviveInvulnerabilityRoutine
+            );
+        }
+
+        reviveInvulnerabilityRoutine =
+            StartCoroutine(
+                ReviveInvulnerability(
+                    Mathf.Max(
+                        0f,
+                        duration
+                    )
+                )
+            );
+    }
+
+    private IEnumerator ReviveInvulnerability(
+        float duration
+    )
+    {
+        isInvulnerable = true;
+
+        SpriteRenderer sr =
+            GetComponentInChildren<
+                SpriteRenderer
+            >();
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            yield return null;
+
+            elapsed +=
+                Time.unscaledDeltaTime;
+        }
+
+        if (sr != null)
+        {
+            sr.enabled = true;
+        }
+
+        isInvulnerable = false;
+        reviveInvulnerabilityRoutine = null;
     }
 }

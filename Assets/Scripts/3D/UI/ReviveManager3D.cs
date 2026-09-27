@@ -26,6 +26,9 @@ public class ReviveManager : MonoBehaviour
     public float reviveHealthAd = 1f;
     public float reviveHealthGems = -1f;
 
+    [Header("Бессмертие после возрождения")]
+    public float reviveInvulnerabilityTime = 1f;
+
     [Header("Сцена после окончания таймера")]
     public string menuSceneName = "MainMenu";
 
@@ -59,10 +62,6 @@ public class ReviveManager : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // TIMER START
-    // =========================================================
-
     public void StartCountdown()
     {
         active = true;
@@ -88,10 +87,6 @@ public class ReviveManager : MonoBehaviour
 
         UpdateTimerText();
     }
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
 
     private void Update()
     {
@@ -126,10 +121,6 @@ public class ReviveManager : MonoBehaviour
             ).ToString();
     }
 
-    // =========================================================
-    // REVIVE AD
-    // =========================================================
-
     private void OnReviveAd()
     {
         if (!active ||
@@ -138,19 +129,11 @@ public class ReviveManager : MonoBehaviour
             return;
         }
 
-        Debug.Log(
-            "[Revive] Заглушка: реклама просмотрена."
-        );
-
         DoRevive(
             reviveHealthAd,
             "Возрождение (+1 HP)"
         );
     }
-
-    // =========================================================
-    // REVIVE GEMS
-    // =========================================================
 
     private void OnReviveGems()
     {
@@ -193,10 +176,6 @@ public class ReviveManager : MonoBehaviour
         );
     }
 
-    // =========================================================
-    // REVIVE
-    // =========================================================
-
     private void DoRevive(
         float healthAfter,
         string toastMsg)
@@ -204,27 +183,61 @@ public class ReviveManager : MonoBehaviour
         revived = true;
         active = false;
 
-        if (ReviveManager.Instance == this)
-        {
-            // оставляем Instance
-        }
-
         ResultsManager resultsManager =
             FindFirstObjectByType<
-                ResultsManager>();
+                ResultsManager
+            >();
 
         if (resultsManager != null)
         {
             resultsManager.HideForRevive();
         }
 
+        RunManager runManager =
+            FindFirstObjectByType<
+                RunManager
+            >();
+
         PlayerMovement3D player =
             FindFirstObjectByType<
-                PlayerMovement3D>();
+                PlayerMovement3D
+            >();
+
+        float reviveZ = 0f;
+
+        if (runManager != null)
+        {
+            // Только режим с убежищем.
+            // Если SafeZone уже появилась,
+            // заново создаём её впереди игрока.
+            runManager.PrepareSafeZoneForRevive();
+
+            if (player != null)
+            {
+                reviveZ =
+                    runManager.GetRevivePlayerZ(
+                        player
+                    );
+            }
+        }
 
         if (player != null)
         {
-            player.Revive();
+            player.Revive(
+                reviveZ
+            );
+
+            PlayerCollision collision =
+                player.GetComponent<
+                    PlayerCollision
+                >();
+
+            if (collision != null)
+            {
+                collision.ActivateReviveInvulnerability(
+                    reviveInvulnerabilityTime
+                );
+            }
         }
 
         if (HUDManager.Instance != null)
@@ -253,10 +266,6 @@ public class ReviveManager : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // TIMER END
-    // =========================================================
-
     private void ReturnToMenu()
     {
         if (!active)
@@ -272,10 +281,6 @@ public class ReviveManager : MonoBehaviour
             menuSceneName
         );
     }
-
-    // =========================================================
-    // CANCEL
-    // =========================================================
 
     public void CancelCountdown()
     {

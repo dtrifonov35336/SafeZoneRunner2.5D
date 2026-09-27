@@ -30,10 +30,7 @@ public class PlayerMovement3D : MonoBehaviour
     public float slideDuration = 0.7f;
 
     [Header("Откат после удара")]
-    [Tooltip("Скорость возвращения игрока вперёд после отката.")]
     public float knockbackRecoverySpeed = 4f;
-
-    [Tooltip("Максимальное расстояние отката назад.")]
     public float maxKnockbackZ = 1.5f;
 
     [Header("Смертельный откат")]
@@ -82,10 +79,14 @@ public class PlayerMovement3D : MonoBehaviour
             ProfileManager.GetSelectedCharacterId();
 
         laneChangeSpeed *=
-            BonusCalculator.GetSpeedMultiplier(charId);
+            BonusCalculator.GetSpeedMultiplier(
+                charId
+            );
 
         recoverySpeed =
-            BonusCalculator.GetRecoverySpeed(charId);
+            BonusCalculator.GetRecoverySpeed(
+                charId
+            );
 
         currentY = baseY;
         targetY = baseY;
@@ -106,7 +107,9 @@ public class PlayerMovement3D : MonoBehaviour
             animator != null)
         {
             mainSprite =
-                animator.GetComponent<SpriteRenderer>();
+                animator.GetComponent<
+                    SpriteRenderer
+                >();
         }
 
         gameplaySprite =
@@ -124,18 +127,24 @@ public class PlayerMovement3D : MonoBehaviour
             transform.rotation;
 
         Transform fillLightTransform =
-            transform.Find("PlayerFillLight");
+            transform.Find(
+                "PlayerFillLight"
+            );
 
         if (fillLightTransform != null)
         {
             playerFillLight =
-                fillLightTransform.GetComponent<Light>();
+                fillLightTransform.GetComponent<
+                    Light
+                >();
         }
 
         if (playerFillLight == null)
         {
             Light[] lights =
-                GetComponentsInChildren<Light>(true);
+                GetComponentsInChildren<
+                    Light
+                >(true);
 
             foreach (Light light in lights)
             {
@@ -145,7 +154,6 @@ public class PlayerMovement3D : MonoBehaviour
                 {
                     playerFillLight =
                         light;
-
                     break;
                 }
             }
@@ -396,7 +404,9 @@ public class PlayerMovement3D : MonoBehaviour
 
         while (timer < slideDuration)
         {
-            timer += Time.deltaTime;
+            timer +=
+                Time.deltaTime;
+
             yield return null;
         }
 
@@ -505,7 +515,10 @@ public class PlayerMovement3D : MonoBehaviour
 
         StartCoroutine(
             FallIntoPitRoutine(
-                Mathf.Max(0f, delay)
+                Mathf.Max(
+                    0f,
+                    delay
+                )
             )
         );
     }
@@ -530,8 +543,7 @@ public class PlayerMovement3D : MonoBehaviour
         float duration =
             0.45f;
 
-        float timer =
-            0f;
+        float timer = 0f;
 
         while (timer < duration)
         {
@@ -640,7 +652,18 @@ public class PlayerMovement3D : MonoBehaviour
         isDead = true;
     }
 
+    // =========================================================
+    // REVIVE
+    // =========================================================
+
     public void Revive()
+    {
+        Revive(0f);
+    }
+
+    public void Revive(
+        float reviveZ
+    )
     {
         StopAllCoroutines();
 
@@ -654,7 +677,15 @@ public class PlayerMovement3D : MonoBehaviour
         jumpOffset = 0f;
         verticalVelocity = 0f;
 
-        knockbackZ = 0f;
+        reviveZ =
+            Mathf.Clamp(
+                reviveZ,
+                -maxKnockbackZ,
+                0f
+            );
+
+        knockbackZ =
+            reviveZ;
 
         isJumping = false;
         hasDoubleJumped = false;
@@ -674,7 +705,7 @@ public class PlayerMovement3D : MonoBehaviour
 
         pos.x = targetX;
         pos.y = baseY;
-        pos.z = 0f;
+        pos.z = reviveZ;
 
         transform.position =
             pos;
