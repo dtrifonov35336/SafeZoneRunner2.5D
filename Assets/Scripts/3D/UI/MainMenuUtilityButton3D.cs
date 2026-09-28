@@ -15,70 +15,202 @@ public class MainMenuUtilityButton3D : MonoBehaviour
 
     [SerializeField] private Button button;
 
+    private GameObject badge;
+    private TextMeshProUGUI badgeText;
+
     private void Awake()
     {
         if (button == null)
             button = GetComponent<Button>();
 
+        EnsureBadge();
+
         if (button != null)
+        {
+            button.onClick.RemoveListener(Press);
             button.onClick.AddListener(Press);
+        }
+    }
+
+    private void Start()
+    {
+        GameSettingsManager3D.Initialize();
+        RefreshBadge();
+    }
+
+    private void OnEnable()
+    {
+        RefreshBadge();
     }
 
     public void Press()
     {
         switch (action)
         {
+            case UtilityAction3D.Settings:
+                OpenSettings();
+                break;
+
             case UtilityAction3D.Achievements:
                 OpenAchievements();
                 break;
 
-            case UtilityAction3D.Settings:
-                OpenOrCreatePanel(
-                    new[] { "SettingsUI", "SettingsPanel", "Settings" },
-                    "НАСТРОЙКИ",
-                    "Настройки игры");
-                break;
-
             case UtilityAction3D.DailyLogin:
-                OpenOrCreatePanel(
-                    new[] { "DailyLoginUI", "DailyLoginPanel", "DailyLogin" },
-                    "ЕЖЕДНЕВНЫЙ ВХОД",
-                    "Ежедневная награда");
+                OpenDailyLogin();
                 break;
         }
     }
 
-    private void OpenAchievements()
+    public void RefreshBadge()
     {
-        AchievementsUI3D ui = FindAnyAchievementsUI();
+        EnsureBadge();
+
+        if (badge == null)
+            return;
+
+        bool visible = false;
+
+        if (action == UtilityAction3D.Achievements)
+        {
+            visible =
+                AchievementSystem3D.HasUnclaimed();
+        }
+        else if (action == UtilityAction3D.DailyLogin)
+        {
+            visible =
+                DailyLoginUI3D.IsRewardAvailable();
+        }
+
+        badge.SetActive(visible);
+    }
+
+    private void OpenSettings()
+    {
+        GameSettingsUI3D ui =
+            FindSettingsUI();
 
         if (ui == null)
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Canvas canvas =
+                FindFirstObjectByType<Canvas>();
 
             if (canvas == null)
             {
-                Debug.LogWarning(
-                    "[MainMenuButton] Canvas не найден для достижений.");
+                Debug.LogError(
+                    "[MainMenuUtilityButton] Canvas не найден.");
                 return;
             }
 
-            GameObject uiObject = new GameObject(
-                "AchievementsUI",
-                typeof(RectTransform),
-                typeof(AchievementsUI3D));
+            GameObject uiObject =
+                new GameObject(
+                    "SettingsUI",
+                    typeof(RectTransform),
+                    typeof(GameSettingsUI3D));
 
             uiObject.transform.SetParent(
                 canvas.transform,
                 false);
 
-            ui = uiObject.GetComponent<AchievementsUI3D>();
+            ui =
+                uiObject.GetComponent<GameSettingsUI3D>();
         }
 
         ui.Open();
     }
 
-    private static AchievementsUI3D FindAnyAchievementsUI()
+    private void OpenDailyLogin()
+    {
+        DailyLoginUI3D ui =
+            FindDailyLoginUI();
+
+        if (ui == null)
+        {
+            Canvas canvas =
+                FindFirstObjectByType<Canvas>();
+
+            if (canvas == null)
+            {
+                Debug.LogError(
+                    "[MainMenuUtilityButton] Canvas не найден.");
+                return;
+            }
+
+            GameObject uiObject =
+                new GameObject(
+                    "DailyLoginUI",
+                    typeof(RectTransform),
+                    typeof(DailyLoginUI3D));
+
+            uiObject.transform.SetParent(
+                canvas.transform,
+                false);
+
+            ui =
+                uiObject.GetComponent<DailyLoginUI3D>();
+        }
+
+        ui.Open();
+    }
+
+    private void OpenAchievements()
+    {
+        AchievementsUI3D ui =
+            FindAchievementsUI();
+
+        if (ui == null)
+        {
+            Canvas canvas =
+                FindFirstObjectByType<Canvas>();
+
+            if (canvas == null)
+            {
+                Debug.LogError(
+                    "[MainMenuUtilityButton] Canvas не найден.");
+                return;
+            }
+
+            GameObject uiObject =
+                new GameObject(
+                    "AchievementsUI",
+                    typeof(RectTransform),
+                    typeof(AchievementsUI3D));
+
+            uiObject.transform.SetParent(
+                canvas.transform,
+                false);
+
+            ui =
+                uiObject.GetComponent<AchievementsUI3D>();
+        }
+
+        ui.Open();
+    }
+
+    private static GameSettingsUI3D FindSettingsUI()
+    {
+        GameSettingsUI3D[] all =
+            FindObjectsByType<GameSettingsUI3D>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        return all != null && all.Length > 0
+            ? all[0]
+            : null;
+    }
+
+    private static DailyLoginUI3D FindDailyLoginUI()
+    {
+        DailyLoginUI3D[] all =
+            FindObjectsByType<DailyLoginUI3D>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        return all != null && all.Length > 0
+            ? all[0]
+            : null;
+    }
+
+    private static AchievementsUI3D FindAchievementsUI()
     {
         AchievementsUI3D[] all =
             FindObjectsByType<AchievementsUI3D>(
@@ -90,296 +222,125 @@ public class MainMenuUtilityButton3D : MonoBehaviour
             : null;
     }
 
-    private void OpenOrCreatePanel(
-        string[] names,
-        string title,
-        string subtitle)
+    private void EnsureBadge()
     {
-        GameObject target = FindByNames(names);
-
-        if (target != null)
+        if (action == UtilityAction3D.Settings)
         {
-            target.SetActive(true);
+            if (badge != null)
+                badge.SetActive(false);
+
             return;
         }
 
-        Canvas canvas = FindFirstObjectByType<Canvas>();
-
-        if (canvas == null)
+        if (badge == null)
         {
-            Debug.LogWarning(
-                "[MainMenuButton] Canvas не найден для: " + action);
-            return;
+            Transform existing =
+                transform.Find("Badge");
+
+            if (existing != null)
+                badge = existing.gameObject;
         }
 
-        target = BuildSimplePanel(
-            canvas.transform,
-            names[0],
-            title,
-            subtitle);
-
-        target.SetActive(true);
-    }
-
-    private static GameObject FindByNames(string[] names)
-    {
-        foreach (string name in names)
+        if (badge == null)
         {
-            if (string.IsNullOrEmpty(name))
-                continue;
+            GameObject badgeObject =
+                new GameObject(
+                    "Badge",
+                    typeof(RectTransform),
+                    typeof(Image));
 
-            GameObject target = GameObject.Find(name);
+            badgeObject.transform.SetParent(
+                transform,
+                false);
 
-            if (target != null)
-                return target;
+            badge = badgeObject;
+
+            RectTransform badgeRect =
+                badgeObject.GetComponent<RectTransform>();
+
+            badgeRect.anchorMin =
+                new Vector2(1f, 1f);
+
+            badgeRect.anchorMax =
+                new Vector2(1f, 1f);
+
+            badgeRect.pivot =
+                new Vector2(1f, 1f);
+
+            badgeRect.anchoredPosition =
+                new Vector2(-2f, -2f);
+
+            badgeRect.sizeDelta =
+                new Vector2(26f, 26f);
         }
 
-        return null;
-    }
+        Image image =
+            badge.GetComponent<Image>();
 
-    private static GameObject BuildSimplePanel(
-        Transform canvas,
-        string rootName,
-        string title,
-        string subtitle)
-    {
-        GameObject root = new GameObject(
-            rootName,
-            typeof(RectTransform));
+        if (image != null)
+        {
+            image.color =
+                new Color(
+                    0.92f,
+                    0.08f,
+                    0.08f,
+                    1f);
 
-        root.transform.SetParent(
-            canvas,
-            false);
+            image.raycastTarget = false;
+        }
 
-        RectTransform rootRect =
-            root.GetComponent<RectTransform>();
+        if (badgeText == null)
+        {
+            Transform textTransform =
+                badge.transform.Find("Text");
 
-        Stretch(rootRect);
+            if (textTransform != null)
+            {
+                badgeText =
+                    textTransform.GetComponent<TextMeshProUGUI>();
+            }
+        }
 
-        Image dim = root.AddComponent<Image>();
+        if (badgeText == null)
+        {
+            GameObject textObject =
+                new GameObject(
+                    "Text",
+                    typeof(RectTransform),
+                    typeof(TextMeshProUGUI));
 
-        dim.color =
-            new Color(
-                0.01f,
-                0.02f,
-                0.03f,
-                0.78f);
+            textObject.transform.SetParent(
+                badge.transform,
+                false);
 
-        GameObject panel = new GameObject(
-            "Panel",
-            typeof(RectTransform),
-            typeof(Image));
+            badgeText =
+                textObject.GetComponent<TextMeshProUGUI>();
+        }
 
-        panel.transform.SetParent(
-            root.transform,
-            false);
+        RectTransform textRect =
+            badgeText.rectTransform;
 
-        RectTransform panelRect =
-            panel.GetComponent<RectTransform>();
-
-        panelRect.anchorMin =
-            new Vector2(
-                0.09f,
-                0.24f);
-
-        panelRect.anchorMax =
-            new Vector2(
-                0.91f,
-                0.76f);
-
-        panelRect.offsetMin =
+        textRect.anchorMin =
             Vector2.zero;
 
-        panelRect.offsetMax =
-            Vector2.zero;
-
-        Image panelImage =
-            panel.GetComponent<Image>();
-
-        panelImage.color =
-            new Color(
-                0.035f,
-                0.065f,
-                0.09f,
-                0.98f);
-
-        Outline outline =
-            panel.AddComponent<Outline>();
-
-        outline.effectColor =
-            new Color(
-                0.20f,
-                0.42f,
-                0.56f,
-                0.80f);
-
-        outline.effectDistance =
-            new Vector2(
-                2f,
-                -2f);
-
-        CreateTMP(
-            panel.transform,
-            title,
-            30f,
-            new Vector2(
-                0.08f,
-                0.72f),
-            new Vector2(
-                0.92f,
-                0.90f),
-            TextAlignmentOptions.Center,
-            new Color(
-                0.96f,
-                0.94f,
-                0.87f));
-
-        CreateTMP(
-            panel.transform,
-            subtitle,
-            18f,
-            new Vector2(
-                0.10f,
-                0.47f),
-            new Vector2(
-                0.90f,
-                0.68f),
-            TextAlignmentOptions.Center,
-            new Color(
-                0.72f,
-                0.76f,
-                0.75f));
-
-        GameObject close = new GameObject(
-            "CloseButton",
-            typeof(RectTransform),
-            typeof(Image),
-            typeof(Button));
-
-        close.transform.SetParent(
-            panel.transform,
-            false);
-
-        RectTransform closeRect =
-            close.GetComponent<RectTransform>();
-
-        closeRect.anchorMin =
-            new Vector2(
-                0.83f,
-                0.83f);
-
-        closeRect.anchorMax =
-            new Vector2(
-                0.96f,
-                0.96f);
-
-        closeRect.offsetMin =
-            Vector2.zero;
-
-        closeRect.offsetMax =
-            Vector2.zero;
-
-        Image closeImage =
-            close.GetComponent<Image>();
-
-        closeImage.color =
-            new Color(
-                0.10f,
-                0.15f,
-                0.18f,
-                1f);
-
-        Button closeButton =
-            close.GetComponent<Button>();
-
-        closeButton.onClick.AddListener(
-            () => root.SetActive(false));
-
-        CreateTMP(
-            close.transform,
-            "X",
-            22f,
-            Vector2.zero,
-            Vector2.one,
-            TextAlignmentOptions.Center,
-            new Color(
-                0.96f,
-                0.94f,
-                0.87f));
-
-        return root;
-    }
-
-    private static TMP_Text CreateTMP(
-        Transform parent,
-        string value,
-        float fontSize,
-        Vector2 anchorMin,
-        Vector2 anchorMax,
-        TextAlignmentOptions alignment,
-        Color color)
-    {
-        GameObject go = new GameObject(
-            "Text",
-            typeof(RectTransform),
-            typeof(TextMeshProUGUI));
-
-        go.transform.SetParent(
-            parent,
-            false);
-
-        RectTransform rect =
-            go.GetComponent<RectTransform>();
-
-        rect.anchorMin =
-            anchorMin;
-
-        rect.anchorMax =
-            anchorMax;
-
-        rect.offsetMin =
-            Vector2.zero;
-
-        rect.offsetMax =
-            Vector2.zero;
-
-        TextMeshProUGUI text =
-            go.GetComponent<TextMeshProUGUI>();
-
-        text.text =
-            value;
-
-        text.fontSize =
-            fontSize;
-
-        text.color =
-            color;
-
-        text.alignment =
-            alignment;
-
-        text.textWrappingMode =
-            TextWrappingModes.Normal;
-
-        text.raycastTarget =
-            false;
-
-        return text;
-    }
-
-    private static void Stretch(
-        RectTransform rect)
-    {
-        rect.anchorMin =
-            Vector2.zero;
-
-        rect.anchorMax =
+        textRect.anchorMax =
             Vector2.one;
 
-        rect.offsetMin =
+        textRect.offsetMin =
             Vector2.zero;
 
-        rect.offsetMax =
+        textRect.offsetMax =
             Vector2.zero;
+
+        badgeText.text = "!";
+        badgeText.fontSize = 17f;
+        badgeText.fontStyle =
+            FontStyles.Bold;
+        badgeText.alignment =
+            TextAlignmentOptions.Center;
+        badgeText.color = Color.white;
+        badgeText.raycastTarget = false;
+        badgeText.textWrappingMode =
+            TextWrappingModes.NoWrap;
     }
 }

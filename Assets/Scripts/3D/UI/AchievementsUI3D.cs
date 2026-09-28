@@ -47,8 +47,7 @@ public class AchievementsUI3D : MonoBehaviour
 
     private TMP_Text countText;
 
-    private Mode currentMode =
-        Mode.Shelter;
+    private Mode currentMode = Mode.Shelter;
 
     private readonly List<AchievementDefinition> achievements =
         new List<AchievementDefinition>
@@ -154,7 +153,6 @@ public class AchievementsUI3D : MonoBehaviour
         {
             Debug.LogError(
                 "[AchievementsUI] Canvas не найден.");
-
             return;
         }
 
@@ -180,10 +178,7 @@ public class AchievementsUI3D : MonoBehaviour
             GetComponentInParent<Canvas>(true);
 
         if (canvas == null)
-        {
-            canvas =
-                FindFirstObjectByType<Canvas>();
-        }
+            canvas = FindFirstObjectByType<Canvas>();
     }
 
     private void Build()
@@ -212,6 +207,8 @@ public class AchievementsUI3D : MonoBehaviour
                 0.045f,
                 0.94f);
 
+        overlay.raycastTarget = true;
+
         GameObject panel =
             CreateImageObject(
                 "Panel",
@@ -226,14 +223,10 @@ public class AchievementsUI3D : MonoBehaviour
             panel.GetComponent<RectTransform>();
 
         panelRect.anchorMin =
-            new Vector2(
-                0.05f,
-                0.06f);
+            new Vector2(0.05f, 0.06f);
 
         panelRect.anchorMax =
-            new Vector2(
-                0.95f,
-                0.94f);
+            new Vector2(0.95f, 0.94f);
 
         panelRect.offsetMin =
             Vector2.zero;
@@ -252,16 +245,14 @@ public class AchievementsUI3D : MonoBehaviour
                 0.75f);
 
         panelOutline.effectDistance =
-            new Vector2(
-                2f,
-                2f);
+            new Vector2(2f, 2f);
 
         GameObject title =
             CreateText(
                 "Title",
                 panel.transform,
                 "ДОСТИЖЕНИЯ",
-                34,
+                34f,
                 new Color(
                     0.96f,
                     0.94f,
@@ -270,12 +261,8 @@ public class AchievementsUI3D : MonoBehaviour
 
         SetAnchored(
             title.GetComponent<RectTransform>(),
-            new Vector2(
-                0.07f,
-                0.88f),
-            new Vector2(
-                0.88f,
-                0.96f),
+            new Vector2(0.07f, 0.88f),
+            new Vector2(0.88f, 0.96f),
             Vector2.zero,
             Vector2.zero);
 
@@ -293,14 +280,10 @@ public class AchievementsUI3D : MonoBehaviour
             closeObject.GetComponent<RectTransform>();
 
         closeRect.anchorMin =
-            new Vector2(
-                0.895f,
-                0.90f);
+            new Vector2(0.895f, 0.90f);
 
         closeRect.anchorMax =
-            new Vector2(
-                0.965f,
-                0.965f);
+            new Vector2(0.965f, 0.965f);
 
         closeRect.offsetMin =
             Vector2.zero;
@@ -311,18 +294,16 @@ public class AchievementsUI3D : MonoBehaviour
         Button closeButton =
             closeObject.AddComponent<Button>();
 
-        ConfigureButton(
-            closeButton);
+        ConfigureButton(closeButton);
 
-        closeButton.onClick.AddListener(
-            Close);
+        closeButton.onClick.AddListener(Close);
 
         GameObject closeText =
             CreateText(
                 "Label",
                 closeObject.transform,
                 "X",
-                24,
+                24f,
                 new Color(
                     0.96f,
                     0.94f,
@@ -336,34 +317,24 @@ public class AchievementsUI3D : MonoBehaviour
             CreateTab(
                 panel.transform,
                 "ДО УБЕЖИЩА",
-                new Vector2(
-                    0.08f,
-                    0.79f),
-                new Vector2(
-                    0.48f,
-                    0.865f),
-                () => SetMode(
-                    Mode.Shelter));
+                new Vector2(0.08f, 0.79f),
+                new Vector2(0.48f, 0.865f),
+                () => SetMode(Mode.Shelter));
 
         infiniteTab =
             CreateTab(
                 panel.transform,
                 "БЕСКОНЕЧНЫЙ",
-                new Vector2(
-                    0.52f,
-                    0.79f),
-                new Vector2(
-                    0.92f,
-                    0.865f),
-                () => SetMode(
-                    Mode.Infinite));
+                new Vector2(0.52f, 0.79f),
+                new Vector2(0.92f, 0.865f),
+                () => SetMode(Mode.Infinite));
 
         GameObject countObject =
             CreateText(
                 "UnclaimedCount",
                 panel.transform,
                 "",
-                17,
+                17f,
                 new Color(
                     0.74f,
                     0.78f,
@@ -372,12 +343,8 @@ public class AchievementsUI3D : MonoBehaviour
 
         SetAnchored(
             countObject.GetComponent<RectTransform>(),
-            new Vector2(
-                0.55f,
-                0.745f),
-            new Vector2(
-                0.92f,
-                0.785f),
+            new Vector2(0.55f, 0.745f),
+            new Vector2(0.92f, 0.785f),
             Vector2.zero,
             Vector2.zero);
 
@@ -399,14 +366,10 @@ public class AchievementsUI3D : MonoBehaviour
             scrollObject.GetComponent<RectTransform>();
 
         scrollRect.anchorMin =
-            new Vector2(
-                0.055f,
-                0.055f);
+            new Vector2(0.055f, 0.055f);
 
         scrollRect.anchorMax =
-            new Vector2(
-                0.945f,
-                0.74f);
+            new Vector2(0.945f, 0.74f);
 
         scrollRect.offsetMin =
             Vector2.zero;
@@ -468,52 +431,32 @@ public class AchievementsUI3D : MonoBehaviour
             content.GetComponent<RectTransform>();
 
         contentRoot.anchorMin =
-            new Vector2(
-                0f,
-                1f);
+            new Vector2(0f, 1f);
 
         contentRoot.anchorMax =
-            new Vector2(
-                1f,
-                1f);
+            new Vector2(1f, 1f);
 
         contentRoot.pivot =
-            new Vector2(
-                0.5f,
-                1f);
+            new Vector2(0.5f, 1f);
 
         contentRoot.anchoredPosition =
             Vector2.zero;
 
         contentRoot.sizeDelta =
-            new Vector2(
-                0f,
-                0f);
+            new Vector2(0f, 0f);
 
         VerticalLayoutGroup layout =
             content.GetComponent<VerticalLayoutGroup>();
 
         layout.padding =
-            new RectOffset(
-                0,
-                8,
-                8,
-                8);
+            new RectOffset(0, 8, 8, 8);
 
-        layout.spacing =
-            10;
+        layout.spacing = 10f;
 
-        layout.childControlWidth =
-            true;
-
-        layout.childControlHeight =
-            true;
-
-        layout.childForceExpandWidth =
-            true;
-
-        layout.childForceExpandHeight =
-            false;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
 
         ContentSizeFitter fitter =
             content.GetComponent<ContentSizeFitter>();
@@ -533,17 +476,13 @@ public class AchievementsUI3D : MonoBehaviour
         scroll.content =
             contentRoot;
 
-        scroll.horizontal =
-            false;
-
-        scroll.vertical =
-            true;
+        scroll.horizontal = false;
+        scroll.vertical = true;
 
         scroll.movementType =
             ScrollRect.MovementType.Clamped;
 
-        scroll.scrollSensitivity =
-            30f;
+        scroll.scrollSensitivity = 30f;
     }
 
     private Button CreateTab(
@@ -576,18 +515,16 @@ public class AchievementsUI3D : MonoBehaviour
         Button button =
             buttonObject.AddComponent<Button>();
 
-        ConfigureButton(
-            button);
+        ConfigureButton(button);
 
-        button.onClick.AddListener(
-            action);
+        button.onClick.AddListener(action);
 
         GameObject text =
             CreateText(
                 "Label",
                 buttonObject.transform,
                 label,
-                17,
+                17f,
                 new Color(
                     0.90f,
                     0.92f,
@@ -621,8 +558,7 @@ public class AchievementsUI3D : MonoBehaviour
             if (definition.mode != currentMode)
                 continue;
 
-            CreateAchievementCard(
-                definition);
+            CreateAchievementCard(definition);
         }
 
         RefreshTabs();
@@ -634,8 +570,7 @@ public class AchievementsUI3D : MonoBehaviour
         {
             countText.text =
                 unclaimed > 0
-                    ? "НАГРАД ДОСТУПНО: " +
-                      unclaimed
+                    ? "НАГРАД ДОСТУПНО: " + unclaimed
                     : "НЕТ НЕПОЛУЧЕННЫХ НАГРАД";
         }
     }
@@ -671,25 +606,18 @@ public class AchievementsUI3D : MonoBehaviour
                         0.095f,
                         1f));
 
-        LayoutElement layoutElement =
+        LayoutElement element =
             card.AddComponent<LayoutElement>();
 
-        layoutElement.minHeight =
-            118f;
-
-        layoutElement.preferredHeight =
-            118f;
-
-        layoutElement.flexibleWidth =
-            1f;
+        element.minHeight = 118f;
+        element.preferredHeight = 118f;
+        element.flexibleWidth = 1f;
 
         Outline outline =
             card.AddComponent<Outline>();
 
         outline.effectDistance =
-            new Vector2(
-                1f,
-                -1f);
+            new Vector2(1f, -1f);
 
         outline.effectColor =
             completed
@@ -709,7 +637,7 @@ public class AchievementsUI3D : MonoBehaviour
                 "Title",
                 card.transform,
                 definition.title,
-                20,
+                20f,
                 new Color(
                     0.95f,
                     0.92f,
@@ -718,12 +646,8 @@ public class AchievementsUI3D : MonoBehaviour
 
         SetAnchored(
             title.GetComponent<RectTransform>(),
-            new Vector2(
-                0.035f,
-                0.68f),
-            new Vector2(
-                0.63f,
-                0.96f),
+            new Vector2(0.035f, 0.68f),
+            new Vector2(0.63f, 0.96f),
             Vector2.zero,
             Vector2.zero);
 
@@ -732,7 +656,7 @@ public class AchievementsUI3D : MonoBehaviour
                 "Description",
                 card.transform,
                 definition.description,
-                14,
+                14f,
                 new Color(
                     0.72f,
                     0.76f,
@@ -747,12 +671,8 @@ public class AchievementsUI3D : MonoBehaviour
 
         SetAnchored(
             descriptionTMP.rectTransform,
-            new Vector2(
-                0.035f,
-                0.27f),
-            new Vector2(
-                0.66f,
-                0.67f),
+            new Vector2(0.035f, 0.27f),
+            new Vector2(0.66f, 0.67f),
             Vector2.zero,
             Vector2.zero);
 
@@ -761,7 +681,7 @@ public class AchievementsUI3D : MonoBehaviour
                 "Target",
                 card.transform,
                 definition.targetText,
-                13,
+                13f,
                 new Color(
                     0.60f,
                     0.68f,
@@ -770,12 +690,8 @@ public class AchievementsUI3D : MonoBehaviour
 
         SetAnchored(
             target.GetComponent<RectTransform>(),
-            new Vector2(
-                0.035f,
-                0.06f),
-            new Vector2(
-                0.66f,
-                0.25f),
+            new Vector2(0.035f, 0.06f),
+            new Vector2(0.66f, 0.25f),
             Vector2.zero,
             Vector2.zero);
 
@@ -786,7 +702,7 @@ public class AchievementsUI3D : MonoBehaviour
                 "+" +
                 definition.reward +
                 " МОНЕТ",
-                15,
+                15f,
                 new Color(
                     1f,
                     0.80f,
@@ -795,12 +711,8 @@ public class AchievementsUI3D : MonoBehaviour
 
         SetAnchored(
             reward.GetComponent<RectTransform>(),
-            new Vector2(
-                0.69f,
-                0.68f),
-            new Vector2(
-                0.97f,
-                0.91f),
+            new Vector2(0.69f, 0.68f),
+            new Vector2(0.97f, 0.91f),
             Vector2.zero,
             Vector2.zero);
 
@@ -809,8 +721,7 @@ public class AchievementsUI3D : MonoBehaviour
 
         if (claimed)
         {
-            statusText =
-                "ПОЛУЧЕНО";
+            statusText = "ПОЛУЧЕНО";
 
             statusColor =
                 new Color(
@@ -820,8 +731,7 @@ public class AchievementsUI3D : MonoBehaviour
         }
         else if (completed)
         {
-            statusText =
-                "ЗАБРАТЬ";
+            statusText = "ЗАБРАТЬ";
 
             statusColor =
                 new Color(
@@ -831,8 +741,7 @@ public class AchievementsUI3D : MonoBehaviour
         }
         else
         {
-            statusText =
-                "НЕ ВЫПОЛНЕНО";
+            statusText = "НЕ ВЫПОЛНЕНО";
 
             statusColor =
                 new Color(
@@ -856,31 +765,25 @@ public class AchievementsUI3D : MonoBehaviour
 
         SetAnchored(
             statusRect,
-            new Vector2(
-                0.70f,
-                0.22f),
-            new Vector2(
-                0.965f,
-                0.60f),
+            new Vector2(0.70f, 0.22f),
+            new Vector2(0.965f, 0.60f),
             Vector2.zero,
             Vector2.zero);
 
         Button statusButton =
             statusObject.AddComponent<Button>();
 
-        ConfigureButton(
-            statusButton);
+        ConfigureButton(statusButton);
 
         statusButton.interactable =
-            completed &&
-            !claimed;
+            completed && !claimed;
 
         GameObject statusLabel =
             CreateText(
                 "Label",
                 statusObject.transform,
                 statusText,
-                14,
+                14f,
                 statusColor,
                 TextAlignmentOptions.Center);
 
@@ -897,8 +800,7 @@ public class AchievementsUI3D : MonoBehaviour
         }
     }
 
-    private void ClaimAchievement(
-        string id)
+    private void ClaimAchievement(string id)
     {
         AchievementSystem3D.Claim(id);
 
@@ -915,14 +817,23 @@ public class AchievementsUI3D : MonoBehaviour
         {
             button.RefreshBadge();
         }
+
+        MainMenuUtilityButton3D[] utilityButtons =
+            FindObjectsByType<MainMenuUtilityButton3D>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        foreach (
+            MainMenuUtilityButton3D utilityButton
+            in utilityButtons)
+        {
+            utilityButton.RefreshBadge();
+        }
     }
 
-    private void SetMode(
-        Mode mode)
+    private void SetMode(Mode mode)
     {
-        currentMode =
-            mode;
-
+        currentMode = mode;
         Refresh();
     }
 
@@ -985,8 +896,8 @@ public class AchievementsUI3D : MonoBehaviour
         Image image =
             go.GetComponent<Image>();
 
-        image.color =
-            color;
+        image.color = color;
+        image.raycastTarget = true;
 
         return go;
     }
@@ -1012,20 +923,11 @@ public class AchievementsUI3D : MonoBehaviour
         TextMeshProUGUI text =
             go.GetComponent<TextMeshProUGUI>();
 
-        text.text =
-            value;
-
-        text.fontSize =
-            fontSize;
-
-        text.color =
-            color;
-
-        text.alignment =
-            alignment;
-
-        text.raycastTarget =
-            false;
+        text.text = value;
+        text.fontSize = fontSize;
+        text.color = color;
+        text.alignment = alignment;
+        text.raycastTarget = false;
 
         text.overflowMode =
             TextOverflowModes.Ellipsis;
@@ -1033,14 +935,12 @@ public class AchievementsUI3D : MonoBehaviour
         text.textWrappingMode =
             TextWrappingModes.Normal;
 
-        text.richText =
-            true;
+        text.richText = true;
 
         return go;
     }
 
-    private static void ConfigureButton(
-        Button button)
+    private static void ConfigureButton(Button button)
     {
         ColorBlock colors =
             button.colors;
@@ -1049,11 +949,7 @@ public class AchievementsUI3D : MonoBehaviour
             Color.white;
 
         colors.highlightedColor =
-            new Color(
-                1f,
-                1f,
-                1f,
-                1f);
+            Color.white;
 
         colors.pressedColor =
             new Color(
@@ -1072,27 +968,17 @@ public class AchievementsUI3D : MonoBehaviour
                 0.70f,
                 0.65f);
 
-        colors.colorMultiplier =
-            1f;
+        colors.colorMultiplier = 1f;
 
-        button.colors =
-            colors;
+        button.colors = colors;
     }
 
-    private static void Stretch(
-        RectTransform rect)
+    private static void Stretch(RectTransform rect)
     {
-        rect.anchorMin =
-            Vector2.zero;
-
-        rect.anchorMax =
-            Vector2.one;
-
-        rect.offsetMin =
-            Vector2.zero;
-
-        rect.offsetMax =
-            Vector2.zero;
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
     }
 
     private static void SetAnchored(
@@ -1102,16 +988,9 @@ public class AchievementsUI3D : MonoBehaviour
         Vector2 offsetMin,
         Vector2 offsetMax)
     {
-        rect.anchorMin =
-            anchorMin;
-
-        rect.anchorMax =
-            anchorMax;
-
-        rect.offsetMin =
-            offsetMin;
-
-        rect.offsetMax =
-            offsetMax;
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
     }
 }

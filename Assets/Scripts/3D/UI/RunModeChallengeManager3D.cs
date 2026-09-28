@@ -1,9 +1,13 @@
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 public class RunModeChallengeManager3D : MonoBehaviour
 {
-    public static RunModeChallengeManager3D Instance { get; private set; }
+    public static RunModeChallengeManager3D Instance
+    {
+        get;
+        private set;
+    }
 
     [Header("UI")]
     public TextMeshProUGUI taskText;
@@ -16,6 +20,9 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
     private float refreshTimer;
     private bool finished;
+    private bool mainGoalCompleted;
+
+    private TaskCheckmarkGraphic3D taskCheckmark;
 
     private void Awake()
     {
@@ -26,17 +33,21 @@ public class RunModeChallengeManager3D : MonoBehaviour
             return;
         }
 
-        Instance = this;
+        Instance =
+            this;
     }
 
     private void Start()
     {
         RunManager runManager =
-            FindFirstObjectByType<RunManager>();
+            FindFirstObjectByType<
+                RunManager>();
 
         infiniteRun =
             runManager != null &&
             runManager.infiniteRun;
+
+        EnsureTaskCheckmark();
 
         RefreshTaskUI();
     }
@@ -48,11 +59,14 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
         UpdateDistanceAchievements();
 
-        refreshTimer -= Time.deltaTime;
+        refreshTimer -=
+            Time.deltaTime;
 
         if (refreshTimer <= 0f)
         {
-            refreshTimer = 0.2f;
+            refreshTimer =
+                0.2f;
+
             RefreshTaskUI();
         }
     }
@@ -61,12 +75,15 @@ public class RunModeChallengeManager3D : MonoBehaviour
     // СОБЫТИЯ
     // =========================================================
 
-    public void OnCoinCollected(int amount)
+    public void OnCoinCollected(
+        int amount)
     {
-        if (finished || amount <= 0)
+        if (finished ||
+            amount <= 0)
             return;
 
-        collectedCoins += amount;
+        collectedCoins +=
+            amount;
 
         if (infiniteRun &&
             collectedCoins >= 100)
@@ -124,31 +141,38 @@ public class RunModeChallengeManager3D : MonoBehaviour
         if (finished)
             return;
 
-        if (victory)
+        if (victory &&
+            !infiniteRun)
         {
-            if (!infiniteRun)
+            AchievementSystem3D.Unlock(
+                "shelter_first"
+            );
+
+            if (hits == 0)
             {
                 AchievementSystem3D.Unlock(
-                    "shelter_first"
+                    "shelter_no_hits"
                 );
-
-                if (hits == 0)
-                {
-                    AchievementSystem3D.Unlock(
-                        "shelter_no_hits"
-                    );
-                }
-
-                if (rescued >= 5)
-                {
-                    AchievementSystem3D.Unlock(
-                        "shelter_rescue_5"
-                    );
-                }
             }
+
+            if (rescued >= 5)
+            {
+                AchievementSystem3D.Unlock(
+                    "shelter_rescue_5"
+                );
+            }
+
+            mainGoalCompleted =
+                true;
+        }
+        else
+        {
+            mainGoalCompleted =
+                false;
         }
 
-        finished = true;
+        finished =
+            true;
 
         RefreshTaskUI();
     }
@@ -167,7 +191,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
         int distance =
             Mathf.RoundToInt(
-                HUDManager.Instance.GetDistance()
+                HUDManager.Instance
+                    .GetDistance()
             );
 
         if (distance >= 1000)
@@ -200,7 +225,7 @@ public class RunModeChallengeManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // UI ЗАДАЧИ
+    // UI ЗАДАЧ
     // =========================================================
 
     private void RefreshTaskUI()
@@ -220,7 +245,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
         {
             int distance =
                 Mathf.RoundToInt(
-                    HUDManager.Instance.GetDistance()
+                    HUDManager.Instance
+                        .GetDistance()
                 );
 
             string distanceLine =
@@ -245,7 +271,9 @@ public class RunModeChallengeManager3D : MonoBehaviour
                 );
 
             taskText.text =
-                FormatMainGoal(mainGoal) +
+                FormatMainGoal(
+                    mainGoal
+                ) +
                 "\n" +
                 distanceLine +
                 "\n" +
@@ -271,19 +299,29 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
             string hitsLine =
                 FormatObjective(
-                    "Получить не больше 1 удара",
+                    "Удары",
                     $"{hits} / 1",
                     hits <= 1
                 );
 
             taskText.text =
-                FormatMainGoal(mainGoal) +
+                FormatMainGoal(
+                    mainGoal
+                ) +
                 "\n" +
                 rescuedLine +
                 "\n" +
                 coinsLine +
                 "\n" +
                 hitsLine;
+        }
+
+        if (taskCheckmark != null)
+        {
+            taskCheckmark.gameObject.SetActive(
+                !infiniteRun &&
+                mainGoalCompleted
+            );
         }
     }
 
@@ -304,13 +342,99 @@ public class RunModeChallengeManager3D : MonoBehaviour
                 ? "#98B88E"
                 : "#A9ADA9";
 
-        string status =
-            completed
-                ? "  ГОТОВО"
-                : "";
-
         return
-            $"<size=19><color={color}>{title}: {progress}{status}</color></size>";
+            $"<size=19><color={color}>{title}: {progress}</color></size>";
+    }
+
+    private void EnsureTaskCheckmark()
+    {
+        if (taskText == null)
+            return;
+
+        Transform taskBox =
+            taskText.transform.parent;
+
+        if (taskBox == null)
+            return;
+
+        Transform existing =
+            taskBox.Find(
+                "TaskCheckmark"
+            );
+
+        if (existing != null)
+        {
+            taskCheckmark =
+                existing.GetComponent<
+                    TaskCheckmarkGraphic3D>();
+
+            return;
+        }
+
+        GameObject checkmarkObject =
+            new GameObject(
+                "TaskCheckmark",
+                typeof(RectTransform),
+                typeof(TaskCheckmarkGraphic3D)
+            );
+
+        checkmarkObject.transform.SetParent(
+            taskBox,
+            false
+        );
+
+        RectTransform rect =
+            checkmarkObject.GetComponent<
+                RectTransform>();
+
+        rect.anchorMin =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        rect.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        rect.pivot =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        rect.anchoredPosition =
+            new Vector2(
+                -16f,
+                -17f
+            );
+
+        rect.sizeDelta =
+            new Vector2(
+                32f,
+                32f
+            );
+
+        taskCheckmark =
+            checkmarkObject.GetComponent<
+                TaskCheckmarkGraphic3D>();
+
+        taskCheckmark.color =
+            new Color32(
+                122,
+                205,
+                118,
+                255
+            );
+
+        taskCheckmark.raycastTarget =
+            false;
+
+        checkmarkObject.SetActive(
+            false
+        );
     }
 
     // =========================================================
