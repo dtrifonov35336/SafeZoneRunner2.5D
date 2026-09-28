@@ -153,19 +153,31 @@ public class AchievementsUI3D : MonoBehaviour
         {
             Debug.LogError(
                 "[AchievementsUI] Canvas не найден.");
+
             return;
         }
+
+        gameObject.SetActive(true);
 
         if (window == null)
             Build();
 
-        Refresh();
+        if (window != null)
+        {
+            window.SetActive(true);
+            window.transform.SetAsLastSibling();
+        }
 
-        gameObject.SetActive(true);
+        transform.SetAsLastSibling();
+
+        Refresh();
     }
 
     public void Close()
     {
+        if (window != null)
+            window.SetActive(false);
+
         gameObject.SetActive(false);
     }
 
@@ -189,7 +201,7 @@ public class AchievementsUI3D : MonoBehaviour
                 typeof(RectTransform));
 
         window.transform.SetParent(
-            transform,
+            canvas.transform,
             false);
 
         RectTransform windowRect =
@@ -879,9 +891,9 @@ public class AchievementsUI3D : MonoBehaviour
     }
 
     private static GameObject CreateImageObject(
-        string objectName,
-        Transform parent,
-        Color color)
+    string objectName,
+    Transform parent,
+    Color color)
     {
         GameObject go =
             new GameObject(
@@ -896,8 +908,14 @@ public class AchievementsUI3D : MonoBehaviour
         Image image =
             go.GetComponent<Image>();
 
-        image.color = color;
-        image.raycastTarget = true;
+        image.sprite =
+            RuntimeUISprite3D.GetSolidSprite();
+
+        image.type =
+            Image.Type.Simple;
+
+        image.color =
+            color;
 
         return go;
     }

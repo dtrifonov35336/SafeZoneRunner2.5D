@@ -4107,7 +4107,7 @@ GameObject:
   - component: {fileID: 720477530}
   - component: {fileID: 720477529}
   - component: {fileID: 720477528}
-  - component: {fileID: 720477527}
+  - component: {fileID: 720477532}
   m_Layer: 0
   m_Name: Utility_Achievements
   m_TagString: Untagged
@@ -4137,22 +4137,6 @@ RectTransform:
   m_AnchoredPosition: {x: 78, y: -360}
   m_SizeDelta: {x: 116, y: 88}
   m_Pivot: {x: 0.5, y: 1}
---- !u!114 &720477527
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 720477525}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8c8c3576d45fed240a8487b9cc1fa51c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AchievementsMenuButton3D
-  button: {fileID: 0}
-  badge: {fileID: 0}
-  badgeText: {fileID: 0}
-  achievementsUI: {fileID: 0}
 --- !u!114 &720477528
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4250,6 +4234,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 720477525}
   m_CullTransparentMesh: 1
+--- !u!114 &720477532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 720477525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c73ccbd979cbed042a6ef765dbf1636b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainMenuUtilityButton3D
+  action: 1
+  button: {fileID: 0}
 --- !u!1 &756433072
 GameObject:
   m_ObjectHideFlags: 0

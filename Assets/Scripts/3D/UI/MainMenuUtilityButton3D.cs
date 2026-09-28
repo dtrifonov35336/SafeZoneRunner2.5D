@@ -279,6 +279,12 @@ public class MainMenuUtilityButton3D : MonoBehaviour
 
         if (image != null)
         {
+            image.sprite =
+                RuntimeUISprite3D.GetSolidSprite();
+
+            image.type =
+                Image.Type.Simple;
+
             image.color =
                 new Color(
                     0.92f,

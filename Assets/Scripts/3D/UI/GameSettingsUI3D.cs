@@ -20,9 +20,7 @@ public class GameSettingsUI3D : MonoBehaviour
     private void Awake()
     {
         uiSprite =
-            Resources.GetBuiltinResource<Sprite>(
-                "UI/Skin/UISprite.psd"
-            );
+            RuntimeUISprite3D.GetSolidSprite();
 
         RectTransform rect =
             GetComponent<RectTransform>();
@@ -769,9 +767,9 @@ public class GameSettingsUI3D : MonoBehaviour
     }
 
     private GameObject CreateImage(
-        string name,
-        Transform parent,
-        Color color)
+    string name,
+    Transform parent,
+    Color color)
     {
         GameObject go =
             new GameObject(
@@ -789,12 +787,10 @@ public class GameSettingsUI3D : MonoBehaviour
             go.GetComponent<Image>();
 
         image.sprite =
-            uiSprite;
+            RuntimeUISprite3D.GetSolidSprite();
 
         image.type =
-            uiSprite != null
-                ? Image.Type.Sliced
-                : Image.Type.Simple;
+            Image.Type.Simple;
 
         image.color =
             color;
