@@ -332,6 +332,11 @@ public class ChaseManager : MonoBehaviour
         gameOver =
             true;
 
+        if (RunModeChallengeManager3D.Instance != null)
+        {
+            RunModeChallengeManager3D.Instance.OnRunFinished(false);
+        }
+
         if (spawner != null)
         {
             spawner.SetRunning(
@@ -380,6 +385,11 @@ public class ChaseManager : MonoBehaviour
 
         victory =
             true;
+
+        if (RunModeChallengeManager3D.Instance != null)
+        {
+            RunModeChallengeManager3D.Instance.OnRunFinished(true);
+        }
 
         if (spawner != null)
         {

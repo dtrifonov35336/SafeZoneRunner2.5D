@@ -211,6 +211,11 @@ public class PlayerCollision : MonoBehaviour
 
                 if (HUDManager.Instance != null)
                 {
+                    if (RunModeChallengeManager3D.Instance != null)
+                    {
+                        RunModeChallengeManager3D.Instance.OnPlayerHit();
+                    }
+
                     HUDManager.Instance.SetHealth(
                         0f
                     );
@@ -305,6 +310,11 @@ public class PlayerCollision : MonoBehaviour
             HUDManager.Instance.ReduceHealth(
                 damage
             );
+
+            if (RunModeChallengeManager3D.Instance != null)
+            {
+                RunModeChallengeManager3D.Instance.OnPlayerHit();
+            }
         }
 
         if (chase != null)

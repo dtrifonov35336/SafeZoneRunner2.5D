@@ -147,6 +147,11 @@ public class RescuedPerson : MonoBehaviour
 
             HUDManager.Instance.AddRescued(1);
 
+            if (RunModeChallengeManager3D.Instance != null)
+            {
+                RunModeChallengeManager3D.Instance.OnRescued();
+            }
+
             // Только награда за спасение.
             // Рюкзак сюда НЕ применяется.
             HUDManager.Instance.AddCoinsWithBonus(

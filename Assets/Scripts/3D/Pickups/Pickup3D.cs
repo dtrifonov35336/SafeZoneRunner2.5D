@@ -14,7 +14,7 @@ public class Pickup3D : MonoBehaviour
 
     public int amount = 1;
 
-    private bool collected = false;
+    private bool collected;
 
     private void OnTriggerEnter(
         Collider other)
@@ -56,6 +56,14 @@ public class Pickup3D : MonoBehaviour
                         finalAmount
                     );
 
+                    if (RunModeChallengeManager3D.Instance != null)
+                    {
+                        RunModeChallengeManager3D.Instance
+                            .OnCoinCollected(
+                                finalAmount
+                            );
+                    }
+
                     break;
                 }
 
@@ -67,12 +75,9 @@ public class Pickup3D : MonoBehaviour
                                 charId
                             );
 
-                    float finalHeal =
-                        amount *
-                        multiplier;
-
                     HUDManager.Instance.AddHealth(
-                        finalHeal
+                        amount *
+                        multiplier
                     );
 
                     break;
