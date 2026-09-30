@@ -28,14 +28,18 @@ public class TaskCheckmarkUI3D : MonoBehaviour
     private void Awake()
     {
         ResolveExistingCheckmarks();
+        AdoptSpriteFromExistingImages();
         ApplyLayout();
+        ApplySpriteToExistingImages();
         HideAll();
     }
 
     private void Start()
     {
         ResolveExistingCheckmarks();
+        AdoptSpriteFromExistingImages();
         ApplyLayout();
+        ApplySpriteToExistingImages();
         HideAll();
     }
 
@@ -44,8 +48,19 @@ public class TaskCheckmarkUI3D : MonoBehaviour
     private void OnValidate()
     {
         ResolveExistingCheckmarks();
+
+        // Если спрайт назначен непосредственно
+        // на одну из галочек — сохраняем его.
+        AdoptSpriteFromExistingImages();
+
         ApplyLayout();
-        ApplySprite();
+
+        // НИКОГДА не затираем Image.sprite,
+        // если общий checkmarkSprite пуст.
+        if (checkmarkSprite != null)
+        {
+            ApplySpriteToExistingImages();
+        }
     }
 
 #endif
@@ -71,12 +86,8 @@ public class TaskCheckmarkUI3D : MonoBehaviour
             i++
         )
         {
-            if (
-                checkmarks[i] != null
-            )
-            {
+            if (checkmarks[i] != null)
                 continue;
-            }
 
             Transform child =
                 transform.Find(
@@ -88,9 +99,41 @@ public class TaskCheckmarkUI3D : MonoBehaviour
                 continue;
 
             checkmarks[i] =
-                child.GetComponent<
-                    Image
-                >();
+                child.GetComponent<Image>();
+        }
+    }
+
+    // =========================================================
+    // ADOPT EXISTING SPRITE
+    // =========================================================
+
+    private void AdoptSpriteFromExistingImages()
+    {
+        if (checkmarkSprite != null)
+            return;
+
+        if (checkmarks == null)
+            return;
+
+        for (
+            int i = 0;
+            i < checkmarks.Length;
+            i++
+        )
+        {
+            Image image =
+                checkmarks[i];
+
+            if (image == null)
+                continue;
+
+            if (image.sprite != null)
+            {
+                checkmarkSprite =
+                    image.sprite;
+
+                break;
+            }
         }
     }
 
@@ -100,12 +143,8 @@ public class TaskCheckmarkUI3D : MonoBehaviour
 
     private void ApplyLayout()
     {
-        if (
-            checkmarks == null
-        )
-        {
+        if (checkmarks == null)
             return;
-        }
 
         for (
             int i = 0;
@@ -171,9 +210,10 @@ public class TaskCheckmarkUI3D : MonoBehaviour
     // SPRITE
     // =========================================================
 
-    private void ApplySprite()
+    private void ApplySpriteToExistingImages()
     {
         if (
+            checkmarkSprite == null ||
             checkmarks == null
         )
         {
@@ -186,12 +226,8 @@ public class TaskCheckmarkUI3D : MonoBehaviour
             i++
         )
         {
-            if (
-                checkmarks[i] == null
-            )
-            {
+            if (checkmarks[i] == null)
                 continue;
-            }
 
             checkmarks[i].sprite =
                 checkmarkSprite;
@@ -220,21 +256,36 @@ public class TaskCheckmarkUI3D : MonoBehaviour
 
         ResolveExistingCheckmarks();
 
+        if (checkmarkSprite == null)
+        {
+            AdoptSpriteFromExistingImages();
+        }
+
         Image image =
             checkmarks[index];
 
         if (image == null)
             return;
 
-        image.sprite =
-            checkmarkSprite;
+        // Используем общий спрайт, если он есть.
+        // Иначе оставляем индивидуальный спрайт Image.
+        Sprite sprite =
+            checkmarkSprite != null
+                ? checkmarkSprite
+                : image.sprite;
+
+        if (sprite != null)
+        {
+            image.sprite =
+                sprite;
+        }
 
         image.color =
             checkmarkColor;
 
         bool visible =
             completed &&
-            checkmarkSprite != null;
+            sprite != null;
 
         image.gameObject.SetActive(
             visible
@@ -243,12 +294,8 @@ public class TaskCheckmarkUI3D : MonoBehaviour
 
     public void HideAll()
     {
-        if (
-            checkmarks == null
-        )
-        {
+        if (checkmarks == null)
             return;
-        }
 
         for (
             int i = 0;
@@ -256,9 +303,7 @@ public class TaskCheckmarkUI3D : MonoBehaviour
             i++
         )
         {
-            if (
-                checkmarks[i] != null
-            )
+            if (checkmarks[i] != null)
             {
                 checkmarks[i]
                     .gameObject
