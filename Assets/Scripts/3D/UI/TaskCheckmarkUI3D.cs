@@ -21,134 +21,109 @@ public class TaskCheckmarkUI3D : MonoBehaviour
 
     public float lineStep = 34f;
 
-    private readonly Image[] checkmarks =
+    [Header("Объекты галочек")]
+    public Image[] checkmarks =
         new Image[4];
-
-    private bool initialized;
 
     private void Awake()
     {
-        EnsureCheckmarks();
+        ResolveExistingCheckmarks();
+        ApplyLayout();
+        HideAll();
     }
 
-    public void SetChecked(
-        int index,
-        bool completed)
+    private void Start()
     {
-        if (index < 0 ||
-            index >= checkmarks.Length)
+        ResolveExistingCheckmarks();
+        ApplyLayout();
+        HideAll();
+    }
+
+#if UNITY_EDITOR
+
+    private void OnValidate()
+    {
+        ResolveExistingCheckmarks();
+        ApplyLayout();
+        ApplySprite();
+    }
+
+#endif
+
+    // =========================================================
+    // FIND EXISTING OBJECTS
+    // =========================================================
+
+    private void ResolveExistingCheckmarks()
+    {
+        if (
+            checkmarks == null ||
+            checkmarks.Length != 4
+        )
         {
-            return;
+            checkmarks =
+                new Image[4];
         }
 
-        EnsureCheckmarks();
-
-        Image image =
-            checkmarks[index];
-
-        if (image == null)
-            return;
-
-        image.sprite =
-            checkmarkSprite;
-
-        image.color =
-            checkmarkColor;
-
-        bool visible =
-            completed &&
-            checkmarkSprite != null;
-
-        image.gameObject.SetActive(
-            visible
-        );
-    }
-
-    public void HideAll()
-    {
-        EnsureCheckmarks();
-
-        for (int i = 0;
-            i < checkmarks.Length;
-            i++)
+        for (
+            int i = 0;
+            i < 4;
+            i++
+        )
         {
-            if (checkmarks[i] != null)
+            if (
+                checkmarks[i] != null
+            )
             {
-                checkmarks[i]
-                    .gameObject
-                    .SetActive(false);
+                continue;
             }
-        }
-    }
 
-    private void EnsureCheckmarks()
-    {
-        if (initialized &&
-            checkmarks[0] != null)
-        {
-            return;
-        }
-
-        Transform taskBox =
-            transform;
-
-        if (taskBox == null)
-            return;
-
-        RectTransform taskBoxRect =
-            GetComponent<RectTransform>();
-
-        if (taskBoxRect == null)
-            return;
-
-        for (int i = 0;
-            i < checkmarks.Length;
-            i++)
-        {
-            string objectName =
-                "TaskCheckmark_" +
-                i;
-
-            Transform existing =
-                taskBox.Find(
-                    objectName
+            Transform child =
+                transform.Find(
+                    "TaskCheckmark_" +
+                    i
                 );
 
-            GameObject go;
+            if (child == null)
+                continue;
 
-            if (existing != null)
-            {
-                go =
-                    existing.gameObject;
-            }
-            else
-            {
-                go =
-                    new GameObject(
-                        objectName,
-                        typeof(RectTransform),
-                        typeof(Image)
-                    );
+            checkmarks[i] =
+                child.GetComponent<
+                    Image
+                >();
+        }
+    }
 
-                go.transform.SetParent(
-                    taskBox,
-                    false
-                );
-            }
+    // =========================================================
+    // LAYOUT
+    // =========================================================
 
+    private void ApplyLayout()
+    {
+        if (
+            checkmarks == null
+        )
+        {
+            return;
+        }
+
+        for (
+            int i = 0;
+            i < checkmarks.Length;
+            i++
+        )
+        {
             Image image =
-                go.GetComponent<Image>();
+                checkmarks[i];
 
             if (image == null)
-            {
-                image =
-                    go.AddComponent<Image>();
-            }
+                continue;
 
             RectTransform rect =
-                go.GetComponent<
-                    RectTransform
-                >();
+                image.rectTransform;
+
+            if (rect == null)
+                continue;
 
             rect.anchorMin =
                 new Vector2(
@@ -184,27 +159,113 @@ public class TaskCheckmarkUI3D : MonoBehaviour
             rect.localScale =
                 Vector3.one;
 
-            image.sprite =
-                checkmarkSprite;
-
-            image.color =
-                checkmarkColor;
-
             image.preserveAspect =
                 true;
 
             image.raycastTarget =
                 false;
+        }
+    }
 
-            image.gameObject.SetActive(
-                false
-            );
+    // =========================================================
+    // SPRITE
+    // =========================================================
 
-            checkmarks[i] =
-                image;
+    private void ApplySprite()
+    {
+        if (
+            checkmarks == null
+        )
+        {
+            return;
         }
 
-        initialized =
-            true;
+        for (
+            int i = 0;
+            i < checkmarks.Length;
+            i++
+        )
+        {
+            if (
+                checkmarks[i] == null
+            )
+            {
+                continue;
+            }
+
+            checkmarks[i].sprite =
+                checkmarkSprite;
+
+            checkmarks[i].color =
+                checkmarkColor;
+        }
+    }
+
+    // =========================================================
+    // RUNTIME
+    // =========================================================
+
+    public void SetChecked(
+        int index,
+        bool completed
+    )
+    {
+        if (
+            index < 0 ||
+            index >= 4
+        )
+        {
+            return;
+        }
+
+        ResolveExistingCheckmarks();
+
+        Image image =
+            checkmarks[index];
+
+        if (image == null)
+            return;
+
+        image.sprite =
+            checkmarkSprite;
+
+        image.color =
+            checkmarkColor;
+
+        bool visible =
+            completed &&
+            checkmarkSprite != null;
+
+        image.gameObject.SetActive(
+            visible
+        );
+    }
+
+    public void HideAll()
+    {
+        if (
+            checkmarks == null
+        )
+        {
+            return;
+        }
+
+        for (
+            int i = 0;
+            i < checkmarks.Length;
+            i++
+        )
+        {
+            if (
+                checkmarks[i] != null
+            )
+            {
+                checkmarks[i]
+                    .gameObject
+                    .SetActive(
+                        false
+                    );
+            }
+        }
     }
 }

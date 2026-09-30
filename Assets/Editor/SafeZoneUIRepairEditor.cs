@@ -486,8 +486,8 @@ public static class SafeZoneUIRepairEditor
     // =========================================================
 
     [MenuItem(
-        "Safe Zone Runner/UI/Подготовить галочки заданий"
-    )]
+    "Safe Zone Runner/UI/Подготовить галочки заданий"
+)]
     public static void SetupTaskCheckmarks()
     {
         if (!PrepareMainRoad())
@@ -525,6 +525,10 @@ public static class SafeZoneUIRepairEditor
             return;
         }
 
+        // =========================================================
+        // CONTROLLER
+        // =========================================================
+
         TaskCheckmarkUI3D controller =
             taskBox.GetComponent<
                 TaskCheckmarkUI3D
@@ -539,6 +543,10 @@ public static class SafeZoneUIRepairEditor
                     taskBox
                 );
         }
+
+        // =========================================================
+        // TASK TEXT
+        // =========================================================
 
         Transform taskText =
             taskBox.transform.Find(
@@ -567,9 +575,173 @@ public static class SafeZoneUIRepairEditor
             }
         }
 
+        // =========================================================
+        // 4 ПОСТОЯННЫХ ОБЪЕКТА
+        // =========================================================
+
+        Image[] images =
+            new Image[4];
+
+        for (
+            int i = 0;
+            i < 4;
+            i++
+        )
+        {
+            string objectName =
+                "TaskCheckmark_" +
+                i;
+
+            Transform existing =
+                taskBox.transform.Find(
+                    objectName
+                );
+
+            GameObject checkmarkObject;
+
+            if (existing != null)
+            {
+                checkmarkObject =
+                    existing.gameObject;
+            }
+            else
+            {
+                checkmarkObject =
+                    new GameObject(
+                        objectName,
+                        typeof(RectTransform),
+                        typeof(Image)
+                    );
+
+                Undo.RegisterCreatedObjectUndo(
+                    checkmarkObject,
+                    "Create Task Checkmark"
+                );
+
+                checkmarkObject.transform.SetParent(
+                    taskBox.transform,
+                    false
+                );
+            }
+
+            Image image =
+                checkmarkObject.GetComponent<
+                    Image
+                >();
+
+            if (image == null)
+            {
+                image =
+                    Undo.AddComponent<Image>(
+                        checkmarkObject
+                    );
+            }
+
+            RectTransform rect =
+                image.rectTransform;
+
+            Undo.RecordObject(
+                rect,
+                "Setup Task Checkmark"
+            );
+
+            rect.anchorMin =
+                new Vector2(
+                    1f,
+                    1f
+                );
+
+            rect.anchorMax =
+                new Vector2(
+                    1f,
+                    1f
+                );
+
+            rect.pivot =
+                new Vector2(
+                    1f,
+                    0.5f
+                );
+
+            rect.sizeDelta =
+                new Vector2(
+                    24f,
+                    24f
+                );
+
+            rect.anchoredPosition =
+                new Vector2(
+                    -8f,
+                    -66f -
+                    i * 34f
+                );
+
+            rect.localScale =
+                Vector3.one;
+
+            image.preserveAspect =
+                true;
+
+            image.raycastTarget =
+                false;
+
+            image.color =
+                Color.white;
+
+            // ВАЖНО:
+            // объекты существуют в сцене,
+            // но до выполнения задания выключены.
+            checkmarkObject.SetActive(
+                false
+            );
+
+            images[i] =
+                image;
+        }
+
+        // =========================================================
+        // ЗАПИСЫВАЕМ IMAGE[] В CONTROLLER
+        // =========================================================
+
+        SerializedObject serializedController =
+            new SerializedObject(
+                controller
+            );
+
+        SerializedProperty checkmarksProperty =
+            serializedController.FindProperty(
+                "checkmarks"
+            );
+
+        if (
+            checkmarksProperty != null
+        )
+        {
+            checkmarksProperty.arraySize =
+                4;
+
+            for (
+                int i = 0;
+                i < 4;
+                i++
+            )
+            {
+                checkmarksProperty
+                    .GetArrayElementAtIndex(i)
+                    .objectReferenceValue =
+                    images[i];
+            }
+        }
+
+        serializedController.ApplyModifiedProperties();
+
         EditorUtility.SetDirty(
             controller
         );
+
+        // =========================================================
+        // SAVE
+        // =========================================================
 
         var activeScene =
             UnityEngine.SceneManagement
@@ -593,7 +765,10 @@ public static class SafeZoneUIRepairEditor
 
         EditorUtility.DisplayDialog(
             "Готово",
-            "TaskBox подготовлен для галочек.",
+            "Созданы 4 постоянных объекта галочек в TaskBox.\n\n" +
+            "Теперь выбери TaskBox и назначь PNG в поле:\n" +
+            "Checkmark Sprite\n\n" +
+            "Объекты больше не создаются во время забега.",
             "OK"
         );
     }

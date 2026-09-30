@@ -59,12 +59,14 @@ public class RunProgressUI3D : MonoBehaviour
     private Image flagImage;
 
     private Canvas canvas;
+    private CanvasGroup canvasGroup;
 
     private void Awake()
     {
         if (root == null)
         {
-            root = gameObject;
+            root =
+                gameObject;
         }
 
         if (runManager == null)
@@ -73,8 +75,27 @@ public class RunProgressUI3D : MonoBehaviour
                 FindFirstObjectByType<RunManager>();
         }
 
-        FindCanvas();
+        canvas =
+            GetComponentInParent<Canvas>(
+                true
+            );
+
+        if (canvas == null)
+        {
+            canvas =
+                FindFirstObjectByType<Canvas>();
+        }
+
         EnsureCanvasParent();
+
+        canvasGroup =
+            root.GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+        {
+            canvasGroup =
+                root.AddComponent<CanvasGroup>();
+        }
 
         ResolveReferences();
         SetupLayout();
@@ -83,7 +104,26 @@ public class RunProgressUI3D : MonoBehaviour
 
     private void Start()
     {
-        FindCanvas();
+        if (runManager == null)
+        {
+            runManager =
+                FindFirstObjectByType<RunManager>();
+        }
+
+        if (canvas == null)
+        {
+            canvas =
+                GetComponentInParent<Canvas>(
+                    true
+                );
+
+            if (canvas == null)
+            {
+                canvas =
+                    FindFirstObjectByType<Canvas>();
+            }
+        }
+
         EnsureCanvasParent();
 
         ResolveReferences();
@@ -101,23 +141,6 @@ public class RunProgressUI3D : MonoBehaviour
     // CANVAS
     // =========================================================
 
-    private void FindCanvas()
-    {
-        if (canvas != null)
-            return;
-
-        canvas =
-            GetComponentInParent<Canvas>(
-                true
-            );
-
-        if (canvas == null)
-        {
-            canvas =
-                FindFirstObjectByType<Canvas>();
-        }
-    }
-
     private void EnsureCanvasParent()
     {
         if (canvas == null ||
@@ -126,8 +149,10 @@ public class RunProgressUI3D : MonoBehaviour
             return;
         }
 
-        if (root.transform.parent !=
-            canvas.transform)
+        if (
+            root.transform.parent !=
+            canvas.transform
+        )
         {
             root.transform.SetParent(
                 canvas.transform,
@@ -144,11 +169,14 @@ public class RunProgressUI3D : MonoBehaviour
     {
         if (root == null)
         {
-            root = gameObject;
+            root =
+                gameObject;
         }
 
         rootRect =
-            root.GetComponent<RectTransform>();
+            root.GetComponent<
+                RectTransform
+            >();
 
         Transform background =
             root.transform.Find(
@@ -241,10 +269,7 @@ public class RunProgressUI3D : MonoBehaviour
         if (rootRect == null)
             return;
 
-        // =====================================================
-        // ROOT — ЦЕНТР ЭКРАНА, НАД ЗОМБИ
-        // =====================================================
-
+        // Центр экрана, над зомби.
         rootRect.anchorMin =
             new Vector2(
                 0.5f,
@@ -346,17 +371,11 @@ public class RunProgressUI3D : MonoBehaviour
         // FILL
         // =====================================================
 
-        if (fillRect != null &&
-            trackRect != null)
+        if (
+            fillRect != null &&
+            trackRect != null
+        )
         {
-            if (fillRect.parent != trackRect)
-            {
-                fillRect.SetParent(
-                    trackRect,
-                    false
-                );
-            }
-
             fillRect.anchorMin =
                 new Vector2(
                     0f,
@@ -495,10 +514,72 @@ public class RunProgressUI3D : MonoBehaviour
                 gameObject;
         }
 
-        FindCanvas();
-        EnsureCanvasParent();
+        if (canvasGroup == null)
+        {
+            canvasGroup =
+                root.GetComponent<
+                    CanvasGroup
+                >();
+
+            if (canvasGroup == null)
+            {
+                canvasGroup =
+                    root.AddComponent<
+                        CanvasGroup
+                    >();
+            }
+        }
+
+        if (runManager == null)
+        {
+            runManager =
+                FindFirstObjectByType<RunManager>();
+        }
 
         ResolveReferences();
+
+        bool gameplayVisible =
+            true;
+
+        if (
+            Application.isPlaying &&
+            runManager != null
+        )
+        {
+            // Бесконечный режим — шкала убежища не нужна.
+            if (runManager.infiniteRun)
+            {
+                gameplayVisible =
+                    false;
+            }
+
+            // =================================================
+            // СМЕРТЬ ИЛИ ПОБЕДА
+            // =================================================
+
+            ChaseManager chase =
+                ChaseManager.Instance;
+
+            if (
+                chase != null &&
+                chase.IsGameOver()
+            )
+            {
+                gameplayVisible =
+                    false;
+            }
+        }
+
+        canvasGroup.alpha =
+            gameplayVisible
+                ? 1f
+                : 0f;
+
+        canvasGroup.interactable =
+            false;
+
+        canvasGroup.blocksRaycasts =
+            false;
 
         float progress;
 
@@ -507,22 +588,6 @@ public class RunProgressUI3D : MonoBehaviour
             runManager != null
         )
         {
-            bool visible =
-                !runManager.infiniteRun;
-
-            if (
-                root.activeSelf !=
-                visible
-            )
-            {
-                root.SetActive(
-                    visible
-                );
-            }
-
-            if (!visible)
-                return;
-
             progress =
                 Mathf.Clamp01(
                     runManager.GetRunProgress()
@@ -585,8 +650,13 @@ public class RunProgressUI3D : MonoBehaviour
         float backgroundWidth =
             backgroundRect.rect.width;
 
-        if (backgroundWidth <= 0.01f)
+        if (
+            backgroundWidth <=
+            0.01f
+        )
+        {
             return;
+        }
 
         float trackLeft =
             fillInset;
