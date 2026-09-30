@@ -35,7 +35,7 @@ public static class SafeZoneUIRepairEditor
         {
             EditorUtility.DisplayDialog(
                 "Ошибка",
-                "RunProgressUI не найден.",
+                "RunProgressUI не найден в MainRoad.",
                 "OK"
             );
 
@@ -60,7 +60,7 @@ public static class SafeZoneUIRepairEditor
         {
             EditorUtility.DisplayDialog(
                 "Ошибка",
-                "У RunProgressUI нет RectTransform.",
+                "У RunProgressUI отсутствует RectTransform.",
                 "OK"
             );
 
@@ -68,13 +68,13 @@ public static class SafeZoneUIRepairEditor
         }
 
         // =====================================================
-        // ПЕРЕНОСИМ ИЗ TopHUD В CANVAS
+        // ПЕРЕНОС В CANVAS
         // =====================================================
 
         Undo.SetTransformParent(
             root.transform,
             canvas.transform,
-            "Move RunProgressUI to Canvas"
+            "Move RunProgressUI To Canvas"
         );
 
         // =====================================================
@@ -88,33 +88,32 @@ public static class SafeZoneUIRepairEditor
 
         rootRect.anchorMin =
             new Vector2(
-                1f,
+                0.5f,
                 0f
             );
 
         rootRect.anchorMax =
             new Vector2(
-                1f,
+                0.5f,
                 0f
             );
 
         rootRect.pivot =
             new Vector2(
-                1f,
+                0.5f,
                 0f
             );
 
-        // Справа и немного выше нижней границы.
         rootRect.anchoredPosition =
             new Vector2(
-                -28f,
-                34f
+                0f,
+                285f
             );
 
         rootRect.sizeDelta =
             new Vector2(
-                280f,
-                48f
+                330f,
+                46f
             );
 
         rootRect.localScale =
@@ -131,48 +130,53 @@ public static class SafeZoneUIRepairEditor
 
         if (background != null)
         {
-            RectTransform rect =
+            RectTransform backgroundRect =
                 background.GetComponent<
                     RectTransform
                 >();
 
-            if (rect != null)
+            if (backgroundRect != null)
             {
                 Undo.RecordObject(
-                    rect,
-                    "Setup RunProgress Background"
+                    backgroundRect,
+                    "Setup Progress Background"
                 );
 
-                rect.anchorMin =
+                backgroundRect.anchorMin =
                     Vector2.zero;
 
-                rect.anchorMax =
+                backgroundRect.anchorMax =
                     Vector2.one;
 
-                rect.pivot =
+                backgroundRect.pivot =
                     new Vector2(
                         0.5f,
                         0.5f
                     );
 
-                rect.offsetMin =
+                backgroundRect.offsetMin =
                     Vector2.zero;
 
-                rect.offsetMax =
+                backgroundRect.offsetMax =
                     Vector2.zero;
 
-                rect.anchoredPosition =
+                backgroundRect.anchoredPosition =
                     Vector2.zero;
+
+                backgroundRect.localScale =
+                    Vector3.one;
             }
 
             Image backgroundImage =
-                background.GetComponent<Image>();
+                background.GetComponent<
+                    Image
+                >();
 
             if (backgroundImage != null)
             {
                 Undo.RecordObject(
                     backgroundImage,
-                    "Style RunProgress Background"
+                    "Style Progress Background"
                 );
 
                 backgroundImage.color =
@@ -207,7 +211,7 @@ public static class SafeZoneUIRepairEditor
                 {
                     Undo.RecordObject(
                         trackRect,
-                        "Setup RunProgress Track"
+                        "Setup Progress Track"
                     );
 
                     trackRect.anchorMin =
@@ -218,18 +222,45 @@ public static class SafeZoneUIRepairEditor
 
                     trackRect.offsetMin =
                         new Vector2(
-                            5f,
-                            5f
+                            4f,
+                            4f
                         );
 
                     trackRect.offsetMax =
                         new Vector2(
-                            -5f,
-                            -5f
+                            -4f,
+                            -4f
                         );
 
                     trackRect.anchoredPosition =
                         Vector2.zero;
+
+                    trackRect.localScale =
+                        Vector3.one;
+                }
+
+                Image trackImage =
+                    track.GetComponent<
+                        Image
+                    >();
+
+                if (trackImage != null)
+                {
+                    Undo.RecordObject(
+                        trackImage,
+                        "Style Progress Track"
+                    );
+
+                    trackImage.color =
+                        new Color32(
+                            48,
+                            54,
+                            53,
+                            245
+                        );
+
+                    trackImage.raycastTarget =
+                        false;
                 }
 
                 // =================================================
@@ -252,7 +283,7 @@ public static class SafeZoneUIRepairEditor
                     {
                         Undo.RecordObject(
                             fillRect,
-                            "Setup RunProgress Fill"
+                            "Setup Progress Fill"
                         );
 
                         fillRect.anchorMin =
@@ -276,6 +307,25 @@ public static class SafeZoneUIRepairEditor
                         fillRect.anchoredPosition =
                             Vector2.zero;
                     }
+
+                    Image fillImage =
+                        fill.GetComponent<
+                            Image
+                        >();
+
+                    if (fillImage != null)
+                    {
+                        fillImage.color =
+                            new Color32(
+                                222,
+                                190,
+                                102,
+                                255
+                            );
+
+                        fillImage.raycastTarget =
+                            false;
+                    }
                 }
 
                 // =================================================
@@ -298,7 +348,7 @@ public static class SafeZoneUIRepairEditor
                     {
                         Undo.RecordObject(
                             flagRect,
-                            "Setup RunProgress Flag"
+                            "Setup Progress Flag"
                         );
 
                         flagRect.anchorMin =
@@ -321,16 +371,24 @@ public static class SafeZoneUIRepairEditor
 
                         flagRect.sizeDelta =
                             new Vector2(
-                                36f,
-                                36f
+                                34f,
+                                34f
                             );
 
                         flagRect.anchoredPosition =
-                            Vector2.zero;
+                            new Vector2(
+                                165f,
+                                0f
+                            );
+
+                        flagRect.localScale =
+                            Vector3.one;
                     }
 
                     Image flagImage =
-                        flag.GetComponent<Image>();
+                        flag.GetComponent<
+                            Image
+                        >();
 
                     if (flagImage != null)
                     {
@@ -355,23 +413,25 @@ public static class SafeZoneUIRepairEditor
 
         if (progress != null)
         {
+            Undo.RecordObject(
+                progress,
+                "Setup RunProgressUI3D"
+            );
+
             progress.progressWidth =
-                280f;
+                330f;
 
             progress.progressHeight =
-                48f;
-
-            progress.rightMargin =
-                28f;
+                46f;
 
             progress.bottomMargin =
-                34f;
+                285f;
 
             progress.flagSize =
-                36f;
+                34f;
 
             progress.fillInset =
-                5f;
+                4f;
 
             progress.runManager =
                 Object.FindFirstObjectByType<
@@ -383,14 +443,24 @@ public static class SafeZoneUIRepairEditor
             );
         }
 
+        // Ставим поверх HUD и зомби.
         root.transform.SetAsLastSibling();
 
+        EditorUtility.SetDirty(
+            root
+        );
+
+        var activeScene =
+            UnityEngine.SceneManagement
+                .SceneManager
+                .GetActiveScene();
+
         EditorSceneManager.MarkSceneDirty(
-            UnityEngine.SceneManagement.SceneManager.GetActiveScene()
+            activeScene
         );
 
         EditorSceneManager.SaveScene(
-            UnityEngine.SceneManagement.SceneManager.GetActiveScene()
+            activeScene
         );
 
         Selection.activeGameObject =
@@ -402,13 +472,11 @@ public static class SafeZoneUIRepairEditor
 
         EditorUtility.DisplayDialog(
             "Готово",
-            "RunProgressUI перенесён в Canvas.\n\n" +
-            "Положение: правый нижний угол, область зомби.\n" +
-            "Ширина: 280\n" +
-            "Высота: 48\n" +
-            "Отступ справа: 28\n" +
-            "Отступ снизу: 34\n" +
-            "Флаг: 36",
+            "RunProgressUI установлен по центру экрана над зомби.\n\n" +
+            "Ширина: 330\n" +
+            "Высота: 46\n" +
+            "Отступ снизу: 285\n" +
+            "Флаг: 34",
             "OK"
         );
     }
@@ -441,6 +509,22 @@ public static class SafeZoneUIRepairEditor
             return;
         }
 
+        RectTransform taskBoxRect =
+            taskBox.GetComponent<
+                RectTransform
+            >();
+
+        if (taskBoxRect == null)
+        {
+            EditorUtility.DisplayDialog(
+                "Ошибка",
+                "У TaskBox нет RectTransform.",
+                "OK"
+            );
+
+            return;
+        }
+
         TaskCheckmarkUI3D controller =
             taskBox.GetComponent<
                 TaskCheckmarkUI3D
@@ -451,7 +535,9 @@ public static class SafeZoneUIRepairEditor
             controller =
                 Undo.AddComponent<
                     TaskCheckmarkUI3D
-                >(taskBox);
+                >(
+                    taskBox
+                );
         }
 
         Transform taskText =
@@ -485,12 +571,17 @@ public static class SafeZoneUIRepairEditor
             controller
         );
 
+        var activeScene =
+            UnityEngine.SceneManagement
+                .SceneManager
+                .GetActiveScene();
+
         EditorSceneManager.MarkSceneDirty(
-            UnityEngine.SceneManagement.SceneManager.GetActiveScene()
+            activeScene
         );
 
         EditorSceneManager.SaveScene(
-            UnityEngine.SceneManagement.SceneManager.GetActiveScene()
+            activeScene
         );
 
         Selection.activeGameObject =
@@ -506,6 +597,10 @@ public static class SafeZoneUIRepairEditor
             "OK"
         );
     }
+
+    // =========================================================
+    // COMMON
+    // =========================================================
 
     private static bool PrepareMainRoad()
     {

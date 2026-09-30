@@ -12,26 +12,23 @@ public class RunProgressUI3D : MonoBehaviour
 
     [Header("Layout")]
     [Min(180f)]
-    public float progressWidth = 400f;
+    public float progressWidth = 330f;
 
     [Min(30f)]
-    public float progressHeight = 52f;
+    public float progressHeight = 46f;
 
     [Min(0f)]
-    public float rightMargin = 300f;
-
-    [Min(0f)]
-    public float bottomMargin = 300f;
+    public float bottomMargin = 285f;
 
     [Header("Предпросмотр")]
     [Range(0f, 1f)]
     public float previewProgress = 0.5f;
 
     [Header("Флаг")]
-    public float flagSize = 40f;
+    public float flagSize = 34f;
 
     [Header("Отступ")]
-    public float fillInset = 5f;
+    public float fillInset = 4f;
 
     [Header("Цвет фона")]
     public Color progressBackgroundColor =
@@ -61,18 +58,23 @@ public class RunProgressUI3D : MonoBehaviour
     private Image trackImage;
     private Image flagImage;
 
+    private Canvas canvas;
+
     private void Awake()
     {
+        if (root == null)
+        {
+            root = gameObject;
+        }
+
         if (runManager == null)
         {
             runManager =
                 FindFirstObjectByType<RunManager>();
         }
 
-        if (root == null)
-        {
-            root = gameObject;
-        }
+        FindCanvas();
+        EnsureCanvasParent();
 
         ResolveReferences();
         SetupLayout();
@@ -81,6 +83,9 @@ public class RunProgressUI3D : MonoBehaviour
 
     private void Start()
     {
+        FindCanvas();
+        EnsureCanvasParent();
+
         ResolveReferences();
         SetupLayout();
         ApplyStyle();
@@ -91,6 +96,49 @@ public class RunProgressUI3D : MonoBehaviour
     {
         UpdateVisual();
     }
+
+    // =========================================================
+    // CANVAS
+    // =========================================================
+
+    private void FindCanvas()
+    {
+        if (canvas != null)
+            return;
+
+        canvas =
+            GetComponentInParent<Canvas>(
+                true
+            );
+
+        if (canvas == null)
+        {
+            canvas =
+                FindFirstObjectByType<Canvas>();
+        }
+    }
+
+    private void EnsureCanvasParent()
+    {
+        if (canvas == null ||
+            root == null)
+        {
+            return;
+        }
+
+        if (root.transform.parent !=
+            canvas.transform)
+        {
+            root.transform.SetParent(
+                canvas.transform,
+                false
+            );
+        }
+    }
+
+    // =========================================================
+    // REFERENCES
+    // =========================================================
 
     private void ResolveReferences()
     {
@@ -184,36 +232,40 @@ public class RunProgressUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // LAYOUT
+    // =========================================================
+
     private void SetupLayout()
     {
         if (rootRect == null)
             return;
 
         // =====================================================
-        // ROOT — НИЗ СПРАВА
+        // ROOT — ЦЕНТР ЭКРАНА, НАД ЗОМБИ
         // =====================================================
 
         rootRect.anchorMin =
             new Vector2(
-                1f,
+                0.5f,
                 0f
             );
 
         rootRect.anchorMax =
             new Vector2(
-                1f,
+                0.5f,
                 0f
             );
 
         rootRect.pivot =
             new Vector2(
-                1f,
+                0.5f,
                 0f
             );
 
         rootRect.anchoredPosition =
             new Vector2(
-                -rightMargin,
+                0f,
                 bottomMargin
             );
 
@@ -338,14 +390,6 @@ public class RunProgressUI3D : MonoBehaviour
 
         if (flagRect != null)
         {
-            if (flagRect.parent != backgroundRect)
-            {
-                flagRect.SetParent(
-                    backgroundRect,
-                    false
-                );
-            }
-
             flagRect.anchorMin =
                 new Vector2(
                     0f,
@@ -379,27 +423,12 @@ public class RunProgressUI3D : MonoBehaviour
         root.transform.SetAsLastSibling();
     }
 
+    // =========================================================
+    // STYLE
+    // =========================================================
+
     private void ApplyStyle()
     {
-        if (trackImage != null)
-        {
-            trackImage.color =
-                progressBackgroundColor;
-
-            if (trackImage.sprite == null &&
-                backgroundImage != null)
-            {
-                trackImage.sprite =
-                    backgroundImage.sprite;
-
-                trackImage.type =
-                    backgroundImage.type;
-            }
-
-            trackImage.raycastTarget =
-                false;
-        }
-
         if (backgroundImage != null)
         {
             backgroundImage.color =
@@ -411,6 +440,27 @@ public class RunProgressUI3D : MonoBehaviour
                 );
 
             backgroundImage.raycastTarget =
+                false;
+        }
+
+        if (trackImage != null)
+        {
+            trackImage.color =
+                progressBackgroundColor;
+
+            if (
+                trackImage.sprite == null &&
+                backgroundImage != null
+            )
+            {
+                trackImage.sprite =
+                    backgroundImage.sprite;
+
+                trackImage.type =
+                    backgroundImage.type;
+            }
+
+            trackImage.raycastTarget =
                 false;
         }
 
@@ -433,27 +483,37 @@ public class RunProgressUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // VISUAL
+    // =========================================================
+
     private void UpdateVisual()
     {
         if (root == null)
         {
-            root = gameObject;
+            root =
+                gameObject;
         }
+
+        FindCanvas();
+        EnsureCanvasParent();
 
         ResolveReferences();
 
-        bool inPlayMode =
-            Application.isPlaying;
-
         float progress;
 
-        if (inPlayMode &&
-            runManager != null)
+        if (
+            Application.isPlaying &&
+            runManager != null
+        )
         {
             bool visible =
                 !runManager.infiniteRun;
 
-            if (root.activeSelf != visible)
+            if (
+                root.activeSelf !=
+                visible
+            )
             {
                 root.SetActive(
                     visible
@@ -489,8 +549,10 @@ public class RunProgressUI3D : MonoBehaviour
         float progress
     )
     {
-        if (fillRect == null ||
-            trackRect == null)
+        if (
+            fillRect == null ||
+            trackRect == null
+        )
         {
             return;
         }
@@ -512,8 +574,10 @@ public class RunProgressUI3D : MonoBehaviour
         float progress
     )
     {
-        if (backgroundRect == null ||
-            flagRect == null)
+        if (
+            backgroundRect == null ||
+            flagRect == null
+        )
         {
             return;
         }

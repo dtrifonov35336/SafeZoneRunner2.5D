@@ -63,6 +63,46 @@ public class AchievementsUI3D : MonoBehaviour
             {
                 "infinite_100_coins",
                 "Собрать 100 монет за забег"
+            },
+            {
+                "shelter_rescue_8",
+                "За один забег: 8 спасённых"
+            },
+            {
+                "shelter_coins_100",
+                "За один забег: 100 монет"
+            },
+            {
+                "shelter_halfway_no_hits",
+                "Половина пути без ударов"
+            },
+            {
+                "shelter_rescue_20",
+                "Суммарно: 20 спасённых"
+            },
+            {
+                "shelter_task_master",
+                "Убежище + 3 спасённых + 50 монет + ≤1 удар"
+            },
+            {
+                "infinite_coins_150",
+                "За один забег: 150 монет"
+            },
+            {
+                "infinite_rescue_10",
+                "За один забег: 10 спасённых"
+            },
+            {
+                "infinite_1000_no_hits",
+                "1000 м без ударов"
+            },
+            {
+                "infinite_3_minutes",
+                "Время: 180 секунд"
+            },
+            {
+                "infinite_task_master",
+                "500 м + 100 монет + 5 спасённых"
             }
         };
 
@@ -563,7 +603,7 @@ public class AchievementsUI3D : MonoBehaviour
                 unclaimed > 0
                     ? "НАГРАД ДОСТУПНО: " +
                       unclaimed
-                    : "НЕТ НЕПОЛУЧЕННЫХ НАГРАД";
+                    : "НЕТ ДОСТУПНЫХ НАГРАД";
         }
 
         if (scroll != null)

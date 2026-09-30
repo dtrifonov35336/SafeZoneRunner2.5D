@@ -20,13 +20,23 @@ public class AchievementDefinition3D
         string title,
         string description,
         AchievementMode3D mode,
-        int reward)
+        int reward
+    )
     {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.mode = mode;
-        this.reward = reward;
+        this.id =
+            id;
+
+        this.title =
+            title;
+
+        this.description =
+            description;
+
+        this.mode =
+            mode;
+
+        this.reward =
+            reward;
     }
 }
 
@@ -38,12 +48,15 @@ public static class AchievementSystem3D
     private const string CLAIMED_PREFIX =
         "AchievementClaimed_";
 
-    private static readonly List<AchievementDefinition3D>
-        achievements =
-        new List<AchievementDefinition3D>
+    private static readonly List<
+        AchievementDefinition3D
+    > achievements =
+        new List<
+            AchievementDefinition3D
+        >
         {
             // =================================================
-            // УБЕЖИЩЕ
+            // УБЕЖИЩЕ — СТАРЫЕ
             // =================================================
 
             new AchievementDefinition3D(
@@ -79,7 +92,51 @@ public static class AchievementSystem3D
             ),
 
             // =================================================
-            // БЕСКОНЕЧНЫЙ
+            // УБЕЖИЩЕ — НОВЫЕ
+            // =================================================
+
+            new AchievementDefinition3D(
+                "shelter_rescue_8",
+                "ВОСЕМЬ ЖИЗНЕЙ",
+                "Спаси 8 человек за один забег до убежища.",
+                AchievementMode3D.Shelter,
+                150
+            ),
+
+            new AchievementDefinition3D(
+                "shelter_coins_100",
+                "ЗАПАСЛИВЫЙ",
+                "Собери 100 монет за один забег до убежища.",
+                AchievementMode3D.Shelter,
+                200
+            ),
+
+            new AchievementDefinition3D(
+                "shelter_halfway_no_hits",
+                "ПОЛПУТИ БЕЗ ЦАРАПИН",
+                "Дойди до середины пути до убежища без удара.",
+                AchievementMode3D.Shelter,
+                250
+            ),
+
+            new AchievementDefinition3D(
+                "shelter_rescue_20",
+                "КОМАНДА СПАСЕНИЯ",
+                "Спаси 20 человек суммарно в режиме «До убежища».",
+                AchievementMode3D.Shelter,
+                350
+            ),
+
+            new AchievementDefinition3D(
+                "shelter_task_master",
+                "ИДЕАЛЬНЫЙ ЗАБЕГ",
+                "Доберись до убежища, спасши 3 человек, собрав 50 монет и получив не более одного удара.",
+                AchievementMode3D.Shelter,
+                450
+            ),
+
+            // =================================================
+            // БЕСКОНЕЧНЫЙ — СТАРЫЕ
             // =================================================
 
             new AchievementDefinition3D(
@@ -120,59 +177,125 @@ public static class AchievementSystem3D
                 "Собери 100 монет за один бесконечный забег.",
                 AchievementMode3D.Infinite,
                 200
+            ),
+
+            // =================================================
+            // БЕСКОНЕЧНЫЙ — НОВЫЕ
+            // =================================================
+
+            new AchievementDefinition3D(
+                "infinite_coins_150",
+                "КОПИЛКА",
+                "Собери 150 монет за один бесконечный забег.",
+                AchievementMode3D.Infinite,
+                250
+            ),
+
+            new AchievementDefinition3D(
+                "infinite_rescue_10",
+                "ДЕСЯТЬ ЖИЗНЕЙ",
+                "Спаси 10 человек за один бесконечный забег.",
+                AchievementMode3D.Infinite,
+                250
+            ),
+
+            new AchievementDefinition3D(
+                "infinite_1000_no_hits",
+                "ЧИСТАЯ ТЫСЯЧА",
+                "Пробеги 1000 метров в бесконечном режиме без единого удара.",
+                AchievementMode3D.Infinite,
+                300
+            ),
+
+            new AchievementDefinition3D(
+                "infinite_3_minutes",
+                "ТРИ МИНУТЫ",
+                "Продержись в бесконечном режиме 180 секунд.",
+                AchievementMode3D.Infinite,
+                400
+            ),
+
+            new AchievementDefinition3D(
+                "infinite_task_master",
+                "ПОЛНЫЙ КОМПЛЕКТ",
+                "Одновременно выполни цели 500 м, 100 монет и 5 спасённых.",
+                AchievementMode3D.Infinite,
+                500
             )
         };
 
-    public static List<AchievementDefinition3D>
-        GetAll()
+    public static List<
+        AchievementDefinition3D
+    > GetAll()
     {
         return achievements;
     }
 
-    public static List<AchievementDefinition3D>
-        GetByMode(
-            AchievementMode3D mode)
+    public static List<
+        AchievementDefinition3D
+    > GetByMode(
+        AchievementMode3D mode
+    )
     {
         List<AchievementDefinition3D> result =
             new List<AchievementDefinition3D>();
 
         foreach (
             AchievementDefinition3D achievement
-            in achievements)
+            in achievements
+        )
         {
-            if (achievement.mode == mode)
-                result.Add(achievement);
+            if (
+                achievement.mode ==
+                mode
+            )
+            {
+                result.Add(
+                    achievement
+                );
+            }
         }
 
         return result;
     }
 
     public static bool IsCompleted(
-        string id)
+        string id
+    )
     {
-        return PlayerPrefs.GetInt(
-            COMPLETED_PREFIX + id,
-            0
-        ) == 1;
+        return
+            PlayerPrefs.GetInt(
+                COMPLETED_PREFIX + id,
+                0
+            ) == 1;
     }
 
     public static bool IsClaimed(
-        string id)
+        string id
+    )
     {
-        return PlayerPrefs.GetInt(
-            CLAIMED_PREFIX + id,
-            0
-        ) == 1;
+        return
+            PlayerPrefs.GetInt(
+                CLAIMED_PREFIX + id,
+                0
+            ) == 1;
     }
 
     public static bool HasUnclaimed()
     {
         foreach (
             AchievementDefinition3D achievement
-            in achievements)
+            in achievements
+        )
         {
-            if (IsCompleted(achievement.id) &&
-                !IsClaimed(achievement.id))
+            if (
+                IsCompleted(
+                    achievement.id
+                ) &&
+                !IsClaimed(
+                    achievement.id
+                )
+            )
             {
                 return true;
             }
@@ -183,14 +306,22 @@ public static class AchievementSystem3D
 
     public static int GetUnclaimedCount()
     {
-        int count = 0;
+        int count =
+            0;
 
         foreach (
             AchievementDefinition3D achievement
-            in achievements)
+            in achievements
+        )
         {
-            if (IsCompleted(achievement.id) &&
-                !IsClaimed(achievement.id))
+            if (
+                IsCompleted(
+                    achievement.id
+                ) &&
+                !IsClaimed(
+                    achievement.id
+                )
+            )
             {
                 count++;
             }
@@ -200,10 +331,15 @@ public static class AchievementSystem3D
     }
 
     public static void Unlock(
-        string id)
+        string id
+    )
     {
-        if (IsCompleted(id))
+        if (
+            IsCompleted(id)
+        )
+        {
             return;
+        }
 
         AchievementDefinition3D achievement =
             Find(id);
@@ -218,19 +354,27 @@ public static class AchievementSystem3D
 
         PlayerPrefs.Save();
 
-        if (ToastNotification.Instance != null)
+        if (
+            ToastNotification.Instance !=
+            null
+        )
         {
             ToastNotification.Instance.Show(
-                $"Достижение выполнено!\n{achievement.title}\nЗаберите награду в разделе достижений"
+                "Достижение выполнено!\n" +
+                achievement.title +
+                "\nЗаберите награду в разделе достижений"
             );
         }
     }
 
     public static bool Claim(
-        string id)
+        string id
+    )
     {
-        if (!IsCompleted(id) ||
-            IsClaimed(id))
+        if (
+            !IsCompleted(id) ||
+            IsClaimed(id)
+        )
         {
             return false;
         }
@@ -262,18 +406,49 @@ public static class AchievementSystem3D
 
         PlayerPrefs.Save();
 
+        // =====================================================
+        // СРАЗУ ОБНОВЛЯЕМ БАЛАНС В ГЛАВНОМ МЕНЮ
+        // =====================================================
+
+        MainMenuManager menu =
+            MainMenuManager.Instance;
+
+        if (menu == null)
+        {
+            menu =
+                Object.FindFirstObjectByType<
+                    MainMenuManager
+                >();
+        }
+
+        if (
+            menu != null &&
+            menu.coinsText != null
+        )
+        {
+            menu.coinsText.text =
+                coins.ToString();
+        }
+
         return true;
     }
 
     public static AchievementDefinition3D Find(
-        string id)
+        string id
+    )
     {
         foreach (
             AchievementDefinition3D achievement
-            in achievements)
+            in achievements
+        )
         {
-            if (achievement.id == id)
+            if (
+                achievement.id ==
+                id
+            )
+            {
                 return achievement;
+            }
         }
 
         return null;

@@ -14,6 +14,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
     public TaskCheckmarkUI3D taskCheckmarks;
 
+    private RunManager runManager;
+
     private bool infiniteRun;
 
     private int rescued;
@@ -27,8 +29,10 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null &&
-            Instance != this)
+        if (
+            Instance != null &&
+            Instance != this
+        )
         {
             Destroy(gameObject);
             return;
@@ -40,8 +44,10 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
     private void Start()
     {
-        RunManager runManager =
-            FindFirstObjectByType<RunManager>();
+        runManager =
+            FindFirstObjectByType<
+                RunManager
+            >();
 
         infiniteRun =
             runManager != null &&
@@ -58,6 +64,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
     {
         if (finished)
             return;
+
+        CheckAdditionalAchievements();
 
         UpdateDistanceAchievements();
 
@@ -77,10 +85,14 @@ public class RunModeChallengeManager3D : MonoBehaviour
     // СОБЫТИЯ
     // =========================================================
 
-    public void OnCoinCollected(int amount)
+    public void OnCoinCollected(
+        int amount
+    )
     {
-        if (finished ||
-            amount <= 0)
+        if (
+            finished ||
+            amount <= 0
+        )
         {
             return;
         }
@@ -88,13 +100,7 @@ public class RunModeChallengeManager3D : MonoBehaviour
         collectedCoins +=
             amount;
 
-        if (infiniteRun &&
-            collectedCoins >= 100)
-        {
-            AchievementSystem3D.Unlock(
-                "infinite_100_coins"
-            );
-        }
+        CheckAdditionalAchievements();
 
         RefreshTaskUI();
     }
@@ -129,7 +135,16 @@ public class RunModeChallengeManager3D : MonoBehaviour
                     "shelter_rescue_10"
                 );
             }
+
+            if (total >= 20)
+            {
+                AchievementSystem3D.Unlock(
+                    "shelter_rescue_20"
+                );
+            }
         }
+
+        CheckAdditionalAchievements();
 
         RefreshTaskUI();
     }
@@ -145,13 +160,16 @@ public class RunModeChallengeManager3D : MonoBehaviour
     }
 
     public void OnRunFinished(
-        bool victory)
+        bool victory
+    )
     {
         if (finished)
             return;
 
-        if (victory &&
-            !infiniteRun)
+        if (
+            victory &&
+            !infiniteRun
+        )
         {
             AchievementSystem3D.Unlock(
                 "shelter_first"
@@ -171,6 +189,15 @@ public class RunModeChallengeManager3D : MonoBehaviour
                 );
             }
 
+            if (rescued >= 3 &&
+                collectedCoins >= 50 &&
+                hits <= 1)
+            {
+                AchievementSystem3D.Unlock(
+                    "shelter_task_master"
+                );
+            }
+
             mainGoalCompleted =
                 true;
         }
@@ -187,13 +214,127 @@ public class RunModeChallengeManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // БЕСКОНЕЧНЫЙ РЕЖИМ
+    // ДОПОЛНИТЕЛЬНЫЕ ДОСТИЖЕНИЯ
+    // =========================================================
+
+    private void CheckAdditionalAchievements()
+    {
+        if (runManager == null)
+            return;
+
+        // -----------------------------------------------------
+        // ДО УБЕЖИЩА
+        // -----------------------------------------------------
+
+        if (!infiniteRun)
+        {
+            if (rescued >= 8)
+            {
+                AchievementSystem3D.Unlock(
+                    "shelter_rescue_8"
+                );
+            }
+
+            if (collectedCoins >= 100)
+            {
+                AchievementSystem3D.Unlock(
+                    "shelter_coins_100"
+                );
+            }
+
+            if (
+                runManager.GetRunProgress() >= 0.5f &&
+                hits == 0
+            )
+            {
+                AchievementSystem3D.Unlock(
+                    "shelter_halfway_no_hits"
+                );
+            }
+
+            int cumulativeRescued =
+                PlayerPrefs.GetInt(
+                    "AchievementProgress_ShelterRescued",
+                    0
+                );
+
+            if (cumulativeRescued >= 20)
+            {
+                AchievementSystem3D.Unlock(
+                    "shelter_rescue_20"
+                );
+            }
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // БЕСКОНЕЧНЫЙ
+        // -----------------------------------------------------
+
+        int distance =
+            HUDManager.Instance != null
+                ? Mathf.RoundToInt(
+                    HUDManager.Instance
+                        .GetDistance()
+                )
+                : 0;
+
+        if (collectedCoins >= 150)
+        {
+            AchievementSystem3D.Unlock(
+                "infinite_coins_150"
+            );
+        }
+
+        if (rescued >= 10)
+        {
+            AchievementSystem3D.Unlock(
+                "infinite_rescue_10"
+            );
+        }
+
+        if (
+            distance >= 1000 &&
+            hits == 0
+        )
+        {
+            AchievementSystem3D.Unlock(
+                "infinite_1000_no_hits"
+            );
+        }
+
+        if (
+            runManager.GetRunTime() >= 180f
+        )
+        {
+            AchievementSystem3D.Unlock(
+                "infinite_3_minutes"
+            );
+        }
+
+        if (
+            distance >= 500 &&
+            collectedCoins >= 100 &&
+            rescued >= 5
+        )
+        {
+            AchievementSystem3D.Unlock(
+                "infinite_task_master"
+            );
+        }
+    }
+
+    // =========================================================
+    // СТАРЫЕ ДИСТАНЦИИ
     // =========================================================
 
     private void UpdateDistanceAchievements()
     {
-        if (!infiniteRun ||
-            HUDManager.Instance == null)
+        if (
+            !infiniteRun ||
+            HUDManager.Instance == null
+        )
         {
             return;
         }
@@ -254,8 +395,7 @@ public class RunModeChallengeManager3D : MonoBehaviour
         {
             Debug.LogWarning(
                 "[RunModeChallengeManager3D] " +
-                "TaskCheckmarkUI3D не найден на TaskBox. " +
-                "Добавь компонент на TaskBox."
+                "TaskCheckmarkUI3D не найден."
             );
         }
     }
@@ -271,7 +411,6 @@ public class RunModeChallengeManager3D : MonoBehaviour
         if (rect == null)
             return;
 
-        // Справа оставляем место под иконку.
         rect.sizeDelta =
             new Vector2(
                 320f,
@@ -281,8 +420,10 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
     private void RefreshTaskUI()
     {
-        if (taskText == null ||
-            HUDManager.Instance == null)
+        if (
+            taskText == null ||
+            HUDManager.Instance == null
+        )
         {
             return;
         }
@@ -305,12 +446,6 @@ public class RunModeChallengeManager3D : MonoBehaviour
                     HUDManager.Instance
                         .GetDistance()
                 );
-
-            // -------------------------------------------------
-            // ВАЖНО:
-            // отображение останавливается на цели.
-            // Внутренние счётчики продолжают работать.
-            // -------------------------------------------------
 
             int shownDistance =
                 Mathf.Min(
@@ -339,37 +474,28 @@ public class RunModeChallengeManager3D : MonoBehaviour
             objective3 =
                 rescued >= 5;
 
-            string distanceLine =
-                FormatObjective(
-                    "Дистанция",
-                    $"{shownDistance} / 500 м",
-                    objective1
-                );
-
-            string coinsLine =
-                FormatObjective(
-                    "Собрать монеты",
-                    $"{shownCoins} / 100",
-                    objective2
-                );
-
-            string rescuedLine =
-                FormatObjective(
-                    "Спасти людей",
-                    $"{shownRescued} / 5",
-                    objective3
-                );
-
             taskText.text =
                 FormatMainGoal(
                     mainGoal
                 ) +
                 "\n" +
-                distanceLine +
+                FormatObjective(
+                    "Дистанция",
+                    $"{shownDistance} / 500 м",
+                    objective1
+                ) +
                 "\n" +
-                coinsLine +
+                FormatObjective(
+                    "Собрать монеты",
+                    $"{shownCoins} / 100",
+                    objective2
+                ) +
                 "\n" +
-                rescuedLine;
+                FormatObjective(
+                    "Спасти людей",
+                    $"{shownRescued} / 5",
+                    objective3
+                );
         }
         else
         {
@@ -385,50 +511,44 @@ public class RunModeChallengeManager3D : MonoBehaviour
                     50
                 );
 
+            int shownHits =
+                Mathf.Min(
+                    hits,
+                    1
+                );
+
             objective1 =
                 rescued >= 3;
 
             objective2 =
                 collectedCoins >= 50;
 
-            // Для задания "Удары <= 1"
-            // галочка появляется только после
-            // успешного завершения забега.
             objective3 =
                 mainGoalCompleted &&
                 hits <= 1;
-
-            string rescuedLine =
-                FormatObjective(
-                    "Спасти людей",
-                    $"{shownRescued} / 3",
-                    objective1
-                );
-
-            string coinsLine =
-                FormatObjective(
-                    "Собрать монеты",
-                    $"{shownCoins} / 50",
-                    objective2
-                );
-
-            string hitsLine =
-                FormatObjective(
-                    "Удары",
-                    $"{hits} / 1",
-                    objective3
-                );
 
             taskText.text =
                 FormatMainGoal(
                     mainGoal
                 ) +
                 "\n" +
-                rescuedLine +
+                FormatObjective(
+                    "Спасти людей",
+                    $"{shownRescued} / 3",
+                    objective1
+                ) +
                 "\n" +
-                coinsLine +
+                FormatObjective(
+                    "Собрать монеты",
+                    $"{shownCoins} / 50",
+                    objective2
+                ) +
                 "\n" +
-                hitsLine;
+                FormatHitsObjective(
+                    shownHits,
+                    objective3,
+                    hits > 1
+                );
         }
 
         // =====================================================
@@ -457,9 +577,38 @@ public class RunModeChallengeManager3D : MonoBehaviour
         );
     }
 
+    private string FormatHitsObjective(
+        int shownHits,
+        bool completed,
+        bool failed
+    )
+    {
+        string color;
+
+        if (completed)
+        {
+            color =
+                "#98B88E";
+        }
+        else if (failed)
+        {
+            color =
+                "#B96E6E";
+        }
+        else
+        {
+            color =
+                "#A9ADA9";
+        }
+
+        return
+            $"<size=19><color={color}>Удары: {shownHits} / 1</color></size>";
+    }
+
     private void SetCheckmark(
         int index,
-        bool completed)
+        bool completed
+    )
     {
         if (taskCheckmarks == null)
             return;
@@ -471,7 +620,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
     }
 
     private string FormatMainGoal(
-        string text)
+        string text
+    )
     {
         return
             $"<size=25><color=#D9D5CB>{text}</color></size>";
@@ -480,7 +630,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
     private string FormatObjective(
         string title,
         string progress,
-        bool completed)
+        bool completed
+    )
     {
         string color =
             completed
