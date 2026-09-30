@@ -141,6 +141,10 @@ public class DailyLoginUI3D : MonoBehaviour
             false
         );
 
+        window.AddComponent<
+            MenuWindowVisualPolish3D
+        >();
+
         RectTransform windowRect =
             window.GetComponent<
                 RectTransform

@@ -199,6 +199,10 @@ public class AchievementsUI3D : MonoBehaviour
             false
         );
 
+        window.AddComponent<
+            MenuWindowVisualPolish3D
+        >();
+
         RectTransform windowRect =
             window.GetComponent<RectTransform>();
 

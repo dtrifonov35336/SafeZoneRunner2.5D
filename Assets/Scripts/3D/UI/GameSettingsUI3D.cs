@@ -124,6 +124,10 @@ public class GameSettingsUI3D : MonoBehaviour
                 )
             );
 
+        window.AddComponent<
+            MenuWindowVisualPolish3D
+        >();
+
         Stretch(
             window.GetComponent<RectTransform>()
         );
