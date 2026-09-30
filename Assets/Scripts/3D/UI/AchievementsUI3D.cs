@@ -6,123 +6,64 @@ using UnityEngine.UI;
 
 public class AchievementsUI3D : MonoBehaviour
 {
-    private enum Mode
-    {
-        Shelter,
-        Infinite
-    }
-
-    private class AchievementDefinition
-    {
-        public string id;
-        public string title;
-        public string description;
-        public int reward;
-        public Mode mode;
-        public string targetText;
-
-        public AchievementDefinition(
-            string id,
-            string title,
-            string description,
-            int reward,
-            Mode mode,
-            string targetText)
-        {
-            this.id = id;
-            this.title = title;
-            this.description = description;
-            this.reward = reward;
-            this.mode = mode;
-            this.targetText = targetText;
-        }
-    }
-
     private Canvas canvas;
     private GameObject window;
+
     private RectTransform contentRoot;
+    private ScrollRect scroll;
 
     private Button shelterTab;
     private Button infiniteTab;
-
     private TMP_Text countText;
 
-    private Mode currentMode = Mode.Shelter;
+    private AchievementMode3D currentMode =
+        AchievementMode3D.Shelter;
 
-    private readonly List<AchievementDefinition> achievements =
-        new List<AchievementDefinition>
+    private readonly Dictionary<
+        string,
+        string
+    > targetTexts =
+        new Dictionary<
+            string,
+            string
+        >
         {
-            new AchievementDefinition(
+            {
                 "shelter_first",
-                "ПЕРВЫЙ ПРИХОД",
-                "Впервые доберитесь до убежища.",
-                100,
-                Mode.Shelter,
-                "Цель: завершить забег до убежища"),
-
-            new AchievementDefinition(
+                "Завершить забег до убежища"
+            },
+            {
                 "shelter_no_hits",
-                "БЕЗ ЦАРАПИН",
-                "Завершите забег до убежища, не получив ни одного удара.",
-                250,
-                Mode.Shelter,
-                "Удары: 0"),
-
-            new AchievementDefinition(
+                "Получить 0 ударов"
+            },
+            {
                 "shelter_rescue_5",
-                "ПЯТЬ ЖИЗНЕЙ",
-                "Спасите 5 человек за один забег до убежища.",
-                150,
-                Mode.Shelter,
-                "За один забег: 5 спасённых"),
-
-            new AchievementDefinition(
+                "Спасти 5 человек за забег"
+            },
+            {
                 "shelter_rescue_10",
-                "СПАСАТЕЛЬ",
-                "Спасите 10 человек суммарно в режиме до убежища.",
-                300,
-                Mode.Shelter,
-                "Суммарно: 10 спасённых"),
-
-            new AchievementDefinition(
+                "Спасти 10 человек суммарно"
+            },
+            {
                 "infinite_1000",
-                "ПЕРВАЯ ТЫСЯЧА",
-                "Пробегите 1000 метров в бесконечном режиме.",
-                100,
-                Mode.Infinite,
-                "Дистанция: 1000 м"),
-
-            new AchievementDefinition(
+                "Дистанция: 1000 м"
+            },
+            {
                 "infinite_2500",
-                "ДАЛЬНИЙ ПУТЬ",
-                "Пробегите 2500 метров в бесконечном режиме.",
-                200,
-                Mode.Infinite,
-                "Дистанция: 2500 м"),
-
-            new AchievementDefinition(
+                "Дистанция: 2500 м"
+            },
+            {
                 "infinite_5000",
-                "МАРАФОН",
-                "Пробегите 5000 метров в бесконечном режиме.",
-                350,
-                Mode.Infinite,
-                "Дистанция: 5000 м"),
-
-            new AchievementDefinition(
+                "Дистанция: 5000 м"
+            },
+            {
                 "infinite_10000",
-                "БЕЗ КОНЦА",
-                "Пробегите 10000 метров в бесконечном режиме.",
-                700,
-                Mode.Infinite,
-                "Дистанция: 10000 м"),
-
-            new AchievementDefinition(
+                "Дистанция: 10000 м"
+            },
+            {
                 "infinite_100_coins",
-                "СОБИРАТЕЛЬ",
-                "Соберите 100 монет за один бесконечный забег.",
-                200,
-                Mode.Infinite,
-                "За один забег: 100 монет")
+                "Собрать 100 монет за забег"
+            }
         };
 
     private void Awake()
@@ -138,12 +79,18 @@ public class AchievementsUI3D : MonoBehaviour
         Keyboard keyboard =
             Keyboard.current;
 
-        if (keyboard != null &&
-            keyboard.escapeKey.wasPressedThisFrame)
+        if (
+            keyboard != null &&
+            keyboard.escapeKey.wasPressedThisFrame
+        )
         {
             Close();
         }
     }
+
+    // =========================================================
+    // OPEN / CLOSE
+    // =========================================================
 
     public void Open()
     {
@@ -152,7 +99,8 @@ public class AchievementsUI3D : MonoBehaviour
         if (canvas == null)
         {
             Debug.LogError(
-                "[AchievementsUI] Canvas не найден.");
+                "[AchievementsUI3D] Canvas не найден."
+            );
 
             return;
         }
@@ -162,15 +110,12 @@ public class AchievementsUI3D : MonoBehaviour
         if (window == null)
             Build();
 
-        if (window != null)
-        {
-            window.SetActive(true);
-            window.transform.SetAsLastSibling();
-        }
-
-        transform.SetAsLastSibling();
+        window.SetActive(true);
+        window.transform.SetAsLastSibling();
 
         Refresh();
+
+        transform.SetAsLastSibling();
     }
 
     public void Close()
@@ -190,522 +135,664 @@ public class AchievementsUI3D : MonoBehaviour
             GetComponentInParent<Canvas>(true);
 
         if (canvas == null)
-            canvas = FindFirstObjectByType<Canvas>();
+        {
+            canvas =
+                FindFirstObjectByType<Canvas>();
+        }
     }
+
+    // =========================================================
+    // BUILD
+    // =========================================================
 
     private void Build()
     {
         window =
             new GameObject(
                 "AchievementsWindow",
-                typeof(RectTransform));
+                typeof(RectTransform),
+                typeof(Image)
+            );
 
         window.transform.SetParent(
             canvas.transform,
-            false);
+            false
+        );
 
         RectTransform windowRect =
             window.GetComponent<RectTransform>();
 
-        Stretch(windowRect);
+        Stretch(
+            windowRect
+        );
 
         Image overlay =
-            window.AddComponent<Image>();
+            window.GetComponent<Image>();
 
         overlay.color =
-            new Color(
-                0.018f,
-                0.030f,
-                0.045f,
-                0.94f);
+            new Color32(
+                5,
+                8,
+                12,
+                242
+            );
 
-        overlay.raycastTarget = true;
+        overlay.raycastTarget =
+            true;
+
+        // =====================================================
+        // PANEL
+        // =====================================================
 
         GameObject panel =
-            CreateImageObject(
+            CreateImage(
                 "Panel",
                 window.transform,
-                new Color(
-                    0.035f,
-                    0.065f,
-                    0.090f,
-                    0.985f));
+                new Color32(
+                    18,
+                    27,
+                    35,
+                    255
+                )
+            );
 
         RectTransform panelRect =
             panel.GetComponent<RectTransform>();
 
-        panelRect.anchorMin =
-            new Vector2(0.05f, 0.06f);
+        SetAnchored(
+            panelRect,
+            new Vector2(
+                0.075f,
+                0.055f
+            ),
+            new Vector2(
+                0.925f,
+                0.945f
+            )
+        );
 
-        panelRect.anchorMax =
-            new Vector2(0.95f, 0.94f);
+        AddOutline(
+            panel,
+            new Color32(
+                48,
+                86,
+                101,
+                220
+            )
+        );
 
-        panelRect.offsetMin =
-            Vector2.zero;
-
-        panelRect.offsetMax =
-            Vector2.zero;
-
-        Outline panelOutline =
-            panel.AddComponent<Outline>();
-
-        panelOutline.effectColor =
-            new Color(
-                0.20f,
-                0.42f,
-                0.56f,
-                0.75f);
-
-        panelOutline.effectDistance =
-            new Vector2(2f, 2f);
+        // =====================================================
+        // TITLE
+        // =====================================================
 
         GameObject title =
             CreateText(
                 "Title",
                 panel.transform,
                 "ДОСТИЖЕНИЯ",
-                34f,
-                new Color(
-                    0.96f,
-                    0.94f,
-                    0.87f),
-                TextAlignmentOptions.Center);
+                31f,
+                new Color32(
+                    238,
+                    235,
+                    225,
+                    255
+                ),
+                TextAlignmentOptions.Center
+            );
 
         SetAnchored(
-            title.GetComponent<RectTransform>(),
-            new Vector2(0.07f, 0.88f),
-            new Vector2(0.88f, 0.96f),
-            Vector2.zero,
-            Vector2.zero);
+            title.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.10f,
+                0.885f
+            ),
+            new Vector2(
+                0.90f,
+                0.95f
+            )
+        );
 
-        GameObject closeObject =
-            CreateImageObject(
-                "CloseButton",
+        // =====================================================
+        // CLOSE
+        // =====================================================
+
+        GameObject close =
+            CreateButton(
+                "Close",
                 panel.transform,
-                new Color(
-                    0.10f,
-                    0.15f,
-                    0.18f,
-                    1f));
-
-        RectTransform closeRect =
-            closeObject.GetComponent<RectTransform>();
-
-        closeRect.anchorMin =
-            new Vector2(0.895f, 0.90f);
-
-        closeRect.anchorMax =
-            new Vector2(0.965f, 0.965f);
-
-        closeRect.offsetMin =
-            Vector2.zero;
-
-        closeRect.offsetMax =
-            Vector2.zero;
-
-        Button closeButton =
-            closeObject.AddComponent<Button>();
-
-        ConfigureButton(closeButton);
-
-        closeButton.onClick.AddListener(Close);
-
-        GameObject closeText =
-            CreateText(
-                "Label",
-                closeObject.transform,
                 "X",
-                24f,
-                new Color(
-                    0.96f,
-                    0.94f,
-                    0.87f),
-                TextAlignmentOptions.Center);
+                20f,
+                new Color32(
+                    34,
+                    47,
+                    55,
+                    255
+                ),
+                Color.white
+            );
 
-        Stretch(
-            closeText.GetComponent<RectTransform>());
+        SetAnchored(
+            close.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.87f,
+                0.885f
+            ),
+            new Vector2(
+                0.965f,
+                0.96f
+            )
+        );
+
+        close.GetComponent<Button>()
+            .onClick.AddListener(
+                Close
+            );
+
+        // =====================================================
+        // TABS
+        // =====================================================
 
         shelterTab =
             CreateTab(
                 panel.transform,
                 "ДО УБЕЖИЩА",
-                new Vector2(0.08f, 0.79f),
-                new Vector2(0.48f, 0.865f),
-                () => SetMode(Mode.Shelter));
+                new Vector2(
+                    0.08f,
+                    0.78f
+                ),
+                new Vector2(
+                    0.48f,
+                    0.855f
+                ),
+                () =>
+                    SetMode(
+                        AchievementMode3D.Shelter
+                    )
+            );
 
         infiniteTab =
             CreateTab(
                 panel.transform,
                 "БЕСКОНЕЧНЫЙ",
-                new Vector2(0.52f, 0.79f),
-                new Vector2(0.92f, 0.865f),
-                () => SetMode(Mode.Infinite));
+                new Vector2(
+                    0.52f,
+                    0.78f
+                ),
+                new Vector2(
+                    0.92f,
+                    0.855f
+                ),
+                () =>
+                    SetMode(
+                        AchievementMode3D.Infinite
+                    )
+            );
 
-        GameObject countObject =
+        // =====================================================
+        // COUNT
+        // =====================================================
+
+        GameObject count =
             CreateText(
-                "UnclaimedCount",
+                "Count",
                 panel.transform,
                 "",
-                17f,
-                new Color(
-                    0.74f,
-                    0.78f,
-                    0.76f),
-                TextAlignmentOptions.Right);
+                14f,
+                new Color32(
+                    171,
+                    177,
+                    175,
+                    255
+                ),
+                TextAlignmentOptions.Right
+            );
 
         SetAnchored(
-            countObject.GetComponent<RectTransform>(),
-            new Vector2(0.55f, 0.745f),
-            new Vector2(0.92f, 0.785f),
-            Vector2.zero,
-            Vector2.zero);
+            count.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.48f,
+                0.735f
+            ),
+            new Vector2(
+                0.92f,
+                0.77f
+            )
+        );
 
         countText =
-            countObject.GetComponent<TMP_Text>();
+            count.GetComponent<TMP_Text>();
+
+        // =====================================================
+        // SCROLL
+        // =====================================================
 
         GameObject scrollObject =
-            new GameObject(
+            CreateImage(
                 "ScrollView",
-                typeof(RectTransform),
-                typeof(Image),
-                typeof(ScrollRect));
-
-        scrollObject.transform.SetParent(
-            panel.transform,
-            false);
+                panel.transform,
+                new Color32(
+                    8,
+                    15,
+                    20,
+                    235
+                )
+            );
 
         RectTransform scrollRect =
-            scrollObject.GetComponent<RectTransform>();
+            scrollObject.GetComponent<
+                RectTransform
+            >();
 
-        scrollRect.anchorMin =
-            new Vector2(0.055f, 0.055f);
+        SetAnchored(
+            scrollRect,
+            new Vector2(
+                0.055f,
+                0.045f
+            ),
+            new Vector2(
+                0.945f,
+                0.725f
+            )
+        );
 
-        scrollRect.anchorMax =
-            new Vector2(0.945f, 0.74f);
+        scroll =
+            scrollObject.AddComponent<
+                ScrollRect
+            >();
 
-        scrollRect.offsetMin =
-            Vector2.zero;
+        scroll.horizontal =
+            false;
 
-        scrollRect.offsetMax =
-            Vector2.zero;
+        scroll.vertical =
+            true;
 
-        Image scrollBackground =
-            scrollObject.GetComponent<Image>();
+        scroll.movementType =
+            ScrollRect.MovementType.Clamped;
 
-        scrollBackground.color =
-            new Color(
-                0.018f,
-                0.032f,
-                0.045f,
-                0.55f);
+        scroll.scrollSensitivity =
+            50f;
+
+        // =====================================================
+        // VIEWPORT
+        // =====================================================
 
         GameObject viewport =
             new GameObject(
                 "Viewport",
                 typeof(RectTransform),
-                typeof(Image),
-                typeof(Mask));
+                typeof(RectMask2D)
+            );
 
         viewport.transform.SetParent(
             scrollObject.transform,
-            false);
+            false
+        );
 
         RectTransform viewportRect =
-            viewport.GetComponent<RectTransform>();
+            viewport.GetComponent<
+                RectTransform
+            >();
 
-        Stretch(viewportRect);
+        Stretch(
+            viewportRect
+        );
 
-        Image viewportImage =
-            viewport.GetComponent<Image>();
-
-        viewportImage.color =
-            new Color(
-                0f,
-                0f,
-                0f,
-                0f);
-
-        viewport.GetComponent<Mask>()
-            .showMaskGraphic = false;
+        // =====================================================
+        // CONTENT
+        // =====================================================
 
         GameObject content =
             new GameObject(
                 "Content",
-                typeof(RectTransform),
-                typeof(VerticalLayoutGroup),
-                typeof(ContentSizeFitter));
+                typeof(RectTransform)
+            );
 
         content.transform.SetParent(
             viewport.transform,
-            false);
+            false
+        );
 
         contentRoot =
-            content.GetComponent<RectTransform>();
+            content.GetComponent<
+                RectTransform
+            >();
 
         contentRoot.anchorMin =
-            new Vector2(0f, 1f);
+            new Vector2(
+                0f,
+                1f
+            );
 
         contentRoot.anchorMax =
-            new Vector2(1f, 1f);
+            new Vector2(
+                1f,
+                1f
+            );
 
         contentRoot.pivot =
-            new Vector2(0.5f, 1f);
+            new Vector2(
+                0.5f,
+                1f
+            );
 
         contentRoot.anchoredPosition =
             Vector2.zero;
-
-        contentRoot.sizeDelta =
-            new Vector2(0f, 0f);
-
-        VerticalLayoutGroup layout =
-            content.GetComponent<VerticalLayoutGroup>();
-
-        layout.padding =
-            new RectOffset(0, 8, 8, 8);
-
-        layout.spacing = 10f;
-
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-
-        ContentSizeFitter fitter =
-            content.GetComponent<ContentSizeFitter>();
-
-        fitter.horizontalFit =
-            ContentSizeFitter.FitMode.Unconstrained;
-
-        fitter.verticalFit =
-            ContentSizeFitter.FitMode.PreferredSize;
-
-        ScrollRect scroll =
-            scrollObject.GetComponent<ScrollRect>();
 
         scroll.viewport =
             viewportRect;
 
         scroll.content =
             contentRoot;
-
-        scroll.horizontal = false;
-        scroll.vertical = true;
-
-        scroll.movementType =
-            ScrollRect.MovementType.Clamped;
-
-        scroll.scrollSensitivity = 30f;
     }
 
-    private Button CreateTab(
-        Transform parent,
-        string label,
-        Vector2 anchorMin,
-        Vector2 anchorMax,
-        UnityEngine.Events.UnityAction action)
-    {
-        GameObject buttonObject =
-            CreateImageObject(
-                label,
-                parent,
-                new Color(
-                    0.07f,
-                    0.12f,
-                    0.15f,
-                    1f));
-
-        RectTransform rect =
-            buttonObject.GetComponent<RectTransform>();
-
-        SetAnchored(
-            rect,
-            anchorMin,
-            anchorMax,
-            Vector2.zero,
-            Vector2.zero);
-
-        Button button =
-            buttonObject.AddComponent<Button>();
-
-        ConfigureButton(button);
-
-        button.onClick.AddListener(action);
-
-        GameObject text =
-            CreateText(
-                "Label",
-                buttonObject.transform,
-                label,
-                17f,
-                new Color(
-                    0.90f,
-                    0.92f,
-                    0.90f),
-                TextAlignmentOptions.Center);
-
-        Stretch(
-            text.GetComponent<RectTransform>());
-
-        return button;
-    }
+    // =========================================================
+    // REFRESH
+    // =========================================================
 
     private void Refresh()
     {
         if (contentRoot == null)
             return;
 
-        for (int i =
+        for (
+            int i =
                 contentRoot.childCount - 1;
             i >= 0;
-            i--)
+            i--
+        )
         {
             Destroy(
-                contentRoot.GetChild(i).gameObject);
+                contentRoot
+                    .GetChild(i)
+                    .gameObject
+            );
         }
 
-        foreach (
-            AchievementDefinition definition
-            in achievements)
-        {
-            if (definition.mode != currentMode)
-                continue;
+        List<AchievementDefinition3D>
+            list =
+                AchievementSystem3D.GetByMode(
+                    currentMode
+                );
 
-            CreateAchievementCard(definition);
+        const float cardHeight =
+            112f;
+
+        const float cardGap =
+            10f;
+
+        float totalHeight =
+            list.Count *
+            (cardHeight + cardGap) +
+            8f;
+
+        contentRoot.sizeDelta =
+            new Vector2(
+                0f,
+                totalHeight
+            );
+
+        for (
+            int i = 0;
+            i < list.Count;
+            i++
+        )
+        {
+            CreateAchievementCard(
+                list[i],
+                i,
+                cardHeight,
+                cardGap
+            );
         }
 
         RefreshTabs();
 
         int unclaimed =
-            AchievementSystem3D.GetUnclaimedCount();
+            AchievementSystem3D
+                .GetUnclaimedCount();
 
         if (countText != null)
         {
             countText.text =
                 unclaimed > 0
-                    ? "НАГРАД ДОСТУПНО: " + unclaimed
+                    ? "НАГРАД ДОСТУПНО: " +
+                      unclaimed
                     : "НЕТ НЕПОЛУЧЕННЫХ НАГРАД";
         }
+
+        if (scroll != null)
+            scroll.verticalNormalizedPosition =
+                1f;
     }
 
+    // =========================================================
+    // CARD
+    // =========================================================
+
     private void CreateAchievementCard(
-        AchievementDefinition definition)
+        AchievementDefinition3D definition,
+        int index,
+        float cardHeight,
+        float gap
+    )
     {
         bool completed =
-            PlayerPrefs.GetInt(
-                "AchievementCompleted_" +
-                definition.id,
-                0) == 1;
+            AchievementSystem3D.IsCompleted(
+                definition.id
+            );
 
         bool claimed =
-            PlayerPrefs.GetInt(
-                "AchievementClaimed_" +
-                definition.id,
-                0) == 1;
+            AchievementSystem3D.IsClaimed(
+                definition.id
+            );
+
+        Color cardColor =
+            completed
+                ? new Color32(
+                    29,
+                    46,
+                    38,
+                    255
+                )
+                : new Color32(
+                    24,
+                    34,
+                    41,
+                    255
+                );
 
         GameObject card =
-            CreateImageObject(
+            CreateImage(
                 definition.id,
                 contentRoot,
-                completed
-                    ? new Color(
-                        0.065f,
-                        0.105f,
-                        0.090f,
-                        1f)
-                    : new Color(
-                        0.055f,
-                        0.078f,
-                        0.095f,
-                        1f));
+                cardColor
+            );
 
-        LayoutElement element =
-            card.AddComponent<LayoutElement>();
+        RectTransform cardRect =
+            card.GetComponent<
+                RectTransform
+            >();
 
-        element.minHeight = 118f;
-        element.preferredHeight = 118f;
-        element.flexibleWidth = 1f;
+        cardRect.anchorMin =
+            new Vector2(
+                0f,
+                1f
+            );
 
-        Outline outline =
-            card.AddComponent<Outline>();
+        cardRect.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
 
-        outline.effectDistance =
-            new Vector2(1f, -1f);
+        cardRect.pivot =
+            new Vector2(
+                0.5f,
+                1f
+            );
 
-        outline.effectColor =
+        cardRect.sizeDelta =
+            new Vector2(
+                0f,
+                cardHeight
+            );
+
+        cardRect.anchoredPosition =
+            new Vector2(
+                0f,
+                -8f -
+                index *
+                (cardHeight + gap)
+            );
+
+        AddOutline(
+            card,
             completed
-                ? new Color(
-                    0.40f,
-                    0.63f,
-                    0.45f,
-                    0.75f)
-                : new Color(
-                    0.18f,
-                    0.34f,
-                    0.42f,
-                    0.75f);
+                ? new Color32(
+                    101,
+                    156,
+                    113,
+                    190
+                )
+                : new Color32(
+                    54,
+                    84,
+                    94,
+                    180
+                )
+        );
+
+        // -----------------------------------------------------
+        // TITLE
+        // -----------------------------------------------------
 
         GameObject title =
             CreateText(
                 "Title",
                 card.transform,
                 definition.title,
-                20f,
-                new Color(
-                    0.95f,
-                    0.92f,
-                    0.82f),
-                TextAlignmentOptions.Left);
+                18f,
+                completed
+                    ? new Color32(
+                        224,
+                        236,
+                        225,
+                        255
+                    )
+                    : new Color32(
+                        225,
+                        226,
+                        218,
+                        255
+                    ),
+                TextAlignmentOptions.Left
+            );
 
         SetAnchored(
-            title.GetComponent<RectTransform>(),
-            new Vector2(0.035f, 0.68f),
-            new Vector2(0.63f, 0.96f),
-            Vector2.zero,
-            Vector2.zero);
+            title.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.035f,
+                0.65f
+            ),
+            new Vector2(
+                0.66f,
+                0.92f
+            )
+        );
+
+        // -----------------------------------------------------
+        // DESCRIPTION
+        // -----------------------------------------------------
 
         GameObject description =
             CreateText(
                 "Description",
                 card.transform,
                 definition.description,
-                14f,
-                new Color(
-                    0.72f,
-                    0.76f,
-                    0.75f),
-                TextAlignmentOptions.Left);
-
-        TextMeshProUGUI descriptionTMP =
-            description.GetComponent<TextMeshProUGUI>();
-
-        descriptionTMP.textWrappingMode =
-            TextWrappingModes.Normal;
+                13f,
+                new Color32(
+                    167,
+                    176,
+                    173,
+                    255
+                ),
+                TextAlignmentOptions.Left
+            );
 
         SetAnchored(
-            descriptionTMP.rectTransform,
-            new Vector2(0.035f, 0.27f),
-            new Vector2(0.66f, 0.67f),
-            Vector2.zero,
-            Vector2.zero);
+            description.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.035f,
+                0.32f
+            ),
+            new Vector2(
+                0.66f,
+                0.66f
+            )
+        );
 
-        GameObject target =
+        TextMeshProUGUI descTmp =
+            description.GetComponent<
+                TextMeshProUGUI
+            >();
+
+        descTmp.textWrappingMode =
+            TextWrappingModes.Normal;
+
+        // -----------------------------------------------------
+        // TARGET
+        // -----------------------------------------------------
+
+        string target =
+            targetTexts.TryGetValue(
+                definition.id,
+                out string value
+            )
+                ? value
+                : "";
+
+        GameObject targetObject =
             CreateText(
                 "Target",
                 card.transform,
-                definition.targetText,
-                13f,
-                new Color(
-                    0.60f,
-                    0.68f,
-                    0.66f),
-                TextAlignmentOptions.Left);
+                target,
+                12f,
+                new Color32(
+                    137,
+                    151,
+                    147,
+                    255
+                ),
+                TextAlignmentOptions.Left
+            );
 
         SetAnchored(
-            target.GetComponent<RectTransform>(),
-            new Vector2(0.035f, 0.06f),
-            new Vector2(0.66f, 0.25f),
-            Vector2.zero,
-            Vector2.zero);
+            targetObject.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.035f,
+                0.06f
+            ),
+            new Vector2(
+                0.66f,
+                0.27f
+            )
+        );
+
+        // -----------------------------------------------------
+        // REWARD
+        // -----------------------------------------------------
 
         GameObject reward =
             CreateText(
@@ -714,162 +801,226 @@ public class AchievementsUI3D : MonoBehaviour
                 "+" +
                 definition.reward +
                 " МОНЕТ",
-                15f,
-                new Color(
-                    1f,
-                    0.80f,
-                    0.20f),
-                TextAlignmentOptions.Center);
+                14f,
+                new Color32(
+                    235,
+                    194,
+                    73,
+                    255
+                ),
+                TextAlignmentOptions.Center
+            );
 
         SetAnchored(
-            reward.GetComponent<RectTransform>(),
-            new Vector2(0.69f, 0.68f),
-            new Vector2(0.97f, 0.91f),
-            Vector2.zero,
-            Vector2.zero);
+            reward.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.70f,
+                0.66f
+            ),
+            new Vector2(
+                0.97f,
+                0.91f
+            )
+        );
 
-        string statusText;
+        // -----------------------------------------------------
+        // STATUS
+        // -----------------------------------------------------
+
+        string status;
+
         Color statusColor;
 
         if (claimed)
         {
-            statusText = "ПОЛУЧЕНО";
+            status =
+                "ПОЛУЧЕНО";
 
             statusColor =
-                new Color(
-                    0.55f,
-                    0.68f,
-                    0.60f);
+                new Color32(
+                    112,
+                    169,
+                    126,
+                    255
+                );
         }
         else if (completed)
         {
-            statusText = "ЗАБРАТЬ";
+            status =
+                "ЗАБРАТЬ";
 
             statusColor =
-                new Color(
-                    1f,
-                    0.78f,
-                    0.18f);
+                new Color32(
+                    242,
+                    195,
+                    67,
+                    255
+                );
         }
         else
         {
-            statusText = "НЕ ВЫПОЛНЕНО";
+            status =
+                "НЕ ВЫПОЛНЕНО";
 
             statusColor =
-                new Color(
-                    0.50f,
-                    0.56f,
-                    0.56f);
+                new Color32(
+                    116,
+                    125,
+                    126,
+                    255
+                );
         }
 
         GameObject statusObject =
-            CreateImageObject(
-                "StatusButton",
+            CreateButton(
+                "Status",
                 card.transform,
-                new Color(
-                    0.09f,
-                    0.15f,
-                    0.17f,
-                    1f));
-
-        RectTransform statusRect =
-            statusObject.GetComponent<RectTransform>();
+                status,
+                12f,
+                new Color32(
+                    31,
+                    46,
+                    53,
+                    255
+                ),
+                statusColor
+            );
 
         SetAnchored(
-            statusRect,
-            new Vector2(0.70f, 0.22f),
-            new Vector2(0.965f, 0.60f),
-            Vector2.zero,
-            Vector2.zero);
+            statusObject.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.70f,
+                0.20f
+            ),
+            new Vector2(
+                0.97f,
+                0.55f
+            )
+        );
 
         Button statusButton =
-            statusObject.AddComponent<Button>();
-
-        ConfigureButton(statusButton);
+            statusObject.GetComponent<
+                Button
+            >();
 
         statusButton.interactable =
-            completed && !claimed;
+            completed &&
+            !claimed;
 
-        GameObject statusLabel =
-            CreateText(
-                "Label",
-                statusObject.transform,
-                statusText,
-                14f,
-                statusColor,
-                TextAlignmentOptions.Center);
-
-        Stretch(
-            statusLabel.GetComponent<RectTransform>());
-
-        if (completed && !claimed)
+        if (
+            completed &&
+            !claimed
+        )
         {
             string id =
                 definition.id;
 
             statusButton.onClick.AddListener(
-                () => ClaimAchievement(id));
+                () =>
+                {
+                    if (
+                        AchievementSystem3D
+                            .Claim(id)
+                    )
+                    {
+                        RefreshMenuBadges();
+                    }
+
+                    Refresh();
+                }
+            );
         }
     }
 
-    private void ClaimAchievement(string id)
+    // =========================================================
+    // TABS
+    // =========================================================
+
+    private Button CreateTab(
+        Transform parent,
+        string label,
+        Vector2 min,
+        Vector2 max,
+        UnityEngine.Events.UnityAction action
+    )
     {
-        AchievementSystem3D.Claim(id);
+        GameObject button =
+            CreateButton(
+                label,
+                parent,
+                label,
+                13f,
+                new Color32(
+                    31,
+                    48,
+                    57,
+                    255
+                ),
+                new Color32(
+                    231,
+                    233,
+                    226,
+                    255
+                )
+            );
 
-        Refresh();
+        SetAnchored(
+            button.GetComponent<
+                RectTransform
+            >(),
+            min,
+            max
+        );
 
-        AchievementsMenuButton3D[] buttons =
-            FindObjectsByType<AchievementsMenuButton3D>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+        Button component =
+            button.GetComponent<
+                Button
+            >();
 
-        foreach (
-            AchievementsMenuButton3D button
-            in buttons)
-        {
-            button.RefreshBadge();
-        }
+        component.onClick.AddListener(
+            action
+        );
 
-        MainMenuUtilityButton3D[] utilityButtons =
-            FindObjectsByType<MainMenuUtilityButton3D>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-        foreach (
-            MainMenuUtilityButton3D utilityButton
-            in utilityButtons)
-        {
-            utilityButton.RefreshBadge();
-        }
+        return component;
     }
 
-    private void SetMode(Mode mode)
+    private void SetMode(
+        AchievementMode3D mode
+    )
     {
-        currentMode = mode;
+        currentMode =
+            mode;
+
         Refresh();
     }
 
     private void RefreshTabs()
     {
-        if (shelterTab != null)
-        {
-            SetTabColor(
-                shelterTab,
-                currentMode == Mode.Shelter);
-        }
+        SetTabColor(
+            shelterTab,
+            currentMode ==
+                AchievementMode3D.Shelter
+        );
 
-        if (infiniteTab != null)
-        {
-            SetTabColor(
-                infiniteTab,
-                currentMode == Mode.Infinite);
-        }
+        SetTabColor(
+            infiniteTab,
+            currentMode ==
+                AchievementMode3D.Infinite
+        );
     }
 
     private void SetTabColor(
         Button button,
-        bool selected)
+        bool selected
+    )
     {
+        if (button == null)
+            return;
+
         Image image =
             button.GetComponent<Image>();
 
@@ -878,38 +1029,83 @@ public class AchievementsUI3D : MonoBehaviour
 
         image.color =
             selected
-                ? new Color(
-                    0.12f,
-                    0.26f,
-                    0.30f,
-                    1f)
-                : new Color(
-                    0.07f,
-                    0.12f,
-                    0.15f,
-                    1f);
+                ? new Color32(
+                    31,
+                    86,
+                    96,
+                    255
+                )
+                : new Color32(
+                    31,
+                    40,
+                    49,
+                    255
+                );
     }
 
-    private static GameObject CreateImageObject(
-    string objectName,
-    Transform parent,
-    Color color)
+    private void RefreshMenuBadges()
+    {
+        MainMenuUtilityButton3D[] buttons =
+            FindObjectsByType<
+                MainMenuUtilityButton3D
+            >(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        foreach (
+            MainMenuUtilityButton3D button
+            in buttons
+        )
+        {
+            button.RefreshBadge();
+        }
+
+        AchievementsMenuButton3D[] oldButtons =
+            FindObjectsByType<
+                AchievementsMenuButton3D
+            >(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        foreach (
+            AchievementsMenuButton3D button
+            in oldButtons
+        )
+        {
+            button.RefreshBadge();
+        }
+    }
+
+    // =========================================================
+    // CREATE HELPERS
+    // =========================================================
+
+    private static GameObject CreateImage(
+        string name,
+        Transform parent,
+        Color color
+    )
     {
         GameObject go =
             new GameObject(
-                objectName,
+                name,
                 typeof(RectTransform),
-                typeof(Image));
+                typeof(Image)
+            );
 
         go.transform.SetParent(
             parent,
-            false);
+            false
+        );
 
         Image image =
             go.GetComponent<Image>();
 
         image.sprite =
-            RuntimeUISprite3D.GetSolidSprite();
+            RuntimeUISprite3D
+                .GetSolidSprite();
 
         image.type =
             Image.Type.Simple;
@@ -921,33 +1117,47 @@ public class AchievementsUI3D : MonoBehaviour
     }
 
     private static GameObject CreateText(
-        string objectName,
+        string name,
         Transform parent,
         string value,
-        float fontSize,
+        float size,
         Color color,
-        TextAlignmentOptions alignment)
+        TextAlignmentOptions alignment
+    )
     {
         GameObject go =
             new GameObject(
-                objectName,
+                name,
                 typeof(RectTransform),
-                typeof(TextMeshProUGUI));
+                typeof(
+                    TextMeshProUGUI
+                )
+            );
 
         go.transform.SetParent(
             parent,
-            false);
+            false
+        );
 
         TextMeshProUGUI text =
-    go.GetComponent<TextMeshProUGUI>();
+            go.GetComponent<
+                TextMeshProUGUI
+            >();
 
-        text.text = value;
-        text.fontSize = fontSize;
-        text.color = color;
-        text.alignment = alignment;
-        text.raycastTarget = false;
+        text.text =
+            value;
 
-        RuntimeUIText3D.Apply(text);
+        text.fontSize =
+            size;
+
+        text.color =
+            color;
+
+        text.alignment =
+            alignment;
+
+        text.raycastTarget =
+            false;
 
         text.overflowMode =
             TextOverflowModes.Ellipsis;
@@ -955,13 +1165,37 @@ public class AchievementsUI3D : MonoBehaviour
         text.textWrappingMode =
             TextWrappingModes.Normal;
 
-        text.richText = true;
+        text.richText =
+            true;
+
+        RuntimeUIText3D.Apply(
+            text
+        );
 
         return go;
     }
 
-    private static void ConfigureButton(Button button)
+    private static GameObject CreateButton(
+        string name,
+        Transform parent,
+        string label,
+        float size,
+        Color background,
+        Color textColor
+    )
     {
+        GameObject go =
+            CreateImage(
+                name,
+                parent,
+                background
+            );
+
+        Button button =
+            go.AddComponent<
+                Button
+            >();
+
         ColorBlock colors =
             button.colors;
 
@@ -972,45 +1206,96 @@ public class AchievementsUI3D : MonoBehaviour
             Color.white;
 
         colors.pressedColor =
-            new Color(
-                0.80f,
-                0.80f,
-                0.80f,
-                1f);
-
-        colors.selectedColor =
-            Color.white;
+            new Color32(
+                205,
+                205,
+                205,
+                255
+            );
 
         colors.disabledColor =
-            new Color(
-                0.70f,
-                0.70f,
-                0.70f,
-                0.65f);
+            new Color32(
+                120,
+                120,
+                120,
+                110
+            );
 
-        colors.colorMultiplier = 1f;
+        button.colors =
+            colors;
 
-        button.colors = colors;
+        GameObject text =
+            CreateText(
+                "Label",
+                go.transform,
+                label,
+                size,
+                textColor,
+                TextAlignmentOptions.Center
+            );
+
+        Stretch(
+            text.GetComponent<
+                RectTransform
+            >()
+        );
+
+        return go;
     }
 
-    private static void Stretch(RectTransform rect)
+    private static void AddOutline(
+        GameObject go,
+        Color color
+    )
     {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        Outline outline =
+            go.AddComponent<
+                Outline
+            >();
+
+        outline.effectColor =
+            color;
+
+        outline.effectDistance =
+            new Vector2(
+                1.5f,
+                -1.5f
+            );
+    }
+
+    private static void Stretch(
+        RectTransform rect
+    )
+    {
+        rect.anchorMin =
+            Vector2.zero;
+
+        rect.anchorMax =
+            Vector2.one;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 
     private static void SetAnchored(
         RectTransform rect,
-        Vector2 anchorMin,
-        Vector2 anchorMax,
-        Vector2 offsetMin,
-        Vector2 offsetMax)
+        Vector2 min,
+        Vector2 max
+    )
     {
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.offsetMin = offsetMin;
-        rect.offsetMax = offsetMax;
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 }

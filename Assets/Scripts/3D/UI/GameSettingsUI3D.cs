@@ -142,8 +142,14 @@ public class GameSettingsUI3D : MonoBehaviour
 
         SetAnchored(
             panel.GetComponent<RectTransform>(),
-            new Vector2(0.08f, 0.12f),
-            new Vector2(0.92f, 0.88f)
+            new Vector2(
+                0.075f,
+                0.10f
+            ),
+            new Vector2(
+                0.925f,
+                0.90f
+            )
         );
 
         AddOutline(
@@ -156,12 +162,16 @@ public class GameSettingsUI3D : MonoBehaviour
             )
         );
 
+        // =====================================================
+        // TITLE
+        // =====================================================
+
         GameObject title =
             CreateText(
                 "Title",
                 panel.transform,
                 "НАСТРОЙКИ",
-                32f,
+                31f,
                 new Color(
                     0.96f,
                     0.94f,
@@ -172,16 +182,26 @@ public class GameSettingsUI3D : MonoBehaviour
 
         SetAnchored(
             title.GetComponent<RectTransform>(),
-            new Vector2(0.10f, 0.86f),
-            new Vector2(0.90f, 0.94f)
+            new Vector2(
+                0.10f,
+                0.865f
+            ),
+            new Vector2(
+                0.90f,
+                0.94f
+            )
         );
+
+        // =====================================================
+        // CLOSE
+        // =====================================================
 
         GameObject close =
             CreateButton(
                 "Close",
                 panel.transform,
                 "X",
-                22f,
+                20f,
                 new Color(
                     0.10f,
                     0.15f,
@@ -193,19 +213,31 @@ public class GameSettingsUI3D : MonoBehaviour
 
         SetAnchored(
             close.GetComponent<RectTransform>(),
-            new Vector2(0.87f, 0.875f),
-            new Vector2(0.955f, 0.955f)
+            new Vector2(
+                0.87f,
+                0.875f
+            ),
+            new Vector2(
+                0.955f,
+                0.95f
+            )
         );
 
         close.GetComponent<Button>()
-            .onClick.AddListener(Close);
+            .onClick.AddListener(
+                Close
+            );
+
+        // =====================================================
+        // ЗВУК
+        // =====================================================
 
         GameObject soundHeader =
             CreateText(
                 "SoundHeader",
                 panel.transform,
                 "ЗВУК",
-                17f,
+                16f,
                 new Color(
                     1f,
                     0.78f,
@@ -216,8 +248,14 @@ public class GameSettingsUI3D : MonoBehaviour
 
         SetAnchored(
             soundHeader.GetComponent<RectTransform>(),
-            new Vector2(0.09f, 0.74f),
-            new Vector2(0.35f, 0.79f)
+            new Vector2(
+                0.09f,
+                0.765f
+            ),
+            new Vector2(
+                0.45f,
+                0.815f
+            )
         );
 
         GameObject volumeLabel =
@@ -225,7 +263,7 @@ public class GameSettingsUI3D : MonoBehaviour
                 "VolumeLabel",
                 panel.transform,
                 "Общая громкость",
-                18f,
+                17f,
                 new Color(
                     0.86f,
                     0.88f,
@@ -236,8 +274,14 @@ public class GameSettingsUI3D : MonoBehaviour
 
         SetAnchored(
             volumeLabel.GetComponent<RectTransform>(),
-            new Vector2(0.09f, 0.63f),
-            new Vector2(0.43f, 0.69f)
+            new Vector2(
+                0.09f,
+                0.685f
+            ),
+            new Vector2(
+                0.39f,
+                0.74f
+            )
         );
 
         volumeSlider =
@@ -247,8 +291,14 @@ public class GameSettingsUI3D : MonoBehaviour
 
         SetAnchored(
             volumeSlider.GetComponent<RectTransform>(),
-            new Vector2(0.43f, 0.64f),
-            new Vector2(0.80f, 0.685f)
+            new Vector2(
+                0.40f,
+                0.695f
+            ),
+            new Vector2(
+                0.79f,
+                0.735f
+            )
         );
 
         GameObject volumeValueObject =
@@ -256,7 +306,7 @@ public class GameSettingsUI3D : MonoBehaviour
                 "VolumeValue",
                 panel.transform,
                 "100%",
-                15f,
+                14f,
                 new Color(
                     0.96f,
                     0.80f,
@@ -266,27 +316,39 @@ public class GameSettingsUI3D : MonoBehaviour
             );
 
         SetAnchored(
-            volumeValueObject
-                .GetComponent<RectTransform>(),
-            new Vector2(0.82f, 0.63f),
-            new Vector2(0.94f, 0.69f)
+            volumeValueObject.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.81f,
+                0.685f
+            ),
+            new Vector2(
+                0.94f,
+                0.74f
+            )
         );
 
         volumeValue =
-            volumeValueObject
-                .GetComponent<TMP_Text>();
+            volumeValueObject.GetComponent<
+                TMP_Text
+            >();
 
         volumeSlider.onValueChanged
             .AddListener(
                 OnVolumeChanged
             );
 
+        // =====================================================
+        // УПРАВЛЕНИЕ
+        // =====================================================
+
         GameObject controlHeader =
             CreateText(
                 "ControlHeader",
                 panel.transform,
                 "УПРАВЛЕНИЕ",
-                17f,
+                16f,
                 new Color(
                     1f,
                     0.78f,
@@ -296,9 +358,17 @@ public class GameSettingsUI3D : MonoBehaviour
             );
 
         SetAnchored(
-            controlHeader.GetComponent<RectTransform>(),
-            new Vector2(0.09f, 0.53f),
-            new Vector2(0.40f, 0.58f)
+            controlHeader.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.09f,
+                0.565f
+            ),
+            new Vector2(
+                0.45f,
+                0.615f
+            )
         );
 
         GameObject vibrationLabel =
@@ -306,7 +376,7 @@ public class GameSettingsUI3D : MonoBehaviour
                 "VibrationLabel",
                 panel.transform,
                 "Вибрация",
-                18f,
+                17f,
                 new Color(
                     0.86f,
                     0.88f,
@@ -316,9 +386,17 @@ public class GameSettingsUI3D : MonoBehaviour
             );
 
         SetAnchored(
-            vibrationLabel.GetComponent<RectTransform>(),
-            new Vector2(0.09f, 0.43f),
-            new Vector2(0.50f, 0.49f)
+            vibrationLabel.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.09f,
+                0.485f
+            ),
+            new Vector2(
+                0.45f,
+                0.54f
+            )
         );
 
         vibrationToggle =
@@ -327,9 +405,17 @@ public class GameSettingsUI3D : MonoBehaviour
             );
 
         SetAnchored(
-            vibrationToggle.GetComponent<RectTransform>(),
-            new Vector2(0.78f, 0.425f),
-            new Vector2(0.92f, 0.495f)
+            vibrationToggle.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.80f,
+                0.485f
+            ),
+            new Vector2(
+                0.92f,
+                0.545f
+            )
         );
 
         vibrationToggle
@@ -338,12 +424,16 @@ public class GameSettingsUI3D : MonoBehaviour
                 OnVibrationChanged
             );
 
+        // =====================================================
+        // ПРОИЗВОДИТЕЛЬНОСТЬ
+        // =====================================================
+
         GameObject performanceHeader =
             CreateText(
                 "PerformanceHeader",
                 panel.transform,
                 "ПРОИЗВОДИТЕЛЬНОСТЬ",
-                17f,
+                16f,
                 new Color(
                     1f,
                     0.78f,
@@ -353,83 +443,115 @@ public class GameSettingsUI3D : MonoBehaviour
             );
 
         SetAnchored(
-            performanceHeader.GetComponent<RectTransform>(),
-            new Vector2(0.09f, 0.33f),
-            new Vector2(0.50f, 0.38f)
+            performanceHeader.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.09f,
+                0.375f
+            ),
+            new Vector2(
+                0.60f,
+                0.425f
+            )
         );
 
         fps30Button =
-    CreateButton(
-        "FPS30",
-        panel.transform,
-        "30 FPS",
-        16f,
-        new Color(
-            0.07f,
-            0.12f,
-            0.15f,
-            1f
-        ),
-        new Color(
-            0.88f,
-            0.89f,
-            0.86f
-        )
-    ).GetComponent<Button>();
+            CreateButton(
+                "FPS30",
+                panel.transform,
+                "30 FPS",
+                15f,
+                new Color(
+                    0.07f,
+                    0.12f,
+                    0.15f,
+                    1f
+                ),
+                new Color(
+                    0.88f,
+                    0.89f,
+                    0.86f
+                )
+            ).GetComponent<Button>();
 
         SetAnchored(
-            fps30Button.GetComponent<RectTransform>(),
-            new Vector2(0.09f, 0.22f),
-            new Vector2(0.46f, 0.305f)
+            fps30Button.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.09f,
+                0.275f
+            ),
+            new Vector2(
+                0.475f,
+                0.355f
+            )
         );
 
         fps30Button.onClick.AddListener(
             () =>
             {
-                GameSettingsManager3D.SetFPS(30);
+                GameSettingsManager3D
+                    .SetFPS(30);
+
                 RefreshFPSButtons();
             }
         );
 
         fps60Button =
-    CreateButton(
-        "FPS60",
-        panel.transform,
-        "60 FPS",
-        16f,
-        new Color(
-            0.07f,
-            0.12f,
-            0.15f,
-            1f
-        ),
-        new Color(
-            0.88f,
-            0.89f,
-            0.86f
-        )
-    ).GetComponent<Button>();
+            CreateButton(
+                "FPS60",
+                panel.transform,
+                "60 FPS",
+                15f,
+                new Color(
+                    0.07f,
+                    0.12f,
+                    0.15f,
+                    1f
+                ),
+                new Color(
+                    0.88f,
+                    0.89f,
+                    0.86f
+                )
+            ).GetComponent<Button>();
 
         SetAnchored(
-            fps60Button.GetComponent<RectTransform>(),
-            new Vector2(0.54f, 0.22f),
-            new Vector2(0.91f, 0.305f)
+            fps60Button.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.525f,
+                0.275f
+            ),
+            new Vector2(
+                0.91f,
+                0.355f
+            )
         );
 
         fps60Button.onClick.AddListener(
             () =>
             {
-                GameSettingsManager3D.SetFPS(60);
+                GameSettingsManager3D
+                    .SetFPS(60);
+
                 RefreshFPSButtons();
             }
         );
+
+        // =====================================================
+        // FOOTER
+        // =====================================================
 
         GameObject footer =
             CreateText(
                 "Footer",
                 panel.transform,
                 "Настройки сохраняются автоматически",
-                13f,
+                12f,
                 new Color(
                     0.53f,
                     0.59f,
@@ -439,9 +561,17 @@ public class GameSettingsUI3D : MonoBehaviour
             );
 
         SetAnchored(
-            footer.GetComponent<RectTransform>(),
-            new Vector2(0.10f, 0.12f),
-            new Vector2(0.90f, 0.17f)
+            footer.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.10f,
+                0.13f
+            ),
+            new Vector2(
+                0.90f,
+                0.175f
+            )
         );
     }
 

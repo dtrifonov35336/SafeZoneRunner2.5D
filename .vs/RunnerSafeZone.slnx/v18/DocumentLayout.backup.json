@@ -3,8 +3,36 @@
   "WorkspaceRootPath": "C:\\Users\\Dmitriy\\RunnerSafeZone\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\gamesettingsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\gamesettingsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\dailyloginui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\dailyloginui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\achievementsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\achievementsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\runtimeuitext3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\runtimeuitext3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\runmodechallengemanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\runmodechallengemanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{74E0D3A7-19C5-40BE-F11E-E5A32DC37A5D}|Assembly-CSharp-Editor.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\editor\\safezoneuirepaireditor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{74E0D3A7-19C5-40BE-F11E-E5A32DC37A5D}|Assembly-CSharp-Editor.csproj|solutionrelative:assets\\editor\\safezoneuirepaireditor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\taskcheckmarkui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\taskcheckmarkui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\runprogressui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\runprogressui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\achievementsmenubutton3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -13,26 +41,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\mainmenuutilitybutton3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\mainmenuutilitybutton3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\achievementsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\achievementsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\dailyloginui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\dailyloginui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\gamesettingsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\gamesettingsui3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\taskcheckmarkgraphic3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\taskcheckmarkgraphic3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{74E0D3A7-19C5-40BE-F11E-E5A32DC37A5D}|Assembly-CSharp-Editor.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\editor\\safezonemainmenubuttonssetupeditor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -61,6 +69,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\gamesettingsmanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\gamesettingsmanager3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|c:\\users\\dmitriy\\runnersafezone\\assets\\scripts\\3d\\ui\\runtimeuisprite3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4CD19DA-EE08-5225-FB19-1D0DFA4113DD}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\3d\\ui\\runtimeuisprite3d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -70,50 +82,114 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "RuntimeUISprite3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAkAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "RuntimeUIText3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RuntimeUIText3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\RuntimeUIText3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RuntimeUIText3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\RuntimeUIText3D.cs",
+              "ViewState": "AgIAADMAAAAAAAAAAAAuwGYAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-28T05:10:14.616Z",
+              "WhenOpened": "2026-09-30T14:27:52.38Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
+              "Title": "TaskCheckmarkUI3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\TaskCheckmarkUI3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\TaskCheckmarkUI3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\TaskCheckmarkUI3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\TaskCheckmarkUI3D.cs",
+              "ViewState": "AgIAAJ4AAAAAAAAAAAAuwNEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T14:25:34.199Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SafeZoneUIRepairEditor.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\SafeZoneUIRepairEditor.cs",
+              "RelativeDocumentMoniker": "Assets\\Editor\\SafeZoneUIRepairEditor.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\SafeZoneUIRepairEditor.cs",
+              "RelativeToolTip": "Assets\\Editor\\SafeZoneUIRepairEditor.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAJUBAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T14:24:11.714Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "RunProgressUI3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RunProgressUI3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\RunProgressUI3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RunProgressUI3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\RunProgressUI3D.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADcCAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T14:21:54.21Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AchievementsMenuButton3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
+              "ViewState": "AgIAAHwAAAAAAAAAAAAuwJcAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-28T04:07:30.844Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AchievementsUI3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
+              "ViewState": "AgIAAJUDAAAAAAAAAAAwwL0DAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-28T03:45:31.768Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "DailyLoginUI3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\DailyLoginUI3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\DailyLoginUI3D.cs",
               "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\DailyLoginUI3D.cs",
               "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\DailyLoginUI3D.cs",
-              "ViewState": "AgIAAEoDAAAAAAAAAAAowHUDAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAuwIsAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-28T04:10:22.708Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "GameSettingsUI3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\GameSettingsUI3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\GameSettingsUI3D.cs",
               "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\GameSettingsUI3D.cs",
               "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\GameSettingsUI3D.cs",
-              "ViewState": "AgIAAPQCAAAAAAAAAAAAAB4DAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAB0DAAAAAAAAAAAQwEYDAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-28T04:09:17.614Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 16,
               "Title": "GameSettingsManager3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\GameSettingsManager3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\GameSettingsManager3D.cs",
@@ -125,20 +201,32 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AchievementsMenuButton3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\AchievementsMenuButton3D.cs",
-              "ViewState": "AgIAAHwAAAAAAAAAAAAuwJcAAAApAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "RunModeChallengeManager3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
+              "ViewState": "AgIAANEBAAAAAAAAAAAuwAQCAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-28T04:07:30.844Z",
+              "WhenOpened": "2026-09-28T02:29:14.659Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 17,
+              "Title": "RuntimeUISprite3D.cs",
+              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
+              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
+              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\RuntimeUISprite3D.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-28T05:10:14.616Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "MainMenuUtilityButton3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\MainMenuUtilityButton3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\MainMenuUtilityButton3D.cs",
@@ -146,50 +234,11 @@
               "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\MainMenuUtilityButton3D.cs",
               "ViewState": "AgIAAAIBAAAAAAAAAAAAABsBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-28T03:45:16.465Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-28T03:45:16.465Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "RunModeChallengeManager3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\RunModeChallengeManager3D.cs",
-              "ViewState": "AgIAAOMBAAAAAAAAAAAuwBYCAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-28T02:29:14.659Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AchievementsUI3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\AchievementsUI3D.cs",
-              "ViewState": "AgIAAGoDAAAAAAAAAAAqwJgDAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-28T03:45:31.768Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "TaskCheckmarkGraphic3D.cs",
-              "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\TaskCheckmarkGraphic3D.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\TaskCheckmarkGraphic3D.cs",
-              "ToolTip": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\TaskCheckmarkGraphic3D.cs",
-              "RelativeToolTip": "Assets\\Scripts\\3D\\UI\\TaskCheckmarkGraphic3D.cs",
-              "ViewState": "AgIAAEIAAAAAAAAAAAAuwHUAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-28T04:11:50.88Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "SafeZoneMainMenuButtonsSetupEditor.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Editor\\SafeZoneMainMenuButtonsSetupEditor.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\SafeZoneMainMenuButtonsSetupEditor.cs",
@@ -201,7 +250,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "AchievementSystem3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\UI\\AchievementSystem3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\UI\\AchievementSystem3D.cs",
@@ -213,7 +262,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "ChaseManager3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\ChaseManager3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\ChaseManager3D.cs",
@@ -225,7 +274,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 14,
               "Title": "PlayerCollision3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Player\\PlayerCollision3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Player\\PlayerCollision3D.cs",
@@ -237,7 +286,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "Pickup3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Pickups\\Pickup3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Pickups\\Pickup3D.cs",
@@ -249,7 +298,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 15,
               "Title": "RescuedPerson3D.cs",
               "DocumentMoniker": "C:\\Users\\Dmitriy\\RunnerSafeZone\\Assets\\Scripts\\3D\\Rescued\\RescuedPerson3D.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\3D\\Rescued\\RescuedPerson3D.cs",

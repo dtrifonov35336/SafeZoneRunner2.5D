@@ -12,16 +12,16 @@ public class RunProgressUI3D : MonoBehaviour
 
     [Header("Layout")]
     [Min(180f)]
-    public float progressWidth = 320f;
+    public float progressWidth = 400f;
 
     [Min(30f)]
     public float progressHeight = 52f;
 
     [Min(0f)]
-    public float rightMargin = 30f;
+    public float rightMargin = 300f;
 
     [Min(0f)]
-    public float bottomMargin = 10f;
+    public float bottomMargin = 300f;
 
     [Header("Предпросмотр")]
     [Range(0f, 1f)]

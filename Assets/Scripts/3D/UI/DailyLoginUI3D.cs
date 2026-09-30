@@ -26,17 +26,18 @@ public class DailyLoginUI3D : MonoBehaviour
 
     private Canvas canvas;
     private GameObject window;
-    private Transform content;
-    private Sprite uiSprite;
+    private RectTransform contentRoot;
+    private ScrollRect scroll;
+
+    private TMP_Text streakText;
 
     public static bool IsRewardAvailable()
     {
         string today =
-            DateTime.Now.Date
-                .ToString(
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture
-                );
+            DateTime.Now.Date.ToString(
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture
+            );
 
         string last =
             PlayerPrefs.GetString(
@@ -49,30 +50,6 @@ public class DailyLoginUI3D : MonoBehaviour
 
     private void Awake()
     {
-        uiSprite =
-            RuntimeUISprite3D.GetSolidSprite();
-
-        RectTransform rect =
-            GetComponent<RectTransform>();
-
-        if (rect != null)
-        {
-            rect.anchorMin =
-                Vector2.zero;
-
-            rect.anchorMax =
-                Vector2.one;
-
-            rect.offsetMin =
-                Vector2.zero;
-
-            rect.offsetMax =
-                Vector2.zero;
-
-            rect.localScale =
-                Vector3.one;
-        }
-
         gameObject.SetActive(false);
     }
 
@@ -84,337 +61,400 @@ public class DailyLoginUI3D : MonoBehaviour
         Keyboard keyboard =
             Keyboard.current;
 
-        if (keyboard != null &&
-            keyboard.escapeKey.wasPressedThisFrame)
+        if (
+            keyboard != null &&
+            keyboard.escapeKey.wasPressedThisFrame
+        )
         {
             Close();
         }
     }
 
+    // =========================================================
+    // OPEN
+    // =========================================================
+
     public void Open()
     {
-        canvas =
-            GetComponentInParent<Canvas>(true);
-
-        if (canvas == null)
-            canvas =
-                FindFirstObjectByType<Canvas>();
+        FindCanvas();
 
         if (canvas == null)
         {
             Debug.LogError(
-                "[DailyLoginUI] Canvas не найден."
+                "[DailyLoginUI3D] Canvas не найден."
             );
 
             return;
         }
-
-        transform.SetParent(
-            canvas.transform,
-            false
-        );
-
-        Stretch(
-            GetComponent<RectTransform>()
-        );
 
         gameObject.SetActive(true);
 
         if (window == null)
             Build();
 
-        if (window != null)
-        {
-            window.SetActive(true);
-            window.transform.SetAsLastSibling();
-        }
-
-        transform.SetAsLastSibling();
+        window.SetActive(true);
+        window.transform.SetAsLastSibling();
 
         Refresh();
+
+        transform.SetAsLastSibling();
     }
 
     public void Close()
     {
+        if (window != null)
+            window.SetActive(false);
+
         gameObject.SetActive(false);
     }
+
+    private void FindCanvas()
+    {
+        if (canvas != null)
+            return;
+
+        canvas =
+            GetComponentInParent<Canvas>(true);
+
+        if (canvas == null)
+        {
+            canvas =
+                FindFirstObjectByType<Canvas>();
+        }
+    }
+
+    // =========================================================
+    // BUILD
+    // =========================================================
 
     private void Build()
     {
         window =
-            CreateImage(
+            new GameObject(
                 "DailyLoginWindow",
-                transform,
-                new Color(
-                    0.015f,
-                    0.025f,
-                    0.038f,
-                    0.94f
-                )
+                typeof(RectTransform),
+                typeof(Image)
             );
 
-        Stretch(
-            window.GetComponent<RectTransform>()
+        window.transform.SetParent(
+            canvas.transform,
+            false
         );
+
+        RectTransform windowRect =
+            window.GetComponent<
+                RectTransform
+            >();
+
+        Stretch(
+            windowRect
+        );
+
+        Image overlay =
+            window.GetComponent<
+                Image
+            >();
+
+        overlay.color =
+            new Color32(
+                5,
+                8,
+                12,
+                242
+            );
+
+        overlay.raycastTarget =
+            true;
+
+        // =====================================================
+        // PANEL
+        // =====================================================
 
         GameObject panel =
             CreateImage(
                 "Panel",
                 window.transform,
-                new Color(
-                    0.035f,
-                    0.065f,
-                    0.088f,
-                    0.99f
+                new Color32(
+                    18,
+                    27,
+                    35,
+                    255
                 )
             );
 
         SetAnchored(
-            panel.GetComponent<RectTransform>(),
-            new Vector2(0.055f, 0.065f),
-            new Vector2(0.945f, 0.935f)
+            panel.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.075f,
+                0.055f
+            ),
+            new Vector2(
+                0.925f,
+                0.945f
+            )
         );
 
-        Outline outline =
-            panel.AddComponent<Outline>();
+        AddOutline(
+            panel,
+            new Color32(
+                48,
+                86,
+                101,
+                220
+            )
+        );
 
-        outline.effectColor =
-            new Color(
-                0.19f,
-                0.40f,
-                0.52f,
-                0.95f
-            );
-
-        outline.effectDistance =
-            new Vector2(
-                2f,
-                -2f
-            );
+        // =====================================================
+        // TITLE
+        // =====================================================
 
         GameObject title =
             CreateText(
                 "Title",
                 panel.transform,
                 "ЕЖЕДНЕВНЫЙ ВХОД",
-                31f,
-                new Color(
-                    0.96f,
-                    0.94f,
-                    0.87f
+                29f,
+                new Color32(
+                    238,
+                    235,
+                    225,
+                    255
                 ),
                 TextAlignmentOptions.Center
             );
 
         SetAnchored(
-            title.GetComponent<RectTransform>(),
-            new Vector2(0.08f, 0.885f),
-            new Vector2(0.92f, 0.95f)
+            title.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.10f,
+                0.885f
+            ),
+            new Vector2(
+                0.90f,
+                0.95f
+            )
         );
+
+        // =====================================================
+        // CLOSE
+        // =====================================================
 
         GameObject close =
             CreateButton(
                 "Close",
                 panel.transform,
                 "X",
-                22f,
-                new Color(
-                    0.10f,
-                    0.15f,
-                    0.18f,
-                    1f
+                20f,
+                new Color32(
+                    34,
+                    47,
+                    55,
+                    255
                 ),
                 Color.white
             );
 
         SetAnchored(
-            close.GetComponent<RectTransform>(),
-            new Vector2(0.88f, 0.895f),
-            new Vector2(0.965f, 0.965f)
+            close.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.87f,
+                0.885f
+            ),
+            new Vector2(
+                0.965f,
+                0.96f
+            )
         );
 
         close.GetComponent<Button>()
-            .onClick.AddListener(Close);
+            .onClick.AddListener(
+                Close
+            );
+
+        // =====================================================
+        // STREAK
+        // =====================================================
 
         GameObject streak =
             CreateText(
                 "Streak",
                 panel.transform,
                 "",
-                17f,
-                new Color(
-                    0.98f,
-                    0.78f,
-                    0.25f
+                14f,
+                new Color32(
+                    180,
+                    186,
+                    182,
+                    255
                 ),
                 TextAlignmentOptions.Center
             );
 
         SetAnchored(
-            streak.GetComponent<RectTransform>(),
-            new Vector2(0.10f, 0.79f),
-            new Vector2(0.90f, 0.835f)
+            streak.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.08f,
+                0.82f
+            ),
+            new Vector2(
+                0.92f,
+                0.865f
+            )
         );
 
-        GameObject scroll =
+        streakText =
+            streak.GetComponent<
+                TMP_Text
+            >();
+
+        // =====================================================
+        // SCROLL
+        // =====================================================
+
+        GameObject scrollObject =
             CreateImage(
-                "Scroll",
+                "ScrollView",
                 panel.transform,
-                new Color(
-                    0.015f,
-                    0.027f,
-                    0.038f,
-                    0.62f
+                new Color32(
+                    8,
+                    15,
+                    20,
+                    235
                 )
             );
 
         SetAnchored(
-            scroll.GetComponent<RectTransform>(),
-            new Vector2(0.075f, 0.10f),
-            new Vector2(0.925f, 0.765f)
+            scrollObject.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.055f,
+                0.085f
+            ),
+            new Vector2(
+                0.945f,
+                0.79f
+            )
         );
 
-        ScrollRect scrollRect =
-            scroll.AddComponent<ScrollRect>();
+        scroll =
+            scrollObject.AddComponent<
+                ScrollRect
+            >();
 
-        scrollRect.horizontal =
+        scroll.horizontal =
             false;
 
-        scrollRect.vertical =
+        scroll.vertical =
             true;
 
-        scrollRect.movementType =
+        scroll.movementType =
             ScrollRect.MovementType.Clamped;
 
-        scrollRect.scrollSensitivity =
-            35f;
+        scroll.scrollSensitivity =
+            55f;
+
+        // =====================================================
+        // VIEWPORT
+        // =====================================================
 
         GameObject viewport =
             new GameObject(
                 "Viewport",
                 typeof(RectTransform),
-                typeof(Image),
-                typeof(Mask)
+                typeof(RectMask2D)
             );
 
         viewport.transform.SetParent(
-            scroll.transform,
+            scrollObject.transform,
             false
         );
 
         RectTransform viewportRect =
-            viewport.GetComponent<RectTransform>();
+            viewport.GetComponent<
+                RectTransform
+            >();
 
         Stretch(
             viewportRect
         );
 
-        viewport.GetComponent<Image>()
-            .color =
-            new Color(
-                0f,
-                0f,
-                0f,
-                0f
-            );
+        // =====================================================
+        // CONTENT
+        // =====================================================
 
-        viewport.GetComponent<Mask>()
-            .showMaskGraphic = false;
-
-        GameObject contentObject =
+        GameObject content =
             new GameObject(
                 "Content",
-                typeof(RectTransform),
-                typeof(GridLayoutGroup),
-                typeof(ContentSizeFitter)
+                typeof(RectTransform)
             );
 
-        contentObject.transform.SetParent(
+        content.transform.SetParent(
             viewport.transform,
             false
         );
 
-        content =
-            contentObject.transform;
+        contentRoot =
+            content.GetComponent<
+                RectTransform
+            >();
 
-        RectTransform contentRect =
-            contentObject.GetComponent<RectTransform>();
+        contentRoot.anchorMin =
+            new Vector2(
+                0f,
+                1f
+            );
 
-        contentRect.anchorMin =
-            new Vector2(0f, 1f);
+        contentRoot.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
 
-        contentRect.anchorMax =
-            new Vector2(1f, 1f);
+        contentRoot.pivot =
+            new Vector2(
+                0.5f,
+                1f
+            );
 
-        contentRect.pivot =
-            new Vector2(0.5f, 1f);
-
-        contentRect.anchoredPosition =
+        contentRoot.anchoredPosition =
             Vector2.zero;
 
-        contentRect.sizeDelta =
-            Vector2.zero;
-
-        GridLayoutGroup grid =
-            contentObject
-                .GetComponent<GridLayoutGroup>();
-
-        grid.constraint =
-            GridLayoutGroup.Constraint.FixedColumnCount;
-
-        grid.constraintCount =
-            2;
-
-        grid.cellSize =
-            new Vector2(
-                360f,
-                145f
-            );
-
-        grid.spacing =
-            new Vector2(
-                12f,
-                12f
-            );
-
-        grid.padding =
-            new RectOffset(
-                10,
-                10,
-                10,
-                10
-            );
-
-        grid.childAlignment =
-            TextAnchor.UpperCenter;
-
-        ContentSizeFitter fitter =
-            contentObject
-                .GetComponent<ContentSizeFitter>();
-
-        fitter.verticalFit =
-            ContentSizeFitter.FitMode.PreferredSize;
-
-        scrollRect.viewport =
+        scroll.viewport =
             viewportRect;
 
-        scrollRect.content =
-            contentRect;
+        scroll.content =
+            contentRoot;
     }
+
+    // =========================================================
+    // REFRESH
+    // =========================================================
 
     private void Refresh()
     {
-        if (content == null)
+        if (contentRoot == null)
             return;
 
         for (
-            int i = content.childCount - 1;
+            int i =
+                contentRoot.childCount - 1;
             i >= 0;
             i--
         )
         {
             Destroy(
-                content.GetChild(i).gameObject
+                contentRoot
+                    .GetChild(i)
+                    .gameObject
             );
         }
 
@@ -424,34 +464,78 @@ public class DailyLoginUI3D : MonoBehaviour
         bool available =
             IsRewardAvailable();
 
-        TMP_Text streak =
-            window.GetComponentInChildren<
-                TMP_Text>();
-
-        if (streak != null &&
-            streak.gameObject.name == "Streak")
+        if (streakText != null)
         {
-            streak.text =
+            streakText.text =
                 available
-                    ? $"ТЕКУЩАЯ СЕРИЯ: ДЕНЬ {currentDay + 1} ИЗ 7"
-                    : $"СЕРИЯ: ДЕНЬ {currentDay + 1} ИЗ 7 • НАГРАДА ПОЛУЧЕНА";
+                    ? "ТЕКУЩАЯ СЕРИЯ: ДЕНЬ " +
+                      (currentDay + 1) +
+                      " ИЗ 7"
+                    : "СЕРИЯ: ДЕНЬ " +
+                      (currentDay + 1) +
+                      " ИЗ 7  •  НАГРАДА ПОЛУЧЕНА";
         }
 
-        for (int i = 0; i < Rewards.Length; i++)
+        const float cardHeight =
+            138f;
+
+        const float rowGap =
+            12f;
+
+        int rows =
+            Mathf.CeilToInt(
+                Rewards.Length / 2f
+            );
+
+        float totalHeight =
+            rows *
+            (cardHeight + rowGap) +
+            8f;
+
+        contentRoot.sizeDelta =
+            new Vector2(
+                0f,
+                totalHeight
+            );
+
+        for (
+            int day = 0;
+            day < Rewards.Length;
+            day++
+        )
         {
             CreateDayCard(
-                i,
+                day,
                 currentDay,
-                available
+                available,
+                cardHeight,
+                rowGap
             );
         }
+
+        if (scroll != null)
+            scroll.verticalNormalizedPosition =
+                1f;
     }
+
+    // =========================================================
+    // CARD
+    // =========================================================
 
     private void CreateDayCard(
         int day,
         int currentDay,
-        bool available)
+        bool available,
+        float cardHeight,
+        float rowGap
+    )
     {
+        int column =
+            day % 2;
+
+        int row =
+            day / 2;
+
         bool isCurrent =
             day == currentDay;
 
@@ -462,105 +546,159 @@ public class DailyLoginUI3D : MonoBehaviour
         bool past =
             day < currentDay;
 
-        Color background;
-
-        if (claimedToday)
-        {
-            background =
-                new Color(
-                    0.07f,
-                    0.15f,
-                    0.11f,
-                    1f
-                );
-        }
-        else if (isCurrent)
-        {
-            background =
-                new Color(
-                    0.12f,
-                    0.19f,
-                    0.17f,
-                    1f
-                );
-        }
-        else if (past)
-        {
-            background =
-                new Color(
-                    0.06f,
-                    0.10f,
-                    0.095f,
-                    1f
-                );
-        }
-        else
-        {
-            background =
-                new Color(
-                    0.045f,
-                    0.065f,
-                    0.078f,
-                    0.72f
-                );
-        }
+        Color background =
+            claimedToday
+                ? new Color32(
+                    23,
+                    50,
+                    36,
+                    255
+                )
+                : isCurrent
+                    ? new Color32(
+                        37,
+                        54,
+                        48,
+                        255
+                    )
+                    : past
+                        ? new Color32(
+                            27,
+                            40,
+                            38,
+                            255
+                        )
+                        : new Color32(
+                            24,
+                            34,
+                            40,
+                            255
+                        );
 
         GameObject card =
             CreateImage(
-                "Day_" + (day + 1),
-                content,
+                "Day_" +
+                (day + 1),
+                contentRoot,
                 background
             );
 
-        Outline outline =
-            card.AddComponent<Outline>();
+        RectTransform cardRect =
+            card.GetComponent<
+                RectTransform
+            >();
 
-        outline.effectColor =
-            isCurrent
-                ? new Color(
-                    0.95f,
-                    0.72f,
-                    0.20f,
-                    0.95f
-                )
-                : new Color(
-                    0.12f,
-                    0.25f,
-                    0.29f,
-                    0.70f
-                );
+        float left =
+            column == 0
+                ? 0f
+                : 0.5f;
 
-        outline.effectDistance =
+        float right =
+            column == 0
+                ? 0.5f
+                : 1f;
+
+        cardRect.anchorMin =
             new Vector2(
-                1.5f,
-                -1.5f
+                left,
+                1f
             );
+
+        cardRect.anchorMax =
+            new Vector2(
+                right,
+                1f
+            );
+
+        cardRect.pivot =
+            new Vector2(
+                0.5f,
+                1f
+            );
+
+        cardRect.offsetMin =
+            Vector2.zero;
+
+        cardRect.offsetMax =
+            Vector2.zero;
+
+        cardRect.sizeDelta =
+            new Vector2(
+                -10f,
+                cardHeight
+            );
+
+        cardRect.anchoredPosition =
+            new Vector2(
+                column == 0
+                    ? 5f
+                    : -5f,
+                -8f -
+                row *
+                (cardHeight + rowGap)
+            );
+
+        AddOutline(
+            card,
+            isCurrent
+                ? new Color32(
+                    239,
+                    192,
+                    67,
+                    210
+                )
+                : new Color32(
+                    56,
+                    82,
+                    92,
+                    170
+                )
+        );
+
+        // -----------------------------------------------------
+        // DAY
+        // -----------------------------------------------------
 
         GameObject dayText =
             CreateText(
                 "Day",
                 card.transform,
-                "ДЕНЬ " + (day + 1),
-                18f,
+                "ДЕНЬ " +
+                (day + 1),
+                16f,
                 isCurrent
-                    ? new Color(
-                        1f,
-                        0.82f,
-                        0.28f
+                    ? new Color32(
+                        245,
+                        207,
+                        78,
+                        255
                     )
-                    : new Color(
-                        0.68f,
-                        0.72f,
-                        0.70f
+                    : new Color32(
+                        184,
+                        189,
+                        184,
+                        255
                     ),
                 TextAlignmentOptions.Center
             );
 
         SetAnchored(
-            dayText.GetComponent<RectTransform>(),
-            new Vector2(0.05f, 0.67f),
-            new Vector2(0.95f, 0.91f)
+            dayText.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.05f,
+                0.67f
+            ),
+            new Vector2(
+                0.95f,
+                0.90f
+            )
         );
+
+        // -----------------------------------------------------
+        // REWARD
+        // -----------------------------------------------------
 
         GameObject reward =
             CreateText(
@@ -569,26 +707,40 @@ public class DailyLoginUI3D : MonoBehaviour
                 "+" +
                 Rewards[day] +
                 " МОНЕТ",
-                21f,
+                19f,
                 isCurrent
-                    ? new Color(
-                        1f,
-                        0.80f,
-                        0.24f
+                    ? new Color32(
+                        246,
+                        200,
+                        67,
+                        255
                     )
-                    : new Color(
-                        0.78f,
-                        0.76f,
-                        0.62f
+                    : new Color32(
+                        210,
+                        201,
+                        165,
+                        255
                     ),
                 TextAlignmentOptions.Center
             );
 
         SetAnchored(
-            reward.GetComponent<RectTransform>(),
-            new Vector2(0.05f, 0.40f),
-            new Vector2(0.95f, 0.66f)
+            reward.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.05f,
+                0.40f
+            ),
+            new Vector2(
+                0.95f,
+                0.65f
+            )
         );
+
+        // -----------------------------------------------------
+        // STATUS
+        // -----------------------------------------------------
 
         string state;
         Color stateColor;
@@ -599,10 +751,11 @@ public class DailyLoginUI3D : MonoBehaviour
                 "ПОЛУЧЕНО";
 
             stateColor =
-                new Color(
-                    0.44f,
-                    0.72f,
-                    0.52f
+                new Color32(
+                    109,
+                    171,
+                    123,
+                    255
                 );
         }
         else if (past)
@@ -611,10 +764,11 @@ public class DailyLoginUI3D : MonoBehaviour
                 "ПОЛУЧЕНО";
 
             stateColor =
-                new Color(
-                    0.43f,
-                    0.58f,
-                    0.49f
+                new Color32(
+                    110,
+                    146,
+                    120,
+                    255
                 );
         }
         else if (isCurrent)
@@ -623,10 +777,11 @@ public class DailyLoginUI3D : MonoBehaviour
                 "ПОЛУЧИТЬ";
 
             stateColor =
-                new Color(
-                    1f,
-                    0.84f,
-                    0.32f
+                new Color32(
+                    245,
+                    204,
+                    73,
+                    255
                 );
         }
         else
@@ -635,10 +790,11 @@ public class DailyLoginUI3D : MonoBehaviour
                 "СКОРО";
 
             stateColor =
-                new Color(
-                    0.43f,
-                    0.49f,
-                    0.49f
+                new Color32(
+                    118,
+                    126,
+                    126,
+                    255
                 );
         }
 
@@ -647,30 +803,43 @@ public class DailyLoginUI3D : MonoBehaviour
                 "StateButton",
                 card.transform,
                 state,
-                13f,
-                new Color(
-                    0.07f,
-                    0.12f,
-                    0.14f,
-                    1f
+                12f,
+                new Color32(
+                    31,
+                    46,
+                    53,
+                    255
                 ),
                 stateColor
             );
 
         SetAnchored(
-            stateButton.GetComponent<RectTransform>(),
-            new Vector2(0.12f, 0.08f),
-            new Vector2(0.88f, 0.34f)
+            stateButton.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.12f,
+                0.08f
+            ),
+            new Vector2(
+                0.88f,
+                0.32f
+            )
         );
 
         Button button =
-            stateButton.GetComponent<Button>();
+            stateButton.GetComponent<
+                Button
+            >();
 
         button.interactable =
             isCurrent &&
             available;
 
-        if (isCurrent && available)
+        if (
+            isCurrent &&
+            available
+        )
         {
             button.onClick.AddListener(
                 TryClaim
@@ -678,14 +847,21 @@ public class DailyLoginUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // CLAIM
+    // =========================================================
+
     private void TryClaim()
     {
         int reward;
         int day;
 
-        if (!TryClaimReward(
+        if (
+            !TryClaimReward(
                 out reward,
-                out day))
+                out day
+            )
+        )
         {
             Refresh();
             return;
@@ -693,21 +869,27 @@ public class DailyLoginUI3D : MonoBehaviour
 
         UpdateMainMenuCoins();
 
-        if (ToastNotification.Instance != null)
+        if (
+            ToastNotification.Instance != null
+        )
         {
             ToastNotification.Instance.Show(
-                $"Ежедневная награда: +{reward} монет",
+                "Ежедневная награда: +" +
+                reward +
+                " монет",
                 3f
             );
         }
 
         RefreshMenuBadge();
+
         Refresh();
     }
 
     private static bool TryClaimReward(
         out int reward,
-        out int day)
+        out int day
+    )
     {
         reward =
             0;
@@ -727,7 +909,8 @@ public class DailyLoginUI3D : MonoBehaviour
                 0
             );
 
-        total += reward;
+        total +=
+            reward;
 
         PlayerPrefs.SetInt(
             "TotalCoins",
@@ -766,17 +949,26 @@ public class DailyLoginUI3D : MonoBehaviour
                 0
             );
 
-        if (string.IsNullOrEmpty(lastDate))
+        if (
+            string.IsNullOrEmpty(
+                lastDate
+            )
+        )
+        {
             return 0;
+        }
 
         DateTime parsed;
 
-        if (!DateTime.TryParseExact(
+        if (
+            !DateTime.TryParseExact(
                 lastDate,
                 "yyyy-MM-dd",
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
-                out parsed))
+                out parsed
+            )
+        )
         {
             return 0;
         }
@@ -785,29 +977,47 @@ public class DailyLoginUI3D : MonoBehaviour
             DateTime.Now.Date;
 
         int diff =
-            (today - parsed.Date).Days;
+            (
+                today -
+                parsed.Date
+            ).Days;
 
         if (diff <= 0)
+        {
             return Mathf.Clamp(
                 storedDay,
                 0,
                 6
             );
+        }
 
         if (diff == 1)
-            return (storedDay + 1) % 7;
+        {
+            return (
+                storedDay + 1
+            ) % 7;
+        }
 
         return 0;
     }
 
     private void UpdateMainMenuCoins()
     {
-        if (MainMenuManager.Instance == null)
-            return;
-
-        if (MainMenuManager.Instance.coinsText != null)
+        if (
+            MainMenuManager.Instance == null
+        )
         {
-            MainMenuManager.Instance.coinsText.text =
+            return;
+        }
+
+        if (
+            MainMenuManager.Instance.coinsText !=
+            null
+        )
+        {
+            MainMenuManager.Instance
+                .coinsText
+                .text =
                 PlayerPrefs.GetInt(
                     "TotalCoins",
                     0
@@ -818,58 +1028,31 @@ public class DailyLoginUI3D : MonoBehaviour
     private void RefreshMenuBadge()
     {
         MainMenuUtilityButton3D[] buttons =
-            FindObjectsByType<MainMenuUtilityButton3D>(
+            FindObjectsByType<
+                MainMenuUtilityButton3D
+            >(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None
             );
 
         foreach (
             MainMenuUtilityButton3D button
-            in buttons)
+            in buttons
+        )
         {
             button.RefreshBadge();
         }
     }
 
-    private GameObject CreateButton(
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private static GameObject CreateImage(
         string name,
         Transform parent,
-        string label,
-        float fontSize,
-        Color background,
-        Color textColor)
-    {
-        GameObject go =
-            CreateImage(
-                name,
-                parent,
-                background
-            );
-
-        Button button =
-            go.AddComponent<Button>();
-
-        GameObject text =
-            CreateText(
-                "Label",
-                go.transform,
-                label,
-                fontSize,
-                textColor,
-                TextAlignmentOptions.Center
-            );
-
-        Stretch(
-            text.GetComponent<RectTransform>()
-        );
-
-        return go;
-    }
-
-    private GameObject CreateImage(
-    string name,
-    Transform parent,
-    Color color)
+        Color color
+    )
     {
         GameObject go =
             new GameObject(
@@ -887,7 +1070,8 @@ public class DailyLoginUI3D : MonoBehaviour
             go.GetComponent<Image>();
 
         image.sprite =
-            RuntimeUISprite3D.GetSolidSprite();
+            RuntimeUISprite3D
+                .GetSolidSprite();
 
         image.type =
             Image.Type.Simple;
@@ -898,19 +1082,22 @@ public class DailyLoginUI3D : MonoBehaviour
         return go;
     }
 
-    private GameObject CreateText(
+    private static GameObject CreateText(
         string name,
         Transform parent,
         string value,
         float size,
         Color color,
-        TextAlignmentOptions alignment)
+        TextAlignmentOptions alignment
+    )
     {
         GameObject go =
             new GameObject(
                 name,
                 typeof(RectTransform),
-                typeof(TextMeshProUGUI)
+                typeof(
+                    TextMeshProUGUI
+                )
             );
 
         go.transform.SetParent(
@@ -919,7 +1106,9 @@ public class DailyLoginUI3D : MonoBehaviour
         );
 
         TextMeshProUGUI text =
-    go.GetComponent<TextMeshProUGUI>();
+            go.GetComponent<
+                TextMeshProUGUI
+            >();
 
         text.text =
             value;
@@ -936,16 +1125,107 @@ public class DailyLoginUI3D : MonoBehaviour
         text.raycastTarget =
             false;
 
-        RuntimeUIText3D.Apply(text);
-
         text.textWrappingMode =
             TextWrappingModes.Normal;
+
+        RuntimeUIText3D.Apply(
+            text
+        );
 
         return go;
     }
 
-    private void Stretch(
-        RectTransform rect)
+    private static GameObject CreateButton(
+        string name,
+        Transform parent,
+        string label,
+        float size,
+        Color background,
+        Color textColor
+    )
+    {
+        GameObject go =
+            CreateImage(
+                name,
+                parent,
+                background
+            );
+
+        Button button =
+            go.AddComponent<
+                Button
+            >();
+
+        ColorBlock colors =
+            button.colors;
+
+        colors.normalColor =
+            Color.white;
+
+        colors.highlightedColor =
+            Color.white;
+
+        colors.pressedColor =
+            new Color32(
+                205,
+                205,
+                205,
+                255
+            );
+
+        colors.disabledColor =
+            new Color32(
+                120,
+                120,
+                120,
+                110
+            );
+
+        button.colors =
+            colors;
+
+        GameObject text =
+            CreateText(
+                "Label",
+                go.transform,
+                label,
+                size,
+                textColor,
+                TextAlignmentOptions.Center
+            );
+
+        Stretch(
+            text.GetComponent<
+                RectTransform
+            >()
+        );
+
+        return go;
+    }
+
+    private static void AddOutline(
+        GameObject go,
+        Color color
+    )
+    {
+        Outline outline =
+            go.AddComponent<
+                Outline
+            >();
+
+        outline.effectColor =
+            color;
+
+        outline.effectDistance =
+            new Vector2(
+                1.5f,
+                -1.5f
+            );
+    }
+
+    private static void Stretch(
+        RectTransform rect
+    )
     {
         rect.anchorMin =
             Vector2.zero;
@@ -960,10 +1240,11 @@ public class DailyLoginUI3D : MonoBehaviour
             Vector2.zero;
     }
 
-    private void SetAnchored(
+    private static void SetAnchored(
         RectTransform rect,
         Vector2 min,
-        Vector2 max)
+        Vector2 max
+    )
     {
         rect.anchorMin =
             min;
