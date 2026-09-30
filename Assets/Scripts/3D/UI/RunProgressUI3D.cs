@@ -10,15 +10,28 @@ public class RunProgressUI3D : MonoBehaviour
     public GameObject root;
     public Image fill;
 
+    [Header("Layout")]
+    [Min(180f)]
+    public float progressWidth = 320f;
+
+    [Min(30f)]
+    public float progressHeight = 52f;
+
+    [Min(0f)]
+    public float rightMargin = 30f;
+
+    [Min(0f)]
+    public float bottomMargin = 10f;
+
     [Header("Предпросмотр")]
     [Range(0f, 1f)]
     public float previewProgress = 0.5f;
 
     [Header("Флаг")]
-    public float flagSize = 48f;
+    public float flagSize = 40f;
 
     [Header("Отступ")]
-    public float fillInset = 4f;
+    public float fillInset = 5f;
 
     [Header("Цвет фона")]
     public Color progressBackgroundColor =
@@ -38,6 +51,7 @@ public class RunProgressUI3D : MonoBehaviour
             255
         );
 
+    private RectTransform rootRect;
     private RectTransform backgroundRect;
     private RectTransform trackRect;
     private RectTransform fillRect;
@@ -85,125 +99,167 @@ public class RunProgressUI3D : MonoBehaviour
             root = gameObject;
         }
 
+        rootRect =
+            root.GetComponent<RectTransform>();
+
         Transform background =
             root.transform.Find(
                 "Background"
             );
 
-        if (background != null)
+        if (background == null)
+            return;
+
+        backgroundRect =
+            background.GetComponent<
+                RectTransform
+            >();
+
+        backgroundImage =
+            background.GetComponent<
+                Image
+            >();
+
+        if (backgroundRect == null)
+            return;
+
+        Transform track =
+            backgroundRect.Find(
+                "ProgressBackground"
+            );
+
+        if (track != null)
         {
-            backgroundRect =
-                background.GetComponent<
+            trackRect =
+                track.GetComponent<
                     RectTransform
                 >();
 
-            backgroundImage =
-                background.GetComponent<
+            trackImage =
+                track.GetComponent<
                     Image
                 >();
-        }
 
-        if (backgroundRect != null)
-        {
-            Transform track =
-                backgroundRect.Find(
-                    "ProgressBackground"
+            Transform trackFill =
+                track.Find(
+                    "Fill"
                 );
 
-            if (track != null)
+            if (trackFill != null)
             {
-                trackRect =
-                    track.GetComponent<
+                fillRect =
+                    trackFill.GetComponent<
                         RectTransform
                     >();
 
-                trackImage =
-                    track.GetComponent<
+                Image foundFill =
+                    trackFill.GetComponent<
                         Image
                     >();
 
-                Transform trackFill =
-                    track.Find(
-                        "Fill"
-                    );
-
-                if (trackFill != null)
+                if (foundFill != null)
                 {
-                    fillRect =
-                        trackFill.GetComponent<
-                            RectTransform
-                        >();
-
-                    Image foundFill =
-                        trackFill.GetComponent<
-                            Image
-                        >();
-
-                    if (foundFill != null)
-                    {
-                        fill =
-                            foundFill;
-                    }
+                    fill =
+                        foundFill;
                 }
             }
+        }
 
-            // Флаг находится внутри Background.
-            Transform flag =
-                backgroundRect.Find(
-                    "Flag"
-                );
+        Transform flag =
+            backgroundRect.Find(
+                "Flag"
+            );
 
-            if (flag != null)
-            {
-                flagRect =
-                    flag.GetComponent<
-                        RectTransform
-                    >();
+        if (flag != null)
+        {
+            flagRect =
+                flag.GetComponent<
+                    RectTransform
+                >();
 
-                flagImage =
-                    flag.GetComponent<
-                        Image
-                    >();
-            }
+            flagImage =
+                flag.GetComponent<
+                    Image
+                >();
         }
     }
 
     private void SetupLayout()
     {
-        if (backgroundRect == null)
-        {
+        if (rootRect == null)
             return;
-        }
 
-        backgroundRect.anchorMin =
-            new Vector2(
-                0f,
-                1f
-            );
+        // =====================================================
+        // ROOT — НИЗ СПРАВА
+        // =====================================================
 
-        backgroundRect.anchorMax =
+        rootRect.anchorMin =
             new Vector2(
                 1f,
-                1f
+                0f
             );
 
-        backgroundRect.pivot =
+        rootRect.anchorMax =
             new Vector2(
-                0.5f,
-                1f
+                1f,
+                0f
             );
 
-        backgroundRect.anchoredPosition =
+        rootRect.pivot =
             new Vector2(
-                0f,
-                -2f
+                1f,
+                0f
             );
 
-        backgroundRect.sizeDelta =
+        rootRect.anchoredPosition =
             new Vector2(
-                -24f,
-                34f
+                -rightMargin,
+                bottomMargin
             );
+
+        rootRect.sizeDelta =
+            new Vector2(
+                progressWidth,
+                progressHeight
+            );
+
+        rootRect.localScale =
+            Vector3.one;
+
+        // =====================================================
+        // BACKGROUND
+        // =====================================================
+
+        if (backgroundRect != null)
+        {
+            backgroundRect.anchorMin =
+                Vector2.zero;
+
+            backgroundRect.anchorMax =
+                Vector2.one;
+
+            backgroundRect.pivot =
+                new Vector2(
+                    0.5f,
+                    0.5f
+                );
+
+            backgroundRect.offsetMin =
+                Vector2.zero;
+
+            backgroundRect.offsetMax =
+                Vector2.zero;
+
+            backgroundRect.anchoredPosition =
+                Vector2.zero;
+
+            backgroundRect.localScale =
+                Vector3.one;
+        }
+
+        // =====================================================
+        // TRACK
+        // =====================================================
 
         if (trackRect != null)
         {
@@ -225,8 +281,18 @@ public class RunProgressUI3D : MonoBehaviour
                     -fillInset
                 );
 
+            trackRect.anchoredPosition =
+                Vector2.zero;
+
+            trackRect.localScale =
+                Vector3.one;
+
             trackRect.SetAsFirstSibling();
         }
+
+        // =====================================================
+        // FILL
+        // =====================================================
 
         if (fillRect != null &&
             trackRect != null)
@@ -265,6 +331,10 @@ public class RunProgressUI3D : MonoBehaviour
 
             fillRect.SetAsLastSibling();
         }
+
+        // =====================================================
+        // FLAG
+        // =====================================================
 
         if (flagRect != null)
         {
@@ -305,6 +375,8 @@ public class RunProgressUI3D : MonoBehaviour
 
             flagRect.SetAsLastSibling();
         }
+
+        root.transform.SetAsLastSibling();
     }
 
     private void ApplyStyle()
@@ -325,6 +397,20 @@ public class RunProgressUI3D : MonoBehaviour
             }
 
             trackImage.raycastTarget =
+                false;
+        }
+
+        if (backgroundImage != null)
+        {
+            backgroundImage.color =
+                new Color32(
+                    23,
+                    27,
+                    28,
+                    235
+                );
+
+            backgroundImage.raycastTarget =
                 false;
         }
 
@@ -375,9 +461,7 @@ public class RunProgressUI3D : MonoBehaviour
             }
 
             if (!visible)
-            {
                 return;
-            }
 
             progress =
                 Mathf.Clamp01(
@@ -415,9 +499,7 @@ public class RunProgressUI3D : MonoBehaviour
             trackRect.rect.width;
 
         if (width <= 0.01f)
-        {
             return;
-        }
 
         fillRect.sizeDelta =
             new Vector2(
@@ -440,9 +522,7 @@ public class RunProgressUI3D : MonoBehaviour
             backgroundRect.rect.width;
 
         if (backgroundWidth <= 0.01f)
-        {
             return;
-        }
 
         float trackLeft =
             fillInset;

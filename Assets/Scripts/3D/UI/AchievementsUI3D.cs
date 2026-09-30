@@ -939,13 +939,15 @@ public class AchievementsUI3D : MonoBehaviour
             false);
 
         TextMeshProUGUI text =
-            go.GetComponent<TextMeshProUGUI>();
+    go.GetComponent<TextMeshProUGUI>();
 
         text.text = value;
         text.fontSize = fontSize;
         text.color = color;
         text.alignment = alignment;
         text.raycastTarget = false;
+
+        RuntimeUIText3D.Apply(text);
 
         text.overflowMode =
             TextOverflowModes.Ellipsis;

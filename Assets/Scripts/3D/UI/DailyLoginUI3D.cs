@@ -68,7 +68,12 @@ public class DailyLoginUI3D : MonoBehaviour
 
             rect.offsetMax =
                 Vector2.zero;
+
+            rect.localScale =
+                Vector3.one;
         }
+
+        gameObject.SetActive(false);
     }
 
     private void Update()
@@ -117,6 +122,14 @@ public class DailyLoginUI3D : MonoBehaviour
 
         if (window == null)
             Build();
+
+        if (window != null)
+        {
+            window.SetActive(true);
+            window.transform.SetAsLastSibling();
+        }
+
+        transform.SetAsLastSibling();
 
         Refresh();
     }
@@ -906,7 +919,7 @@ public class DailyLoginUI3D : MonoBehaviour
         );
 
         TextMeshProUGUI text =
-            go.GetComponent<TextMeshProUGUI>();
+    go.GetComponent<TextMeshProUGUI>();
 
         text.text =
             value;
@@ -922,6 +935,8 @@ public class DailyLoginUI3D : MonoBehaviour
 
         text.raycastTarget =
             false;
+
+        RuntimeUIText3D.Apply(text);
 
         text.textWrappingMode =
             TextWrappingModes.Normal;

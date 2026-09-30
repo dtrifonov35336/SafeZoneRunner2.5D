@@ -819,7 +819,7 @@ public class GameSettingsUI3D : MonoBehaviour
         );
 
         TextMeshProUGUI text =
-            go.GetComponent<TextMeshProUGUI>();
+    go.GetComponent<TextMeshProUGUI>();
 
         text.text =
             value;
@@ -835,6 +835,8 @@ public class GameSettingsUI3D : MonoBehaviour
 
         text.raycastTarget =
             false;
+
+        RuntimeUIText3D.Apply(text);
 
         text.textWrappingMode =
             TextWrappingModes.Normal;
