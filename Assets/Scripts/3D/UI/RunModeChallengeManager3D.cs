@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class RunModeChallengeManager3D : MonoBehaviour
 {
@@ -11,8 +12,16 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
     [Header("UI")]
     public TextMeshProUGUI taskText;
-
     public TaskCheckmarkUI3D taskCheckmarks;
+
+    [Header("Размер строк")]
+    public float rowHeight = 34f;
+
+    [Header("Отступ между строками")]
+    public float rowSpacing = 2f;
+
+    [Header("Отступ галочки")]
+    public float checkmarkRightInset = 8f;
 
     private RunManager runManager;
 
@@ -27,6 +36,14 @@ public class RunModeChallengeManager3D : MonoBehaviour
     private bool finished;
     private bool mainGoalCompleted;
 
+    private RectTransform taskContainer;
+
+    private readonly RectTransform[] taskRows =
+        new RectTransform[4];
+
+    private readonly TextMeshProUGUI[] rowTexts =
+        new TextMeshProUGUI[4];
+
     private void Awake()
     {
         if (
@@ -38,16 +55,13 @@ public class RunModeChallengeManager3D : MonoBehaviour
             return;
         }
 
-        Instance =
-            this;
+        Instance = this;
     }
 
     private void Start()
     {
         runManager =
-            FindFirstObjectByType<
-                RunManager
-            >();
+            FindFirstObjectByType<RunManager>();
 
         infiniteRun =
             runManager != null &&
@@ -55,7 +69,7 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
         ResolveCheckmarkController();
 
-        PrepareTaskText();
+        BuildTaskRows();
 
         RefreshTaskUI();
     }
@@ -74,20 +88,16 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
         if (refreshTimer <= 0f)
         {
-            refreshTimer =
-                0.2f;
-
+            refreshTimer = 0.2f;
             RefreshTaskUI();
         }
     }
 
     // =========================================================
-    // СОБЫТИЯ
+    // EVENTS
     // =========================================================
 
-    public void OnCoinCollected(
-        int amount
-    )
+    public void OnCoinCollected(int amount)
     {
         if (
             finished ||
@@ -97,8 +107,7 @@ public class RunModeChallengeManager3D : MonoBehaviour
             return;
         }
 
-        collectedCoins +=
-            amount;
+        collectedCoins += amount;
 
         CheckAdditionalAchievements();
 
@@ -159,9 +168,7 @@ public class RunModeChallengeManager3D : MonoBehaviour
         RefreshTaskUI();
     }
 
-    public void OnRunFinished(
-        bool victory
-    )
+    public void OnRunFinished(bool victory)
     {
         if (finished)
             return;
@@ -189,42 +196,37 @@ public class RunModeChallengeManager3D : MonoBehaviour
                 );
             }
 
-            if (rescued >= 3 &&
+            if (
+                rescued >= 3 &&
                 collectedCoins >= 50 &&
-                hits <= 1)
+                hits <= 1
+            )
             {
                 AchievementSystem3D.Unlock(
                     "shelter_task_master"
                 );
             }
 
-            mainGoalCompleted =
-                true;
+            mainGoalCompleted = true;
         }
         else
         {
-            mainGoalCompleted =
-                false;
+            mainGoalCompleted = false;
         }
 
-        finished =
-            true;
+        finished = true;
 
         RefreshTaskUI();
     }
 
     // =========================================================
-    // ДОПОЛНИТЕЛЬНЫЕ ДОСТИЖЕНИЯ
+    // ACHIEVEMENTS
     // =========================================================
 
     private void CheckAdditionalAchievements()
     {
         if (runManager == null)
             return;
-
-        // -----------------------------------------------------
-        // ДО УБЕЖИЩА
-        // -----------------------------------------------------
 
         if (!infiniteRun)
         {
@@ -268,15 +270,10 @@ public class RunModeChallengeManager3D : MonoBehaviour
             return;
         }
 
-        // -----------------------------------------------------
-        // БЕСКОНЕЧНЫЙ
-        // -----------------------------------------------------
-
         int distance =
             HUDManager.Instance != null
                 ? Mathf.RoundToInt(
-                    HUDManager.Instance
-                        .GetDistance()
+                    HUDManager.Instance.GetDistance()
                 )
                 : 0;
 
@@ -325,10 +322,6 @@ public class RunModeChallengeManager3D : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // СТАРЫЕ ДИСТАНЦИИ
-    // =========================================================
-
     private void UpdateDistanceAchievements()
     {
         if (
@@ -341,8 +334,7 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
         int distance =
             Mathf.RoundToInt(
-                HUDManager.Instance
-                    .GetDistance()
+                HUDManager.Instance.GetDistance()
             );
 
         if (distance >= 1000)
@@ -375,7 +367,176 @@ public class RunModeChallengeManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // UI
+    // BUILD TASK ROWS
+    // =========================================================
+
+    private void BuildTaskRows()
+    {
+        if (taskText == null)
+            return;
+
+        RectTransform original =
+            taskText.rectTransform;
+
+        if (original == null)
+            return;
+
+        taskContainer =
+            original.parent as RectTransform;
+
+        if (taskContainer == null)
+            return;
+
+        taskText.gameObject.SetActive(false);
+
+        for (int i = 0; i < 4; i++)
+        {
+            Transform existing =
+                taskContainer.Find(
+                    "TaskRow_" + i
+                );
+
+            GameObject rowObject;
+
+            if (existing != null)
+            {
+                rowObject =
+                    existing.gameObject;
+            }
+            else
+            {
+                rowObject =
+                    new GameObject(
+                        "TaskRow_" + i,
+                        typeof(RectTransform)
+                    );
+
+                rowObject.transform.SetParent(
+                    taskContainer,
+                    false
+                );
+            }
+
+            RectTransform row =
+                rowObject.GetComponent<RectTransform>();
+
+            taskRows[i] = row;
+
+            row.anchorMin =
+                new Vector2(
+                    0f,
+                    1f
+                );
+
+            row.anchorMax =
+                new Vector2(
+                    1f,
+                    1f
+                );
+
+            row.pivot =
+                new Vector2(
+                    0.5f,
+                    1f
+                );
+
+            row.sizeDelta =
+                new Vector2(
+                    0f,
+                    rowHeight
+                );
+
+            row.anchoredPosition =
+                new Vector2(
+                    0f,
+                    -(rowHeight + rowSpacing) * i
+                );
+
+            TextMeshProUGUI text =
+                row.GetComponentInChildren<
+                    TextMeshProUGUI
+                >(true);
+
+            if (text == null)
+            {
+                GameObject textObject =
+                    new GameObject(
+                        "TaskText",
+                        typeof(RectTransform),
+                        typeof(TextMeshProUGUI)
+                    );
+
+                textObject.transform.SetParent(
+                    row,
+                    false
+                );
+
+                text =
+                    textObject.GetComponent<
+                        TextMeshProUGUI
+                    >();
+            }
+
+            rowTexts[i] = text;
+
+            RectTransform textRect =
+                text.rectTransform;
+
+            textRect.anchorMin =
+                new Vector2(
+                    0f,
+                    0.5f
+                );
+
+            textRect.anchorMax =
+                new Vector2(
+                    1f,
+                    0.5f
+                );
+
+            textRect.pivot =
+                new Vector2(
+                    0f,
+                    0.5f
+                );
+
+            textRect.offsetMin =
+                new Vector2(
+                    0f,
+                    -rowHeight * 0.5f
+                );
+
+            textRect.offsetMax =
+                new Vector2(
+                    0f,
+                    rowHeight * 0.5f
+                );
+
+            text.alignment =
+                TextAlignmentOptions.Left |
+                TextAlignmentOptions.Midline;
+
+            text.textWrappingMode =
+                TMPro.TextWrappingModes.NoWrap;
+
+            text.raycastTarget = false;
+
+            if (taskCheckmarks != null)
+            {
+                taskCheckmarks.SetTaskRow(
+                    i,
+                    row
+                );
+            }
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(
+            taskContainer
+        );
+    }
+
+    // =========================================================
+    // CHECKMARK
     // =========================================================
 
     private void ResolveCheckmarkController()
@@ -393,36 +554,22 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
         if (taskCheckmarks == null)
         {
-            Debug.LogWarning(
-                "[RunModeChallengeManager3D] " +
-                "TaskCheckmarkUI3D не найден."
-            );
+            taskCheckmarks =
+                GetComponentInChildren<
+                    TaskCheckmarkUI3D
+                >(true);
         }
     }
 
-    private void PrepareTaskText()
-    {
-        if (taskText == null)
-            return;
-
-        RectTransform rect =
-            taskText.rectTransform;
-
-        if (rect == null)
-            return;
-
-        rect.sizeDelta =
-            new Vector2(
-                320f,
-                rect.sizeDelta.y
-            );
-    }
+    // =========================================================
+    // UI
+    // =========================================================
 
     private void RefreshTaskUI()
     {
         if (
-            taskText == null ||
-            HUDManager.Instance == null
+            HUDManager.Instance == null ||
+            taskRows[0] == null
         )
         {
             return;
@@ -430,216 +577,164 @@ public class RunModeChallengeManager3D : MonoBehaviour
 
         ResolveCheckmarkController();
 
-        string mainGoal =
-            infiniteRun
-                ? "Продержись как можно дольше"
-                : "Доберись до убежища";
-
-        bool objective1;
-        bool objective2;
-        bool objective3;
-
         if (infiniteRun)
         {
-            int distance =
-                Mathf.RoundToInt(
-                    HUDManager.Instance
-                        .GetDistance()
-                );
-
-            int shownDistance =
-                Mathf.Min(
-                    distance,
-                    500
-                );
-
-            int shownCoins =
-                Mathf.Min(
-                    collectedCoins,
-                    100
-                );
-
-            int shownRescued =
-                Mathf.Min(
-                    rescued,
-                    5
-                );
-
-            objective1 =
-                distance >= 500;
-
-            objective2 =
-                collectedCoins >= 100;
-
-            objective3 =
-                rescued >= 5;
-
-            taskText.text =
-                FormatMainGoal(
-                    mainGoal
-                ) +
-                "\n" +
-                FormatObjective(
-                    "Дистанция",
-                    $"{shownDistance} / 500 м",
-                    objective1
-                ) +
-                "\n" +
-                FormatObjective(
-                    "Собрать монеты",
-                    $"{shownCoins} / 100",
-                    objective2
-                ) +
-                "\n" +
-                FormatObjective(
-                    "Спасти людей",
-                    $"{shownRescued} / 5",
-                    objective3
-                );
+            RefreshInfiniteTasks();
         }
         else
         {
-            int shownRescued =
-                Mathf.Min(
-                    rescued,
-                    3
-                );
-
-            int shownCoins =
-                Mathf.Min(
-                    collectedCoins,
-                    50
-                );
-
-            int shownHits =
-                Mathf.Min(
-                    hits,
-                    1
-                );
-
-            objective1 =
-                rescued >= 3;
-
-            objective2 =
-                collectedCoins >= 50;
-
-            objective3 =
-                mainGoalCompleted &&
-                hits <= 1;
-
-            taskText.text =
-                FormatMainGoal(
-                    mainGoal
-                ) +
-                "\n" +
-                FormatObjective(
-                    "Спасти людей",
-                    $"{shownRescued} / 3",
-                    objective1
-                ) +
-                "\n" +
-                FormatObjective(
-                    "Собрать монеты",
-                    $"{shownCoins} / 50",
-                    objective2
-                ) +
-                "\n" +
-                FormatHitsObjective(
-                    shownHits,
-                    objective3,
-                    hits > 1
-                );
+            RefreshShelterTasks();
         }
+    }
 
-        // =====================================================
-        // ГАЛОЧКИ
-        // =====================================================
+    private void RefreshInfiniteTasks()
+    {
+        int distance =
+            Mathf.RoundToInt(
+                HUDManager.Instance.GetDistance()
+            );
 
-        SetCheckmark(
+        int shownDistance =
+            Mathf.Min(
+                distance,
+                500
+            );
+
+        int shownCoins =
+            Mathf.Min(
+                collectedCoins,
+                100
+            );
+
+        int shownRescued =
+            Mathf.Min(
+                rescued,
+                5
+            );
+
+        bool objective0 =
+            distance >= 500;
+
+        bool objective1 =
+            collectedCoins >= 100;
+
+        bool objective2 =
+            rescued >= 5;
+
+        SetRow(
             0,
-            !infiniteRun &&
-            mainGoalCompleted
+            "Продержись как можно дольше",
+            false
         );
 
-        SetCheckmark(
+        SetRow(
             1,
+            $"Дистанция: {shownDistance} / 500 м",
+            objective0
+        );
+
+        SetRow(
+            2,
+            $"Собрать монеты: {shownCoins} / 100",
             objective1
         );
 
-        SetCheckmark(
+        SetRow(
+            3,
+            $"Спасти людей: {shownRescued} / 5",
+            objective2
+        );
+    }
+
+    private void RefreshShelterTasks()
+    {
+        int shownRescued =
+            Mathf.Min(
+                rescued,
+                3
+            );
+
+        int shownCoins =
+            Mathf.Min(
+                collectedCoins,
+                50
+            );
+
+        int shownHits =
+            Mathf.Min(
+                hits,
+                1
+            );
+
+        bool objective0 =
+            mainGoalCompleted;
+
+        bool objective1 =
+            rescued >= 3;
+
+        bool objective2 =
+            collectedCoins >= 50;
+
+        bool objective3 =
+            mainGoalCompleted &&
+            hits <= 1;
+
+        SetRow(
+            0,
+            "Доберись до убежища",
+            objective0
+        );
+
+        SetRow(
+            1,
+            $"Спасти людей: {shownRescued} / 3",
+            objective1
+        );
+
+        SetRow(
             2,
+            $"Собрать монеты: {shownCoins} / 50",
             objective2
         );
 
-        SetCheckmark(
+        SetRow(
             3,
+            $"Удары: {shownHits} / 1",
             objective3
         );
     }
 
-    private string FormatHitsObjective(
-        int shownHits,
-        bool completed,
-        bool failed
-    )
-    {
-        string color;
-
-        if (completed)
-        {
-            color =
-                "#98B88E";
-        }
-        else if (failed)
-        {
-            color =
-                "#B96E6E";
-        }
-        else
-        {
-            color =
-                "#A9ADA9";
-        }
-
-        return
-            $"<size=19><color={color}>Удары: {shownHits} / 1</color></size>";
-    }
-
-    private void SetCheckmark(
+    private void SetRow(
         int index,
+        string text,
         bool completed
     )
     {
-        if (taskCheckmarks == null)
+        if (
+            index < 0 ||
+            index >= 4
+        )
+        {
             return;
+        }
 
-        taskCheckmarks.SetChecked(
-            index,
-            completed
-        );
-    }
+        if (rowTexts[index] != null)
+        {
+            rowTexts[index].text =
+                index == 0
+                    ? $"<size=25><color=#D9D5CB>{text}</color></size>"
+                    : completed
+                        ? $"<size=19><color=#98B88E>{text}</color></size>"
+                        : $"<size=19><color=#A9ADA9>{text}</color></size>";
+        }
 
-    private string FormatMainGoal(
-        string text
-    )
-    {
-        return
-            $"<size=25><color=#D9D5CB>{text}</color></size>";
-    }
-
-    private string FormatObjective(
-        string title,
-        string progress,
-        bool completed
-    )
-    {
-        string color =
-            completed
-                ? "#98B88E"
-                : "#A9ADA9";
-
-        return
-            $"<size=19><color={color}>{title}: {progress}</color></size>";
+        if (taskCheckmarks != null)
+        {
+            taskCheckmarks.SetChecked(
+                index,
+                completed
+            );
+        }
     }
 
     // =========================================================

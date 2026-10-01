@@ -178,8 +178,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 100%
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1318,8 +1318,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\xD7"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1941,52 +1941,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 170038587}
   m_CullTransparentMesh: 1
---- !u!28 &185861967
-Texture2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: RuntimeUISolidTexture
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 4
-  m_Width: 1
-  m_Height: 1
-  m_CompleteImageSize: 4
-  m_MipsStripped: 0
-  m_TextureFormat: 4
-  m_MipCount: 1
-  m_IsReadable: 1
-  m_IsPreProcessed: 0
-  m_IgnoreMipmapLimit: 1
-  m_MipmapLimitGroupName: 
-  m_StreamingMipmaps: 0
-  m_StreamingMipmapsPriority: 0
-  m_VTOnly: 0
-  m_AlphaIsTransparency: 0
-  m_ImageCount: 1
-  m_TextureDimension: 2
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_LightmapFormat: 0
-  m_ColorSpace: 1
-  m_PlatformBlob: 
-  image data: 4
-  _typelessdata: ffffffff
-  m_StreamData:
-    serializedVersion: 2
-    offset: 0
-    size: 0
-    path: 
 --- !u!1 &220358139
 GameObject:
   m_ObjectHideFlags: 0
@@ -2462,8 +2416,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0423\u041F\u0420\u0410\u0412\u041B\u0415\u041D\u0418\u0415"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3281,6 +3235,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 318308751}
   m_CullTransparentMesh: 1
+--- !u!28 &324728502
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RuntimeUISolidTexture
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 4
+  m_Width: 1
+  m_Height: 1
+  m_CompleteImageSize: 4
+  m_MipsStripped: 0
+  m_TextureFormat: 4
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 1
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_LightmapFormat: 0
+  m_ColorSpace: 1
+  m_PlatformBlob: 
+  image data: 4
+  _typelessdata: ffffffff
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
 --- !u!1 &340159401
 GameObject:
   m_ObjectHideFlags: 0
@@ -3416,8 +3416,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0412\u0438\u0431\u0440\u0430\u0446\u0438\u044F"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -4508,8 +4508,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u041D\u0410\u0421\u0422\u0420\u041E\u0419\u041A\u0418"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6824,8 +6824,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0411\u0415\u0421\u041A\u041E\u041D\u0415\u0427\u041D\u042B\u0419"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -7311,8 +7311,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0421\u0415\u0420\u0418\u042F  \u2022  \u0414\u0415\u041D\u042C 1 / 7"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -8018,7 +8018,7 @@ RectTransform:
   m_Father: {fileID: 1144073360}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -8569,8 +8569,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 60 FPS
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -8884,8 +8884,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0415\u0416\u0415\u0414\u041D\u0415\u0412\u041D\u042B\u0419 \u0412\u0425\u041E\u0414"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -9021,8 +9021,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 30 FPS
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -9732,7 +9732,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 58, y: -6}
+  m_AnchoredPosition: {x: 35, y: 13}
   m_SizeDelta: {x: 25, y: 25}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1271853342
@@ -9755,7 +9755,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 2008512734}
+  m_Sprite: {fileID: 1887785292}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -9931,8 +9931,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u041E\u0431\u0449\u0430\u044F \u0433\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -10438,8 +10438,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\xD7"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -11173,7 +11173,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 58, y: -6}
+  m_AnchoredPosition: {x: 35, y: 13}
   m_SizeDelta: {x: 25, y: 25}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1456026768
@@ -11196,7 +11196,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 2008512734}
+  m_Sprite: {fileID: 1887785292}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11788,8 +11788,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0414\u041E\u0421\u0422\u0418\u0416\u0415\u041D\u0418\u042F"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -11925,8 +11925,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u041F\u0420\u041E\u0418\u0417\u0412\u041E\u0414\u0418\u0422\u0415\u041B\u042C\u041D\u041E\u0421\u0422\u042C"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -12447,8 +12447,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\xD7"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -12780,8 +12780,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0414\u041E \u0423\u0411\u0415\u0416\u0418\u0429\u0410"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -13550,6 +13550,216 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1862551772}
   m_CullTransparentMesh: 1
+--- !u!213 &1887785292
+Sprite:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RuntimeUISolidSprite
+  m_Rect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  m_Offset: {x: 0, y: 0}
+  m_Border: {x: 0, y: 0, z: 0, w: 0}
+  m_PixelsToUnits: 1
+  m_Pivot: {x: 0.5, y: 0.5}
+  m_Extrude: 0
+  m_IsPolygon: 0
+  m_PackingTag: 
+  m_RenderDataKey:
+    00000000000000000000000000000000: 0
+  m_AtlasTags: []
+  m_SpriteAtlas: {fileID: 0}
+  m_RD:
+    serializedVersion: 3
+    texture: {fileID: 324728502}
+    alphaTexture: {fileID: 0}
+    secondaryTextures: []
+    m_SubMeshes:
+    - serializedVersion: 2
+      firstByte: 0
+      indexCount: 6
+      topology: 0
+      baseVertex: 0
+      firstVertex: 0
+      vertexCount: 4
+      localAABB:
+        m_Center: {x: 0, y: 0, z: 0}
+        m_Extent: {x: 0, y: 0, z: 0}
+    m_IndexBuffer: 000001000200020001000300
+    m_VertexData:
+      serializedVersion: 3
+      m_VertexCount: 4
+      m_Channels:
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 3
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 1
+        offset: 0
+        format: 0
+        dimension: 2
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      m_DataSize: 80
+      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf000000000000000000000000000000000000000000000000000000000000000000000000
+    m_Bindpose: []
+    textureRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    textureRectOffset: {x: 0, y: 0}
+    atlasRectOffset: {x: -1, y: -1}
+    settingsRaw: 64
+    uvTransform: {x: 1, y: 0.5, z: 1, w: 0.5}
+    downscaleMultiplier: 1
+  m_AtlasRD:
+    serializedVersion: 3
+    texture: {fileID: 324728502}
+    alphaTexture: {fileID: 0}
+    secondaryTextures: []
+    m_SubMeshes:
+    - serializedVersion: 2
+      firstByte: 0
+      indexCount: 6
+      topology: 0
+      baseVertex: 0
+      firstVertex: 0
+      vertexCount: 4
+      localAABB:
+        m_Center: {x: 0, y: 0, z: 0}
+        m_Extent: {x: 0, y: 0, z: 0}
+    m_IndexBuffer: 000001000200020001000300
+    m_VertexData:
+      serializedVersion: 3
+      m_VertexCount: 4
+      m_Channels:
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 3
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 1
+        offset: 0
+        format: 0
+        dimension: 2
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      - stream: 0
+        offset: 0
+        format: 0
+        dimension: 0
+      m_DataSize: 80
+      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf000000000000000000000000000000000000000000000000000000000000000000000000
+    m_Bindpose: []
+    textureRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    textureRectOffset: {x: 0, y: 0}
+    atlasRectOffset: {x: -1, y: -1}
+    settingsRaw: 64
+    uvTransform: {x: 1, y: 0.5, z: 1, w: 0.5}
+    downscaleMultiplier: 1
+  m_PhysicsShape: []
+  m_Bones: []
+  m_ScriptableObjects: []
+  m_SpriteID: 
 --- !u!1 &1891361856
 GameObject:
   m_ObjectHideFlags: 0
@@ -13792,216 +14002,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1941492620}
   m_CullTransparentMesh: 1
---- !u!213 &2008512734
-Sprite:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: RuntimeUISolidSprite
-  m_Rect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
-  m_Offset: {x: 0, y: 0}
-  m_Border: {x: 0, y: 0, z: 0, w: 0}
-  m_PixelsToUnits: 1
-  m_Pivot: {x: 0.5, y: 0.5}
-  m_Extrude: 0
-  m_IsPolygon: 0
-  m_PackingTag: 
-  m_RenderDataKey:
-    00000000000000000000000000000000: 0
-  m_AtlasTags: []
-  m_SpriteAtlas: {fileID: 0}
-  m_RD:
-    serializedVersion: 3
-    texture: {fileID: 185861967}
-    alphaTexture: {fileID: 0}
-    secondaryTextures: []
-    m_SubMeshes:
-    - serializedVersion: 2
-      firstByte: 0
-      indexCount: 6
-      topology: 0
-      baseVertex: 0
-      firstVertex: 0
-      vertexCount: 4
-      localAABB:
-        m_Center: {x: 0, y: 0, z: 0}
-        m_Extent: {x: 0, y: 0, z: 0}
-    m_IndexBuffer: 000001000200020001000300
-    m_VertexData:
-      serializedVersion: 3
-      m_VertexCount: 4
-      m_Channels:
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 3
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 1
-        offset: 0
-        format: 0
-        dimension: 2
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      m_DataSize: 80
-      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf000000000000000000000000000000000000000000000000000000000000000000000000
-    m_Bindpose: []
-    textureRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    textureRectOffset: {x: 0, y: 0}
-    atlasRectOffset: {x: -1, y: -1}
-    settingsRaw: 64
-    uvTransform: {x: 1, y: 0.5, z: 1, w: 0.5}
-    downscaleMultiplier: 1
-  m_AtlasRD:
-    serializedVersion: 3
-    texture: {fileID: 185861967}
-    alphaTexture: {fileID: 0}
-    secondaryTextures: []
-    m_SubMeshes:
-    - serializedVersion: 2
-      firstByte: 0
-      indexCount: 6
-      topology: 0
-      baseVertex: 0
-      firstVertex: 0
-      vertexCount: 4
-      localAABB:
-        m_Center: {x: 0, y: 0, z: 0}
-        m_Extent: {x: 0, y: 0, z: 0}
-    m_IndexBuffer: 000001000200020001000300
-    m_VertexData:
-      serializedVersion: 3
-      m_VertexCount: 4
-      m_Channels:
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 3
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 1
-        offset: 0
-        format: 0
-        dimension: 2
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      - stream: 0
-        offset: 0
-        format: 0
-        dimension: 0
-      m_DataSize: 80
-      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf000000000000000000000000000000000000000000000000000000000000000000000000
-    m_Bindpose: []
-    textureRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
-    textureRectOffset: {x: 0, y: 0}
-    atlasRectOffset: {x: -1, y: -1}
-    settingsRaw: 64
-    uvTransform: {x: 1, y: 0.5, z: 1, w: 0.5}
-    downscaleMultiplier: 1
-  m_PhysicsShape: []
-  m_Bones: []
-  m_ScriptableObjects: []
-  m_SpriteID: 
 --- !u!1 &2032037550
 GameObject:
   m_ObjectHideFlags: 0
@@ -14257,8 +14257,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 316166326}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 22, y: 22}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -14572,8 +14572,8 @@ MonoBehaviour:
   m_text: "\u041D\u0415\u0422 \u0414\u041E\u0421\u0422\u0423\u041F\u041D\u042B\u0425
     \u041D\u0410\u0413\u0420\u0410\u0414"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -14709,8 +14709,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u0417\u0412\u0423\u041A"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
-  m_sharedMaterial: {fileID: -8178146836339960626, guid: 112c37c9cf94dd645b6109cf3bf33e7c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
+  m_sharedMaterial: {fileID: 2307991742212823059, guid: 29a0d46c5c5e176459c2547131618cee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
