@@ -44,8 +44,10 @@ public class MainMenuManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null &&
-            Instance != this)
+        if (
+            Instance != null &&
+            Instance != this
+        )
         {
             Destroy(gameObject);
             return;
@@ -69,12 +71,16 @@ public class MainMenuManager : MonoBehaviour
             );
 
         if (coinsText != null)
+        {
             coinsText.text =
                 savedCoins.ToString();
+        }
 
         if (diamondsText != null)
+        {
             diamondsText.text =
                 savedDiamonds.ToString();
+        }
 
         UpdateProfileUI();
         RefreshPlayerImg();
@@ -89,40 +95,28 @@ public class MainMenuManager : MonoBehaviour
         if (charactersButton != null)
         {
             charactersButton.onClick.AddListener(
-                () =>
-                    OnNavClicked(
-                        "Персонажи"
-                    )
+                OnCharactersClicked
             );
         }
 
         if (equipmentButton != null)
         {
             equipmentButton.onClick.AddListener(
-                () =>
-                    OnNavClicked(
-                        "Снаряжение"
-                    )
+                OnEquipmentClicked
             );
         }
 
         if (shopButton != null)
         {
             shopButton.onClick.AddListener(
-                () =>
-                    OnNavClicked(
-                        "Магазин"
-                    )
+                OnShopClicked
             );
         }
 
         if (hangarButton != null)
         {
             hangarButton.onClick.AddListener(
-                () =>
-                    OnNavClicked(
-                        "Ангар"
-                    )
+                OnHangarClicked
             );
         }
 
@@ -147,13 +141,30 @@ public class MainMenuManager : MonoBehaviour
 
             PlayerPrefs.Save();
 
-            if (ToastNotification.Instance != null)
+            if (
+                ToastNotification.Instance != null
+            )
             {
                 ToastNotification.Instance.Show(
                     pending,
                     4f
                 );
             }
+        }
+    }
+
+    // =========================================================
+    // SOUND
+    // =========================================================
+
+    private void PlayMenuClickSound()
+    {
+        if (
+            AudioManager3D.Instance != null
+        )
+        {
+            AudioManager3D.Instance
+                .PlayMenuClick();
         }
     }
 
@@ -167,7 +178,8 @@ public class MainMenuManager : MonoBehaviour
             return;
 
         string charId =
-            ProfileManager.GetSelectedCharacterId();
+            ProfileManager
+                .GetSelectedCharacterId();
 
         Sprite s =
             Resources.Load<Sprite>(
@@ -210,8 +222,14 @@ public class MainMenuManager : MonoBehaviour
 
     private void OpenProfileSettings()
     {
-        if (profileSettingsPanel != null)
+        PlayMenuClickSound();
+
+        if (
+            profileSettingsPanel != null
+        )
+        {
             profileSettingsPanel.OpenPanel();
+        }
     }
 
     public void RefreshProfileAvatar()
@@ -273,12 +291,16 @@ public class MainMenuManager : MonoBehaviour
         RefreshProfileName();
 
         if (profileLevelText != null)
+        {
             profileLevelText.text =
                 $"Ур. {level}";
+        }
 
         if (profileXPText != null)
+        {
             profileXPText.text =
                 $"{xp} / {needed}";
+        }
 
         if (profileXPBarFill != null)
         {
@@ -305,44 +327,53 @@ public class MainMenuManager : MonoBehaviour
 
     private void OnPlayClicked()
     {
+        PlayMenuClickSound();
+
         RunModeSelectionUI.Open(
             gameSceneName
         );
     }
 
-    private void OnNavClicked(
-        string section)
+    private void OnCharactersClicked()
     {
-        switch (section)
-        {
-            case "Персонажи":
-                SceneManager.LoadScene(
-                    "CharacterSelect"
-                );
-                break;
+        PlayMenuClickSound();
 
-            case "Снаряжение":
-                SceneManager.LoadScene(
-                    "Equipment"
-                );
-                break;
+        SceneManager.LoadScene(
+            "CharacterSelect"
+        );
+    }
 
-            case "Магазин":
-                SceneManager.LoadScene(
-                    "Shop"
-                );
-                break;
+    private void OnEquipmentClicked()
+    {
+        PlayMenuClickSound();
 
-            case "Ангар":
-                SceneManager.LoadScene(
-                    "Hangar"
-                );
-                break;
-        }
+        SceneManager.LoadScene(
+            "Equipment"
+        );
+    }
+
+    private void OnShopClicked()
+    {
+        PlayMenuClickSound();
+
+        SceneManager.LoadScene(
+            "Shop"
+        );
+    }
+
+    private void OnHangarClicked()
+    {
+        PlayMenuClickSound();
+
+        SceneManager.LoadScene(
+            "Hangar"
+        );
     }
 
     public void OnQuitClicked()
     {
+        PlayMenuClickSound();
+
 #if UNITY_EDITOR
         UnityEditor.EditorApplication
             .isPlaying = false;

@@ -47,8 +47,10 @@ public class PlayerCollision : MonoBehaviour
                 ObstacleMover3D
             >();
 
-        if (mover != null &&
-            mover.hasHitPlayer)
+        if (
+            mover != null &&
+            mover.hasHitPlayer
+        )
         {
             return;
         }
@@ -111,8 +113,10 @@ public class PlayerCollision : MonoBehaviour
     private void HandleNormalObstacle(
         ObstacleMover3D mover)
     {
-        if (playerMovement != null &&
-            playerMovement.IsJumping())
+        if (
+            playerMovement != null &&
+            playerMovement.IsJumping()
+        )
         {
             return;
         }
@@ -130,8 +134,10 @@ public class PlayerCollision : MonoBehaviour
         ObstacleMover3D mover,
         Collider pitCollider)
     {
-        if (playerMovement == null ||
-            pitCollider == null)
+        if (
+            playerMovement == null ||
+            pitCollider == null
+        )
         {
             return;
         }
@@ -157,10 +163,12 @@ public class PlayerCollision : MonoBehaviour
     {
         while (true)
         {
-            if (playerMovement == null ||
+            if (
+                playerMovement == null ||
                 playerMovement.IsJumping() ||
                 playerMovement.IsDead() ||
-                playerMovement.IsDying())
+                playerMovement.IsDying()
+            )
             {
                 pitRoutine =
                     null;
@@ -168,11 +176,13 @@ public class PlayerCollision : MonoBehaviour
                 yield break;
             }
 
-            if (mover == null ||
+            if (
+                mover == null ||
                 !mover.isActiveAndEnabled ||
                 pitCollider == null ||
                 !pitCollider.enabled ||
-                !pitCollider.gameObject.activeInHierarchy)
+                !pitCollider.gameObject.activeInHierarchy
+            )
             {
                 pitRoutine =
                     null;
@@ -202,8 +212,10 @@ public class PlayerCollision : MonoBehaviour
                     pitBounds.max.z +
                     pitCheckTolerance;
 
-            if (insideX &&
-                insideZ)
+            if (
+                insideX &&
+                insideZ
+            )
             {
                 MarkObstacleHit(
                     mover
@@ -211,14 +223,25 @@ public class PlayerCollision : MonoBehaviour
 
                 if (HUDManager.Instance != null)
                 {
-                    if (RunModeChallengeManager3D.Instance != null)
+                    if (
+                        RunModeChallengeManager3D.Instance != null
+                    )
                     {
-                        RunModeChallengeManager3D.Instance.OnPlayerHit();
+                        RunModeChallengeManager3D.Instance
+                            .OnPlayerHit();
                     }
 
                     HUDManager.Instance.SetHealth(
                         0f
                     );
+                }
+
+                if (
+                    AudioManager3D.Instance != null
+                )
+                {
+                    AudioManager3D.Instance
+                        .PlayPitFall();
                 }
 
                 playerMovement.FallIntoPit();
@@ -234,9 +257,11 @@ public class PlayerCollision : MonoBehaviour
                 yield break;
             }
 
-            if (pitBounds.max.z <
+            if (
+                pitBounds.max.z <
                 playerPosition.z -
-                pitCheckTolerance)
+                pitCheckTolerance
+            )
             {
                 pitRoutine =
                     null;
@@ -255,8 +280,10 @@ public class PlayerCollision : MonoBehaviour
     private void HandleSlide(
         ObstacleMover3D mover)
     {
-        if (playerMovement != null &&
-            playerMovement.IsSliding())
+        if (
+            playerMovement != null &&
+            playerMovement.IsSliding()
+        )
         {
             return;
         }
@@ -269,8 +296,10 @@ public class PlayerCollision : MonoBehaviour
     private void HandleDoubleJump(
         ObstacleMover3D mover)
     {
-        if (playerMovement != null &&
-            playerMovement.HasDoubleJumped())
+        if (
+            playerMovement != null &&
+            playerMovement.HasDoubleJumped()
+        )
         {
             return;
         }
@@ -311,10 +340,21 @@ public class PlayerCollision : MonoBehaviour
                 damage
             );
 
-            if (RunModeChallengeManager3D.Instance != null)
+            if (
+                RunModeChallengeManager3D.Instance != null
+            )
             {
-                RunModeChallengeManager3D.Instance.OnPlayerHit();
+                RunModeChallengeManager3D.Instance
+                    .OnPlayerHit();
             }
+        }
+
+        if (
+            AudioManager3D.Instance != null
+        )
+        {
+            AudioManager3D.Instance
+                .PlayHit();
         }
 
         if (chase != null)

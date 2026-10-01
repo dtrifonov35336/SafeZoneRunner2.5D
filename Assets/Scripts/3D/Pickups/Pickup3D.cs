@@ -56,12 +56,22 @@ public class Pickup3D : MonoBehaviour
                         finalAmount
                     );
 
-                    if (RunModeChallengeManager3D.Instance != null)
+                    if (
+                        RunModeChallengeManager3D.Instance != null
+                    )
                     {
                         RunModeChallengeManager3D.Instance
                             .OnCoinCollected(
                                 finalAmount
                             );
+                    }
+
+                    if (
+                        AudioManager3D.Instance != null
+                    )
+                    {
+                        AudioManager3D.Instance
+                            .PlayCoin();
                     }
 
                     break;
@@ -79,6 +89,14 @@ public class Pickup3D : MonoBehaviour
                         amount *
                         multiplier
                     );
+
+                    if (
+                        AudioManager3D.Instance != null
+                    )
+                    {
+                        AudioManager3D.Instance
+                            .PlayHeart();
+                    }
 
                     break;
                 }

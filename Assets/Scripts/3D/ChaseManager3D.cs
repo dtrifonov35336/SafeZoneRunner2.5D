@@ -48,8 +48,10 @@ public class ChaseManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null &&
-            Instance != this)
+        if (
+            Instance != null &&
+            Instance != this
+        )
         {
             Destroy(
                 gameObject
@@ -137,12 +139,16 @@ public class ChaseManager : MonoBehaviour
         // HP
         // =====================================================
 
-        if (HUDManager.Instance != null &&
-            HUDManager.Instance.GetHealth() <= 0f)
+        if (
+            HUDManager.Instance != null &&
+            HUDManager.Instance.GetHealth() <= 0f
+        )
         {
-            if (playerMovement != null &&
+            if (
+                playerMovement != null &&
                 !playerMovement.IsDying() &&
-                !playerMovement.IsDead())
+                !playerMovement.IsDead()
+            )
             {
                 if (!killTriggered)
                 {
@@ -153,8 +159,10 @@ public class ChaseManager : MonoBehaviour
                 }
             }
 
-            if (playerMovement == null ||
-                playerMovement.IsDead())
+            if (
+                playerMovement == null ||
+                playerMovement.IsDead()
+            )
             {
                 TriggerGameOver();
             }
@@ -274,7 +282,8 @@ public class ChaseManager : MonoBehaviour
                 level <=
                     newLevel;
 
-                level++)
+                level++
+            )
             {
                 string bonus =
                     BonusCalculator
@@ -282,8 +291,11 @@ public class ChaseManager : MonoBehaviour
                             level
                         );
 
-                if (!string.IsNullOrEmpty(
-                        bonus))
+                if (
+                    !string.IsNullOrEmpty(
+                        bonus
+                    )
+                )
                 {
                     bonusMsg +=
                         bonus +
@@ -291,8 +303,11 @@ public class ChaseManager : MonoBehaviour
                 }
             }
 
-            if (!string.IsNullOrEmpty(
-                    bonusMsg))
+            if (
+                !string.IsNullOrEmpty(
+                    bonusMsg
+                )
+            )
             {
                 PlayerPrefs.SetString(
                     "PendingLevelToast",
@@ -332,9 +347,20 @@ public class ChaseManager : MonoBehaviour
         gameOver =
             true;
 
-        if (RunModeChallengeManager3D.Instance != null)
+        if (
+            AudioManager3D.Instance != null
+        )
         {
-            RunModeChallengeManager3D.Instance.OnRunFinished(false);
+            AudioManager3D.Instance
+                .PlayDeath();
+        }
+
+        if (
+            RunModeChallengeManager3D.Instance != null
+        )
+        {
+            RunModeChallengeManager3D.Instance
+                .OnRunFinished(false);
         }
 
         if (spawner != null)
@@ -386,9 +412,12 @@ public class ChaseManager : MonoBehaviour
         victory =
             true;
 
-        if (RunModeChallengeManager3D.Instance != null)
+        if (
+            RunModeChallengeManager3D.Instance != null
+        )
         {
-            RunModeChallengeManager3D.Instance.OnRunFinished(true);
+            RunModeChallengeManager3D.Instance
+                .OnRunFinished(true);
         }
 
         if (spawner != null)
@@ -465,7 +494,8 @@ public class ChaseManager : MonoBehaviour
 
         foreach (
             ObstacleMover3D obstacle
-            in obstacles)
+            in obstacles
+        )
         {
             if (obstacle != null)
             {
@@ -483,7 +513,8 @@ public class ChaseManager : MonoBehaviour
 
         foreach (
             PickupMover3D pickup
-            in pickups)
+            in pickups
+        )
         {
             if (pickup != null)
             {
@@ -525,7 +556,8 @@ public class ChaseManager : MonoBehaviour
 
         foreach (
             ObstacleMover3D obstacle
-            in obstacles)
+            in obstacles
+        )
         {
             if (obstacle != null)
             {
@@ -546,7 +578,8 @@ public class ChaseManager : MonoBehaviour
 
         foreach (
             PickupMover3D pickup
-            in pickups)
+            in pickups
+        )
         {
             if (pickup != null)
             {

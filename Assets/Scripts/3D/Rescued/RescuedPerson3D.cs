@@ -67,7 +67,9 @@ public class RescuedPerson : MonoBehaviour
         float moveSpeed =
             speed;
 
-        if (ObstacleSpawner3D.Instance != null)
+        if (
+            ObstacleSpawner3D.Instance != null
+        )
         {
             moveSpeed =
                 ObstacleSpawner3D.Instance
@@ -147,16 +149,28 @@ public class RescuedPerson : MonoBehaviour
 
             HUDManager.Instance.AddRescued(1);
 
-            if (RunModeChallengeManager3D.Instance != null)
+            if (
+                RunModeChallengeManager3D.Instance != null
+            )
             {
-                RunModeChallengeManager3D.Instance.OnRescued();
+                RunModeChallengeManager3D.Instance
+                    .OnRescued();
             }
 
             // Только награда за спасение.
-            // Рюкзак сюда НЕ применяется.
+            // Бонус рюкзака применяется здесь,
+            // как и раньше.
             HUDManager.Instance.AddCoinsWithBonus(
                 coinReward
             );
+        }
+
+        if (
+            AudioManager3D.Instance != null
+        )
+        {
+            AudioManager3D.Instance
+                .PlaySurvivor();
         }
 
         int gained = 0;
