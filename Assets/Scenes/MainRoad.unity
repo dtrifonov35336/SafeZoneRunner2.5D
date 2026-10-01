@@ -12060,7 +12060,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5b62edc6d9fd1449b6a6a1cdee53366, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieAudio3D
-  zombieClips: []
+  zombieClips:
+  - {fileID: 8300000, guid: 0eec2aaecaf2ec848aa5e166ab0a6ea5, type: 3}
+  - {fileID: 8300000, guid: 439e541f2558a7d42ab12076b11e0a1d, type: 3}
+  - {fileID: 8300000, guid: 3dc208f8b4aee1345b898e9aed79bb68, type: 3}
   volume: 0.45
   minInterval: 4
   maxInterval: 8
@@ -19806,15 +19809,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a55c185c1d5385b499567d287a5c7ff7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager3D
-  mainMenuMusic: {fileID: 0}
-  runMusic: {fileID: 0}
-  coinClip: {fileID: 0}
-  heartClip: {fileID: 0}
-  survivorClip: {fileID: 0}
-  hitClip: {fileID: 0}
-  pitFallClip: {fileID: 0}
-  deathClip: {fileID: 0}
-  menuClickClip: {fileID: 0}
+  mainMenuMusic: {fileID: 8300000, guid: 90a402adc58a0574fb9977580ca78e7d, type: 3}
+  runMusic: {fileID: 8300000, guid: b130d6ac3f37db54d99f82f8cbbc1936, type: 3}
+  coinClip: {fileID: 8300000, guid: 53e9a33b76e157f40b53d411d0de1880, type: 3}
+  heartClip: {fileID: 8300000, guid: a5db1bbc4f167b64db660721824fad49, type: 3}
+  survivorClip: {fileID: 8300000, guid: 68b36f8ec5232bf45b260e61e53e112b, type: 3}
+  hitClip: {fileID: 8300000, guid: d9d1b62ad05c68a488b71d9a0c025c70, type: 3}
+  pitFallClip: {fileID: 8300000, guid: 3d6d0aa1207fcee418ce1419cbfa80d3, type: 3}
+  deathClip: {fileID: 8300000, guid: 50b17eb6aa1cdb8499878cb7971a44e3, type: 3}
+  menuClickClip: {fileID: 8300000, guid: b38d84be79ae09d43a6b63fa05be30d6, type: 3}
   musicVolume: 0.35
   sfxVolume: 0.8
 --- !u!1 &2071339522
