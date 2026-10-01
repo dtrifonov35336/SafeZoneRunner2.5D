@@ -77,18 +77,45 @@ public class MainMenuUtilityButton3D : MonoBehaviour
     private void OnValidate()
     {
         ResolveReferences();
-        ConfigureLayout();
+        EnsureBadge();
 
-        // Не затираем уже назначенную иконку,
-        // если поле iconSprite пока пустое.
+        ConfigureLayout();
+        ConfigureButton();
+
+        ApplyIcon();
+
         if (
-            iconSprite != null
+            action ==
+            UtilityAction3D.DailyLogin
         )
         {
-            ApplyIcon();
+            // В редакторе ! всегда виден,
+            // чтобы его можно было двигать
+            // и настраивать положение.
+            if (badge != null)
+            {
+                badge.SetActive(true);
+            }
         }
-
-        ConfigureButton();
+        else if (
+            action ==
+            UtilityAction3D.Achievements
+        )
+        {
+            if (badge != null)
+            {
+                badge.SetActive(
+                    AchievementSystem3D.HasUnclaimed()
+                );
+            }
+        }
+        else
+        {
+            if (badge != null)
+            {
+                badge.SetActive(false);
+            }
+        }
     }
 
 #endif

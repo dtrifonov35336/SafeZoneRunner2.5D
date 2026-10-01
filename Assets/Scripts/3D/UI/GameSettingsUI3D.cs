@@ -100,13 +100,41 @@ public class GameSettingsUI3D : MonoBehaviour
         gameObject.SetActive(true);
 
         if (window == null)
+        {
             Build();
+        }
+
+        MainMenuModalVisibility3D modal =
+            FindFirstObjectByType<
+                MainMenuModalVisibility3D
+            >();
+
+        if (modal != null)
+        {
+            modal.OpenModal(
+                window
+            );
+        }
+        else
+        {
+            window.transform.SetAsLastSibling();
+        }
 
         Refresh();
     }
 
     public void Close()
     {
+        MainMenuModalVisibility3D modal =
+            FindFirstObjectByType<
+                MainMenuModalVisibility3D
+            >();
+
+        if (modal != null)
+        {
+            modal.CloseModal();
+        }
+
         gameObject.SetActive(false);
     }
 

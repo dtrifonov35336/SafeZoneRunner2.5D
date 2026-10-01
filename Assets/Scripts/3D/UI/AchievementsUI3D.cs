@@ -151,7 +151,22 @@ public class AchievementsUI3D : MonoBehaviour
             Build();
 
         window.SetActive(true);
-        window.transform.SetAsLastSibling();
+
+        MainMenuModalVisibility3D modal =
+            FindFirstObjectByType<
+                MainMenuModalVisibility3D
+            >();
+
+        if (modal != null)
+        {
+            modal.OpenModal(
+                window
+            );
+        }
+        else
+        {
+            window.transform.SetAsLastSibling();
+        }
 
         Refresh();
 
@@ -160,8 +175,20 @@ public class AchievementsUI3D : MonoBehaviour
 
     public void Close()
     {
+        MainMenuModalVisibility3D modal =
+            FindFirstObjectByType<
+                MainMenuModalVisibility3D
+            >();
+
+        if (modal != null)
+        {
+            modal.CloseModal();
+        }
+
         if (window != null)
+        {
             window.SetActive(false);
+        }
 
         gameObject.SetActive(false);
     }
