@@ -5,11 +5,14 @@ using UnityEngine.UI;
 [ExecuteAlways]
 public class MainMenuUtilityButton3D : MonoBehaviour
 {
+    [Header("Действие")]
     public UtilityAction3D action;
 
+    [Header("Кнопка")]
     [SerializeField]
     private Button button;
 
+    [Header("Иконка")]
     [SerializeField]
     private Image icon;
 
@@ -20,24 +23,31 @@ public class MainMenuUtilityButton3D : MonoBehaviour
     [SerializeField]
     private float iconSize = 100f;
 
+    [Header("Текст")]
     [SerializeField]
     private TextMeshProUGUI label;
 
     [SerializeField]
     private float labelHeight = 34f;
 
+    [Header("Badge")]
+    [SerializeField]
     private GameObject badge;
 
     [SerializeField]
     private TextMeshProUGUI badgeText;
 
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
     private void Awake()
     {
         ResolveReferences();
         ConfigureButton();
+        ConfigureLayout();
         ApplyIcon();
-
-        EnsureBadge();
+        ConfigureBadge();
         RefreshBadge();
     }
 
@@ -50,14 +60,15 @@ public class MainMenuUtilityButton3D : MonoBehaviour
 
         ResolveReferences();
         ConfigureButton();
+        ConfigureLayout();
         ApplyIcon();
-
-        EnsureBadge();
+        ConfigureBadge();
         RefreshBadge();
     }
 
     private void OnEnable()
     {
+        ResolveReferences();
         RefreshBadge();
     }
 
@@ -67,39 +78,31 @@ public class MainMenuUtilityButton3D : MonoBehaviour
     {
         ResolveReferences();
         ConfigureButton();
+        ConfigureLayout();
         ApplyIcon();
+        ConfigureBadge();
 
-        EnsureBadge();
-
-        if (Application.isPlaying)
+        if (!Application.isPlaying)
         {
-            RefreshBadge();
+            bool previewVisible =
+                action != UtilityAction3D.Settings;
+
+            if (badge != null)
+            {
+                badge.SetActive(previewVisible);
+            }
         }
         else
         {
-            // В Preview показываем !,
-            // чтобы его можно было двигать руками.
-            if (action ==
-                UtilityAction3D.DailyLogin)
-            {
-                if (badge != null)
-                    badge.gameObject.SetActive(true);
-            }
-            else if (action ==
-                     UtilityAction3D.Achievements)
-            {
-                if (badge != null)
-                    badge.gameObject.SetActive(true);
-            }
-            else
-            {
-                if (badge != null)
-                    badge.gameObject.SetActive(false);
-            }
+            RefreshBadge();
         }
     }
 
 #endif
+
+    // =========================================================
+    // PRESS
+    // =========================================================
 
     public void Press()
     {
@@ -119,62 +122,72 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // REFERENCES
+    // =========================================================
+
     private void ResolveReferences()
     {
         if (button == null)
+        {
             button = GetComponent<Button>();
+        }
 
         if (icon == null)
         {
-            Transform found =
-                transform.Find("Icon");
+            Transform found = transform.Find("Icon");
 
             if (found != null)
+            {
                 icon = found.GetComponent<Image>();
+            }
         }
 
         if (label == null)
         {
-            Transform found =
-                transform.Find("Label");
+            Transform found = transform.Find("Label");
 
             if (found != null)
+            {
                 label =
-                    found.GetComponent<
-                        TextMeshProUGUI
-                    >();
+                    found.GetComponent<TextMeshProUGUI>();
+            }
         }
 
         if (badge == null)
         {
-            Transform found =
-                transform.Find("Badge");
+            Transform found = transform.Find("Badge");
 
             if (found != null)
-                badge =
-                    found.GetComponent<Image>();
+            {
+                // ВАЖНО:
+                // Badge — GameObject, а не Image.
+                badge = found.gameObject;
+            }
         }
 
-        if (badgeText == null &&
-            badge != null)
+        if (badgeText == null && badge != null)
         {
-            Transform found =
-                badge.transform.Find("Text");
+            Transform found = badge.transform.Find("Text");
 
             if (found != null)
             {
                 badgeText =
-                    found.GetComponent<
-                        TextMeshProUGUI
-                    >();
+                    found.GetComponent<TextMeshProUGUI>();
             }
         }
     }
 
+    // =========================================================
+    // BUTTON
+    // =========================================================
+
     private void ConfigureButton()
     {
         if (button == null)
+        {
             return;
+        }
 
         button.onClick.RemoveListener(Press);
         button.onClick.AddListener(Press);
@@ -182,6 +195,7 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         if (icon != null)
         {
             button.targetGraphic = icon;
+
             icon.raycastTarget = true;
             icon.preserveAspect = true;
         }
@@ -189,8 +203,7 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         button.transition =
             Selectable.Transition.ColorTint;
 
-        ColorBlock colors =
-            button.colors;
+        ColorBlock colors = button.colors;
 
         colors.normalColor = Color.white;
 
@@ -210,9 +223,17 @@ public class MainMenuUtilityButton3D : MonoBehaviour
                 1f
             );
 
-        colors.selectedColor =
-            Color.white;
+        colors.selectedColor = Color.white;
 
+        colors.disabledColor =
+            new Color(
+                0.65f,
+                0.68f,
+                0.66f,
+                0.6f
+            );
+
+        colors.colorMultiplier = 1f;
         colors.fadeDuration = 0.08f;
 
         button.colors = colors;
@@ -237,15 +258,23 @@ public class MainMenuUtilityButton3D : MonoBehaviour
             GetComponent<Outline>();
 
         if (outline != null)
+        {
             outline.enabled = false;
+        }
 
         ConfigureLabel();
     }
 
+    // =========================================================
+    // LABEL
+    // =========================================================
+
     private void ConfigureLabel()
     {
         if (label == null)
+        {
             return;
+        }
 
         RectTransform rect =
             label.rectTransform;
@@ -289,160 +318,239 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         label.raycastTarget = false;
     }
 
+    // =========================================================
+    // LAYOUT
+    // =========================================================
+
+    private void ConfigureLayout()
+    {
+        RectTransform rootRect =
+            GetComponent<RectTransform>();
+
+        if (rootRect != null)
+        {
+            rootRect.sizeDelta =
+                new Vector2(
+                    140f,
+                    145f
+                );
+
+            rootRect.localScale =
+                Vector3.one;
+        }
+
+        if (icon != null)
+        {
+            RectTransform rect =
+                icon.rectTransform;
+
+            rect.anchorMin =
+                new Vector2(
+                    0.5f,
+                    1f
+                );
+
+            rect.anchorMax =
+                new Vector2(
+                    0.5f,
+                    1f
+                );
+
+            rect.pivot =
+                new Vector2(
+                    0.5f,
+                    1f
+                );
+
+            rect.anchoredPosition =
+                Vector2.zero;
+
+            rect.sizeDelta =
+                new Vector2(
+                    iconSize,
+                    iconSize
+                );
+
+            rect.localScale =
+                Vector3.one;
+
+            icon.preserveAspect = true;
+            icon.raycastTarget = true;
+        }
+
+        ConfigureLabel();
+    }
+
+    // =========================================================
+    // ICON
+    // =========================================================
+
     private void ApplyIcon()
     {
         if (icon == null)
+        {
             return;
+        }
 
+        // Не стираем уже назначенный Image.sprite.
         if (iconSprite != null)
+        {
             icon.sprite = iconSprite;
-
-        RectTransform rect =
-            icon.rectTransform;
-
-        rect.sizeDelta =
-            new Vector2(
-                iconSize,
-                iconSize
-            );
+        }
 
         icon.preserveAspect = true;
     }
 
-    private void EnsureBadge()
-    {
-        if (action == UtilityAction3D.Settings)
-        {
-            if (badge != null)
-                badge.SetActive(false);
+    // =========================================================
+    // BADGE
+    // =========================================================
 
+    private void ConfigureBadge()
+    {
+        if (badge == null)
+        {
             return;
         }
 
-        if (badge == null)
-        {
-            Transform existing = transform.Find("Badge");
+        RectTransform badgeRect =
+            badge.GetComponent<RectTransform>();
 
-            if (existing != null)
-                badge = existing.gameObject;
-        }
-
-        if (badge == null)
-        {
-            GameObject badgeObject = new GameObject(
-                "Badge",
-                typeof(RectTransform),
-                typeof(Image)
-            );
-
-            badgeObject.transform.SetParent(transform, false);
-            badge = badgeObject;
-        }
-
-        RectTransform badgeRect = badge.GetComponent<RectTransform>();
-
-        badgeRect.anchorMin = new Vector2(0.5f, 1f);
-        badgeRect.anchorMax = new Vector2(0.5f, 1f);
-        badgeRect.pivot = new Vector2(0f, 1f);
-
-        // Положение задаём только для нового/служебного Badge.
-        // Существующий объект больше не пересоздаём.
         if (badgeRect != null)
         {
-            badgeRect.sizeDelta = new Vector2(25f, 25f);
+            // Положение НЕ меняем.
+            // Теперь его можно спокойно выставить вручную
+            // в Inspector.
+
+            badgeRect.sizeDelta =
+                new Vector2(
+                    25f,
+                    25f
+                );
         }
 
-        Image image = badge.GetComponent<Image>();
+        Image image =
+            badge.GetComponent<Image>();
 
         if (image != null)
         {
-            image.sprite = RuntimeUISprite3D.GetSolidSprite();
-            image.type = Image.Type.Simple;
-            image.color = new Color(0.92f, 0.08f, 0.08f, 1f);
+            image.sprite =
+                RuntimeUISprite3D.GetSolidSprite();
+
+            image.type =
+                Image.Type.Simple;
+
+            image.color =
+                new Color(
+                    0.92f,
+                    0.08f,
+                    0.08f,
+                    1f
+                );
+
             image.raycastTarget = false;
         }
 
         if (badgeText == null)
         {
-            Transform textTransform = badge.transform.Find("Text");
+            Transform textTransform =
+                badge.transform.Find("Text");
 
             if (textTransform != null)
-                badgeText = textTransform.GetComponent<TextMeshProUGUI>();
+            {
+                badgeText =
+                    textTransform
+                        .GetComponent<TextMeshProUGUI>();
+            }
         }
 
         if (badgeText == null)
         {
-            GameObject textObject = new GameObject(
-                "Text",
-                typeof(RectTransform),
-                typeof(TextMeshProUGUI)
-            );
-
-            textObject.transform.SetParent(badge.transform, false);
-
-            badgeText = textObject.GetComponent<TextMeshProUGUI>();
+            return;
         }
 
-        RectTransform textRect = badgeText.rectTransform;
+        RectTransform textRect =
+            badgeText.rectTransform;
 
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        textRect.anchorMin =
+            Vector2.zero;
+
+        textRect.anchorMax =
+            Vector2.one;
+
+        textRect.offsetMin =
+            Vector2.zero;
+
+        textRect.offsetMax =
+            Vector2.zero;
 
         badgeText.text = "!";
+
         badgeText.fontSize = 17f;
-        badgeText.fontStyle = FontStyles.Bold;
-        badgeText.alignment = TextAlignmentOptions.Center;
-        badgeText.color = Color.white;
+
+        badgeText.fontStyle =
+            FontStyles.Bold;
+
+        badgeText.alignment =
+            TextAlignmentOptions.Center;
+
+        badgeText.color =
+            Color.white;
+
         badgeText.raycastTarget = false;
-        badgeText.textWrappingMode = TextWrappingModes.NoWrap;
+
+        badgeText.textWrappingMode =
+            TextWrappingModes.NoWrap;
     }
+
+    // =========================================================
+    // BADGE REFRESH
+    // =========================================================
 
     public void RefreshBadge()
     {
+        ResolveReferences();
+
         if (badge == null)
+        {
             return;
+        }
+
+        if (!Application.isPlaying)
+        {
+            badge.SetActive(
+                action != UtilityAction3D.Settings
+            );
+
+            return;
+        }
 
         bool visible = false;
 
-        if (Application.isPlaying)
+        if (action ==
+            UtilityAction3D.Achievements)
         {
-            if (action ==
-                UtilityAction3D.Achievements)
-            {
-                visible =
-                    AchievementSystem3D
-                        .HasUnclaimed();
-            }
-            else if (
-                action ==
-                UtilityAction3D.DailyLogin)
-            {
-                visible =
-                    DailyLoginUI3D
-                        .IsRewardAvailable();
-            }
-        }
-        else
-        {
-            // Preview.
             visible =
-                action !=
-                UtilityAction3D.Settings;
+                AchievementSystem3D.HasUnclaimed();
+        }
+        else if (
+            action ==
+            UtilityAction3D.DailyLogin)
+        {
+            visible =
+                DailyLoginUI3D.IsRewardAvailable();
         }
 
-        badge.gameObject.SetActive(
-            visible
-        );
+        badge.SetActive(visible);
     }
+
+    // =========================================================
+    // OPEN SETTINGS
+    // =========================================================
 
     private void OpenSettings()
     {
         GameSettingsUI3D ui =
-            FindExisting<
-                GameSettingsUI3D
-            >(
+            FindExisting<GameSettingsUI3D>(
                 "Modal_Settings"
             );
 
@@ -450,8 +558,7 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         {
             Debug.LogError(
                 "[MainMenuUtility] " +
-                "Modal_Settings не найден. " +
-                "Запусти финальный UI Setup."
+                "Modal_Settings не найден."
             );
 
             return;
@@ -460,12 +567,14 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         ui.Open();
     }
 
+    // =========================================================
+    // OPEN ACHIEVEMENTS
+    // =========================================================
+
     private void OpenAchievements()
     {
         AchievementsUI3D ui =
-            FindExisting<
-                AchievementsUI3D
-            >(
+            FindExisting<AchievementsUI3D>(
                 "Modal_Achievements"
             );
 
@@ -473,8 +582,7 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         {
             Debug.LogError(
                 "[MainMenuUtility] " +
-                "Modal_Achievements не найден. " +
-                "Запусти финальный UI Setup."
+                "Modal_Achievements не найден."
             );
 
             return;
@@ -483,12 +591,14 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         ui.Open();
     }
 
+    // =========================================================
+    // OPEN DAILY LOGIN
+    // =========================================================
+
     private void OpenDailyLogin()
     {
         DailyLoginUI3D ui =
-            FindExisting<
-                DailyLoginUI3D
-            >(
+            FindExisting<DailyLoginUI3D>(
                 "Modal_DailyLogin"
             );
 
@@ -496,8 +606,7 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         {
             Debug.LogError(
                 "[MainMenuUtility] " +
-                "Modal_DailyLogin не найден. " +
-                "Запусти финальный UI Setup."
+                "Modal_DailyLogin не найден."
             );
 
             return;
@@ -505,6 +614,10 @@ public class MainMenuUtilityButton3D : MonoBehaviour
 
         ui.Open();
     }
+
+    // =========================================================
+    // FIND EXISTING
+    // =========================================================
 
     private static T FindExisting<T>(
         string preferredName
@@ -522,7 +635,9 @@ public class MainMenuUtilityButton3D : MonoBehaviour
         foreach (T item in all)
         {
             if (item == null)
+            {
                 continue;
+            }
 
             if (item.gameObject.name ==
                 preferredName)
@@ -531,7 +646,9 @@ public class MainMenuUtilityButton3D : MonoBehaviour
             }
 
             if (fallback == null)
+            {
                 fallback = item;
+            }
         }
 
         return fallback;

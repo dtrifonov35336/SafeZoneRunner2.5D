@@ -24,4 +24,11 @@ sysinfo.txt
 *.apk 
 *.aab 
 *.unitypackage 
-crashlytics-build.properties 
+crashlytics-build.properties
+.vs/
+.vscode/
+.utmp/
+.plastic/
+
+Safe Zone Runner_BackUpThisFolder_ButDontShipItWithYourGame/
+Safe Zone Runner_BurstDebugInformation_DoNotShipIt/ 
