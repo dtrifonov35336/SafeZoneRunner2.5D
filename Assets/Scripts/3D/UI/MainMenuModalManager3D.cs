@@ -3,17 +3,11 @@ using UnityEngine;
 
 public class MainMenuModalManager3D : MonoBehaviour
 {
-    public static MainMenuModalManager3D Instance
-    {
-        get;
-        private set;
-    }
+    public static MainMenuModalManager3D Instance { get; private set; }
 
-    [Header("Main Menu")]
     [SerializeField]
     private GameObject background;
 
-    [Header("Safe Area")]
     [SerializeField]
     private GameObject safeArea;
 
@@ -24,23 +18,15 @@ public class MainMenuModalManager3D : MonoBehaviour
 
     private void Awake()
     {
-        if (
-            Instance != null &&
-            Instance != this
-        )
+        if (Instance != null &&
+            Instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
-        Instance =
-            this;
+        Instance = this;
 
-        ResolveReferences();
-    }
-
-    private void Start()
-    {
         ResolveReferences();
     }
 
@@ -49,115 +35,65 @@ public class MainMenuModalManager3D : MonoBehaviour
         if (background == null)
         {
             Transform found =
-                transform.Find(
-                    "Background"
-                );
+                transform.Find("Background");
 
             if (found != null)
-            {
-                background =
-                    found.gameObject;
-            }
+                background = found.gameObject;
         }
 
         if (safeArea == null)
         {
             Transform found =
-                transform.Find(
-                    "SafeArea"
-                );
+                transform.Find("SafeArea");
 
             if (found != null)
-            {
-                safeArea =
-                    found.gameObject;
-            }
+                safeArea = found.gameObject;
         }
     }
 
-    // =========================================================
-    // OPEN
-    // =========================================================
-
-    public void OpenModal(
-        GameObject modal
-    )
+    public void OpenModal(GameObject modal)
     {
         if (modal == null)
             return;
 
         ResolveReferences();
 
-        // Если уже открыто другое окно,
-        // сначала полностью закрываем его.
-        if (
-            activeModal != null &&
-            activeModal != modal
-        )
+        if (activeModal != null &&
+            activeModal != modal)
         {
-            CloseModal();
+            CloseModal(activeModal);
         }
 
         hiddenObjects.Clear();
 
-        // =====================================================
-        // СКРЫВАЕМ ОСНОВНОЕ МЕНЮ
-        // =====================================================
-
-        if (safeArea != null)
-        {
-            safeArea.SetActive(false);
-        }
-
-        // =====================================================
-        // СКРЫВАЕМ ВСЕ ПРЯМЫЕ ДЕТИ CANVAS,
-        // КРОМЕ ФОНА И ОТКРЫВАЕМОГО ОКНА
-        // =====================================================
-
-        for (
-            int i = 0;
-            i < transform.childCount;
-            i++
-        )
+        for (int i = 0;
+             i < transform.childCount;
+             i++)
         {
             GameObject child =
                 transform.GetChild(i).gameObject;
 
-            if (
-                child == background ||
-                child == modal
-            )
+            if (child == background ||
+                child == modal ||
+                child == gameObject)
             {
                 continue;
             }
 
-            if (
-                child.activeSelf
-            )
+            if (child.activeSelf)
             {
-                hiddenObjects.Add(
-                    child
-                );
-
+                hiddenObjects.Add(child);
                 child.SetActive(false);
             }
         }
 
-        activeModal =
-            modal;
+        activeModal = modal;
 
         modal.SetActive(true);
-
         modal.transform.SetAsLastSibling();
     }
 
-    // =========================================================
-    // CLOSE
-    // =========================================================
-
-    public void CloseModal(
-        GameObject modal = null
-    )
+    public void CloseModal(GameObject modal = null)
     {
         GameObject target =
             modal != null
@@ -165,39 +101,21 @@ public class MainMenuModalManager3D : MonoBehaviour
                 : activeModal;
 
         if (target != null)
-        {
             target.SetActive(false);
-        }
 
-        for (
-            int i = 0;
-            i < hiddenObjects.Count;
-            i++
-        )
+        for (int i = 0;
+             i < hiddenObjects.Count;
+             i++)
         {
-            GameObject objectToRestore =
-                hiddenObjects[i];
-
-            if (
-                objectToRestore != null
-            )
-            {
-                objectToRestore.SetActive(true);
-            }
+            if (hiddenObjects[i] != null)
+                hiddenObjects[i].SetActive(true);
         }
 
         hiddenObjects.Clear();
-
-        activeModal =
-            null;
-
-        if (safeArea != null)
-        {
-            safeArea.SetActive(true);
-        }
+        activeModal = null;
     }
 
-    public bool IsModalOpened()
+    public bool IsModalOpen()
     {
         return activeModal != null;
     }
