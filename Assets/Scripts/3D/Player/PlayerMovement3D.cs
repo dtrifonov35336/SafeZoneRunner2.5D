@@ -29,6 +29,34 @@ public class PlayerMovement3D : MonoBehaviour
     [Header("Скольжение")]
     public float slideDuration = 0.7f;
 
+    [Tooltip("Время плавного опускания коллайдера.")]
+    public float slideEnterTime = 0.10f;
+
+    [Tooltip("Время плавного возврата коллайдера.")]
+    public float slideExitTime = 0.12f;
+
+    [Tooltip("Размер BoxCollider во время скольжения.")]
+    public Vector3 slideColliderSize =
+        new Vector3(
+            3f,
+            2.6f,
+            3f
+        );
+
+    [Tooltip("Центр BoxCollider во время скольжения.")]
+    public Vector3 slideColliderCenter =
+        new Vector3(
+            0f,
+            -1.7f,
+            0f
+        );
+
+    [Tooltip("Проверять наличие препятствия перед подъёмом.")]
+    public bool checkStandUpClearance = true;
+
+    [Tooltip("Небольшой запас пространства над головой.")]
+    public float standUpExtraHeight = 0.05f;
+
     [Header("Откат после удара")]
     public float knockbackRecoverySpeed = 4f;
     public float maxKnockbackZ = 1.5f;
@@ -70,6 +98,13 @@ public class PlayerMovement3D : MonoBehaviour
 
     private Light playerFillLight;
 
+    private BoxCollider playerCollider;
+
+    private Vector3 normalColliderSize;
+    private Vector3 normalColliderCenter;
+
+    private PlayerVisualController visualController;
+
     private void Awake()
     {
         animator =
@@ -77,20 +112,39 @@ public class PlayerMovement3D : MonoBehaviour
                 Animator
             >();
 
+        visualController =
+            GetComponentInChildren<
+                PlayerVisualController
+            >();
+
+        playerCollider =
+            GetComponent<BoxCollider>();
+
+        // Запоминаем реально установленный
+        // в сцене обычный Collider.
+        if (playerCollider != null)
+        {
+            normalColliderSize =
+                playerCollider.size;
+
+            normalColliderCenter =
+                playerCollider.center;
+        }
+
         string charId =
             ProfileManager
                 .GetSelectedCharacterId();
 
-        // Ангар + уровни:
-        // увеличивают скорость смены полос.
+        // =====================================================
+        // УЛУЧШЕНИЯ
+        // =====================================================
+
         laneChangeSpeed *=
             BonusCalculator
                 .GetSpeedMultiplier(
                     charId
                 );
 
-        // Выносливость реально влияет
-        // на восстановление после удара.
         knockbackRecoverySpeed =
             BonusCalculator
                 .GetKnockbackRecoverySpeed(
@@ -98,8 +152,6 @@ public class PlayerMovement3D : MonoBehaviour
                     knockbackRecoverySpeed
                 );
 
-        // Ускоритель реально влияет
-        // на прыжок.
         float jumpMultiplier =
             BonusCalculator
                 .GetJumpHeightMultiplier(
@@ -118,8 +170,10 @@ public class PlayerMovement3D : MonoBehaviour
         targetY =
             baseY;
 
-        if (lanePositions == null ||
-            lanePositions.Length != 2)
+        if (
+            lanePositions == null ||
+            lanePositions.Length != 2
+        )
         {
             lanePositions =
                 new float[]
@@ -137,8 +191,10 @@ public class PlayerMovement3D : MonoBehaviour
                 currentLane
             ];
 
-        if (mainSprite == null &&
-            animator != null)
+        if (
+            mainSprite == null &&
+            animator != null
+        )
         {
             mainSprite =
                 animator.GetComponent<
@@ -180,11 +236,16 @@ public class PlayerMovement3D : MonoBehaviour
                     Light
                 >(true);
 
-            foreach (Light light in lights)
+            foreach (
+                Light light
+                in lights
+            )
             {
-                if (light != null &&
+                if (
+                    light != null &&
                     light.gameObject.name ==
-                    "PlayerFillLight")
+                    "PlayerFillLight"
+                )
                 {
                     playerFillLight =
                         light;
@@ -197,8 +258,10 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void Update()
     {
-        if (isDead ||
-            isVictory)
+        if (
+            isDead ||
+            isVictory
+        )
         {
             return;
         }
@@ -224,30 +287,49 @@ public class PlayerMovement3D : MonoBehaviour
             initialRotation;
     }
 
+    // =========================================================
+    // INPUT
+    // =========================================================
+
     private void ProcessKeyboardInput()
     {
         if (Keyboard.current == null)
             return;
 
-        if (Keyboard.current.aKey.wasPressedThisFrame ||
-            Keyboard.current.leftArrowKey.wasPressedThisFrame)
+        if (
+            Keyboard.current.aKey
+                .wasPressedThisFrame ||
+            Keyboard.current.leftArrowKey
+                .wasPressedThisFrame
+        )
         {
             MoveLaneLeft();
         }
 
-        if (Keyboard.current.dKey.wasPressedThisFrame ||
-            Keyboard.current.rightArrowKey.wasPressedThisFrame)
+        if (
+            Keyboard.current.dKey
+                .wasPressedThisFrame ||
+            Keyboard.current.rightArrowKey
+                .wasPressedThisFrame
+        )
         {
             MoveLaneRight();
         }
 
-        if (Keyboard.current.wKey.wasPressedThisFrame ||
-            Keyboard.current.upArrowKey.wasPressedThisFrame)
+        if (
+            Keyboard.current.wKey
+                .wasPressedThisFrame ||
+            Keyboard.current.upArrowKey
+                .wasPressedThisFrame
+        )
         {
             Jump();
         }
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (
+            Keyboard.current.spaceKey
+                .wasPressedThisFrame
+        )
         {
             if (isJumping)
                 DoubleJump();
@@ -255,8 +337,12 @@ public class PlayerMovement3D : MonoBehaviour
                 Jump();
         }
 
-        if (Keyboard.current.sKey.wasPressedThisFrame ||
-            Keyboard.current.downArrowKey.wasPressedThisFrame)
+        if (
+            Keyboard.current.sKey
+                .wasPressedThisFrame ||
+            Keyboard.current.downArrowKey
+                .wasPressedThisFrame
+        )
         {
             Slide();
         }
@@ -267,27 +353,58 @@ public class PlayerMovement3D : MonoBehaviour
         if (TouchControls.Instance == null)
             return;
 
-        if (TouchControls.Instance.ConsumeLeft())
+        if (
+            TouchControls.Instance
+                .ConsumeLeft()
+        )
+        {
             MoveLaneLeft();
+        }
 
-        if (TouchControls.Instance.ConsumeRight())
+        if (
+            TouchControls.Instance
+                .ConsumeRight()
+        )
+        {
             MoveLaneRight();
+        }
 
-        if (TouchControls.Instance.ConsumeJump())
+        if (
+            TouchControls.Instance
+                .ConsumeJump()
+        )
+        {
             Jump();
+        }
 
-        if (TouchControls.Instance.ConsumeDoubleJump())
+        if (
+            TouchControls.Instance
+                .ConsumeDoubleJump()
+        )
+        {
             DoubleJump();
+        }
 
-        if (TouchControls.Instance.ConsumeSlide())
+        if (
+            TouchControls.Instance
+                .ConsumeSlide()
+        )
+        {
             Slide();
+        }
     }
+
+    // =========================================================
+    // LANES
+    // =========================================================
 
     private void MoveLaneLeft()
     {
-        if (isDead ||
+        if (
+            isDead ||
             isDying ||
-            isVictory)
+            isVictory
+        )
         {
             return;
         }
@@ -305,17 +422,21 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void MoveLaneRight()
     {
-        if (isDead ||
+        if (
+            isDead ||
             isDying ||
-            isVictory)
+            isVictory
+        )
         {
             return;
         }
 
         currentLane++;
 
-        if (currentLane >=
-            lanePositions.Length)
+        if (
+            currentLane >=
+            lanePositions.Length
+        )
         {
             currentLane =
                 lanePositions.Length - 1;
@@ -345,14 +466,23 @@ public class PlayerMovement3D : MonoBehaviour
             pos;
     }
 
+    // =========================================================
+    // JUMP
+    // =========================================================
+
     public void Jump()
     {
-        if (isDead ||
+        if (
+            isDead ||
             isDying ||
-            isVictory)
+            isVictory
+        )
         {
             return;
         }
+
+        if (isSliding)
+            return;
 
         if (isJumping)
             return;
@@ -378,12 +508,17 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void DoubleJump()
     {
-        if (isDead ||
+        if (
+            isDead ||
             isDying ||
-            isVictory)
+            isVictory
+        )
         {
             return;
         }
+
+        if (isSliding)
+            return;
 
         if (!allowDoubleJump)
             return;
@@ -427,8 +562,10 @@ public class PlayerMovement3D : MonoBehaviour
             verticalVelocity *
             Time.deltaTime;
 
-        if (jumpOffset <= 0f &&
-            verticalVelocity < 0f)
+        if (
+            jumpOffset <= 0f &&
+            verticalVelocity < 0f
+        )
         {
             jumpOffset =
                 0f;
@@ -444,14 +581,24 @@ public class PlayerMovement3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // SLIDE
+    // =========================================================
+
     public void Slide()
     {
-        if (isDead ||
+        if (
+            isDead ||
             isDying ||
-            isVictory)
+            isVictory
+        )
         {
             return;
         }
+
+        // Не начинаем слайд в воздухе.
+        if (isJumping)
+            return;
 
         if (isSliding)
             return;
@@ -474,23 +621,324 @@ public class PlayerMovement3D : MonoBehaviour
         isSliding =
             true;
 
+        // Запускаем визуальную анимацию.
+        if (visualController != null)
+        {
+            visualController
+                .StartSlideAnimation();
+        }
+
+        float enterTime =
+            Mathf.Max(
+                0.01f,
+                slideEnterTime
+            );
+
+        float exitTime =
+            Mathf.Max(
+                0.01f,
+                slideExitTime
+            );
+
+        float totalDuration =
+            Mathf.Max(
+                enterTime +
+                exitTime,
+                slideDuration
+            );
+
+        float holdDuration =
+            Mathf.Max(
+                0f,
+                totalDuration -
+                enterTime -
+                exitTime
+            );
+
+        // =====================================================
+        // ОПУСКАНИЕ
+        // =====================================================
+
         float timer =
             0f;
 
-        while (timer < slideDuration)
+        while (
+            timer <
+            enterTime
+        )
         {
             timer +=
                 Time.deltaTime;
 
+            float t =
+                Mathf.Clamp01(
+                    timer /
+                    enterTime
+                );
+
+            ApplySlideCollider(
+                t
+            );
+
             yield return null;
         }
+
+        ApplySlideCollider(
+            1f
+        );
+
+        // =====================================================
+        // ОСНОВНАЯ ФАЗА СКОЛЬЖЕНИЯ
+        // =====================================================
+
+        timer =
+            0f;
+
+        while (
+            timer <
+            holdDuration
+        )
+        {
+            timer +=
+                Time.deltaTime;
+
+            ApplySlideCollider(
+                1f
+            );
+
+            yield return null;
+        }
+
+        // =====================================================
+        // НЕ ПОДНИМАЕМСЯ ПОД ПРЕПЯТСТВИЕМ
+        // =====================================================
+
+        if (checkStandUpClearance)
+        {
+            while (
+                !CanStandUp()
+            )
+            {
+                ApplySlideCollider(
+                    1f
+                );
+
+                yield return null;
+            }
+        }
+
+        // =====================================================
+        // ВОЗВРАТ К НОРМАЛЬНОМУ КОЛЛАЙДЕРУ
+        // =====================================================
+
+        timer =
+            0f;
+
+        while (
+            timer <
+            exitTime
+        )
+        {
+            timer +=
+                Time.deltaTime;
+
+            float t =
+                Mathf.Clamp01(
+                    timer /
+                    exitTime
+                );
+
+            ApplySlideCollider(
+                1f - t
+            );
+
+            yield return null;
+        }
+
+        RestoreNormalCollider();
 
         isSliding =
             false;
 
         slideCoroutine =
             null;
+
+        if (visualController != null)
+        {
+            visualController
+                .EndSlideAnimation();
+        }
     }
+
+    private void ApplySlideCollider(
+        float t
+    )
+    {
+        if (playerCollider == null)
+            return;
+
+        t =
+            Mathf.Clamp01(t);
+
+        playerCollider.size =
+            Vector3.Lerp(
+                normalColliderSize,
+                slideColliderSize,
+                t
+            );
+
+        playerCollider.center =
+            Vector3.Lerp(
+                normalColliderCenter,
+                slideColliderCenter,
+                t
+            );
+    }
+
+    private void RestoreNormalCollider()
+    {
+        if (playerCollider == null)
+            return;
+
+        playerCollider.size =
+            normalColliderSize;
+
+        playerCollider.center =
+            normalColliderCenter;
+    }
+
+    private bool CanStandUp()
+    {
+        if (playerCollider == null)
+            return true;
+
+        Vector3 targetSize =
+            normalColliderSize;
+
+        targetSize.y +=
+            standUpExtraHeight;
+
+        Vector3 worldCenter =
+            transform.TransformPoint(
+                normalColliderCenter
+            );
+
+        Vector3 halfExtents =
+            Vector3.Scale(
+                targetSize * 0.5f,
+                AbsVector(
+                    transform.lossyScale
+                )
+            );
+
+        Collider[] hits =
+            Physics.OverlapBox(
+                worldCenter,
+                halfExtents,
+                transform.rotation,
+                ~0,
+                QueryTriggerInteraction.Collide
+            );
+
+        foreach (
+            Collider hit
+            in hits
+        )
+        {
+            if (hit == null)
+                continue;
+
+            if (
+                hit ==
+                playerCollider
+            )
+            {
+                continue;
+            }
+
+            if (
+                hit.transform == transform ||
+                hit.transform.IsChildOf(
+                    transform
+                )
+            )
+            {
+                continue;
+            }
+
+            bool obstacle =
+                hit.CompareTag(
+                    "Obstacle"
+                );
+
+            if (!obstacle)
+            {
+                Transform root =
+                    hit.transform.root;
+
+                obstacle =
+                    root != null &&
+                    root.CompareTag(
+                        "Obstacle"
+                    );
+            }
+
+            if (obstacle)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Vector3 AbsVector(
+        Vector3 value
+    )
+    {
+        return new Vector3(
+            Mathf.Abs(value.x),
+            Mathf.Abs(value.y),
+            Mathf.Abs(value.z)
+        );
+    }
+
+    private void CancelSlide(
+        bool restoreCollider,
+        bool restoreAnimation
+    )
+    {
+        if (slideCoroutine != null)
+        {
+            StopCoroutine(
+                slideCoroutine
+            );
+
+            slideCoroutine =
+                null;
+        }
+
+        isSliding =
+            false;
+
+        if (restoreCollider)
+        {
+            RestoreNormalCollider();
+        }
+
+        if (
+            restoreAnimation &&
+            visualController != null
+        )
+        {
+            visualController
+                .EndSlideAnimation();
+        }
+    }
+
+    // =========================================================
+    // GROUND
+    // =========================================================
 
     private void UpdateGroundRecovery()
     {
@@ -512,11 +960,17 @@ public class PlayerMovement3D : MonoBehaviour
             );
     }
 
+    // =========================================================
+    // KNOCKBACK
+    // =========================================================
+
     private void UpdateKnockback()
     {
-        if (Mathf.Abs(
+        if (
+            Mathf.Abs(
                 knockbackZ
-            ) <= 0.001f)
+            ) <= 0.001f
+        )
         {
             knockbackZ =
                 0f;
@@ -550,11 +1004,14 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     public void Knockback(
-        float amount)
+        float amount
+    )
     {
-        if (isDead ||
+        if (
+            isDead ||
             isDying ||
-            isVictory)
+            isVictory
+        )
         {
             return;
         }
@@ -566,7 +1023,9 @@ public class PlayerMovement3D : MonoBehaviour
             Mathf.Max(
                 -maxKnockbackZ,
                 knockbackZ -
-                Mathf.Abs(amount)
+                Mathf.Abs(
+                    amount
+                )
             );
     }
 
@@ -576,15 +1035,20 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void FallIntoPit()
     {
-        FallIntoPit(0f);
+        FallIntoPit(
+            0f
+        );
     }
 
     public void FallIntoPit(
-        float delay)
+        float delay
+    )
     {
-        if (isDead ||
+        if (
+            isDead ||
             isDying ||
-            isVictory)
+            isVictory
+        )
         {
             return;
         }
@@ -592,15 +1056,10 @@ public class PlayerMovement3D : MonoBehaviour
         if (isJumping)
             return;
 
-        if (slideCoroutine != null)
-        {
-            StopCoroutine(
-                slideCoroutine
-            );
-        }
-
-        isSliding =
-            false;
+        CancelSlide(
+            true,
+            true
+        );
 
         isDying =
             true;
@@ -622,7 +1081,8 @@ public class PlayerMovement3D : MonoBehaviour
     }
 
     private IEnumerator FallIntoPitRoutine(
-        float delay)
+        float delay
+    )
     {
         if (delay > 0f)
         {
@@ -645,7 +1105,10 @@ public class PlayerMovement3D : MonoBehaviour
         float timer =
             0f;
 
-        while (timer < duration)
+        while (
+            timer <
+            duration
+        )
         {
             timer +=
                 Time.deltaTime;
@@ -678,26 +1141,42 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void StopAnimation()
     {
+        CancelSlide(
+            true,
+            false
+        );
+
         isVictory =
             true;
 
         if (animator != null)
+        {
             animator.speed =
                 0f;
+        }
 
         if (mainSprite != null)
+        {
             mainSprite.enabled =
                 false;
+        }
 
         if (victorySprite != null)
+        {
             victorySprite.enabled =
                 true;
+        }
     }
 
     public void Kill()
     {
         if (isDead)
             return;
+
+        CancelSlide(
+            true,
+            false
+        );
 
         isDying =
             true;
@@ -729,7 +1208,10 @@ public class PlayerMovement3D : MonoBehaviour
         float t =
             0f;
 
-        while (t < deathSlideDuration)
+        while (
+            t <
+            deathSlideDuration
+        )
         {
             t +=
                 Time.deltaTime;
@@ -763,6 +1245,8 @@ public class PlayerMovement3D : MonoBehaviour
 
         isDead =
             true;
+
+        RestoreNormalCollider();
     }
 
     // =========================================================
@@ -771,13 +1255,19 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void Revive()
     {
-        Revive(0f);
+        Revive(
+            0f
+        );
     }
 
     public void Revive(
-        float reviveZ)
+        float reviveZ
+    )
     {
         StopAllCoroutines();
+
+        slideCoroutine =
+            null;
 
         isDead =
             false;
@@ -787,6 +1277,11 @@ public class PlayerMovement3D : MonoBehaviour
 
         isVictory =
             false;
+
+        isSliding =
+            false;
+
+        RestoreNormalCollider();
 
         currentY =
             baseY;
@@ -816,14 +1311,13 @@ public class PlayerMovement3D : MonoBehaviour
         hasDoubleJumped =
             false;
 
-        isSliding =
-            false;
-
         currentLane =
             0;
 
-        if (lanePositions != null &&
-            lanePositions.Length == 2)
+        if (
+            lanePositions != null &&
+            lanePositions.Length == 2
+        )
         {
             targetX =
                 lanePositions[
@@ -858,11 +1352,16 @@ public class PlayerMovement3D : MonoBehaviour
         Collider[] colliders =
             GetComponents<Collider>();
 
-        foreach (Collider col in colliders)
+        foreach (
+            Collider col
+            in colliders
+        )
         {
             if (col != null)
+            {
                 col.enabled =
                     true;
+            }
         }
 
         if (mainSprite != null)
@@ -884,9 +1383,14 @@ public class PlayerMovement3D : MonoBehaviour
 
         if (visualCtrl != null)
         {
-            visualCtrl.ReviveAnimation();
+            visualCtrl
+                .ReviveAnimation();
         }
     }
+
+    // =========================================================
+    // GETTERS
+    // =========================================================
 
     public bool IsDead() =>
         isDead;
