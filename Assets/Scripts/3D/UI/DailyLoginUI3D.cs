@@ -232,6 +232,7 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         ApplyLayout();
+        ApplyCloseButtonVisual();
         ConfigureListeners();
     }
 
@@ -338,42 +339,31 @@ public class DailyLoginUI3D : MonoBehaviour
                     0.95f
                 )
             );
-
-            Image image =
-                closeButton.GetComponent<
-                    Image
-                >();
-
-            if (image != null)
-            {
-                image.raycastTarget =
-                    true;
-            }
         }
     }
 
-    private static void SetAnchored(
-        RectTransform rect,
-        Vector2 min,
-        Vector2 max
-    )
+    private void ApplyCloseButtonVisual()
     {
-        if (rect == null)
+        if (closeButton == null)
         {
             return;
         }
 
-        rect.anchorMin =
-            min;
+        Image image =
+            closeButton.GetComponent<
+                Image
+            >();
 
-        rect.anchorMax =
-            max;
+        if (image == null)
+        {
+            return;
+        }
 
-        rect.offsetMin =
-            Vector2.zero;
+        image.type =
+            Image.Type.Simple;
 
-        rect.offsetMax =
-            Vector2.zero;
+        image.raycastTarget =
+            true;
     }
 
     // =========================================================
@@ -382,16 +372,18 @@ public class DailyLoginUI3D : MonoBehaviour
 
     private void ConfigureListeners()
     {
-        if (closeButton != null)
+        if (closeButton == null)
         {
-            closeButton.onClick.RemoveListener(
-                Close
-            );
-
-            closeButton.onClick.AddListener(
-                Close
-            );
+            return;
         }
+
+        closeButton.onClick.RemoveListener(
+            Close
+        );
+
+        closeButton.onClick.AddListener(
+            Close
+        );
     }
 
     // =========================================================
@@ -426,9 +418,6 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         const float width = 0.5f;
-
-        // Было 128/12.
-        // Теперь карточки крупнее и равномернее.
         const float cardHeight = 150f;
         const float gap = 10f;
 
@@ -439,7 +428,7 @@ public class DailyLoginUI3D : MonoBehaviour
                 0f,
                 rows *
                 (cardHeight + gap) +
-                8f
+                16f
             );
 
         for (
@@ -659,11 +648,11 @@ public class DailyLoginUI3D : MonoBehaviour
             TextAlignmentOptions.Center,
             new Vector2(
                 0.08f,
-                0.70f
+                0.68f
             ),
             new Vector2(
                 0.92f,
-                0.91f
+                0.90f
             )
         );
 
@@ -687,11 +676,11 @@ public class DailyLoginUI3D : MonoBehaviour
             TextAlignmentOptions.Center,
             new Vector2(
                 0.08f,
-                0.39f
+                0.38f
             ),
             new Vector2(
                 0.92f,
-                0.66f
+                0.65f
             )
         );
 
@@ -700,7 +689,6 @@ public class DailyLoginUI3D : MonoBehaviour
         // =====================================================
 
         string state;
-
         Color stateColor;
 
         if (claimedToday)
@@ -794,17 +782,6 @@ public class DailyLoginUI3D : MonoBehaviour
             current &&
             available;
 
-        Image buttonImage =
-            stateObject.GetComponent<
-                Image
-            >();
-
-        if (buttonImage != null)
-        {
-            buttonImage.raycastTarget =
-                true;
-        }
-
         if (
             current &&
             available
@@ -837,7 +814,6 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         Refresh();
-
         RefreshMenuBadge();
     }
 
@@ -897,8 +873,7 @@ public class DailyLoginUI3D : MonoBehaviour
         PlayerPrefs.Save();
 
         if (
-            AudioManager3D.Instance !=
-            null
+            AudioManager3D.Instance != null
         )
         {
             AudioManager3D.Instance
@@ -1042,9 +1017,14 @@ public class DailyLoginUI3D : MonoBehaviour
                 Image
             >();
 
+        // В проекте RuntimeUISprite3D
+        // существует только GetSolidSprite().
         image.sprite =
             RuntimeUISprite3D
                 .GetSolidSprite();
+
+        image.type =
+            Image.Type.Simple;
 
         image.color =
             color;
@@ -1145,6 +1125,9 @@ public class DailyLoginUI3D : MonoBehaviour
                 Image
             >();
 
+        image.type =
+            Image.Type.Simple;
+
         image.raycastTarget =
             true;
 
@@ -1171,5 +1154,33 @@ public class DailyLoginUI3D : MonoBehaviour
         );
 
         return go;
+    }
+
+    // =========================================================
+    // RECT
+    // =========================================================
+
+    private static void SetAnchored(
+        RectTransform rect,
+        Vector2 min,
+        Vector2 max
+    )
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 }

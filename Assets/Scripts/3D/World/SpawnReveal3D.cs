@@ -11,20 +11,13 @@ public class SpawnReveal3D : MonoBehaviour
     private bool revealed;
 
     public void Initialize(
-        float targetRevealZ)
+        float targetRevealZ
+    )
     {
         revealZ =
             targetRevealZ;
 
-        renderers =
-            GetComponentsInChildren<
-                Renderer
-            >(true);
-
-        colliders =
-            GetComponentsInChildren<
-                Collider
-            >(true);
+        CacheComponents();
 
         revealed =
             false;
@@ -34,12 +27,61 @@ public class SpawnReveal3D : MonoBehaviour
         );
     }
 
+    // =========================================================
+    // СИНХРОНИЗИРОВАННЫЙ REVEAL
+    // =========================================================
+
+    public void InitializeSynchronized(
+        float objectSpawnZ,
+        float referenceSpawnZ,
+        float referenceRevealZ
+    )
+    {
+        // Объекты движутся с одинаковой скоростью по Z.
+        // Поэтому вычисляем такой revealZ для объекта,
+        // чтобы он открылся в тот же момент,
+        // когда reference-объект достигнет referenceRevealZ.
+        revealZ =
+            referenceRevealZ +
+            (
+                objectSpawnZ -
+                referenceSpawnZ
+            );
+
+        CacheComponents();
+
+        revealed =
+            false;
+
+        SetVisible(
+            false
+        );
+    }
+
+    private void CacheComponents()
+    {
+        renderers =
+            GetComponentsInChildren<
+                Renderer
+            >(true);
+
+        colliders =
+            GetComponentsInChildren<
+                Collider
+            >(true);
+    }
+
     private void Update()
     {
         if (revealed)
+        {
             return;
+        }
 
-        if (transform.position.z <= revealZ)
+        if (
+            transform.position.z <=
+            revealZ
+        )
         {
             revealed =
                 true;
@@ -51,25 +93,36 @@ public class SpawnReveal3D : MonoBehaviour
     }
 
     private void SetVisible(
-        bool value)
+        bool value
+    )
     {
         if (renderers != null)
         {
-            foreach (Renderer r in renderers)
+            foreach (
+                Renderer renderer
+                in renderers
+            )
             {
-                if (r != null)
-                    r.enabled =
+                if (renderer != null)
+                {
+                    renderer.enabled =
                         value;
+                }
             }
         }
 
         if (colliders != null)
         {
-            foreach (Collider c in colliders)
+            foreach (
+                Collider collider
+                in colliders
+            )
             {
-                if (c != null)
-                    c.enabled =
+                if (collider != null)
+                {
+                    collider.enabled =
                         value;
+                }
             }
         }
     }

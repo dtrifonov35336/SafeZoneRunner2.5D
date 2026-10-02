@@ -9,7 +9,7 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     [Header("Lanes")]
     public float[] lanePositions =
-        new float[] { -0.7f, 0.7f };
+        new float[] { -0.8f, 0.8f };
 
     [Header("Spawning")]
     public float startInterval = 3.5f;
@@ -17,16 +17,12 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float difficultyRampTime = 114f;
 
     [Header("Двойной спавн")]
-    [Tooltip(
-        "Иногда два обычных препятствия появляются одновременно " +
-        "на двух разных полосах."
-    )]
     public bool allowDoubleObstacleWaves = true;
 
     [Range(0f, 1f)]
     public float doubleObstacleWaveChance = 0.30f;
 
-    [Range(1, 5)]
+    [Range(1, 2)]
     public int maxObstaclesPerWave = 2;
 
     [Header("Position")]
@@ -100,10 +96,14 @@ public class ObstacleSpawner3D : MonoBehaviour
                 0f,
                 baseObstacleSpeed
             );
+
+        SyncLanePositionsWithPlayer();
     }
 
     private void Start()
     {
+        SyncLanePositionsWithPlayer();
+
         if (
             lanePositions == null ||
             lanePositions.Length != 2
@@ -112,13 +112,11 @@ public class ObstacleSpawner3D : MonoBehaviour
             lanePositions =
                 new float[]
                 {
-                    -0.7f,
-                    0.7f
+                    -0.8f,
+                    0.8f
                 };
         }
 
-        // Двойной спавн разрешён логикой отдельным шансом.
-        // Поэтому старое значение 1 из сцены не должно его отключать.
         if (maxObstaclesPerWave < 2)
         {
             maxObstaclesPerWave = 2;
@@ -192,7 +190,43 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // СКОРОСТЬ
+    // LANES
+    // =========================================================
+
+    private void SyncLanePositionsWithPlayer()
+    {
+        PlayerMovement3D player =
+            FindFirstObjectByType<PlayerMovement3D>();
+
+        if (
+            player != null &&
+            player.lanePositions != null &&
+            player.lanePositions.Length == 2
+        )
+        {
+            lanePositions =
+                new float[]
+                {
+                    player.lanePositions[0],
+                    player.lanePositions[1]
+                };
+        }
+        else if (
+            lanePositions == null ||
+            lanePositions.Length != 2
+        )
+        {
+            lanePositions =
+                new float[]
+                {
+                    -0.8f,
+                    0.8f
+                };
+        }
+    }
+
+    // =========================================================
+    // SPEED
     // =========================================================
 
     private void UpdateCurrentObstacleSpeed()
@@ -260,11 +294,13 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // SPAWN WAVE
+    // WAVE
     // =========================================================
 
     private bool TrySpawnWave()
     {
+        SyncLanePositionsWithPlayer();
+
         if (
             obstaclePrefabs == null ||
             obstaclePrefabs.Length == 0
@@ -273,7 +309,6 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
-        // Двойной спавн только для обычных препятствий.
         if (
             allowDoubleObstacleWaves &&
             maxObstaclesPerWave >= 2 &&
@@ -287,19 +322,19 @@ public class ObstacleSpawner3D : MonoBehaviour
             }
         }
 
-        // Если двойной спавн не удался,
-        // обычный одиночный остаётся рабочим.
         return TrySpawnOne();
     }
 
     // =========================================================
-    // ДВОЙНАЯ ВОЛНА
+    // DOUBLE
     // =========================================================
 
     private bool TrySpawnDoubleNormalWave()
     {
-        if (lanePositions == null ||
-            lanePositions.Length != 2)
+        if (
+            lanePositions == null ||
+            lanePositions.Length != 2
+        )
         {
             return false;
         }
@@ -320,9 +355,6 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
-        // Оба должны быть обычными,
-        // поэтому Bus / Slide / Pipe / DoubleJump
-        // сюда не попадут.
         if (
             IsWideObstacle(firstPrefab) ||
             IsWideObstacle(secondPrefab)
@@ -334,7 +366,7 @@ public class ObstacleSpawner3D : MonoBehaviour
         int coinLane =
             Random.Range(
                 0,
-                lanePositions.Length
+                2
             );
 
         int secondLane =
@@ -342,17 +374,16 @@ public class ObstacleSpawner3D : MonoBehaviour
                 ? 1
                 : 0;
 
-        float coinObstacleX =
+        float firstX =
             lanePositions[coinLane];
 
-        float secondObstacleX =
+        float secondX =
             lanePositions[secondLane];
 
-        // Проверяем специальные объекты.
         if (
             checkPickups &&
             !IsLaneClearOfSpecialObjects(
-                coinObstacleX
+                firstX
             )
         )
         {
@@ -362,18 +393,17 @@ public class ObstacleSpawner3D : MonoBehaviour
         if (
             checkPickups &&
             !IsLaneClearOfSpecialObjects(
-                secondObstacleX
+                secondX
             )
         )
         {
             return false;
         }
 
-        // Проверяем дистанцию до уже существующих препятствий.
         if (
             !CanSpawnAnotherObstacle(
                 firstPrefab,
-                coinObstacleX
+                firstX
             )
         )
         {
@@ -383,25 +413,24 @@ public class ObstacleSpawner3D : MonoBehaviour
         if (
             !CanSpawnAnotherObstacle(
                 secondPrefab,
-                secondObstacleX
+                secondX
             )
         )
         {
             return false;
         }
 
-        // ВАЖНО:
-        // только первое препятствие получает маршрут монет.
+        // Только первое препятствие получает монеты.
         SpawnOne(
             firstPrefab,
-            coinObstacleX,
+            firstX,
             true
         );
 
-        // Второе препятствие полностью без маршрута монет.
+        // Второе — БЕЗ монет.
         SpawnOne(
             secondPrefab,
-            secondObstacleX,
+            secondX,
             false
         );
 
@@ -409,7 +438,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // ОДИНОЧНОЕ ПРЕПЯТСТВИЕ
+    // SINGLE
     // =========================================================
 
     private bool TrySpawnOne()
@@ -428,13 +457,11 @@ public class ObstacleSpawner3D : MonoBehaviour
         }
 
         bool wide =
-            IsWideObstacle(
-                prefab
-            );
+            IsWideObstacle(prefab);
 
-        // =====================================================
-        // ШИРОКОЕ ПРЕПЯТСТВИЕ
-        // =====================================================
+        // -----------------------------------------------------
+        // BUS / PIPE / SLIDE
+        // -----------------------------------------------------
 
         if (wide)
         {
@@ -456,7 +483,6 @@ public class ObstacleSpawner3D : MonoBehaviour
                 return false;
             }
 
-            // Широкое препятствие всегда в центре.
             SpawnOne(
                 prefab,
                 0f,
@@ -466,14 +492,14 @@ public class ObstacleSpawner3D : MonoBehaviour
             return true;
         }
 
-        // =====================================================
-        // ОБЫЧНОЕ
-        // =====================================================
+        // -----------------------------------------------------
+        // Обычное
+        // -----------------------------------------------------
 
         int first =
             Random.Range(
                 0,
-                lanePositions.Length
+                2
             );
 
         int second =
@@ -525,30 +551,18 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // ПОИСК ОБЫЧНОГО ПРЕПЯТСТВИЯ
+    // REGULAR PREFAB
     // =========================================================
 
     private GameObject GetRandomRegularObstaclePrefab()
     {
-        if (
-            obstaclePrefabs == null ||
-            obstaclePrefabs.Length == 0
-        )
-        {
-            return null;
-        }
-
         int validCount = 0;
 
-        for (
-            int i = 0;
-            i < obstaclePrefabs.Length;
-            i++
+        foreach (
+            GameObject prefab
+            in obstaclePrefabs
         )
         {
-            GameObject prefab =
-                obstaclePrefabs[i];
-
             if (
                 prefab == null ||
                 IsWideObstacle(prefab)
@@ -571,15 +585,11 @@ public class ObstacleSpawner3D : MonoBehaviour
                 validCount
             );
 
-        for (
-            int i = 0;
-            i < obstaclePrefabs.Length;
-            i++
+        foreach (
+            GameObject prefab
+            in obstaclePrefabs
         )
         {
-            GameObject prefab =
-                obstaclePrefabs[i];
-
             if (
                 prefab == null ||
                 IsWideObstacle(prefab)
@@ -600,7 +610,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // ДИСТАНЦИЯ
+    // GAP
     // =========================================================
 
     private bool CanSpawnAnotherObstacle(
@@ -652,8 +662,7 @@ public class ObstacleSpawner3D : MonoBehaviour
                 existingWide
             )
             {
-                laneConflict =
-                    true;
+                laneConflict = true;
             }
             else
             {
@@ -689,7 +698,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // ШИРОКОЕ ПРЕПЯТСТВИЕ
+    // WIDE
     // =========================================================
 
     private bool IsWideObstacle(
@@ -708,7 +717,6 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         if (type != null)
         {
-            // Яма остаётся полосовой.
             if (
                 type.type ==
                 ObstacleType.Pit
@@ -717,9 +725,6 @@ public class ObstacleSpawner3D : MonoBehaviour
                 return false;
             }
 
-            // Slide / DoubleJump считаются широкими.
-            // Поэтому сюда попадает труба/Bus,
-            // если они имеют эти типы.
             if (
                 type.type ==
                 ObstacleType.Slide ||
@@ -734,8 +739,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         float width =
             GetObjectWidth(obj);
 
-        return width >=
-               wideObstacleWidth;
+        return
+            width >=
+            wideObstacleWidth;
     }
 
     private float GetObjectWidth(
@@ -797,7 +803,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // СЕРДЦА / СПАСЁННЫЕ
+    // SPECIAL OBJECTS
     // =========================================================
 
     private bool IsLaneClearOfSpecialObjects(
@@ -923,7 +929,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // СОЗДАНИЕ
+    // CREATE
     // =========================================================
 
     private void SpawnOne(
@@ -978,10 +984,6 @@ public class ObstacleSpawner3D : MonoBehaviour
             >();
         }
 
-        // =====================================================
-        // GROUND SNAP
-        // =====================================================
-
         GroundSnap3D groundSnap =
             instance.GetComponent<
                 GroundSnap3D
@@ -1003,10 +1005,6 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         groundSnap.SnapToGround();
 
-        // =====================================================
-        // ДВИЖЕНИЕ
-        // =====================================================
-
         ObstacleMover3D mover =
             instance.GetComponent<
                 ObstacleMover3D
@@ -1026,12 +1024,9 @@ public class ObstacleSpawner3D : MonoBehaviour
             mover.ApplyInitialState();
         }
 
-        // =====================================================
-        // REVEAL
-        // =====================================================
-
         string charId =
-            ProfileManager.GetSelectedCharacterId();
+            ProfileManager
+                .GetSelectedCharacterId();
 
         float effectiveRevealZ =
             BonusCalculator.GetObstacleRevealZ(
@@ -1057,13 +1052,8 @@ public class ObstacleSpawner3D : MonoBehaviour
             effectiveRevealZ
         );
 
-        // =====================================================
-        // СРАЗУ РЕГИСТРИРУЕМ ПРЕПЯТСТВИЕ В СПАВНЕРЕ МОНЕТ
-        // =====================================================
-
         if (
-            PickupSpawner3D.Instance !=
-            null
+            PickupSpawner3D.Instance != null
         )
         {
             PickupSpawner3D.Instance

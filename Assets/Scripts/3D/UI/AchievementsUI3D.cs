@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 public class AchievementsUI3D : MonoBehaviour
 {
-    [Header("Scene UI")]
     [SerializeField]
     private GameObject window;
 
@@ -113,6 +112,10 @@ public class AchievementsUI3D : MonoBehaviour
                 }
             };
 
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Awake()
     {
         ResolveReferences();
@@ -142,6 +145,10 @@ public class AchievementsUI3D : MonoBehaviour
             Close();
         }
     }
+
+    // =========================================================
+    // OPEN
+    // =========================================================
 
     public void Open()
     {
@@ -174,6 +181,10 @@ public class AchievementsUI3D : MonoBehaviour
 
         Refresh();
     }
+
+    // =========================================================
+    // CLOSE
+    // =========================================================
 
     public void Close()
     {
@@ -309,6 +320,7 @@ public class AchievementsUI3D : MonoBehaviour
         }
 
         ApplyLayout();
+        ApplyButtonVisuals();
         ConfigureListeners();
     }
 
@@ -351,56 +363,53 @@ public class AchievementsUI3D : MonoBehaviour
             );
         }
 
-        if (shelterTab != null)
-        {
-            SetAnchored(
-                shelterTab.GetComponent<
+        SetAnchored(
+            shelterTab != null
+                ? shelterTab.GetComponent<
                     RectTransform
-                >(),
-                new Vector2(
-                    0.07f,
-                    0.755f
-                ),
-                new Vector2(
-                    0.49f,
-                    0.835f
-                )
-            );
-        }
+                  >()
+                : null,
+            new Vector2(
+                0.065f,
+                0.745f
+            ),
+            new Vector2(
+                0.49f,
+                0.845f
+            )
+        );
 
-        if (infiniteTab != null)
-        {
-            SetAnchored(
-                infiniteTab.GetComponent<
+        SetAnchored(
+            infiniteTab != null
+                ? infiniteTab.GetComponent<
                     RectTransform
-                >(),
-                new Vector2(
-                    0.51f,
-                    0.755f
-                ),
-                new Vector2(
-                    0.93f,
-                    0.835f
-                )
-            );
-        }
+                  >()
+                : null,
+            new Vector2(
+                0.51f,
+                0.745f
+            ),
+            new Vector2(
+                0.935f,
+                0.845f
+            )
+        );
 
-        if (countText != null)
-        {
-            SetAnchored(
-                countText.GetComponent<
+        SetAnchored(
+            countText != null
+                ? countText.GetComponent<
                     RectTransform
-                >(),
-                new Vector2(
-                    0.50f,
-                    0.705f
-                ),
-                new Vector2(
-                    0.93f,
-                    0.75f
-                )
-            );
-        }
+                  >()
+                : null,
+            new Vector2(
+                0.45f,
+                0.695f
+            ),
+            new Vector2(
+                0.935f,
+                0.735f
+            )
+        );
 
         if (scroll != null)
         {
@@ -417,7 +426,7 @@ public class AchievementsUI3D : MonoBehaviour
                 ),
                 new Vector2(
                     0.945f,
-                    0.695f
+                    0.685f
                 )
             );
 
@@ -434,57 +443,65 @@ public class AchievementsUI3D : MonoBehaviour
                 65f;
         }
 
-        if (closeButton != null)
-        {
-            SetAnchored(
-                closeButton.GetComponent<
+        SetAnchored(
+            closeButton != null
+                ? closeButton.GetComponent<
                     RectTransform
-                >(),
-                new Vector2(
-                    0.875f,
-                    0.875f
-                ),
-                new Vector2(
-                    0.955f,
-                    0.95f
-                )
-            );
-
-            Image image =
-                closeButton.GetComponent<
-                    Image
-                >();
-
-            if (image != null)
-            {
-                image.raycastTarget =
-                    true;
-            }
-        }
+                  >()
+                : null,
+            new Vector2(
+                0.875f,
+                0.875f
+            ),
+            new Vector2(
+                0.955f,
+                0.95f
+            )
+        );
     }
 
-    private static void SetAnchored(
-        RectTransform rect,
-        Vector2 min,
-        Vector2 max
+    private void ApplyButtonVisuals()
+    {
+        SetSimpleButton(
+            shelterTab
+        );
+
+        SetSimpleButton(
+            infiniteTab
+        );
+
+        SetSimpleButton(
+            closeButton
+        );
+    }
+
+    private void SetSimpleButton(
+        Button button
     )
     {
-        if (rect == null)
+        if (button == null)
         {
             return;
         }
 
-        rect.anchorMin =
-            min;
+        Image image =
+            button.GetComponent<
+                Image
+            >();
 
-        rect.anchorMax =
-            max;
+        if (image == null)
+        {
+            return;
+        }
 
-        rect.offsetMin =
-            Vector2.zero;
+        image.type =
+            Image.Type.Simple;
 
-        rect.offsetMax =
-            Vector2.zero;
+        image.preserveAspect =
+            false;
+
+        image.raycastTarget =
+            true;
     }
 
     // =========================================================
@@ -570,7 +587,7 @@ public class AchievementsUI3D : MonoBehaviour
                 0f,
                 list.Count *
                 (cardHeight + gap) +
-                8f
+                12f
             );
 
         for (
@@ -601,6 +618,12 @@ public class AchievementsUI3D : MonoBehaviour
         }
 
         RefreshTabs();
+
+        if (scroll != null)
+        {
+            scroll.verticalNormalizedPosition =
+                1f;
+        }
     }
 
     private void ClearContent()
@@ -840,6 +863,21 @@ public class AchievementsUI3D : MonoBehaviour
                 "НЕ ВЫПОЛНЕНО";
         }
 
+        Color statusColor =
+            completed
+                ? new Color32(
+                    241,
+                    195,
+                    71,
+                    255
+                )
+                : new Color32(
+                    118,
+                    128,
+                    130,
+                    255
+                );
+
         GameObject statusObject =
             CreateButton(
                 "Status",
@@ -852,19 +890,7 @@ public class AchievementsUI3D : MonoBehaviour
                     52,
                     255
                 ),
-                completed
-                    ? new Color32(
-                        241,
-                        195,
-                        71,
-                        255
-                    )
-                    : new Color32(
-                        118,
-                        128,
-                        130,
-                        255
-                    )
+                statusColor
             );
 
         SetAnchored(
@@ -890,7 +916,7 @@ public class AchievementsUI3D : MonoBehaviour
             completed &&
             !claimed;
 
-        string id =
+        string achievementId =
             definition.id;
 
         statusButton.onClick.AddListener(
@@ -898,7 +924,9 @@ public class AchievementsUI3D : MonoBehaviour
             {
                 if (
                     AchievementSystem3D
-                        .Claim(id)
+                        .Claim(
+                            achievementId
+                        )
                 )
                 {
                     Refresh();
@@ -995,9 +1023,13 @@ public class AchievementsUI3D : MonoBehaviour
                 Image
             >();
 
+        // В RuntimeUISprite3D есть только GetSolidSprite().
         image.sprite =
             RuntimeUISprite3D
                 .GetSolidSprite();
+
+        image.type =
+            Image.Type.Simple;
 
         image.color =
             color;
@@ -1098,6 +1130,9 @@ public class AchievementsUI3D : MonoBehaviour
                 Image
             >();
 
+        image.type =
+            Image.Type.Simple;
+
         image.raycastTarget =
             true;
 
@@ -1124,5 +1159,33 @@ public class AchievementsUI3D : MonoBehaviour
         );
 
         return go;
+    }
+
+    // =========================================================
+    // RECT
+    // =========================================================
+
+    private static void SetAnchored(
+        RectTransform rect,
+        Vector2 min,
+        Vector2 max
+    )
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 }

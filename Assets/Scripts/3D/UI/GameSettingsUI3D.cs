@@ -5,7 +5,6 @@ using UnityEngine.UI;
 
 public class GameSettingsUI3D : MonoBehaviour
 {
-    [Header("Scene UI")]
     [SerializeField]
     private GameObject window;
 
@@ -223,6 +222,8 @@ public class GameSettingsUI3D : MonoBehaviour
         }
 
         ApplyLayout();
+        ApplyButtonVisuals();
+
         ConfigureListeners();
     }
 
@@ -232,297 +233,292 @@ public class GameSettingsUI3D : MonoBehaviour
 
     private void ApplyLayout()
     {
-        if (window != null)
-        {
-            RectTransform windowRect =
-                window.GetComponent<
-                    RectTransform
-                >();
+        SetStretch(
+            window
+        );
 
-            if (windowRect != null)
-            {
-                SetAnchored(
-                    windowRect,
-                    Vector2.zero,
-                    Vector2.one
-                );
-            }
-        }
-
-        Transform panel =
+        SetAnchored(
             transform.Find(
                 "Window/Panel"
-            );
+            ),
+            new Vector2(
+                0.055f,
+                0.045f
+            ),
+            new Vector2(
+                0.945f,
+                0.955f
+            )
+        );
 
-        if (panel != null)
-        {
-            SetAnchored(
-                panel.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.055f,
-                    0.045f
-                ),
-                new Vector2(
-                    0.945f,
-                    0.955f
-                )
-            );
-        }
-
-        Transform sound =
+        SetAnchored(
             transform.Find(
                 "Window/Panel/SoundSection"
-            );
+            ),
+            new Vector2(
+                0.065f,
+                0.62f
+            ),
+            new Vector2(
+                0.935f,
+                0.80f
+            )
+        );
 
-        if (sound != null)
-        {
-            SetAnchored(
-                sound.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.065f,
-                    0.60f
-                ),
-                new Vector2(
-                    0.935f,
-                    0.80f
-                )
-            );
-        }
-
-        Transform control =
+        SetAnchored(
             transform.Find(
                 "Window/Panel/ControlSection"
-            );
+            ),
+            new Vector2(
+                0.065f,
+                0.40f
+            ),
+            new Vector2(
+                0.935f,
+                0.58f
+            )
+        );
 
-        if (control != null)
-        {
-            SetAnchored(
-                control.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.065f,
-                    0.38f
-                ),
-                new Vector2(
-                    0.935f,
-                    0.58f
-                )
-            );
-        }
-
-        Transform performance =
+        SetAnchored(
             transform.Find(
                 "Window/Panel/PerformanceSection"
-            );
+            ),
+            new Vector2(
+                0.065f,
+                0.18f
+            ),
+            new Vector2(
+                0.935f,
+                0.36f
+            )
+        );
 
-        if (performance != null)
-        {
-            SetAnchored(
-                performance.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.065f,
-                    0.16f
-                ),
-                new Vector2(
-                    0.935f,
-                    0.36f
-                )
-            );
-        }
-
-        if (volumeSlider != null)
-        {
-            SetAnchored(
-                volumeSlider.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.43f,
-                    0.30f
-                ),
-                new Vector2(
-                    0.80f,
-                    0.62f
-                )
-            );
-        }
-
-        if (volumeValue != null)
-        {
-            SetAnchored(
-                volumeValue.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.82f,
-                    0.30f
-                ),
-                new Vector2(
-                    0.94f,
-                    0.62f
-                )
-            );
-        }
-
-        Transform volumeLabel =
+        SetAnchored(
             transform.Find(
                 "Window/Panel/SoundSection/VolumeLabel"
-            );
+            ),
+            new Vector2(
+                0.06f,
+                0.28f
+            ),
+            new Vector2(
+                0.42f,
+                0.62f
+            )
+        );
 
-        if (volumeLabel != null)
-        {
-            SetAnchored(
-                volumeLabel.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.06f,
-                    0.30f
-                ),
-                new Vector2(
-                    0.42f,
-                    0.62f
-                )
-            );
-        }
+        SetAnchored(
+            transform.Find(
+                "Window/Panel/SoundSection/VolumeSlider"
+            ),
+            new Vector2(
+                0.43f,
+                0.27f
+            ),
+            new Vector2(
+                0.80f,
+                0.63f
+            )
+        );
 
-        if (vibrationToggle != null)
-        {
-            SetAnchored(
-                vibrationToggle.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.80f,
-                    0.28f
-                ),
-                new Vector2(
-                    0.94f,
-                    0.68f
-                )
-            );
-        }
+        SetAnchored(
+            transform.Find(
+                "Window/Panel/SoundSection/VolumeValue"
+            ),
+            new Vector2(
+                0.82f,
+                0.28f
+            ),
+            new Vector2(
+                0.94f,
+                0.62f
+            )
+        );
 
-        Transform vibrationLabel =
+        SetAnchored(
             transform.Find(
                 "Window/Panel/ControlSection/VibrationLabel"
-            );
+            ),
+            new Vector2(
+                0.06f,
+                0.28f
+            ),
+            new Vector2(
+                0.55f,
+                0.62f
+            )
+        );
 
-        if (vibrationLabel != null)
+        SetAnchored(
+            transform.Find(
+                "Window/Panel/ControlSection/VibrationToggle"
+            ),
+            new Vector2(
+                0.79f,
+                0.25f
+            ),
+            new Vector2(
+                0.94f,
+                0.69f
+            )
+        );
+
+        SetAnchored(
+            transform.Find(
+                "Window/Panel/PerformanceSection/FPS30"
+            ),
+            new Vector2(
+                0.06f,
+                0.12f
+            ),
+            new Vector2(
+                0.47f,
+                0.57f
+            )
+        );
+
+        SetAnchored(
+            transform.Find(
+                "Window/Panel/PerformanceSection/FPS60"
+            ),
+            new Vector2(
+                0.53f,
+                0.12f
+            ),
+            new Vector2(
+                0.94f,
+                0.57f
+            )
+        );
+
+        SetAnchored(
+            transform.Find(
+                "Window/Panel/Close"
+            ),
+            new Vector2(
+                0.875f,
+                0.875f
+            ),
+            new Vector2(
+                0.955f,
+                0.95f
+            )
+        );
+    }
+
+    // =========================================================
+    // BUTTON VISUAL
+    // =========================================================
+
+    private void ApplyButtonVisuals()
+    {
+        SetSimpleButton(
+            fps30Button
+        );
+
+        SetSimpleButton(
+            fps60Button
+        );
+
+        SetSimpleButton(
+            closeButton
+        );
+    }
+
+    private void SetSimpleButton(
+        Button button
+    )
+    {
+        if (button == null)
         {
-            SetAnchored(
-                vibrationLabel.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.06f,
-                    0.30f
-                ),
-                new Vector2(
-                    0.55f,
-                    0.62f
-                )
-            );
+            return;
         }
 
-        if (fps30Button != null)
+        Image image =
+            button.GetComponent<
+                Image
+            >();
+
+        if (image == null)
         {
-            SetAnchored(
-                fps30Button.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.06f,
-                    0.14f
-                ),
-                new Vector2(
-                    0.47f,
-                    0.56f
-                )
-            );
-
-            Image image =
-                fps30Button.GetComponent<
-                    Image
-                >();
-
-            if (image != null)
-            {
-                image.raycastTarget =
-                    true;
-            }
+            return;
         }
 
-        if (fps60Button != null)
+        image.type =
+            Image.Type.Simple;
+
+        image.raycastTarget =
+            true;
+
+        image.preserveAspect =
+            false;
+    }
+
+    private static void SetStretch(
+        GameObject target
+    )
+    {
+        if (target == null)
         {
-            SetAnchored(
-                fps60Button.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.53f,
-                    0.14f
-                ),
-                new Vector2(
-                    0.94f,
-                    0.56f
-                )
-            );
-
-            Image image =
-                fps60Button.GetComponent<
-                    Image
-                >();
-
-            if (image != null)
-            {
-                image.raycastTarget =
-                    true;
-            }
+            return;
         }
 
-        if (closeButton != null)
+        SetStretch(
+            target.transform
+        );
+    }
+
+    private static void SetStretch(
+        Transform target
+    )
+    {
+        if (target == null)
         {
-            SetAnchored(
-                closeButton.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.875f,
-                    0.875f
-                ),
-                new Vector2(
-                    0.955f,
-                    0.95f
-                )
-            );
-
-            Image image =
-                closeButton.GetComponent<
-                    Image
-                >();
-
-            if (image != null)
-            {
-                image.raycastTarget =
-                    true;
-            }
+            return;
         }
+
+        RectTransform rect =
+            target.GetComponent<
+                RectTransform
+            >();
+
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin =
+            Vector2.zero;
+
+        rect.anchorMax =
+            Vector2.one;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
+
+        rect.localScale =
+            Vector3.one;
     }
 
     private static void SetAnchored(
-        RectTransform rect,
+        Transform target,
         Vector2 min,
         Vector2 max
     )
     {
+        if (target == null)
+        {
+            return;
+        }
+
+        RectTransform rect =
+            target.GetComponent<
+                RectTransform
+            >();
+
         if (rect == null)
         {
             return;
@@ -573,14 +569,12 @@ public class GameSettingsUI3D : MonoBehaviour
 
         if (vibrationToggle != null)
         {
-            vibrationToggle
-                .onValueChanged
+            vibrationToggle.onValueChanged
                 .RemoveListener(
                     OnVibrationChanged
                 );
 
-            vibrationToggle
-                .onValueChanged
+            vibrationToggle.onValueChanged
                 .AddListener(
                     OnVibrationChanged
                 );
@@ -588,33 +582,29 @@ public class GameSettingsUI3D : MonoBehaviour
 
         if (fps30Button != null)
         {
-            fps30Button.onClick
-                .RemoveListener(
-                    Set30FPS
-                );
+            fps30Button.onClick.RemoveListener(
+                Set30FPS
+            );
 
-            fps30Button.onClick
-                .AddListener(
-                    Set30FPS
-                );
+            fps30Button.onClick.AddListener(
+                Set30FPS
+            );
         }
 
         if (fps60Button != null)
         {
-            fps60Button.onClick
-                .RemoveListener(
-                    Set60FPS
-                );
+            fps60Button.onClick.RemoveListener(
+                Set60FPS
+            );
 
-            fps60Button.onClick
-                .AddListener(
-                    Set60FPS
-                );
+            fps60Button.onClick.AddListener(
+                Set60FPS
+            );
         }
     }
 
     // =========================================================
-    // REFRESH
+    // SETTINGS
     // =========================================================
 
     private void Refresh()
