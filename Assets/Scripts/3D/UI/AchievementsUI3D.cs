@@ -112,10 +112,6 @@ public class AchievementsUI3D : MonoBehaviour
                 }
             };
 
-    // =========================================================
-    // UNITY
-    // =========================================================
-
     private void Awake()
     {
         ResolveReferences();
@@ -319,189 +315,7 @@ public class AchievementsUI3D : MonoBehaviour
             }
         }
 
-        ApplyLayout();
-        ApplyButtonVisuals();
         ConfigureListeners();
-    }
-
-    // =========================================================
-    // LAYOUT
-    // =========================================================
-
-    private void ApplyLayout()
-    {
-        if (window != null)
-        {
-            SetAnchored(
-                window.GetComponent<
-                    RectTransform
-                >(),
-                Vector2.zero,
-                Vector2.one
-            );
-        }
-
-        Transform panel =
-            transform.Find(
-                "Window/Panel"
-            );
-
-        if (panel != null)
-        {
-            SetAnchored(
-                panel.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.055f,
-                    0.045f
-                ),
-                new Vector2(
-                    0.945f,
-                    0.955f
-                )
-            );
-        }
-
-        SetAnchored(
-            shelterTab != null
-                ? shelterTab.GetComponent<
-                    RectTransform
-                  >()
-                : null,
-            new Vector2(
-                0.065f,
-                0.745f
-            ),
-            new Vector2(
-                0.49f,
-                0.845f
-            )
-        );
-
-        SetAnchored(
-            infiniteTab != null
-                ? infiniteTab.GetComponent<
-                    RectTransform
-                  >()
-                : null,
-            new Vector2(
-                0.51f,
-                0.745f
-            ),
-            new Vector2(
-                0.935f,
-                0.845f
-            )
-        );
-
-        SetAnchored(
-            countText != null
-                ? countText.GetComponent<
-                    RectTransform
-                  >()
-                : null,
-            new Vector2(
-                0.45f,
-                0.695f
-            ),
-            new Vector2(
-                0.935f,
-                0.735f
-            )
-        );
-
-        if (scroll != null)
-        {
-            RectTransform scrollRect =
-                scroll.GetComponent<
-                    RectTransform
-                >();
-
-            SetAnchored(
-                scrollRect,
-                new Vector2(
-                    0.055f,
-                    0.045f
-                ),
-                new Vector2(
-                    0.945f,
-                    0.685f
-                )
-            );
-
-            scroll.horizontal =
-                false;
-
-            scroll.vertical =
-                true;
-
-            scroll.movementType =
-                ScrollRect.MovementType.Clamped;
-
-            scroll.scrollSensitivity =
-                65f;
-        }
-
-        SetAnchored(
-            closeButton != null
-                ? closeButton.GetComponent<
-                    RectTransform
-                  >()
-                : null,
-            new Vector2(
-                0.875f,
-                0.875f
-            ),
-            new Vector2(
-                0.955f,
-                0.95f
-            )
-        );
-    }
-
-    private void ApplyButtonVisuals()
-    {
-        SetSimpleButton(
-            shelterTab
-        );
-
-        SetSimpleButton(
-            infiniteTab
-        );
-
-        SetSimpleButton(
-            closeButton
-        );
-    }
-
-    private void SetSimpleButton(
-        Button button
-    )
-    {
-        if (button == null)
-        {
-            return;
-        }
-
-        Image image =
-            button.GetComponent<
-                Image
-            >();
-
-        if (image == null)
-        {
-            return;
-        }
-
-        image.type =
-            Image.Type.Simple;
-
-        image.preserveAspect =
-            false;
-
-        image.raycastTarget =
-            true;
     }
 
     // =========================================================
@@ -1023,7 +837,6 @@ public class AchievementsUI3D : MonoBehaviour
                 Image
             >();
 
-        // В RuntimeUISprite3D есть только GetSolidSprite().
         image.sprite =
             RuntimeUISprite3D
                 .GetSolidSprite();
@@ -1119,25 +932,38 @@ public class AchievementsUI3D : MonoBehaviour
     )
     {
         GameObject go =
-            CreateImage(
+            new GameObject(
                 name,
-                parent,
-                background
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
             );
+
+        go.transform.SetParent(
+            parent,
+            false
+        );
 
         Image image =
             go.GetComponent<
                 Image
             >();
 
+        image.sprite =
+            RuntimeUISprite3D
+                .GetRoundedSprite();
+
         image.type =
-            Image.Type.Simple;
+            Image.Type.Sliced;
+
+        image.color =
+            background;
 
         image.raycastTarget =
             true;
 
         Button button =
-            go.AddComponent<
+            go.GetComponent<
                 Button
             >();
 

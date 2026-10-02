@@ -231,139 +231,7 @@ public class DailyLoginUI3D : MonoBehaviour
             }
         }
 
-        ApplyLayout();
-        ApplyCloseButtonVisual();
         ConfigureListeners();
-    }
-
-    // =========================================================
-    // LAYOUT
-    // =========================================================
-
-    private void ApplyLayout()
-    {
-        if (window != null)
-        {
-            SetAnchored(
-                window.GetComponent<
-                    RectTransform
-                >(),
-                Vector2.zero,
-                Vector2.one
-            );
-        }
-
-        Transform panel =
-            transform.Find(
-                "Window/Panel"
-            );
-
-        if (panel != null)
-        {
-            SetAnchored(
-                panel.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.055f,
-                    0.045f
-                ),
-                new Vector2(
-                    0.945f,
-                    0.955f
-                )
-            );
-        }
-
-        if (streakText != null)
-        {
-            SetAnchored(
-                streakText.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.15f,
-                    0.775f
-                ),
-                new Vector2(
-                    0.85f,
-                    0.835f
-                )
-            );
-        }
-
-        if (scroll != null)
-        {
-            RectTransform scrollRect =
-                scroll.GetComponent<
-                    RectTransform
-                >();
-
-            SetAnchored(
-                scrollRect,
-                new Vector2(
-                    0.055f,
-                    0.045f
-                ),
-                new Vector2(
-                    0.945f,
-                    0.72f
-                )
-            );
-
-            scroll.horizontal =
-                false;
-
-            scroll.vertical =
-                true;
-
-            scroll.movementType =
-                ScrollRect.MovementType.Clamped;
-
-            scroll.scrollSensitivity =
-                65f;
-        }
-
-        if (closeButton != null)
-        {
-            SetAnchored(
-                closeButton.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.875f,
-                    0.875f
-                ),
-                new Vector2(
-                    0.955f,
-                    0.95f
-                )
-            );
-        }
-    }
-
-    private void ApplyCloseButtonVisual()
-    {
-        if (closeButton == null)
-        {
-            return;
-        }
-
-        Image image =
-            closeButton.GetComponent<
-                Image
-            >();
-
-        if (image == null)
-        {
-            return;
-        }
-
-        image.type =
-            Image.Type.Simple;
-
-        image.raycastTarget =
-            true;
     }
 
     // =========================================================
@@ -1017,8 +885,6 @@ public class DailyLoginUI3D : MonoBehaviour
                 Image
             >();
 
-        // В проекте RuntimeUISprite3D
-        // существует только GetSolidSprite().
         image.sprite =
             RuntimeUISprite3D
                 .GetSolidSprite();
@@ -1114,25 +980,38 @@ public class DailyLoginUI3D : MonoBehaviour
     )
     {
         GameObject go =
-            CreateImage(
+            new GameObject(
                 name,
-                parent,
-                background
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
             );
+
+        go.transform.SetParent(
+            parent,
+            false
+        );
 
         Image image =
             go.GetComponent<
                 Image
             >();
 
+        image.sprite =
+            RuntimeUISprite3D
+                .GetRoundedSprite();
+
         image.type =
-            Image.Type.Simple;
+            Image.Type.Sliced;
+
+        image.color =
+            background;
 
         image.raycastTarget =
             true;
 
         Button button =
-            go.AddComponent<
+            go.GetComponent<
                 Button
             >();
 
