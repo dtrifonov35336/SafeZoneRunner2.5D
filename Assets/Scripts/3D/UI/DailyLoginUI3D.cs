@@ -67,6 +67,10 @@ public class DailyLoginUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // ДОСТУПНОСТЬ НАГРАДЫ
+    // =========================================================
+
     public static bool IsRewardAvailable()
     {
         string today =
@@ -84,6 +88,10 @@ public class DailyLoginUI3D : MonoBehaviour
         return last != today;
     }
 
+    // =========================================================
+    // OPEN
+    // =========================================================
+
     public void Open()
     {
         ResolveReferences();
@@ -91,7 +99,9 @@ public class DailyLoginUI3D : MonoBehaviour
         gameObject.SetActive(true);
 
         if (window != null)
+        {
             window.SetActive(true);
+        }
 
         MainMenuModalManager3D modal =
             MainMenuModalManager3D.Instance;
@@ -114,6 +124,10 @@ public class DailyLoginUI3D : MonoBehaviour
         Refresh();
     }
 
+    // =========================================================
+    // CLOSE
+    // =========================================================
+
     public void Close()
     {
         MainMenuModalManager3D modal =
@@ -131,6 +145,10 @@ public class DailyLoginUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // REFERENCES
+    // =========================================================
+
     private void ResolveReferences()
     {
         if (window == null)
@@ -141,8 +159,10 @@ public class DailyLoginUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 window =
                     found.gameObject;
+            }
         }
 
         if (contentRoot == null)
@@ -153,10 +173,12 @@ public class DailyLoginUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 contentRoot =
                     found.GetComponent<
                         RectTransform
                     >();
+            }
         }
 
         if (scroll == null)
@@ -167,10 +189,12 @@ public class DailyLoginUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 scroll =
                     found.GetComponent<
                         ScrollRect
                     >();
+            }
         }
 
         if (streakText == null)
@@ -181,10 +205,12 @@ public class DailyLoginUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 streakText =
                     found.GetComponent<
                         TMP_Text
                     >();
+            }
         }
 
         if (closeButton == null)
@@ -195,12 +221,23 @@ public class DailyLoginUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 closeButton =
                     found.GetComponent<
                         Button
                     >();
+            }
         }
 
+        ConfigureListeners();
+    }
+
+    // =========================================================
+    // LISTENERS
+    // =========================================================
+
+    private void ConfigureListeners()
+    {
         if (closeButton != null)
         {
             closeButton.onClick.RemoveListener(
@@ -213,24 +250,16 @@ public class DailyLoginUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // REFRESH
+    // =========================================================
+
     private void Refresh()
     {
         if (contentRoot == null)
             return;
 
-        for (
-            int i =
-                contentRoot.childCount - 1;
-            i >= 0;
-            i--
-        )
-        {
-            Destroy(
-                contentRoot
-                    .GetChild(i)
-                    .gameObject
-            );
-        }
+        ClearContent();
 
         int currentDay =
             GetCurrentDayIndex();
@@ -286,6 +315,27 @@ public class DailyLoginUI3D : MonoBehaviour
                 1f;
         }
     }
+
+    private void ClearContent()
+    {
+        for (
+            int i =
+                contentRoot.childCount - 1;
+            i >= 0;
+            i--
+        )
+        {
+            Destroy(
+                contentRoot
+                    .GetChild(i)
+                    .gameObject
+            );
+        }
+    }
+
+    // =========================================================
+    // DAY CARD
+    // =========================================================
 
     private void CreateDayCard(
         int day,
@@ -409,7 +459,9 @@ public class DailyLoginUI3D : MonoBehaviour
             );
 
         Outline outline =
-            card.AddComponent<Outline>();
+            card.AddComponent<
+                Outline
+            >();
 
         outline.effectColor =
             current
@@ -431,6 +483,10 @@ public class DailyLoginUI3D : MonoBehaviour
                 1f,
                 -1f
             );
+
+        // =====================================================
+        // DAY
+        // =====================================================
 
         CreateText(
             "Day",
@@ -462,6 +518,10 @@ public class DailyLoginUI3D : MonoBehaviour
             )
         );
 
+        // =====================================================
+        // REWARD
+        // =====================================================
+
         CreateText(
             "Reward",
             card.transform,
@@ -486,13 +546,18 @@ public class DailyLoginUI3D : MonoBehaviour
             )
         );
 
+        // =====================================================
+        // STATE
+        // =====================================================
+
         string state;
 
         Color stateColor;
 
         if (claimedToday)
         {
-            state = "ПОЛУЧЕНО";
+            state =
+                "ПОЛУЧЕНО";
 
             stateColor =
                 new Color32(
@@ -504,7 +569,8 @@ public class DailyLoginUI3D : MonoBehaviour
         }
         else if (past)
         {
-            state = "ПОЛУЧЕНО";
+            state =
+                "ПОЛУЧЕНО";
 
             stateColor =
                 new Color32(
@@ -516,7 +582,8 @@ public class DailyLoginUI3D : MonoBehaviour
         }
         else if (current)
         {
-            state = "ПОЛУЧИТЬ";
+            state =
+                "ПОЛУЧИТЬ";
 
             stateColor =
                 new Color32(
@@ -528,7 +595,8 @@ public class DailyLoginUI3D : MonoBehaviour
         }
         else
         {
-            state = "СКОРО";
+            state =
+                "СКОРО";
 
             stateColor =
                 new Color32(
@@ -573,9 +641,29 @@ public class DailyLoginUI3D : MonoBehaviour
                 Button
             >();
 
+        // =====================================================
+        // ГЛАВНОЕ ИСПРАВЛЕНИЕ
+        // =====================================================
+
         button.interactable =
             current &&
             available;
+
+        // У кнопки должен быть включён raycast.
+        Image buttonImage =
+            stateObject.GetComponent<
+                Image
+            >();
+
+        if (buttonImage != null)
+        {
+            buttonImage.raycastTarget =
+                true;
+        }
+
+        // =====================================================
+        // CLAIM
+        // =====================================================
 
         if (
             current &&
@@ -587,6 +675,10 @@ public class DailyLoginUI3D : MonoBehaviour
             );
         }
     }
+
+    // =========================================================
+    // CLAIM
+    // =========================================================
 
     private void TryClaim()
     {
@@ -605,6 +697,7 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         Refresh();
+
         RefreshMenuBadge();
     }
 
@@ -621,8 +714,20 @@ public class DailyLoginUI3D : MonoBehaviour
         if (!IsRewardAvailable())
             return false;
 
+        if (
+            day < 0 ||
+            day >= Rewards.Length
+        )
+        {
+            day = 0;
+        }
+
         reward =
             Rewards[day];
+
+        // =====================================================
+        // МОНЕТЫ
+        // =====================================================
 
         int coins =
             PlayerPrefs.GetInt(
@@ -630,12 +735,17 @@ public class DailyLoginUI3D : MonoBehaviour
                 0
             );
 
-        coins += reward;
+        coins +=
+            reward;
 
         PlayerPrefs.SetInt(
             "TotalCoins",
             coins
         );
+
+        // =====================================================
+        // СОХРАНЯЕМ ДАТУ
+        // =====================================================
 
         PlayerPrefs.SetString(
             LAST_CLAIM_DATE,
@@ -653,7 +763,7 @@ public class DailyLoginUI3D : MonoBehaviour
         PlayerPrefs.Save();
 
         // =====================================================
-        // ЗВУК ПОЛУЧЕНИЯ НАГРАДЫ
+        // ЗВУК НАГРАДЫ
         // =====================================================
 
         if (
@@ -666,7 +776,7 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         // =====================================================
-        // ОБНОВЛЕНИЕ БАЛАНСА
+        // ОБНОВЛЯЕМ БАЛАНС В МЕНЮ
         // =====================================================
 
         MainMenuManager menu =
@@ -692,6 +802,10 @@ public class DailyLoginUI3D : MonoBehaviour
         return true;
     }
 
+    // =========================================================
+    // CURRENT DAY
+    // =========================================================
+
     private static int GetCurrentDayIndex()
     {
         string lastDate =
@@ -707,7 +821,9 @@ public class DailyLoginUI3D : MonoBehaviour
             );
 
         if (string.IsNullOrEmpty(lastDate))
+        {
             return 0;
+        }
 
         if (
             !DateTime.TryParseExact(
@@ -744,8 +860,14 @@ public class DailyLoginUI3D : MonoBehaviour
             ) % 7;
         }
 
+        // Пропустил день —
+        // начинаем серию заново.
         return 0;
     }
+
+    // =========================================================
+    // BADGE
+    // =========================================================
 
     private void RefreshMenuBadge()
     {
@@ -762,9 +884,16 @@ public class DailyLoginUI3D : MonoBehaviour
             in buttons
         )
         {
-            button.RefreshBadge();
+            if (button != null)
+            {
+                button.RefreshBadge();
+            }
         }
     }
+
+    // =========================================================
+    // CREATE IMAGE
+    // =========================================================
 
     private static GameObject CreateImage(
         string name,
@@ -785,7 +914,9 @@ public class DailyLoginUI3D : MonoBehaviour
         );
 
         Image image =
-            go.GetComponent<Image>();
+            go.GetComponent<
+                Image
+            >();
 
         image.sprite =
             RuntimeUISprite3D
@@ -794,8 +925,17 @@ public class DailyLoginUI3D : MonoBehaviour
         image.color =
             color;
 
+        // Карточка не должна забирать raycast
+        // у кнопки внутри неё.
+        image.raycastTarget =
+            false;
+
         return go;
     }
+
+    // =========================================================
+    // CREATE TEXT
+    // =========================================================
 
     private static GameObject CreateText(
         string name,
@@ -845,6 +985,7 @@ public class DailyLoginUI3D : MonoBehaviour
         text.alignment =
             alignment;
 
+        // Текст не должен блокировать кнопку.
         text.raycastTarget =
             false;
 
@@ -857,6 +998,10 @@ public class DailyLoginUI3D : MonoBehaviour
 
         return go;
     }
+
+    // =========================================================
+    // CREATE BUTTON
+    // =========================================================
 
     private static GameObject CreateButton(
         string name,
@@ -874,8 +1019,29 @@ public class DailyLoginUI3D : MonoBehaviour
                 background
             );
 
+        Image image =
+            go.GetComponent<
+                Image
+            >();
+
+        // =====================================================
+        // ГЛАВНОЕ:
+        // КНОПКА ДОЛЖНА ПРИНИМАТЬ UI RAYCAST
+        // =====================================================
+
+        image.raycastTarget =
+            true;
+
         Button button =
-            go.AddComponent<Button>();
+            go.AddComponent<
+                Button
+            >();
+
+        button.targetGraphic =
+            image;
+
+        button.transition =
+            Selectable.Transition.ColorTint;
 
         GameObject text =
             CreateText(
@@ -889,13 +1055,12 @@ public class DailyLoginUI3D : MonoBehaviour
                 Vector2.one
             );
 
-        button.targetGraphic =
-            go.GetComponent<
-                Image
-            >();
-
         return go;
     }
+
+    // =========================================================
+    // ANCHORS
+    // =========================================================
 
     private static void SetAnchored(
         RectTransform rect,

@@ -193,7 +193,9 @@ public class AchievementsUI3D : MonoBehaviour
         if (window == null)
         {
             Transform found =
-                transform.Find("Window");
+                transform.Find(
+                    "Window"
+                );
 
             if (found != null)
                 window =
@@ -485,7 +487,9 @@ public class AchievementsUI3D : MonoBehaviour
             );
 
         Outline outline =
-            card.AddComponent<Outline>();
+            card.AddComponent<
+                Outline
+            >();
 
         outline.effectColor =
             completed
@@ -609,11 +613,20 @@ public class AchievementsUI3D : MonoBehaviour
         string status;
 
         if (claimed)
-            status = "ПОЛУЧЕНО";
+        {
+            status =
+                "ПОЛУЧЕНО";
+        }
         else if (completed)
-            status = "ЗАБРАТЬ";
+        {
+            status =
+                "ЗАБРАТЬ";
+        }
         else
-            status = "НЕ ВЫПОЛНЕНО";
+        {
+            status =
+                "НЕ ВЫПОЛНЕНО";
+        }
 
         GameObject statusObject =
             CreateButton(
@@ -687,7 +700,9 @@ public class AchievementsUI3D : MonoBehaviour
         if (shelterTab != null)
         {
             Image image =
-                shelterTab.GetComponent<Image>();
+                shelterTab.GetComponent<
+                    Image
+                >();
 
             if (image != null)
             {
@@ -712,7 +727,9 @@ public class AchievementsUI3D : MonoBehaviour
         if (infiniteTab != null)
         {
             Image image =
-                infiniteTab.GetComponent<Image>();
+                infiniteTab.GetComponent<
+                    Image
+                >();
 
             if (image != null)
             {
@@ -757,11 +774,14 @@ public class AchievementsUI3D : MonoBehaviour
             go.GetComponent<Image>();
 
         image.sprite =
-            RuntimeUISprite3D.GetSolidSprite();
+            RuntimeUISprite3D
+                .GetSolidSprite();
 
-        image.color = color;
+        image.color =
+            color;
 
-        image.raycastTarget = false;
+        image.raycastTarget =
+            false;
 
         return go;
     }
@@ -802,15 +822,27 @@ public class AchievementsUI3D : MonoBehaviour
                 TextMeshProUGUI
             >();
 
-        text.text = value;
-        text.fontSize = size;
-        text.color = color;
-        text.alignment = alignment;
-        text.raycastTarget = false;
+        text.text =
+            value;
+
+        text.fontSize =
+            size;
+
+        text.color =
+            color;
+
+        text.alignment =
+            alignment;
+
+        text.raycastTarget =
+            false;
+
         text.textWrappingMode =
             TextWrappingModes.Normal;
 
-        RuntimeUIText3D.Apply(text);
+        RuntimeUIText3D.Apply(
+            text
+        );
 
         return go;
     }
@@ -831,11 +863,29 @@ public class AchievementsUI3D : MonoBehaviour
                 background
             );
 
+        Image image =
+            go.GetComponent<
+                Image
+            >();
+
+        // =====================================================
+        // ГЛАВНОЕ ИСПРАВЛЕНИЕ:
+        // КНОПКА ДОЛЖНА ПРИНИМАТЬ RAYCAST
+        // =====================================================
+
+        image.raycastTarget =
+            true;
+
         Button button =
-            go.AddComponent<Button>();
+            go.AddComponent<
+                Button
+            >();
 
         button.targetGraphic =
-            go.GetComponent<Image>();
+            image;
+
+        button.transition =
+            Selectable.Transition.ColorTint;
 
         GameObject text =
             CreateText(
@@ -858,9 +908,16 @@ public class AchievementsUI3D : MonoBehaviour
         Vector2 max
     )
     {
-        rect.anchorMin = min;
-        rect.anchorMax = max;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 }
