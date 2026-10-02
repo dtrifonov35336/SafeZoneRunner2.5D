@@ -2,12 +2,15 @@ using UnityEngine;
 
 public class RescuedPersonSpawner : MonoBehaviour
 {
-    [Header("Префаб")]
     public GameObject rescuedPersonPrefab;
 
     [Header("Полосы")]
     public float[] lanePositions =
-        new float[] { -0.7f, 0.7f };
+        new float[]
+        {
+            -1.35f,
+            1.35f
+        };
 
     [Header("Тайминг")]
     public float spawnInterval = 10f;
@@ -21,8 +24,8 @@ public class RescuedPersonSpawner : MonoBehaviour
     public float revealZ = 40f;
 
     [Header("Проверка")]
-    public float laneCheckRadius = 0.4f;
-    public float checkFromZ = 55f;
+    public float laneCheckRadius = 0.55f;
+    public float checkFromZ = 80f;
     public float checkToZ = 5f;
 
     [Header("Визуальная дистанция")]
@@ -30,14 +33,14 @@ public class RescuedPersonSpawner : MonoBehaviour
 
     private float timer;
 
+    private void Awake()
+    {
+        SyncLanePositions();
+    }
+
     private void Start()
     {
-        if (lanePositions == null ||
-            lanePositions.Length != 2)
-        {
-            lanePositions =
-                new float[] { -0.7f, 0.7f };
-        }
+        SyncLanePositions();
 
         timer =
             firstSpawnDelay;
@@ -45,8 +48,10 @@ public class RescuedPersonSpawner : MonoBehaviour
 
     private void Update()
     {
-        if (ChaseManager.Instance != null &&
-            ChaseManager.Instance.IsGameOver())
+        if (
+            ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver()
+        )
         {
             return;
         }
@@ -55,7 +60,9 @@ public class RescuedPersonSpawner : MonoBehaviour
             Time.deltaTime;
 
         if (timer > 0f)
+        {
             return;
+        }
 
         timer =
             spawnInterval;
@@ -64,87 +71,81 @@ public class RescuedPersonSpawner : MonoBehaviour
             GetFreeLane();
 
         if (lane == -1)
+        {
             return;
+        }
 
         SpawnOne(
             lanePositions[lane]
         );
     }
 
+    private void SyncLanePositions()
+    {
+        lanePositions =
+            RunnerLaneSettings3D
+                .GetLanePositions();
+    }
+
     private int GetFreeLane()
     {
-        int[] order =
-            new int[lanePositions.Length];
-
-        for (int i = 0;
-             i < order.Length;
-             i++)
-        {
-            order[i] = i;
-        }
-
-        for (int i = 0;
-             i < order.Length;
-             i++)
-        {
-            int r =
-                Random.Range(
-                    i,
-                    order.Length
-                );
-
-            (
-                order[i],
-                order[r]
-            ) =
-            (
-                order[r],
-                order[i]
+        int first =
+            Random.Range(
+                0,
+                2
             );
+
+        int second =
+            first == 0
+                ? 1
+                : 0;
+
+        if (
+            IsLaneClear(
+                lanePositions[first]
+            )
+        )
+        {
+            return first;
         }
 
-        foreach (int idx in order)
+        if (
+            IsLaneClear(
+                lanePositions[second]
+            )
+        )
         {
-            if (IsLaneClear(
-                    lanePositions[idx]
-                ))
-            {
-                return idx;
-            }
+            return second;
         }
 
         return -1;
     }
 
     private bool IsLaneClear(
-        float laneX)
+        float laneX
+    )
     {
-        // =====================================================
-        // ПРЕПЯТСТВИЯ
-        // =====================================================
-
         ObstacleMover3D[] obstacles =
             FindObjectsByType<ObstacleMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (ObstacleMover3D obstacle in obstacles)
+        foreach (
+            ObstacleMover3D obstacle
+            in obstacles
+        )
         {
             if (obstacle == null)
-                continue;
-
-            if (!TryGetWorldBounds(
-                    obstacle.gameObject,
-                    out Bounds bounds))
             {
                 continue;
             }
 
             ObstacleType3D type =
                 obstacle.GetComponentInParent<
-                    ObstacleType3D>();
+                    ObstacleType3D
+                >();
 
-            bool occupiesBothLanes =
+            bool wide =
                 type != null &&
                 (
                     type.type ==
@@ -157,80 +158,100 @@ public class RescuedPersonSpawner : MonoBehaviour
                 Mathf.Abs(
                     obstacle.laneX -
                     laneX
-                ) < laneCheckRadius;
+                ) <
+                laneCheckRadius;
 
-            if (!occupiesBothLanes &&
-                !sameLane)
+            if (
+                !wide &&
+                !sameLane
+            )
             {
                 continue;
             }
 
-            if (spawnZ <=
-                bounds.max.z +
-                minSpawnGap)
+            if (
+                spawnZ <=
+                obstacle.transform.position.z +
+                minSpawnGap
+            )
             {
                 return false;
             }
         }
-
-        // =====================================================
-        // ДРУГИЕ ВЫЖИВШИЕ
-        // =====================================================
 
         RescuedPerson[] rescued =
             FindObjectsByType<RescuedPerson>(
                 FindObjectsSortMode.None
             );
 
-        foreach (RescuedPerson person in rescued)
+        foreach (
+            RescuedPerson person
+            in rescued
+        )
         {
             if (person == null)
+            {
                 continue;
+            }
 
-            if (Mathf.Abs(
+            if (
+                Mathf.Abs(
                     person.transform.position.x -
                     laneX
-                ) < laneCheckRadius &&
+                ) <
+                laneCheckRadius &&
                 Mathf.Abs(
                     person.transform.position.z -
                     spawnZ
-                ) < minSpawnGap)
+                ) <
+                minSpawnGap
+            )
             {
                 return false;
             }
         }
-
-        // =====================================================
-        // СЕРДЕЧКИ
-        // =====================================================
 
         PickupMover3D[] pickups =
             FindObjectsByType<PickupMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (PickupMover3D pickup in pickups)
+        foreach (
+            PickupMover3D pickup
+            in pickups
+        )
         {
             if (pickup == null)
-                continue;
-
-            Pickup3D data =
-                pickup.GetComponent<Pickup3D>();
-
-            if (data == null ||
-                data.type != Pickup3DType.Heart)
             {
                 continue;
             }
 
-            if (Mathf.Abs(
+            Pickup3D data =
+                pickup.GetComponent<
+                    Pickup3D
+                >();
+
+            if (
+                data == null ||
+                data.type !=
+                Pickup3DType.Heart
+            )
+            {
+                continue;
+            }
+
+            if (
+                Mathf.Abs(
                     pickup.transform.position.x -
                     laneX
-                ) < laneCheckRadius &&
+                ) <
+                laneCheckRadius &&
                 Mathf.Abs(
                     pickup.transform.position.z -
                     spawnZ
-                ) < minSpawnGap)
+                ) <
+                minSpawnGap
+            )
             {
                 return false;
             }
@@ -239,92 +260,56 @@ public class RescuedPersonSpawner : MonoBehaviour
         return true;
     }
 
-    private bool TryGetWorldBounds(
-        GameObject obj,
-        out Bounds bounds)
-    {
-        bounds = default;
-
-        if (obj == null)
-            return false;
-
-        Renderer[] renderers =
-            obj.GetComponentsInChildren<Renderer>(
-                true
-            );
-
-        bool found = false;
-
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer == null)
-                continue;
-
-            if (!found)
-            {
-                bounds =
-                    renderer.bounds;
-
-                found = true;
-            }
-            else
-            {
-                bounds.Encapsulate(
-                    renderer.bounds
-                );
-            }
-        }
-
-        if (found)
-            return true;
-
-        Collider collider =
-            obj.GetComponent<Collider>();
-
-        if (collider == null)
-        {
-            collider =
-                obj.GetComponentInChildren<Collider>();
-        }
-
-        if (collider == null)
-            return false;
-
-        bounds =
-            collider.bounds;
-
-        return true;
-    }
-
     private void SpawnOne(
-        float laneX)
+        float laneX
+    )
     {
-        if (rescuedPersonPrefab == null)
+        if (
+            rescuedPersonPrefab ==
+            null
+        )
+        {
             return;
-
-        Vector3 spawnPos =
-            new Vector3(
-                laneX,
-                spawnY,
-                spawnZ
-            );
+        }
 
         GameObject inst =
             Instantiate(
                 rescuedPersonPrefab,
-                spawnPos,
+                new Vector3(
+                    laneX,
+                    spawnY,
+                    spawnZ
+                ),
                 Quaternion.identity,
                 transform
             );
 
-        if (inst.GetComponent<RunnerDepthSorter3D>() ==
-            null)
+        if (
+            inst.GetComponent<
+                RunnerDepthSorter3D
+            >() == null
+        )
         {
-            inst.AddComponent<RunnerDepthSorter3D>();
+            inst.AddComponent<
+                RunnerDepthSorter3D
+            >();
         }
 
         SpawnReveal3D reveal =
-            inst.AddComponent<SpawnReveal3D>();
+            inst.GetComponent<
+                SpawnReveal3D
+            >();
+
+        if (reveal == null)
+        {
+            reveal =
+                inst.AddComponent<
+                    SpawnReveal3D
+                >();
+        }
+
+        reveal.fadeDuration =
+            0.35f;
 
         reveal.Initialize(
             revealZ
@@ -332,7 +317,8 @@ public class RescuedPersonSpawner : MonoBehaviour
 
         RescuedPerson person =
             inst.GetComponent<
-                RescuedPerson>();
+                RescuedPerson
+            >();
 
         if (person != null)
         {
@@ -347,7 +333,8 @@ public class RescuedPersonSpawner : MonoBehaviour
     }
 
     public void SetRunning(
-        bool running)
+        bool running
+    )
     {
         enabled =
             running;

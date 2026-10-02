@@ -6,7 +6,11 @@ public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Полосы движения")]
     public float[] lanePositions =
-        new float[] { -0.7f, 0.7f };
+        new float[]
+        {
+            -1.35f,
+            1.35f
+        };
 
     public float laneChangeSpeed = 9f;
     public float laneChangeSmoothTime = 0.08f;
@@ -29,13 +33,9 @@ public class PlayerMovement3D : MonoBehaviour
     [Header("Скольжение")]
     public float slideDuration = 0.7f;
 
-    [Tooltip("Время плавного опускания коллайдера.")]
     public float slideEnterTime = 0.10f;
-
-    [Tooltip("Время плавного возврата коллайдера.")]
     public float slideExitTime = 0.12f;
 
-    [Tooltip("Размер BoxCollider во время скольжения.")]
     public Vector3 slideColliderSize =
         new Vector3(
             3f,
@@ -43,7 +43,6 @@ public class PlayerMovement3D : MonoBehaviour
             3f
         );
 
-    [Tooltip("Центр BoxCollider во время скольжения.")]
     public Vector3 slideColliderCenter =
         new Vector3(
             0f,
@@ -51,10 +50,7 @@ public class PlayerMovement3D : MonoBehaviour
             0f
         );
 
-    [Tooltip("Проверять наличие препятствия перед подъёмом.")]
     public bool checkStandUpClearance = true;
-
-    [Tooltip("Небольшой запас пространства над головой.")]
     public float standUpExtraHeight = 0.05f;
 
     [Header("Откат после удара")]
@@ -118,10 +114,10 @@ public class PlayerMovement3D : MonoBehaviour
             >();
 
         playerCollider =
-            GetComponent<BoxCollider>();
+            GetComponent<
+                BoxCollider
+            >();
 
-        // Запоминаем реально установленный
-        // в сцене обычный Collider.
         if (playerCollider != null)
         {
             normalColliderSize =
@@ -131,13 +127,14 @@ public class PlayerMovement3D : MonoBehaviour
                 playerCollider.center;
         }
 
+        // ОДНА СИСТЕМА ПОЛОС ДЛЯ ВСЕЙ ИГРЫ.
+        lanePositions =
+            RunnerLaneSettings3D
+                .GetLanePositions();
+
         string charId =
             ProfileManager
                 .GetSelectedCharacterId();
-
-        // =====================================================
-        // УЛУЧШЕНИЯ
-        // =====================================================
 
         laneChangeSpeed *=
             BonusCalculator
@@ -169,19 +166,6 @@ public class PlayerMovement3D : MonoBehaviour
 
         targetY =
             baseY;
-
-        if (
-            lanePositions == null ||
-            lanePositions.Length != 2
-        )
-        {
-            lanePositions =
-                new float[]
-                {
-                    -0.7f,
-                    0.7f
-                };
-        }
 
         currentLane =
             0;
@@ -226,7 +210,9 @@ public class PlayerMovement3D : MonoBehaviour
         {
             playerFillLight =
                 fillLightTransform
-                    .GetComponent<Light>();
+                    .GetComponent<
+                        Light
+                    >();
         }
 
         if (playerFillLight == null)
@@ -294,7 +280,9 @@ public class PlayerMovement3D : MonoBehaviour
     private void ProcessKeyboardInput()
     {
         if (Keyboard.current == null)
+        {
             return;
+        }
 
         if (
             Keyboard.current.aKey
@@ -351,7 +339,9 @@ public class PlayerMovement3D : MonoBehaviour
     private void ProcessTouchInput()
     {
         if (TouchControls.Instance == null)
+        {
             return;
+        }
 
         if (
             TouchControls.Instance
@@ -412,7 +402,9 @@ public class PlayerMovement3D : MonoBehaviour
         currentLane--;
 
         if (currentLane < 0)
+        {
             currentLane = 0;
+        }
 
         targetX =
             lanePositions[
@@ -482,21 +474,22 @@ public class PlayerMovement3D : MonoBehaviour
         }
 
         if (isSliding)
+        {
             return;
+        }
 
         if (isJumping)
+        {
             return;
+        }
 
         StartFirstJump();
     }
 
     private void StartFirstJump()
     {
-        isJumping =
-            true;
-
-        hasDoubleJumped =
-            false;
+        isJumping = true;
+        hasDoubleJumped = false;
 
         verticalVelocity =
             Mathf.Sqrt(
@@ -518,10 +511,14 @@ public class PlayerMovement3D : MonoBehaviour
         }
 
         if (isSliding)
+        {
             return;
+        }
 
         if (!allowDoubleJump)
+        {
             return;
+        }
 
         if (!isJumping)
         {
@@ -530,10 +527,11 @@ public class PlayerMovement3D : MonoBehaviour
         }
 
         if (hasDoubleJumped)
+        {
             return;
+        }
 
-        hasDoubleJumped =
-            true;
+        hasDoubleJumped = true;
 
         verticalVelocity =
             Mathf.Sqrt(
@@ -552,7 +550,9 @@ public class PlayerMovement3D : MonoBehaviour
     private void UpdateJump()
     {
         if (!isJumping)
+        {
             return;
+        }
 
         verticalVelocity -=
             gravity *
@@ -567,17 +567,10 @@ public class PlayerMovement3D : MonoBehaviour
             verticalVelocity < 0f
         )
         {
-            jumpOffset =
-                0f;
-
-            verticalVelocity =
-                0f;
-
-            isJumping =
-                false;
-
-            hasDoubleJumped =
-                false;
+            jumpOffset = 0f;
+            verticalVelocity = 0f;
+            isJumping = false;
+            hasDoubleJumped = false;
         }
     }
 
@@ -596,12 +589,15 @@ public class PlayerMovement3D : MonoBehaviour
             return;
         }
 
-        // Не начинаем слайд в воздухе.
         if (isJumping)
+        {
             return;
+        }
 
         if (isSliding)
+        {
             return;
+        }
 
         if (slideCoroutine != null)
         {
@@ -618,10 +614,8 @@ public class PlayerMovement3D : MonoBehaviour
 
     private IEnumerator SlideRoutine()
     {
-        isSliding =
-            true;
+        isSliding = true;
 
-        // Запускаем визуальную анимацию.
         if (visualController != null)
         {
             visualController
@@ -655,12 +649,7 @@ public class PlayerMovement3D : MonoBehaviour
                 exitTime
             );
 
-        // =====================================================
-        // ОПУСКАНИЕ
-        // =====================================================
-
-        float timer =
-            0f;
+        float timer = 0f;
 
         while (
             timer <
@@ -687,12 +676,7 @@ public class PlayerMovement3D : MonoBehaviour
             1f
         );
 
-        // =====================================================
-        // ОСНОВНАЯ ФАЗА СКОЛЬЖЕНИЯ
-        // =====================================================
-
-        timer =
-            0f;
+        timer = 0f;
 
         while (
             timer <
@@ -709,10 +693,6 @@ public class PlayerMovement3D : MonoBehaviour
             yield return null;
         }
 
-        // =====================================================
-        // НЕ ПОДНИМАЕМСЯ ПОД ПРЕПЯТСТВИЕМ
-        // =====================================================
-
         if (checkStandUpClearance)
         {
             while (
@@ -727,12 +707,7 @@ public class PlayerMovement3D : MonoBehaviour
             }
         }
 
-        // =====================================================
-        // ВОЗВРАТ К НОРМАЛЬНОМУ КОЛЛАЙДЕРУ
-        // =====================================================
-
-        timer =
-            0f;
+        timer = 0f;
 
         while (
             timer <
@@ -757,11 +732,8 @@ public class PlayerMovement3D : MonoBehaviour
 
         RestoreNormalCollider();
 
-        isSliding =
-            false;
-
-        slideCoroutine =
-            null;
+        isSliding = false;
+        slideCoroutine = null;
 
         if (visualController != null)
         {
@@ -775,7 +747,9 @@ public class PlayerMovement3D : MonoBehaviour
     )
     {
         if (playerCollider == null)
+        {
             return;
+        }
 
         t =
             Mathf.Clamp01(t);
@@ -798,7 +772,9 @@ public class PlayerMovement3D : MonoBehaviour
     private void RestoreNormalCollider()
     {
         if (playerCollider == null)
+        {
             return;
+        }
 
         playerCollider.size =
             normalColliderSize;
@@ -810,7 +786,9 @@ public class PlayerMovement3D : MonoBehaviour
     private bool CanStandUp()
     {
         if (playerCollider == null)
+        {
             return true;
+        }
 
         Vector3 targetSize =
             normalColliderSize;
@@ -846,12 +824,11 @@ public class PlayerMovement3D : MonoBehaviour
         )
         {
             if (hit == null)
+            {
                 continue;
+            }
 
-            if (
-                hit ==
-                playerCollider
-            )
+            if (hit == playerCollider)
             {
                 continue;
             }
@@ -918,8 +895,7 @@ public class PlayerMovement3D : MonoBehaviour
                 null;
         }
 
-        isSliding =
-            false;
+        isSliding = false;
 
         if (restoreCollider)
         {
@@ -972,9 +948,7 @@ public class PlayerMovement3D : MonoBehaviour
             ) <= 0.001f
         )
         {
-            knockbackZ =
-                0f;
-
+            knockbackZ = 0f;
             return;
         }
 
@@ -1017,15 +991,15 @@ public class PlayerMovement3D : MonoBehaviour
         }
 
         if (isJumping)
+        {
             return;
+        }
 
         knockbackZ =
             Mathf.Max(
                 -maxKnockbackZ,
                 knockbackZ -
-                Mathf.Abs(
-                    amount
-                )
+                Mathf.Abs(amount)
             );
     }
 
@@ -1035,9 +1009,7 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void FallIntoPit()
     {
-        FallIntoPit(
-            0f
-        );
+        FallIntoPit(0f);
     }
 
     public void FallIntoPit(
@@ -1054,15 +1026,16 @@ public class PlayerMovement3D : MonoBehaviour
         }
 
         if (isJumping)
+        {
             return;
+        }
 
         CancelSlide(
             true,
             true
         );
 
-        isDying =
-            true;
+        isDying = true;
 
         if (playerFillLight != null)
         {
@@ -1097,13 +1070,12 @@ public class PlayerMovement3D : MonoBehaviour
 
         float targetFallY =
             minY -
-            2.0f;
+            2f;
 
         float duration =
             0.45f;
 
-        float timer =
-            0f;
+        float timer = 0f;
 
         while (
             timer <
@@ -1146,40 +1118,37 @@ public class PlayerMovement3D : MonoBehaviour
             false
         );
 
-        isVictory =
-            true;
+        isVictory = true;
 
         if (animator != null)
         {
-            animator.speed =
-                0f;
+            animator.speed = 0f;
         }
 
         if (mainSprite != null)
         {
-            mainSprite.enabled =
-                false;
+            mainSprite.enabled = false;
         }
 
         if (victorySprite != null)
         {
-            victorySprite.enabled =
-                true;
+            victorySprite.enabled = true;
         }
     }
 
     public void Kill()
     {
         if (isDead)
+        {
             return;
+        }
 
         CancelSlide(
             true,
             false
         );
 
-        isDying =
-            true;
+        isDying = true;
 
         PlayerVisualController visualCtrl =
             GetComponentInChildren<
@@ -1205,8 +1174,7 @@ public class PlayerMovement3D : MonoBehaviour
             minY -
             finalKnockbackAmount;
 
-        float t =
-            0f;
+        float t = 0f;
 
         while (
             t <
@@ -1241,10 +1209,11 @@ public class PlayerMovement3D : MonoBehaviour
     private void Die()
     {
         if (isDead)
+        {
             return;
+        }
 
-        isDead =
-            true;
+        isDead = true;
 
         RestoreNormalCollider();
     }
@@ -1255,9 +1224,7 @@ public class PlayerMovement3D : MonoBehaviour
 
     public void Revive()
     {
-        Revive(
-            0f
-        );
+        Revive(0f);
     }
 
     public void Revive(
@@ -1269,31 +1236,18 @@ public class PlayerMovement3D : MonoBehaviour
         slideCoroutine =
             null;
 
-        isDead =
-            false;
-
-        isDying =
-            false;
-
-        isVictory =
-            false;
-
-        isSliding =
-            false;
+        isDead = false;
+        isDying = false;
+        isVictory = false;
+        isSliding = false;
 
         RestoreNormalCollider();
 
-        currentY =
-            baseY;
+        currentY = baseY;
+        targetY = baseY;
 
-        targetY =
-            baseY;
-
-        jumpOffset =
-            0f;
-
-        verticalVelocity =
-            0f;
+        jumpOffset = 0f;
+        verticalVelocity = 0f;
 
         reviveZ =
             Mathf.Clamp(
@@ -1305,25 +1259,19 @@ public class PlayerMovement3D : MonoBehaviour
         knockbackZ =
             reviveZ;
 
-        isJumping =
-            false;
+        isJumping = false;
+        hasDoubleJumped = false;
 
-        hasDoubleJumped =
-            false;
+        lanePositions =
+            RunnerLaneSettings3D
+                .GetLanePositions();
 
-        currentLane =
-            0;
+        currentLane = 0;
 
-        if (
-            lanePositions != null &&
-            lanePositions.Length == 2
-        )
-        {
-            targetX =
-                lanePositions[
-                    currentLane
-                ];
-        }
+        targetX =
+            lanePositions[
+                currentLane
+            ];
 
         Vector3 pos =
             transform.position;
@@ -1359,21 +1307,18 @@ public class PlayerMovement3D : MonoBehaviour
         {
             if (col != null)
             {
-                col.enabled =
-                    true;
+                col.enabled = true;
             }
         }
 
         if (mainSprite != null)
         {
-            mainSprite.enabled =
-                true;
+            mainSprite.enabled = true;
         }
 
         if (victorySprite != null)
         {
-            victorySprite.enabled =
-                false;
+            victorySprite.enabled = false;
         }
 
         PlayerVisualController visualCtrl =
@@ -1387,10 +1332,6 @@ public class PlayerMovement3D : MonoBehaviour
                 .ReviveAnimation();
         }
     }
-
-    // =========================================================
-    // GETTERS
-    // =========================================================
 
     public bool IsDead() =>
         isDead;

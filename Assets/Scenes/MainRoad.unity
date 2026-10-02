@@ -19840,7 +19840,7 @@ MonoBehaviour:
   pitFallClip: {fileID: 8300000, guid: 3d6d0aa1207fcee418ce1419cbfa80d3, type: 3}
   deathClip: {fileID: 8300000, guid: 50b17eb6aa1cdb8499878cb7971a44e3, type: 3}
   menuClickClip: {fileID: 8300000, guid: b38d84be79ae09d43a6b63fa05be30d6, type: 3}
-  rewardClaimClip: {fileID: 0}
+  rewardClaimClip: {fileID: 8300000, guid: 52d143ad6aebef94bba9760e9c67fc37, type: 3}
   musicVolume: 0.35
   sfxVolume: 0.8
   coinSoundInterval: 0.13

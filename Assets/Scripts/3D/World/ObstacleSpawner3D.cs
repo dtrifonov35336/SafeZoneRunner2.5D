@@ -9,7 +9,11 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     [Header("Lanes")]
     public float[] lanePositions =
-        new float[] { -0.8f, 0.8f };
+        new float[]
+        {
+            -1.35f,
+            1.35f
+        };
 
     [Header("Spawning")]
     public float startInterval = 3.5f;
@@ -26,7 +30,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     public int maxObstaclesPerWave = 2;
 
     [Header("Position")]
-    public float spawnZ = 60f;
+    public float spawnZ = 90f;
 
     [Header("Высота дороги")]
     public float obstacleGroundY = -0.04f;
@@ -43,18 +47,17 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float infiniteDifficultyDistance = 2500f;
 
     [Header("Reveal")]
-    public float revealZ = 40f;
+    public float revealZ = 70f;
 
     [Header("Проверка пикапов")]
     public bool checkPickups = true;
-    public float pickupCheckFromZ = 55f;
+    public float pickupCheckFromZ = 80f;
     public float pickupCheckToZ = 5f;
-    public float pickupLaneWidth = 0.4f;
+    public float pickupLaneWidth = 0.55f;
 
     [Header("Безопасная дистанция")]
     public float minLaneGap = 12f;
     public float wideObstacleGap = 18f;
-    public float wideObstacleWidth = 2.4f;
 
     [Header("Runtime")]
     public bool isRunning = true;
@@ -91,36 +94,18 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         Instance = this;
 
+        SyncLanePositions();
+
         currentObstacleSpeed =
             Mathf.Max(
                 0f,
                 baseObstacleSpeed
             );
-
-        SyncLanePositionsWithPlayer();
     }
 
     private void Start()
     {
-        SyncLanePositionsWithPlayer();
-
-        if (
-            lanePositions == null ||
-            lanePositions.Length != 2
-        )
-        {
-            lanePositions =
-                new float[]
-                {
-                    -0.8f,
-                    0.8f
-                };
-        }
-
-        if (maxObstaclesPerWave < 2)
-        {
-            maxObstaclesPerWave = 2;
-        }
+        SyncLanePositions();
 
         runManager =
             FindFirstObjectByType<RunManager>();
@@ -138,6 +123,21 @@ public class ObstacleSpawner3D : MonoBehaviour
             Instance = null;
         }
     }
+
+    // =========================================================
+    // LANES
+    // =========================================================
+
+    private void SyncLanePositions()
+    {
+        lanePositions =
+            RunnerLaneSettings3D
+                .GetLanePositions();
+    }
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
 
     private void Update()
     {
@@ -190,42 +190,6 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // LANES
-    // =========================================================
-
-    private void SyncLanePositionsWithPlayer()
-    {
-        PlayerMovement3D player =
-            FindFirstObjectByType<PlayerMovement3D>();
-
-        if (
-            player != null &&
-            player.lanePositions != null &&
-            player.lanePositions.Length == 2
-        )
-        {
-            lanePositions =
-                new float[]
-                {
-                    player.lanePositions[0],
-                    player.lanePositions[1]
-                };
-        }
-        else if (
-            lanePositions == null ||
-            lanePositions.Length != 2
-        )
-        {
-            lanePositions =
-                new float[]
-                {
-                    -0.8f,
-                    0.8f
-                };
-        }
-    }
-
-    // =========================================================
     // SPEED
     // =========================================================
 
@@ -265,7 +229,8 @@ public class ObstacleSpawner3D : MonoBehaviour
             if (HUDManager.Instance != null)
             {
                 distance =
-                    HUDManager.Instance.GetDistance();
+                    HUDManager.Instance
+                        .GetDistance();
             }
 
             if (
@@ -282,7 +247,10 @@ public class ObstacleSpawner3D : MonoBehaviour
             );
         }
 
-        if (difficultyRampTime <= 0.01f)
+        if (
+            difficultyRampTime <=
+            0.01f
+        )
         {
             return 1f;
         }
@@ -299,7 +267,7 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private bool TrySpawnWave()
     {
-        SyncLanePositionsWithPlayer();
+        SyncLanePositions();
 
         if (
             obstaclePrefabs == null ||
@@ -316,7 +284,9 @@ public class ObstacleSpawner3D : MonoBehaviour
             doubleObstacleWaveChance
         )
         {
-            if (TrySpawnDoubleNormalWave())
+            if (
+                TrySpawnDoubleNormalWave()
+            )
             {
                 return true;
             }
@@ -326,19 +296,11 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // DOUBLE
+    // DOUBLE WAVE
     // =========================================================
 
     private bool TrySpawnDoubleNormalWave()
     {
-        if (
-            lanePositions == null ||
-            lanePositions.Length != 2
-        )
-        {
-            return false;
-        }
-
         GameObject firstPrefab =
             GetRandomRegularObstaclePrefab();
 
@@ -355,14 +317,6 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
-        if (
-            IsWideObstacle(firstPrefab) ||
-            IsWideObstacle(secondPrefab)
-        )
-        {
-            return false;
-        }
-
         int coinLane =
             Random.Range(
                 0,
@@ -375,10 +329,14 @@ public class ObstacleSpawner3D : MonoBehaviour
                 : 0;
 
         float firstX =
-            lanePositions[coinLane];
+            lanePositions[
+                coinLane
+            ];
 
         float secondX =
-            lanePositions[secondLane];
+            lanePositions[
+                secondLane
+            ];
 
         if (
             checkPickups &&
@@ -420,14 +378,14 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
-        // Только первое препятствие получает монеты.
+        // Только первое получает монеты.
         SpawnOne(
             firstPrefab,
             firstX,
             true
         );
 
-        // Второе — БЕЗ монет.
+        // Второе без монет.
         SpawnOne(
             secondPrefab,
             secondX,
@@ -457,11 +415,13 @@ public class ObstacleSpawner3D : MonoBehaviour
         }
 
         bool wide =
-            IsWideObstacle(prefab);
+            IsWideObstacle(
+                prefab
+            );
 
-        // -----------------------------------------------------
-        // BUS / PIPE / SLIDE
-        // -----------------------------------------------------
+        // =====================================================
+        // BUS / SLIDE / DOUBLE JUMP / PIPE
+        // =====================================================
 
         if (wide)
         {
@@ -492,9 +452,9 @@ public class ObstacleSpawner3D : MonoBehaviour
             return true;
         }
 
-        // -----------------------------------------------------
-        // Обычное
-        // -----------------------------------------------------
+        // =====================================================
+        // NORMAL
+        // =====================================================
 
         int first =
             Random.Range(
@@ -513,7 +473,10 @@ public class ObstacleSpawner3D : MonoBehaviour
             second
         };
 
-        foreach (int index in order)
+        foreach (
+            int index
+            in order
+        )
         {
             float laneX =
                 lanePositions[index];
@@ -626,13 +589,15 @@ public class ObstacleSpawner3D : MonoBehaviour
         float normalGap =
             Mathf.Max(
                 minLaneGap,
-                currentObstacleSpeed * 0.65f
+                currentObstacleSpeed *
+                0.65f
             );
 
         float wideGap =
             Mathf.Max(
                 wideObstacleGap,
-                currentObstacleSpeed * 0.90f
+                currentObstacleSpeed *
+                0.90f
             );
 
         ObstacleMover3D[] obstacles =
@@ -670,7 +635,7 @@ public class ObstacleSpawner3D : MonoBehaviour
                     Mathf.Abs(
                         obstacle.laneX -
                         candidateLaneX
-                    ) < 0.45f;
+                    ) < 0.55f;
             }
 
             if (!laneConflict)
@@ -688,7 +653,10 @@ public class ObstacleSpawner3D : MonoBehaviour
                 spawnZ -
                 obstacle.transform.position.z;
 
-            if (distance < requiredGap)
+            if (
+                distance <
+                requiredGap
+            )
             {
                 return false;
             }
@@ -715,91 +683,16 @@ public class ObstacleSpawner3D : MonoBehaviour
                 ObstacleType3D
             >(true);
 
-        if (type != null)
+        if (type == null)
         {
-            if (
-                type.type ==
-                ObstacleType.Pit
-            )
-            {
-                return false;
-            }
-
-            if (
-                type.type ==
-                ObstacleType.Slide ||
-                type.type ==
-                ObstacleType.DoubleJump
-            )
-            {
-                return true;
-            }
+            return false;
         }
-
-        float width =
-            GetObjectWidth(obj);
 
         return
-            width >=
-            wideObstacleWidth;
-    }
-
-    private float GetObjectWidth(
-        GameObject obj
-    )
-    {
-        float result = 0f;
-
-        Collider[] colliders =
-            obj.GetComponentsInChildren<
-                Collider
-            >(true);
-
-        foreach (
-            Collider collider
-            in colliders
-        )
-        {
-            if (collider == null)
-            {
-                continue;
-            }
-
-            result =
-                Mathf.Max(
-                    result,
-                    collider.bounds.size.x
-                );
-        }
-
-        if (result > 0f)
-        {
-            return result;
-        }
-
-        Renderer[] renderers =
-            obj.GetComponentsInChildren<
-                Renderer
-            >(true);
-
-        foreach (
-            Renderer renderer
-            in renderers
-        )
-        {
-            if (renderer == null)
-            {
-                continue;
-            }
-
-            result =
-                Mathf.Max(
-                    result,
-                    renderer.bounds.size.x
-                );
-        }
-
-        return result;
+            type.type ==
+            ObstacleType.Slide ||
+            type.type ==
+            ObstacleType.DoubleJump;
     }
 
     // =========================================================
@@ -848,8 +741,10 @@ public class ObstacleSpawner3D : MonoBehaviour
                 pickup.transform.position.z;
 
             if (
-                z < pickupCheckToZ ||
-                z > pickupCheckFromZ
+                z <
+                pickupCheckToZ ||
+                z >
+                pickupCheckFromZ
             )
             {
                 continue;
@@ -886,8 +781,10 @@ public class ObstacleSpawner3D : MonoBehaviour
                 person.transform.position.z;
 
             if (
-                z < pickupCheckToZ ||
-                z > pickupCheckFromZ
+                z <
+                pickupCheckToZ ||
+                z >
+                pickupCheckFromZ
             )
             {
                 continue;
@@ -929,7 +826,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // CREATE
+    // SPAWN
     // =========================================================
 
     private void SpawnOne(
@@ -1029,11 +926,12 @@ public class ObstacleSpawner3D : MonoBehaviour
                 .GetSelectedCharacterId();
 
         float effectiveRevealZ =
-            BonusCalculator.GetObstacleRevealZ(
-                charId,
-                revealZ,
-                spawnZ
-            );
+            BonusCalculator
+                .GetObstacleRevealZ(
+                    charId,
+                    revealZ,
+                    spawnZ
+                );
 
         SpawnReveal3D reveal =
             instance.GetComponent<
@@ -1053,7 +951,8 @@ public class ObstacleSpawner3D : MonoBehaviour
         );
 
         if (
-            PickupSpawner3D.Instance != null
+            PickupSpawner3D.Instance !=
+            null
         )
         {
             PickupSpawner3D.Instance
