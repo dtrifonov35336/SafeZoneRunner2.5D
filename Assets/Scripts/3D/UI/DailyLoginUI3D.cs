@@ -74,7 +74,7 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // AVAILABILITY
+    // AVAILABLE
     // =========================================================
 
     public static bool IsRewardAvailable()
@@ -267,10 +267,10 @@ public class DailyLoginUI3D : MonoBehaviour
 
             image.raycastTarget =
                 true;
-        }
 
-        closeButton.targetGraphic =
-            image;
+            closeButton.targetGraphic =
+                image;
+        }
 
         closeButton.transition =
             Selectable.Transition.None;
@@ -335,15 +335,10 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         const float cardWidth = 0.5f;
-        const float cardHeight = 150f;
-        const float gap = 10f;
+        const float cardHeight = 220f;
+        const float gap = 12f;
 
         const int rows = 4;
-
-        float contentHeight =
-            rows *
-            (cardHeight + gap) +
-            16f;
 
         contentRoot.anchorMin =
             new Vector2(
@@ -369,7 +364,9 @@ public class DailyLoginUI3D : MonoBehaviour
         contentRoot.sizeDelta =
             new Vector2(
                 0f,
-                contentHeight
+                rows *
+                (cardHeight + gap) +
+                16f
             );
 
         for (
@@ -453,8 +450,8 @@ public class DailyLoginUI3D : MonoBehaviour
             cardColor =
                 new Color32(
                     31,
-                    62,
-                    46,
+                    65,
+                    48,
                     255
                 );
         }
@@ -462,9 +459,9 @@ public class DailyLoginUI3D : MonoBehaviour
         {
             cardColor =
                 new Color32(
-                    49,
-                    61,
-                    48,
+                    55,
+                    67,
+                    50,
                     255
                 );
         }
@@ -472,9 +469,9 @@ public class DailyLoginUI3D : MonoBehaviour
         {
             cardColor =
                 new Color32(
-                    25,
-                    39,
-                    47,
+                    27,
+                    43,
+                    51,
                     255
                 );
         }
@@ -542,32 +539,6 @@ public class DailyLoginUI3D : MonoBehaviour
                 (height + gap)
             );
 
-        Outline outline =
-            card.AddComponent<
-                Outline
-            >();
-
-        outline.effectColor =
-            current
-                ? new Color32(
-                    231,
-                    188,
-                    67,
-                    230
-                )
-                : new Color32(
-                    52,
-                    78,
-                    87,
-                    150
-                );
-
-        outline.effectDistance =
-            new Vector2(
-                1f,
-                -1f
-            );
-
         // =====================================================
         // DAY
         // =====================================================
@@ -577,7 +548,7 @@ public class DailyLoginUI3D : MonoBehaviour
             card.transform,
             "ДЕНЬ " +
             (day + 1),
-            15f,
+            18f,
             current
                 ? new Color32(
                     244,
@@ -586,19 +557,19 @@ public class DailyLoginUI3D : MonoBehaviour
                     255
                 )
                 : new Color32(
-                    191,
-                    198,
-                    190,
+                    204,
+                    210,
+                    204,
                     255
                 ),
             TextAlignmentOptions.Center,
             new Vector2(
                 0.08f,
-                0.68f
+                0.70f
             ),
             new Vector2(
                 0.92f,
-                0.90f
+                0.91f
             )
         );
 
@@ -612,21 +583,21 @@ public class DailyLoginUI3D : MonoBehaviour
             "+" +
             Rewards[day] +
             " МОНЕТ",
-            18f,
+            24f,
             new Color32(
-                229,
-                223,
-                190,
+                239,
+                224,
+                181,
                 255
             ),
             TextAlignmentOptions.Center,
             new Vector2(
                 0.08f,
-                0.38f
+                0.42f
             ),
             new Vector2(
                 0.92f,
-                0.65f
+                0.67f
             )
         );
 
@@ -645,9 +616,9 @@ public class DailyLoginUI3D : MonoBehaviour
 
             stateColor =
                 new Color32(
-                    105,
-                    170,
-                    121,
+                    107,
+                    174,
+                    122,
                     255
                 );
         }
@@ -658,9 +629,9 @@ public class DailyLoginUI3D : MonoBehaviour
 
             stateColor =
                 new Color32(
-                    105,
-                    150,
-                    119,
+                    107,
+                    154,
+                    121,
                     255
                 );
         }
@@ -671,9 +642,9 @@ public class DailyLoginUI3D : MonoBehaviour
 
             stateColor =
                 new Color32(
-                    244,
-                    201,
-                    69,
+                    245,
+                    202,
+                    70,
                     255
                 );
         }
@@ -684,9 +655,9 @@ public class DailyLoginUI3D : MonoBehaviour
 
             stateColor =
                 new Color32(
-                    112,
-                    124,
-                    126,
+                    120,
+                    132,
+                    134,
                     255
                 );
         }
@@ -696,11 +667,11 @@ public class DailyLoginUI3D : MonoBehaviour
                 "StateButton",
                 card.transform,
                 state,
-                11f,
+                12f,
                 new Color32(
-                    30,
-                    47,
-                    55,
+                    32,
+                    51,
+                    59,
                     255
                 ),
                 stateColor
@@ -711,11 +682,11 @@ public class DailyLoginUI3D : MonoBehaviour
                 RectTransform
             >(),
             new Vector2(
-                0.12f,
-                0.08f
+                0.13f,
+                0.10f
             ),
             new Vector2(
-                0.88f,
+                0.87f,
                 0.31f
             )
         );
@@ -851,7 +822,7 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // CURRENT DAY
+    // DAY INDEX
     // =========================================================
 
     private static int GetCurrentDayIndex()
@@ -868,7 +839,11 @@ public class DailyLoginUI3D : MonoBehaviour
                 0
             );
 
-        if (string.IsNullOrEmpty(lastDate))
+        if (
+            string.IsNullOrEmpty(
+                lastDate
+            )
+        )
         {
             return 0;
         }
@@ -938,7 +913,7 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // ROUNDED IMAGE
+    // IMAGE
     // =========================================================
 
     private static GameObject CreateRoundedImage(
@@ -982,7 +957,7 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // ROUNDED BUTTON
+    // BUTTON
     // =========================================================
 
     private static GameObject CreateRoundedButton(
@@ -1034,13 +1009,6 @@ public class DailyLoginUI3D : MonoBehaviour
 
         button.transition =
             Selectable.Transition.None;
-
-        button.navigation =
-            new Navigation
-            {
-                mode =
-                    Navigation.Mode.None
-            };
 
         CreateText(
             "Label",

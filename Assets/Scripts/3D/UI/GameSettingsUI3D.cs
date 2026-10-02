@@ -233,183 +233,196 @@ public class GameSettingsUI3D : MonoBehaviour
             }
         }
 
-        ConfigureInteractiveControls();
+        ConfigureSlider();
+        ConfigureToggle();
+        ConfigureButton(
+            fps30Button
+        );
+        ConfigureButton(
+            fps60Button
+        );
+        ConfigureButton(
+            closeButton
+        );
+
         ConfigureListeners();
     }
 
     // =========================================================
-    // INTERACTIVE CONTROLS
+    // SLIDER
     // =========================================================
 
-    private void ConfigureInteractiveControls()
+    private void ConfigureSlider()
     {
-        // -----------------------------------------------------
-        // SLIDER
-        // -----------------------------------------------------
-
-        if (volumeSlider != null)
+        if (volumeSlider == null)
         {
-            volumeSlider.interactable = true;
+            return;
+        }
 
-            Transform background =
-                volumeSlider.transform.Find(
-                    "Background"
+        volumeSlider.interactable =
+            true;
+
+        volumeSlider.transition =
+            Selectable.Transition.None;
+
+        volumeSlider.navigation =
+            new Navigation
+            {
+                mode =
+                    Navigation.Mode.None
+            };
+
+        Transform background =
+            volumeSlider.transform.Find(
+                "Background"
+            );
+
+        if (background != null)
+        {
+            Image image =
+                background.GetComponent<Image>();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    true;
+            }
+        }
+
+        Transform fillArea =
+            volumeSlider.transform.Find(
+                "Fill Area"
+            );
+
+        if (fillArea != null)
+        {
+            Transform fill =
+                fillArea.Find(
+                    "Fill"
                 );
 
-            if (background != null)
+            if (fill != null)
             {
                 Image image =
-                    background.GetComponent<Image>();
+                    fill.GetComponent<Image>();
 
                 if (image != null)
                 {
-                    image.raycastTarget = true;
+                    image.raycastTarget =
+                        false;
                 }
+
+                volumeSlider.fillRect =
+                    fill.GetComponent<
+                        RectTransform
+                    >();
             }
-
-            Transform handleArea =
-                volumeSlider.transform.Find(
-                    "Handle Slide Area"
-                );
-
-            if (handleArea != null)
-            {
-                Transform handle =
-                    handleArea.Find(
-                        "Handle"
-                    );
-
-                if (handle != null)
-                {
-                    Image image =
-                        handle.GetComponent<Image>();
-
-                    if (image != null)
-                    {
-                        image.raycastTarget =
-                            true;
-
-                        volumeSlider.targetGraphic =
-                            image;
-                    }
-                }
-            }
-
-            volumeSlider.transition =
-                Selectable.Transition.None;
         }
 
-        // -----------------------------------------------------
-        // TOGGLE
-        // -----------------------------------------------------
+        Transform handleArea =
+            volumeSlider.transform.Find(
+                "Handle Slide Area"
+            );
 
-        if (vibrationToggle != null)
+        if (handleArea != null)
         {
-            vibrationToggle.interactable =
-                true;
-
-            Transform background =
-                vibrationToggle.transform.Find(
-                    "Background"
+            Transform handle =
+                handleArea.Find(
+                    "Handle"
                 );
 
-            if (background != null)
+            if (handle != null)
             {
                 Image image =
-                    background.GetComponent<Image>();
+                    handle.GetComponent<Image>();
 
                 if (image != null)
                 {
                     image.raycastTarget =
                         true;
 
-                    vibrationToggle.targetGraphic =
+                    volumeSlider.targetGraphic =
                         image;
                 }
+
+                volumeSlider.handleRect =
+                    handle.GetComponent<
+                        RectTransform
+                    >();
             }
-
-            Transform checkmark =
-                vibrationToggle.transform.Find(
-                    "Checkmark"
-                );
-
-            if (checkmark != null)
-            {
-                Image image =
-                    checkmark.GetComponent<Image>();
-
-                if (image != null)
-                {
-                    vibrationToggle.graphic =
-                        image;
-
-                    image.raycastTarget =
-                        false;
-                }
-            }
-
-            vibrationToggle.transition =
-                Selectable.Transition.None;
         }
-
-        ConfigureFPSButton(
-            fps30Button
-        );
-
-        ConfigureFPSButton(
-            fps60Button
-        );
-
-        ConfigureModalButton(
-            closeButton
-        );
     }
 
-    private void ConfigureFPSButton(
-        Button button
-    )
+    // =========================================================
+    // TOGGLE
+    // =========================================================
+
+    private void ConfigureToggle()
     {
-        if (button == null)
+        if (vibrationToggle == null)
         {
             return;
         }
 
-        Image image =
-            button.GetComponent<Image>();
+        vibrationToggle.interactable =
+            true;
 
-        if (image != null)
-        {
-            image.sprite =
-                RuntimeUISprite3D
-                    .GetRoundedSprite();
-
-            image.type =
-                Image.Type.Sliced;
-
-            image.preserveAspect =
-                false;
-
-            image.raycastTarget =
-                true;
-        }
-
-        button.targetGraphic =
-            image;
-
-        // Убираем ColorTint,
-        // чтобы цвет кнопки не умножал Image.color.
-        button.transition =
+        vibrationToggle.transition =
             Selectable.Transition.None;
 
-        button.navigation =
+        vibrationToggle.navigation =
             new Navigation
             {
                 mode =
                     Navigation.Mode.None
             };
+
+        Transform background =
+            vibrationToggle.transform.Find(
+                "Background"
+            );
+
+        if (background != null)
+        {
+            Image image =
+                background.GetComponent<Image>();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    true;
+
+                vibrationToggle.targetGraphic =
+                    image;
+            }
+        }
+
+        Transform checkmark =
+            vibrationToggle.transform.Find(
+                "Checkmark"
+            );
+
+        if (checkmark != null)
+        {
+            Image image =
+                checkmark.GetComponent<Image>();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    false;
+
+                vibrationToggle.graphic =
+                    image;
+            }
+        }
     }
 
-    private void ConfigureModalButton(
+    // =========================================================
+    // BUTTON
+    // =========================================================
+
+    private void ConfigureButton(
         Button button
     )
     {
@@ -435,10 +448,10 @@ public class GameSettingsUI3D : MonoBehaviour
 
             image.raycastTarget =
                 true;
-        }
 
-        button.targetGraphic =
-            image;
+            button.targetGraphic =
+                image;
+        }
 
         button.transition =
             Selectable.Transition.None;
@@ -662,15 +675,15 @@ public class GameSettingsUI3D : MonoBehaviour
         image.color =
             selected
                 ? new Color32(
-                    42,
+                    45,
                     98,
                     107,
                     255
                 )
                 : new Color32(
-                    27,
-                    46,
-                    54,
+                    29,
+                    50,
+                    58,
                     255
                 );
     }

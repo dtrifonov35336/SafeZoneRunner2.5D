@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 
+using System.IO;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -11,13 +12,23 @@ public static class SafeZoneMainMenuFinalFixEditor
     private const string SceneName =
         "MainMenu";
 
+    private const string GeneratedFolder =
+        "Assets/GeneratedUI";
+
     private const string RoundedPath =
         "Assets/GeneratedUI/SafeZoneRoundedUI.png";
 
+    private const string WhitePath =
+        "Assets/GeneratedUI/SafeZoneWhiteUI.png";
+
+    // =========================================================
+    // MENU
+    // =========================================================
+
     [MenuItem(
-        "Safe Zone Runner/UI/FINAL — исправить MainMenu UI"
+        "Safe Zone Runner/UI/FINAL — ПОЛНОСТЬЮ ПЕРЕСОБРАТЬ MainMenu"
     )]
-    public static void Fix()
+    public static void Rebuild()
     {
         if (
             EditorSceneManager.GetActiveScene().name !=
@@ -47,25 +58,129 @@ public static class SafeZoneMainMenuFinalFixEditor
             return;
         }
 
-        EnsureRoundedSprite();
+        EnsureGeneratedSprites();
 
         Transform canvasTransform =
             canvas.transform;
 
-        FixModal(
-            canvasTransform,
-            "Modal_Settings"
+        MainMenuModalManager3D manager =
+            canvas.GetComponent<
+                MainMenuModalManager3D
+            >();
+
+        if (manager == null)
+        {
+            manager =
+                Undo.AddComponent<
+                    MainMenuModalManager3D
+                >(
+                    canvas.gameObject
+                );
+        }
+
+        GameObject background =
+            FindChild(
+                canvasTransform,
+                "Background"
+            );
+
+        GameObject safeArea =
+            FindChild(
+                canvasTransform,
+                "SafeArea"
+            );
+
+        AssignManagerReferences(
+            manager,
+            background,
+            safeArea
         );
 
-        FixModal(
-            canvasTransform,
-            "Modal_Achievements"
+        DeleteLegacyObjects(
+            canvasTransform
         );
 
-        FixModal(
-            canvasTransform,
-            "Modal_DailyLogin"
+        GameObject settingsRoot =
+            CreateOrReuseRoot(
+                canvasTransform,
+                "Modal_Settings"
+            );
+
+        GameObject achievementsRoot =
+            CreateOrReuseRoot(
+                canvasTransform,
+                "Modal_Achievements"
+            );
+
+        GameObject dailyRoot =
+            CreateOrReuseRoot(
+                canvasTransform,
+                "Modal_DailyLogin"
+            );
+
+        ClearChildren(
+            settingsRoot
         );
+
+        ClearChildren(
+            achievementsRoot
+        );
+
+        ClearChildren(
+            dailyRoot
+        );
+
+        GameSettingsUI3D settingsController =
+            GetOrAdd<
+                GameSettingsUI3D
+            >(
+                settingsRoot
+            );
+
+        AchievementsUI3D achievementsController =
+            GetOrAdd<
+                AchievementsUI3D
+            >(
+                achievementsRoot
+            );
+
+        DailyLoginUI3D dailyController =
+            GetOrAdd<
+                DailyLoginUI3D
+            >(
+                dailyRoot
+            );
+
+        BuildSettings(
+            settingsRoot,
+            settingsController
+        );
+
+        BuildAchievements(
+            achievementsRoot,
+            achievementsController
+        );
+
+        BuildDailyLogin(
+            dailyRoot,
+            dailyController
+        );
+
+        settingsRoot.SetActive(false);
+        achievementsRoot.SetActive(false);
+        dailyRoot.SetActive(false);
+
+        canvasTransform
+            .Find("Modal_Settings")
+            ?.SetAsLastSibling();
+
+        canvasTransform
+            .Find("Modal_Achievements")
+            ?.SetAsLastSibling();
+
+        canvasTransform
+            .Find("Modal_DailyLogin")
+            ?.SetAsLastSibling();
 
         EditorSceneManager.MarkSceneDirty(
             EditorSceneManager.GetActiveScene()
@@ -75,560 +190,1422 @@ public static class SafeZoneMainMenuFinalFixEditor
             EditorSceneManager.GetActiveScene()
         );
 
+        Selection.activeGameObject =
+            achievementsRoot;
+
+        EditorGUIUtility.PingObject(
+            achievementsRoot
+        );
+
         EditorUtility.DisplayDialog(
-            "Готово",
-            "MainMenu UI исправлен:\n\n" +
-            "• скругление кнопок\n" +
-            "• цвета\n" +
-            "• raycast Slider/Toggle\n" +
-            "• ScrollView\n" +
-            "• layout окон\n" +
-            "• ссылки контроллеров",
+            "MainMenu пересобран",
+            "Готово.\n\n" +
+            "Старые Window/Panel/Tabs/ScrollView удалены.\n" +
+            "Кнопки пересозданы.\n" +
+            "Крестики теперь квадратные.\n" +
+            "Toggle уменьшен.\n" +
+            "Slider интерактивный.\n" +
+            "Все четыре угла UI исправлены.",
             "OK"
         );
     }
 
     // =========================================================
-    // MODAL
+    // LEGACY
     // =========================================================
 
-    private static void FixModal(
-        Transform canvas,
-        string modalName
+    private static void DeleteLegacyObjects(
+        Transform canvas
     )
     {
-        Transform root =
-            canvas.Find(
-                modalName
-            );
-
-        if (root == null)
+        string[] legacyNames =
         {
-            return;
-        }
+            "AchievementsUI"
+        };
 
-        SetStretch(
-            root.GetComponent<RectTransform>()
-        );
-
-        Transform window =
-            root.Find("Window");
-
-        if (window == null)
+        foreach (
+            string name
+            in legacyNames
+        )
         {
-            return;
-        }
-
-        SetStretch(
-            window.GetComponent<RectTransform>()
-        );
-
-        Image windowImage =
-            window.GetComponent<Image>();
-
-        if (windowImage != null)
-        {
-            windowImage.sprite =
-                LoadRoundedSprite();
-
-            windowImage.type =
-                Image.Type.Sliced;
-
-            windowImage.color =
-                new Color32(
-                    13,
-                    21,
-                    27,
-                    248
+            Transform found =
+                canvas.Find(
+                    name
                 );
 
-            windowImage.preserveAspect =
-                false;
-
-            windowImage.raycastTarget =
-                true;
+            if (found != null)
+            {
+                Undo.DestroyObjectImmediate(
+                    found.gameObject
+                );
+            }
         }
+    }
 
-        Transform panel =
-            window.Find("Panel");
+    // =========================================================
+    // ROOT
+    // =========================================================
 
-        if (panel == null)
+    private static GameObject CreateOrReuseRoot(
+        Transform canvas,
+        string name
+    )
+    {
+        Transform found =
+            canvas.Find(
+                name
+            );
+
+        GameObject root;
+
+        if (found != null)
         {
-            return;
+            root =
+                found.gameObject;
+        }
+        else
+        {
+            root =
+                new GameObject(
+                    name,
+                    typeof(RectTransform)
+                );
+
+            Undo.RegisterCreatedObjectUndo(
+                root,
+                "Create " + name
+            );
+
+            root.transform.SetParent(
+                canvas,
+                false
+            );
         }
 
-        SetAnchored(
-            panel.GetComponent<RectTransform>(),
+        RectTransform rect =
+            root.GetComponent<
+                RectTransform
+            >();
+
+        SetStretch(
+            rect
+        );
+
+        root.transform.localScale =
+            Vector3.one;
+
+        return root;
+    }
+
+    private static void ClearChildren(
+        GameObject root
+    )
+    {
+        for (
+            int i =
+                root.transform.childCount - 1;
+            i >= 0;
+            i--
+        )
+        {
+            Undo.DestroyObjectImmediate(
+                root.transform
+                    .GetChild(i)
+                    .gameObject
+            );
+        }
+    }
+
+    // =========================================================
+    // SETTINGS
+    // =========================================================
+
+    private static void BuildSettings(
+        GameObject root,
+        GameSettingsUI3D controller
+    )
+    {
+        GameObject window =
+            CreateWindow(
+                root.transform
+            );
+
+        GameObject panel =
+            CreatePanel(
+                window.transform
+            );
+
+        CreateHeader(
+            panel.transform,
+            "НАСТРОЙКИ",
+            out GameObject close
+        );
+
+        // -----------------------------------------------------
+        // SOUND
+        // -----------------------------------------------------
+
+        GameObject sound =
+            CreateSection(
+                panel.transform,
+                "SoundSection",
+                0.59f,
+                0.82f,
+                "ЗВУК"
+            );
+
+        CreateText(
+            "VolumeLabel",
+            sound.transform,
+            "Общая громкость",
+            16f,
+            new Color32(
+                232,
+                235,
+                229,
+                255
+            ),
+            TextAlignmentOptions.Left,
             new Vector2(
-                0.055f,
-                0.045f
+                0.06f,
+                0.30f
             ),
             new Vector2(
-                0.945f,
-                0.955f
+                0.40f,
+                0.58f
             )
         );
 
-        Image panelImage =
-            panel.GetComponent<Image>();
-
-        if (panelImage != null)
-        {
-            panelImage.sprite =
-                LoadRoundedSprite();
-
-            panelImage.type =
-                Image.Type.Sliced;
-
-            panelImage.color =
-                new Color32(
-                    22,
-                    35,
-                    43,
-                    255
-                );
-
-            panelImage.preserveAspect =
-                false;
-        }
-
-        FixPanelButtons(
-            panel
+        CreateSlider(
+            sound.transform
         );
 
-        FixSections(
-            panel
+        CreateText(
+            "VolumeValue",
+            sound.transform,
+            "100%",
+            15f,
+            new Color32(
+                239,
+                202,
+                78,
+                255
+            ),
+            TextAlignmentOptions.Right,
+            new Vector2(
+                0.82f,
+                0.30f
+            ),
+            new Vector2(
+                0.94f,
+                0.58f
+            )
         );
 
-        FixScroll(
-            panel
+        // -----------------------------------------------------
+        // CONTROL
+        // -----------------------------------------------------
+
+        GameObject control =
+            CreateSection(
+                panel.transform,
+                "ControlSection",
+                0.33f,
+                0.56f,
+                "УПРАВЛЕНИЕ"
+            );
+
+        CreateText(
+            "VibrationLabel",
+            control.transform,
+            "Вибрация",
+            16f,
+            new Color32(
+                232,
+                235,
+                229,
+                255
+            ),
+            TextAlignmentOptions.Left,
+            new Vector2(
+                0.06f,
+                0.30f
+            ),
+            new Vector2(
+                0.55f,
+                0.58f
+            )
         );
 
-        FixSettingsControls(
-            panel
+        CreateToggle(
+            control.transform
         );
 
-        FixAchievements(
-            panel
+        // -----------------------------------------------------
+        // PERFORMANCE
+        // -----------------------------------------------------
+
+        GameObject performance =
+            CreateSection(
+                panel.transform,
+                "PerformanceSection",
+                0.07f,
+                0.30f,
+                "ПРОИЗВОДИТЕЛЬНОСТЬ"
+            );
+
+        CreateButton(
+            performance.transform,
+            "FPS30",
+            "30 FPS",
+            new Vector2(
+                0.06f,
+                0.16f
+            ),
+            new Vector2(
+                0.47f,
+                0.57f
+            ),
+            14f
         );
 
-        FixDailyLogin(
-            panel
+        CreateButton(
+            performance.transform,
+            "FPS60",
+            "60 FPS",
+            new Vector2(
+                0.53f,
+                0.16f
+            ),
+            new Vector2(
+                0.94f,
+                0.57f
+            ),
+            14f
         );
 
-        FixControllerReferences(
-            root.gameObject
+        AssignSettingsReferences(
+            controller,
+            window,
+            sound,
+            control,
+            performance,
+            close
         );
     }
 
     // =========================================================
-    // SECTIONS
+    // ACHIEVEMENTS
     // =========================================================
 
-    private static void FixSections(
-        Transform panel
+    private static void BuildAchievements(
+        GameObject root,
+        AchievementsUI3D controller
     )
     {
-        FixSection(
-            panel,
-            "SoundSection",
-            0.62f,
-            0.80f
+        GameObject window =
+            CreateWindow(
+                root.transform
+            );
+
+        GameObject panel =
+            CreatePanel(
+                window.transform
+            );
+
+        CreateHeader(
+            panel.transform,
+            "ДОСТИЖЕНИЯ",
+            out GameObject close
         );
 
-        FixSection(
-            panel,
-            "ControlSection",
-            0.40f,
-            0.58f
+        GameObject tabs =
+            new GameObject(
+                "Tabs",
+                typeof(RectTransform)
+            );
+
+        tabs.transform.SetParent(
+            panel.transform,
+            false
         );
-
-        FixSection(
-            panel,
-            "PerformanceSection",
-            0.18f,
-            0.36f
-        );
-    }
-
-    private static void FixSection(
-        Transform panel,
-        string name,
-        float minY,
-        float maxY
-    )
-    {
-        Transform section =
-            panel.Find(name);
-
-        if (section == null)
-        {
-            return;
-        }
 
         SetAnchored(
-            section.GetComponent<RectTransform>(),
+            tabs.GetComponent<
+                RectTransform
+            >(),
             new Vector2(
                 0.065f,
-                minY
+                0.735f
             ),
             new Vector2(
                 0.935f,
+                0.815f
+            )
+        );
+
+        CreateButton(
+            tabs.transform,
+            "Shelter",
+            "ДО УБЕЖИЩА",
+            new Vector2(
+                0f,
+                0f
+            ),
+            new Vector2(
+                0.49f,
+                1f
+            ),
+            13f
+        );
+
+        CreateButton(
+            tabs.transform,
+            "Infinite",
+            "БЕСКОНЕЧНЫЙ",
+            new Vector2(
+                0.51f,
+                0f
+            ),
+            new Vector2(
+                1f,
+                1f
+            ),
+            13f
+        );
+
+        // -----------------------------------------------------
+        // COUNT BOX
+        // -----------------------------------------------------
+
+        GameObject countBox =
+            CreateRoundedImage(
+                "CountBox",
+                panel.transform,
+                new Color32(
+                    28,
+                    49,
+                    57,
+                    255
+                )
+            );
+
+        SetAnchored(
+            countBox.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.62f,
+                0.675f
+            ),
+            new Vector2(
+                0.935f,
+                0.72f
+            )
+        );
+
+        CreateText(
+            "Count",
+            panel.transform,
+            "НЕТ ДОСТУПНЫХ НАГРАД",
+            11f,
+            new Color32(
+                217,
+                222,
+                215,
+                255
+            ),
+            TextAlignmentOptions.Center,
+            new Vector2(
+                0.62f,
+                0.675f
+            ),
+            new Vector2(
+                0.935f,
+                0.72f
+            )
+        );
+
+        // -----------------------------------------------------
+        // SCROLL
+        // -----------------------------------------------------
+
+        CreateScroll(
+            panel.transform,
+            "ScrollView",
+            new Vector2(
+                0.055f,
+                0.075f
+            ),
+            new Vector2(
+                0.945f,
+                0.655f
+            )
+        );
+
+        AssignAchievementsReferences(
+            controller,
+            window,
+            tabs,
+            close
+        );
+    }
+
+    // =========================================================
+    // DAILY
+    // =========================================================
+
+    private static void BuildDailyLogin(
+        GameObject root,
+        DailyLoginUI3D controller
+    )
+    {
+        GameObject window =
+            CreateWindow(
+                root.transform
+            );
+
+        GameObject panel =
+            CreatePanel(
+                window.transform
+            );
+
+        CreateHeader(
+            panel.transform,
+            "ЕЖЕДНЕВНЫЙ ВХОД",
+            out GameObject close
+        );
+
+        // -----------------------------------------------------
+        // STREAK BACKGROUND
+        // -----------------------------------------------------
+
+        GameObject streakBox =
+            CreateRoundedImage(
+                "StreakBox",
+                panel.transform,
+                new Color32(
+                    49,
+                    62,
+                    49,
+                    255
+                )
+            );
+
+        SetAnchored(
+            streakBox.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.20f,
+                0.755f
+            ),
+            new Vector2(
+                0.80f,
+                0.815f
+            )
+        );
+
+        CreateText(
+            "Streak",
+            panel.transform,
+            "СЕРИЯ  •  ДЕНЬ 1 / 7",
+            15f,
+            new Color32(
+                244,
+                204,
+                76,
+                255
+            ),
+            TextAlignmentOptions.Center,
+            new Vector2(
+                0.22f,
+                0.76f
+            ),
+            new Vector2(
+                0.78f,
+                0.81f
+            )
+        );
+
+        // -----------------------------------------------------
+        // SCROLL
+        // -----------------------------------------------------
+
+        CreateScroll(
+            panel.transform,
+            "ScrollView",
+            new Vector2(
+                0.055f,
+                0.075f
+            ),
+            new Vector2(
+                0.945f,
+                0.715f
+            )
+        );
+
+        AssignDailyReferences(
+            controller,
+            window,
+            close
+        );
+    }
+
+    // =========================================================
+    // WINDOW
+    // =========================================================
+
+    private static GameObject CreateWindow(
+        Transform parent
+    )
+    {
+        GameObject window =
+            new GameObject(
+                "Window",
+                typeof(RectTransform),
+                typeof(Image)
+            );
+
+        window.transform.SetParent(
+            parent,
+            false
+        );
+
+        Image image =
+            window.GetComponent<Image>();
+
+        image.sprite =
+            LoadRoundedSprite();
+
+        image.type =
+            Image.Type.Sliced;
+
+        image.color =
+            new Color32(
+                7,
+                13,
+                18,
+                155
+            );
+
+        image.raycastTarget =
+            true;
+
+        SetStretch(
+            window.GetComponent<
+                RectTransform
+            >()
+        );
+
+        return window;
+    }
+
+    // =========================================================
+    // PANEL
+    // =========================================================
+
+    private static GameObject CreatePanel(
+        Transform window
+    )
+    {
+        GameObject panel =
+            new GameObject(
+                "Panel",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Outline)
+            );
+
+        panel.transform.SetParent(
+            window,
+            false
+        );
+
+        Image image =
+            panel.GetComponent<Image>();
+
+        image.sprite =
+            LoadRoundedSprite();
+
+        image.type =
+            Image.Type.Sliced;
+
+        image.color =
+            new Color32(
+                27,
+                43,
+                51,
+                255
+            );
+
+        image.raycastTarget =
+            true;
+
+        Outline outline =
+            panel.GetComponent<Outline>();
+
+        outline.effectColor =
+            new Color32(
+                68,
+                96,
+                105,
+                220
+            );
+
+        outline.effectDistance =
+            new Vector2(
+                2f,
+                -2f
+            );
+
+        SetAnchored(
+            panel.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.095f,
+                0.055f
+            ),
+            new Vector2(
+                0.905f,
+                0.945f
+            )
+        );
+
+        return panel;
+    }
+
+    // =========================================================
+    // HEADER
+    // =========================================================
+
+    private static void CreateHeader(
+        Transform panel,
+        string title,
+        out GameObject close
+    )
+    {
+        CreateText(
+            "Title",
+            panel,
+            title,
+            27f,
+            new Color32(
+                237,
+                239,
+                232,
+                255
+            ),
+            TextAlignmentOptions.Left,
+            new Vector2(
+                0.085f,
+                0.885f
+            ),
+            new Vector2(
+                0.72f,
+                0.95f
+            )
+        );
+
+        GameObject accent =
+            CreateRoundedImage(
+                "TitleAccent",
+                panel,
+                new Color32(
+                    231,
+                    188,
+                    69,
+                    255
+                )
+            );
+
+        SetAnchored(
+            accent.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.055f,
+                0.89f
+            ),
+            new Vector2(
+                0.068f,
+                0.95f
+            )
+        );
+
+        close =
+            CreateButton(
+                panel,
+                "Close",
+                "×",
+                Vector2.zero,
+                Vector2.one,
+                20f
+            );
+
+        RectTransform closeRect =
+            close.GetComponent<
+                RectTransform
+            >();
+
+        // КРИТИЧНО:
+        // фиксированный квадрат,
+        // НЕ растягиваем якорями.
+
+        closeRect.anchorMin =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        closeRect.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        closeRect.pivot =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        closeRect.sizeDelta =
+            new Vector2(
+                64f,
+                64f
+            );
+
+        closeRect.anchoredPosition =
+            new Vector2(
+                -22f,
+                -18f
+            );
+    }
+
+    // =========================================================
+    // SECTION
+    // =========================================================
+
+    private static GameObject CreateSection(
+        Transform panel,
+        string name,
+        float minY,
+        float maxY,
+        string title
+    )
+    {
+        GameObject section =
+            CreateRoundedImage(
+                name,
+                panel,
+                new Color32(
+                    34,
+                    52,
+                    60,
+                    255
+                )
+            );
+
+        SetAnchored(
+            section.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.06f,
+                minY
+            ),
+            new Vector2(
+                0.94f,
                 maxY
             )
         );
 
-        Image image =
-            section.GetComponent<Image>();
-
-        if (image != null)
-        {
-            image.sprite =
-                LoadRoundedSprite();
-
-            image.type =
-                Image.Type.Sliced;
-
-            image.color =
+        GameObject header =
+            CreateRoundedImage(
+                "Header",
+                section.transform,
                 new Color32(
-                    18,
-                    34,
-                    42,
+                    41,
+                    61,
+                    69,
                     255
-                );
-
-            image.preserveAspect =
-                false;
-
-            image.raycastTarget =
-                false;
-        }
-    }
-
-    // =========================================================
-    // BUTTONS
-    // =========================================================
-
-    private static void FixPanelButtons(
-        Transform panel
-    )
-    {
-        Button[] buttons =
-            panel.GetComponentsInChildren<Button>(
-                true
+                )
             );
 
-        foreach (
-            Button button
-            in buttons
-        )
-        {
-            if (button == null)
-            {
-                continue;
-            }
-
-            Image image =
-                button.GetComponent<Image>();
-
-            if (image == null)
-            {
-                continue;
-            }
-
-            image.sprite =
-                LoadRoundedSprite();
-
-            image.type =
-                Image.Type.Sliced;
-
-            image.preserveAspect =
-                false;
-
-            image.raycastTarget =
-                true;
-
-            button.targetGraphic =
-                image;
-
-            // ВАЖНО:
-            // Не умножаем Image.color через ColorTint.
-            button.transition =
-                Selectable.Transition.None;
-
-            button.navigation =
-                new Navigation
-                {
-                    mode =
-                        Navigation.Mode.None
-                };
-
-            image.color =
-                new Color32(
-                    27,
-                    46,
-                    54,
-                    255
-                );
-
-            if (
-                button.name ==
-                "Close"
+        SetAnchored(
+            header.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.015f,
+                0.73f
+            ),
+            new Vector2(
+                0.985f,
+                0.985f
             )
-            {
-                image.color =
-                    new Color32(
-                        35,
-                        49,
-                        56,
-                        255
-                    );
-            }
-        }
+        );
+
+        GameObject accent =
+            CreateRoundedImage(
+                "Accent",
+                header.transform,
+                new Color32(
+                    229,
+                    188,
+                    69,
+                    255
+                )
+            );
+
+        SetAnchored(
+            accent.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.018f,
+                0.18f
+            ),
+            new Vector2(
+                0.028f,
+                0.82f
+            )
+        );
+
+        CreateText(
+            "Title",
+            header.transform,
+            title,
+            13f,
+            new Color32(
+                239,
+                240,
+                233,
+                255
+            ),
+            TextAlignmentOptions.Left,
+            new Vector2(
+                0.055f,
+                0.08f
+            ),
+            new Vector2(
+                0.94f,
+                0.92f
+            )
+        );
+
+        return section;
     }
 
     // =========================================================
-    // SETTINGS CONTROLS
+    // SLIDER
     // =========================================================
 
-    private static void FixSettingsControls(
-        Transform panel
+    private static Slider CreateSlider(
+        Transform parent
     )
     {
-        Transform sliderTransform =
-            panel.Find(
-                "SoundSection/VolumeSlider"
+        GameObject root =
+            new GameObject(
+                "VolumeSlider",
+                typeof(RectTransform),
+                typeof(Slider)
             );
 
-        if (sliderTransform != null)
-        {
-            Slider slider =
-                sliderTransform.GetComponent<
-                    Slider
-                >();
+        root.transform.SetParent(
+            parent,
+            false
+        );
 
-            if (slider != null)
-            {
-                slider.interactable =
-                    true;
+        SetAnchored(
+            root.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.41f,
+                0.29f
+            ),
+            new Vector2(
+                0.79f,
+                0.59f
+            )
+        );
 
-                slider.transition =
-                    Selectable.Transition.None;
+        Slider slider =
+            root.GetComponent<Slider>();
 
-                Transform background =
-                    sliderTransform.Find(
-                        "Background"
-                    );
+        slider.minValue =
+            0f;
 
-                if (background != null)
-                {
-                    Image image =
-                        background.GetComponent<Image>();
+        slider.maxValue =
+            1f;
 
-                    if (image != null)
-                    {
-                        image.raycastTarget =
-                            true;
+        slider.wholeNumbers =
+            false;
 
-                        image.color =
-                            new Color32(
-                                29,
-                                45,
-                                53,
-                                255
-                            );
-                    }
-                }
+        slider.interactable =
+            true;
 
-                Transform handleArea =
-                    sliderTransform.Find(
-                        "Handle Slide Area"
-                    );
+        slider.direction =
+            Slider.Direction.LeftToRight;
 
-                if (handleArea != null)
-                {
-                    Transform handle =
-                        handleArea.Find(
-                            "Handle"
-                        );
+        // -----------------------------------------------------
+        // BACKGROUND
+        // -----------------------------------------------------
 
-                    if (handle != null)
-                    {
-                        Image image =
-                            handle.GetComponent<Image>();
-
-                        if (image != null)
-                        {
-                            image.raycastTarget =
-                                true;
-
-                            slider.targetGraphic =
-                                image;
-                        }
-                    }
-                }
-            }
-        }
-
-        Transform toggleTransform =
-            panel.Find(
-                "ControlSection/VibrationToggle"
+        GameObject background =
+            CreateRoundedImage(
+                "Background",
+                root.transform,
+                new Color32(
+                    23,
+                    39,
+                    47,
+                    255
+                )
             );
 
-        if (toggleTransform != null)
-        {
-            Toggle toggle =
-                toggleTransform.GetComponent<
-                    Toggle
-                >();
+        SetStretch(
+            background.GetComponent<
+                RectTransform
+            >()
+        );
 
-            if (toggle != null)
+        // -----------------------------------------------------
+        // FILL AREA
+        // -----------------------------------------------------
+
+        GameObject fillArea =
+            new GameObject(
+                "Fill Area",
+                typeof(RectTransform)
+            );
+
+        fillArea.transform.SetParent(
+            root.transform,
+            false
+        );
+
+        SetAnchored(
+            fillArea.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(
+                0.04f,
+                0.28f
+            ),
+            new Vector2(
+                0.96f,
+                0.72f
+            )
+        );
+
+        // -----------------------------------------------------
+        // FILL
+        // -----------------------------------------------------
+
+        GameObject fill =
+            CreateRoundedImage(
+                "Fill",
+                fillArea.transform,
+                new Color32(
+                    229,
+                    188,
+                    69,
+                    255
+                )
+            );
+
+        RectTransform fillRect =
+            fill.GetComponent<
+                RectTransform
+            >();
+
+        fillRect.anchorMin =
+            new Vector2(
+                0f,
+                0f
+            );
+
+        fillRect.anchorMax =
+            new Vector2(
+                0f,
+                1f
+            );
+
+        fillRect.pivot =
+            new Vector2(
+                0f,
+                0.5f
+            );
+
+        fillRect.sizeDelta =
+            new Vector2(
+                0f,
+                0f
+            );
+
+        // -----------------------------------------------------
+        // HANDLE AREA
+        // -----------------------------------------------------
+
+        GameObject handleArea =
+            new GameObject(
+                "Handle Slide Area",
+                typeof(RectTransform)
+            );
+
+        handleArea.transform.SetParent(
+            root.transform,
+            false
+        );
+
+        SetStretch(
+            handleArea.GetComponent<
+                RectTransform
+            >()
+        );
+
+        // -----------------------------------------------------
+        // HANDLE
+        // -----------------------------------------------------
+
+        GameObject handle =
+            CreateRoundedImage(
+                "Handle",
+                handleArea.transform,
+                new Color32(
+                    239,
+                    239,
+                    230,
+                    255
+                )
+            );
+
+        RectTransform handleRect =
+            handle.GetComponent<
+                RectTransform
+            >();
+
+        handleRect.anchorMin =
+            new Vector2(
+                0f,
+                0.5f
+            );
+
+        handleRect.anchorMax =
+            new Vector2(
+                0f,
+                0.5f
+            );
+
+        handleRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        handleRect.sizeDelta =
+            new Vector2(
+                26f,
+                26f
+            );
+
+        slider.fillRect =
+            fillRect;
+
+        slider.handleRect =
+            handleRect;
+
+        slider.targetGraphic =
+            handle.GetComponent<Image>();
+
+        return slider;
+    }
+
+    // =========================================================
+    // TOGGLE
+    // =========================================================
+
+    private static Toggle CreateToggle(
+        Transform parent
+    )
+    {
+        GameObject root =
+            new GameObject(
+                "VibrationToggle",
+                typeof(RectTransform),
+                typeof(Toggle)
+            );
+
+        root.transform.SetParent(
+            parent,
+            false
+        );
+
+        RectTransform rect =
+            root.GetComponent<
+                RectTransform
+            >();
+
+        rect.anchorMin =
+            new Vector2(
+                1f,
+                0.5f
+            );
+
+        rect.anchorMax =
+            new Vector2(
+                1f,
+                0.5f
+            );
+
+        rect.pivot =
+            new Vector2(
+                1f,
+                0.5f
+            );
+
+        rect.sizeDelta =
+            new Vector2(
+                82f,
+                46f
+            );
+
+        rect.anchoredPosition =
+            new Vector2(
+                -26f,
+                0f
+            );
+
+        Toggle toggle =
+            root.GetComponent<Toggle>();
+
+        // -----------------------------------------------------
+        // BACKGROUND
+        // -----------------------------------------------------
+
+        GameObject background =
+            CreateRoundedImage(
+                "Background",
+                root.transform,
+                new Color32(
+                    24,
+                    42,
+                    50,
+                    255
+                )
+            );
+
+        SetStretch(
+            background.GetComponent<
+                RectTransform
+            >()
+        );
+
+        // -----------------------------------------------------
+        // CHECKMARK
+        // -----------------------------------------------------
+
+        GameObject checkmark =
+            CreateRoundedImage(
+                "Checkmark",
+                root.transform,
+                new Color32(
+                    229,
+                    188,
+                    69,
+                    255
+                )
+            );
+
+        RectTransform checkRect =
+            checkmark.GetComponent<
+                RectTransform
+            >();
+
+        checkRect.anchorMin =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        checkRect.anchorMax =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        checkRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        checkRect.sizeDelta =
+            new Vector2(
+                30f,
+                30f
+            );
+
+        checkRect.anchoredPosition =
+            Vector2.zero;
+
+        toggle.targetGraphic =
+            background.GetComponent<
+                Image
+            >();
+
+        toggle.graphic =
+            checkmark.GetComponent<
+                Image
+            >();
+
+        toggle.isOn =
+            true;
+
+        return toggle;
+    }
+
+    // =========================================================
+    // BUTTON
+    // =========================================================
+
+    private static GameObject CreateButton(
+        Transform parent,
+        string name,
+        string label,
+        Vector2 min,
+        Vector2 max,
+        float fontSize
+    )
+    {
+        GameObject go =
+            new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
+
+        go.transform.SetParent(
+            parent,
+            false
+        );
+
+        RectTransform rect =
+            go.GetComponent<
+                RectTransform
+            >();
+
+        SetAnchored(
+            rect,
+            min,
+            max
+        );
+
+        Image image =
+            go.GetComponent<
+                Image
+            >();
+
+        image.sprite =
+            LoadRoundedSprite();
+
+        image.type =
+            Image.Type.Sliced;
+
+        image.color =
+            new Color32(
+                30,
+                50,
+                58,
+                255
+            );
+
+        image.raycastTarget =
+            true;
+
+        Button button =
+            go.GetComponent<
+                Button
+            >();
+
+        button.targetGraphic =
+            image;
+
+        button.transition =
+            Selectable.Transition.None;
+
+        button.navigation =
+            new Navigation
             {
-                toggle.interactable =
-                    true;
+                mode =
+                    Navigation.Mode.None
+            };
 
-                toggle.transition =
-                    Selectable.Transition.None;
+        CreateText(
+            "Label",
+            go.transform,
+            label,
+            fontSize,
+            new Color32(
+                234,
+                236,
+                230,
+                255
+            ),
+            TextAlignmentOptions.Center,
+            new Vector2(
+                0.05f,
+                0.04f
+            ),
+            new Vector2(
+                0.95f,
+                0.96f
+            )
+        );
 
-                Transform background =
-                    toggleTransform.Find(
-                        "Background"
-                    );
-
-                if (background != null)
-                {
-                    Image image =
-                        background.GetComponent<Image>();
-
-                    if (image != null)
-                    {
-                        image.raycastTarget =
-                            true;
-
-                        image.color =
-                            new Color32(
-                                29,
-                                45,
-                                53,
-                                255
-                            );
-
-                        toggle.targetGraphic =
-                            image;
-                    }
-                }
-
-                Transform checkmark =
-                    toggleTransform.Find(
-                        "Checkmark"
-                    );
-
-                if (checkmark != null)
-                {
-                    Image image =
-                        checkmark.GetComponent<Image>();
-
-                    if (image != null)
-                    {
-                        image.raycastTarget =
-                            false;
-
-                        image.color =
-                            new Color32(
-                                229,
-                                188,
-                                69,
-                                255
-                            );
-
-                        toggle.graphic =
-                            image;
-                    }
-                }
-            }
-        }
+        return go;
     }
 
     // =========================================================
     // SCROLL
     // =========================================================
 
-    private static void FixScroll(
-        Transform panel
+    private static ScrollRect CreateScroll(
+        Transform parent,
+        string name,
+        Vector2 min,
+        Vector2 max
     )
     {
-        Transform scrollTransform =
-            panel.Find(
-                "ScrollView"
+        GameObject root =
+            new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(ScrollRect)
             );
 
-        if (scrollTransform == null)
-        {
-            return;
-        }
+        root.transform.SetParent(
+            parent,
+            false
+        );
+
+        SetAnchored(
+            root.GetComponent<
+                RectTransform
+            >(),
+            min,
+            max
+        );
 
         ScrollRect scroll =
-            scrollTransform.GetComponent<
+            root.GetComponent<
                 ScrollRect
             >();
-
-        if (scroll == null)
-        {
-            return;
-        }
-
-        string parentName =
-            panel.name == "Panel"
-                ? panel.parent.name
-                : "";
-
-        if (
-            panel.parent != null &&
-            panel.parent.parent != null
-        )
-        {
-            string modalName =
-                panel.parent.parent.name;
-
-            if (
-                modalName ==
-                "Modal_Achievements"
-            )
-            {
-                SetAnchored(
-                    scrollTransform.GetComponent<
-                        RectTransform
-                    >(),
-                    new Vector2(
-                        0.055f,
-                        0.045f
-                    ),
-                    new Vector2(
-                        0.945f,
-                        0.685f
-                    )
-                );
-            }
-            else if (
-                modalName ==
-                "Modal_DailyLogin"
-            )
-            {
-                SetAnchored(
-                    scrollTransform.GetComponent<
-                        RectTransform
-                    >(),
-                    new Vector2(
-                        0.055f,
-                        0.045f
-                    ),
-                    new Vector2(
-                        0.945f,
-                        0.72f
-                    )
-                );
-            }
-        }
 
         scroll.horizontal =
             false;
@@ -642,403 +1619,478 @@ public static class SafeZoneMainMenuFinalFixEditor
         scroll.scrollSensitivity =
             65f;
 
-        Transform viewport =
-            scrollTransform.Find(
-                "Viewport"
+        // -----------------------------------------------------
+        // VIEWPORT
+        // -----------------------------------------------------
+
+        GameObject viewport =
+            new GameObject(
+                "Viewport",
+                typeof(RectTransform),
+                typeof(RectMask2D),
+                typeof(Image)
             );
 
-        if (viewport != null)
-        {
-            Image viewportImage =
-                viewport.GetComponent<Image>();
+        viewport.transform.SetParent(
+            root.transform,
+            false
+        );
 
-            if (viewportImage == null)
-            {
-                viewportImage =
-                    viewport.gameObject.AddComponent<
-                        Image
-                    >();
-            }
+        SetStretch(
+            viewport.GetComponent<
+                RectTransform
+            >()
+        );
 
-            viewportImage.sprite =
-                RuntimeUISprite3D
-                    .GetSolidSprite();
-
-            viewportImage.color =
-                new Color(
-                    1f,
-                    1f,
-                    1f,
-                    0f
-                );
-
-            viewportImage.raycastTarget =
-                true;
-
-            RectMask2D mask =
-                viewport.GetComponent<
-                    RectMask2D
-                >();
-
-            if (mask == null)
-            {
-                viewport.gameObject.AddComponent<
-                    RectMask2D
-                >();
-            }
-        }
-
-        if (
-            scroll.content != null
-        )
-        {
-            RectTransform content =
-                scroll.content;
-
-            content.anchorMin =
-                new Vector2(
-                    0f,
-                    1f
-                );
-
-            content.anchorMax =
-                new Vector2(
-                    1f,
-                    1f
-                );
-
-            content.pivot =
-                new Vector2(
-                    0.5f,
-                    1f
-                );
-
-            content.anchoredPosition =
-                Vector2.zero;
-
-            content.offsetMin =
-                Vector2.zero;
-
-            content.offsetMax =
-                Vector2.zero;
-        }
-    }
-
-    // =========================================================
-    // ACHIEVEMENTS
-    // =========================================================
-
-    private static void FixAchievements(
-        Transform panel
-    )
-    {
-        Transform tabs =
-            panel.Find("Tabs");
-
-        if (tabs != null)
-        {
-            SetAnchored(
-                tabs.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.065f,
-                    0.745f
-                ),
-                new Vector2(
-                    0.935f,
-                    0.845f
-                )
-            );
-        }
-
-        Transform count =
-            panel.Find("Count");
-
-        if (count != null)
-        {
-            SetAnchored(
-                count.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.45f,
-                    0.695f
-                ),
-                new Vector2(
-                    0.935f,
-                    0.735f
-                )
-            );
-        }
-    }
-
-    // =========================================================
-    // DAILY
-    // =========================================================
-
-    private static void FixDailyLogin(
-        Transform panel
-    )
-    {
-        Transform streak =
-            panel.Find("Streak");
-
-        if (streak != null)
-        {
-            SetAnchored(
-                streak.GetComponent<
-                    RectTransform
-                >(),
-                new Vector2(
-                    0.15f,
-                    0.775f
-                ),
-                new Vector2(
-                    0.85f,
-                    0.835f
-                )
-            );
-        }
-    }
-
-    // =========================================================
-    // REFERENCES
-    // =========================================================
-
-    private static void FixControllerReferences(
-        GameObject root
-    )
-    {
-        AchievementsUI3D achievements =
-            root.GetComponent<
-                AchievementsUI3D
+        Image viewportImage =
+            viewport.GetComponent<
+                Image
             >();
 
-        if (achievements != null)
-        {
-            SerializedObject so =
-                new SerializedObject(
-                    achievements
-                );
+        viewportImage.sprite =
+            RuntimeUISprite3D
+                .GetSolidSprite();
 
-            SetReference(
-                so,
-                "window",
-                root.transform
-                    .Find("Window")
-                    ?.gameObject
+        viewportImage.color =
+            new Color(
+                1f,
+                1f,
+                1f,
+                0.001f
             );
 
-            SetReference(
-                so,
-                "contentRoot",
-                root.transform
-                    .Find(
-                        "Window/Panel/ScrollView/Viewport/Content"
-                    )
-                    ?.GetComponent<RectTransform>()
+        viewportImage.raycastTarget =
+            true;
+
+        // -----------------------------------------------------
+        // CONTENT
+        // -----------------------------------------------------
+
+        GameObject content =
+            new GameObject(
+                "Content",
+                typeof(RectTransform)
             );
 
-            SetReference(
-                so,
-                "scroll",
-                root.transform
-                    .Find(
-                        "Window/Panel/ScrollView"
-                    )
-                    ?.GetComponent<ScrollRect>()
-            );
+        content.transform.SetParent(
+            viewport.transform,
+            false
+        );
 
-            SetReference(
-                so,
-                "shelterTab",
-                root.transform
-                    .Find(
-                        "Window/Panel/Tabs/Shelter"
-                    )
-                    ?.GetComponent<Button>()
-            );
-
-            SetReference(
-                so,
-                "infiniteTab",
-                root.transform
-                    .Find(
-                        "Window/Panel/Tabs/Infinite"
-                    )
-                    ?.GetComponent<Button>()
-            );
-
-            SetReference(
-                so,
-                "countText",
-                root.transform
-                    .Find(
-                        "Window/Panel/Count"
-                    )
-                    ?.GetComponent<TMP_Text>()
-            );
-
-            SetReference(
-                so,
-                "closeButton",
-                root.transform
-                    .Find(
-                        "Window/Panel/Close"
-                    )
-                    ?.GetComponent<Button>()
-            );
-
-            so.ApplyModifiedProperties();
-        }
-
-        DailyLoginUI3D daily =
-            root.GetComponent<
-                DailyLoginUI3D
+        RectTransform contentRect =
+            content.GetComponent<
+                RectTransform
             >();
 
-        if (daily != null)
-        {
-            SerializedObject so =
-                new SerializedObject(
-                    daily
-                );
-
-            SetReference(
-                so,
-                "window",
-                root.transform
-                    .Find("Window")
-                    ?.gameObject
+        contentRect.anchorMin =
+            new Vector2(
+                0f,
+                1f
             );
 
-            SetReference(
-                so,
-                "contentRoot",
-                root.transform
-                    .Find(
-                        "Window/Panel/ScrollView/Viewport/Content"
-                    )
-                    ?.GetComponent<RectTransform>()
+        contentRect.anchorMax =
+            new Vector2(
+                1f,
+                1f
             );
 
-            SetReference(
-                so,
-                "scroll",
-                root.transform
-                    .Find(
-                        "Window/Panel/ScrollView"
-                    )
-                    ?.GetComponent<ScrollRect>()
+        contentRect.pivot =
+            new Vector2(
+                0.5f,
+                1f
             );
 
-            SetReference(
-                so,
-                "streakText",
-                root.transform
-                    .Find(
-                        "Window/Panel/Streak"
-                    )
-                    ?.GetComponent<TMP_Text>()
-            );
+        contentRect.anchoredPosition =
+            Vector2.zero;
 
-            SetReference(
-                so,
-                "closeButton",
-                root.transform
-                    .Find(
-                        "Window/Panel/Close"
-                    )
-                    ?.GetComponent<Button>()
-            );
+        contentRect.sizeDelta =
+            Vector2.zero;
 
-            so.ApplyModifiedProperties();
-        }
-
-        GameSettingsUI3D settings =
-            root.GetComponent<
-                GameSettingsUI3D
+        scroll.viewport =
+            viewport.GetComponent<
+                RectTransform
             >();
 
-        if (settings != null)
-        {
-            SerializedObject so =
-                new SerializedObject(
-                    settings
-                );
+        scroll.content =
+            contentRect;
 
-            SetReference(
-                so,
-                "window",
-                root.transform
-                    .Find("Window")
-                    ?.gameObject
-            );
-
-            SetReference(
-                so,
-                "volumeSlider",
-                root.transform
-                    .Find(
-                        "Window/Panel/SoundSection/VolumeSlider"
-                    )
-                    ?.GetComponent<Slider>()
-            );
-
-            SetReference(
-                so,
-                "volumeValue",
-                root.transform
-                    .Find(
-                        "Window/Panel/SoundSection/VolumeValue"
-                    )
-                    ?.GetComponent<TMP_Text>()
-            );
-
-            SetReference(
-                so,
-                "vibrationToggle",
-                root.transform
-                    .Find(
-                        "Window/Panel/ControlSection/VibrationToggle"
-                    )
-                    ?.GetComponent<Toggle>()
-            );
-
-            SetReference(
-                so,
-                "fps30Button",
-                root.transform
-                    .Find(
-                        "Window/Panel/PerformanceSection/FPS30"
-                    )
-                    ?.GetComponent<Button>()
-            );
-
-            SetReference(
-                so,
-                "fps60Button",
-                root.transform
-                    .Find(
-                        "Window/Panel/PerformanceSection/FPS60"
-                    )
-                    ?.GetComponent<Button>()
-            );
-
-            SetReference(
-                so,
-                "closeButton",
-                root.transform
-                    .Find(
-                        "Window/Panel/Close"
-                    )
-                    ?.GetComponent<Button>()
-            );
-
-            so.ApplyModifiedProperties();
-        }
+        return scroll;
     }
+
+    // =========================================================
+    // IMAGE
+    // =========================================================
+
+    private static GameObject CreateRoundedImage(
+        string name,
+        Transform parent,
+        Color color
+    )
+    {
+        GameObject go =
+            new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image)
+            );
+
+        go.transform.SetParent(
+            parent,
+            false
+        );
+
+        Image image =
+            go.GetComponent<Image>();
+
+        image.sprite =
+            LoadRoundedSprite();
+
+        image.type =
+            Image.Type.Sliced;
+
+        image.color =
+            color;
+
+        image.preserveAspect =
+            false;
+
+        image.raycastTarget =
+            false;
+
+        return go;
+    }
+
+    // =========================================================
+    // TEXT
+    // =========================================================
+
+    private static GameObject CreateText(
+        string name,
+        Transform parent,
+        string value,
+        float size,
+        Color color,
+        TextAlignmentOptions alignment,
+        Vector2 min,
+        Vector2 max
+    )
+    {
+        GameObject go =
+            new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(TextMeshProUGUI)
+            );
+
+        go.transform.SetParent(
+            parent,
+            false
+        );
+
+        RectTransform rect =
+            go.GetComponent<
+                RectTransform
+            >();
+
+        SetAnchored(
+            rect,
+            min,
+            max
+        );
+
+        TextMeshProUGUI text =
+            go.GetComponent<
+                TextMeshProUGUI
+            >();
+
+        text.text =
+            value;
+
+        text.fontSize =
+            size;
+
+        text.color =
+            color;
+
+        text.alignment =
+            alignment;
+
+        text.raycastTarget =
+            false;
+
+        text.textWrappingMode =
+            TextWrappingModes.Normal;
+
+        RuntimeUIText3D.Apply(
+            text
+        );
+
+        return go;
+    }
+
+    // =========================================================
+    // REFERENCES SETTINGS
+    // =========================================================
+
+    private static void AssignSettingsReferences(
+        GameSettingsUI3D controller,
+        GameObject window,
+        GameObject sound,
+        GameObject control,
+        GameObject performance,
+        GameObject close
+    )
+    {
+        SerializedObject so =
+            new SerializedObject(
+                controller
+            );
+
+        SetReference(
+            so,
+            "window",
+            window
+        );
+
+        SetReference(
+            so,
+            "volumeSlider",
+            sound.transform
+                .Find(
+                    "VolumeSlider"
+                )
+                ?.GetComponent<
+                    Slider
+                >()
+        );
+
+        SetReference(
+            so,
+            "volumeValue",
+            sound.transform
+                .Find(
+                    "VolumeValue"
+                )
+                ?.GetComponent<
+                    TMP_Text
+                >()
+        );
+
+        SetReference(
+            so,
+            "vibrationToggle",
+            control.transform
+                .Find(
+                    "VibrationToggle"
+                )
+                ?.GetComponent<
+                    Toggle
+                >()
+        );
+
+        SetReference(
+            so,
+            "fps30Button",
+            performance.transform
+                .Find(
+                    "FPS30"
+                )
+                ?.GetComponent<
+                    Button
+                >()
+        );
+
+        SetReference(
+            so,
+            "fps60Button",
+            performance.transform
+                .Find(
+                    "FPS60"
+                )
+                ?.GetComponent<
+                    Button
+                >()
+        );
+
+        SetReference(
+            so,
+            "closeButton",
+            close.GetComponent<
+                Button
+            >()
+        );
+
+        so.ApplyModifiedProperties();
+    }
+
+    // =========================================================
+    // REFERENCES ACHIEVEMENTS
+    // =========================================================
+
+    private static void AssignAchievementsReferences(
+        AchievementsUI3D controller,
+        GameObject window,
+        GameObject tabs,
+        GameObject close
+    )
+    {
+        SerializedObject so =
+            new SerializedObject(
+                controller
+            );
+
+        SetReference(
+            so,
+            "window",
+            window
+        );
+
+        Transform scroll =
+            window.transform.Find(
+                "Panel/ScrollView"
+            );
+
+        Transform content =
+            window.transform.Find(
+                "Panel/ScrollView/Viewport/Content"
+            );
+
+        SetReference(
+            so,
+            "contentRoot",
+            content?.GetComponent<
+                RectTransform
+            >()
+        );
+
+        SetReference(
+            so,
+            "scroll",
+            scroll?.GetComponent<
+                ScrollRect
+            >()
+        );
+
+        SetReference(
+            so,
+            "shelterTab",
+            tabs.transform
+                .Find(
+                    "Shelter"
+                )
+                ?.GetComponent<
+                    Button
+                >()
+        );
+
+        SetReference(
+            so,
+            "infiniteTab",
+            tabs.transform
+                .Find(
+                    "Infinite"
+                )
+                ?.GetComponent<
+                    Button
+                >()
+        );
+
+        SetReference(
+            so,
+            "countText",
+            window.transform
+                .Find(
+                    "Panel/Count"
+                )
+                ?.GetComponent<
+                    TMP_Text
+                >()
+        );
+
+        SetReference(
+            so,
+            "closeButton",
+            close.GetComponent<
+                Button
+            >()
+        );
+
+        so.ApplyModifiedProperties();
+    }
+
+    // =========================================================
+    // REFERENCES DAILY
+    // =========================================================
+
+    private static void AssignDailyReferences(
+        DailyLoginUI3D controller,
+        GameObject window,
+        GameObject close
+    )
+    {
+        SerializedObject so =
+            new SerializedObject(
+                controller
+            );
+
+        Transform scroll =
+            window.transform.Find(
+                "Panel/ScrollView"
+            );
+
+        Transform content =
+            window.transform.Find(
+                "Panel/ScrollView/Viewport/Content"
+            );
+
+        SetReference(
+            so,
+            "window",
+            window
+        );
+
+        SetReference(
+            so,
+            "contentRoot",
+            content?.GetComponent<
+                RectTransform
+            >()
+        );
+
+        SetReference(
+            so,
+            "scroll",
+            scroll?.GetComponent<
+                ScrollRect
+            >()
+        );
+
+        SetReference(
+            so,
+            "streakText",
+            window.transform
+                .Find(
+                    "Panel/Streak"
+                )
+                ?.GetComponent<
+                    TMP_Text
+                >()
+        );
+
+        SetReference(
+            so,
+            "closeButton",
+            close.GetComponent<
+                Button
+            >()
+        );
+
+        so.ApplyModifiedProperties();
+    }
+
+    // =========================================================
+    // SERIALIZED REFERENCE
+    // =========================================================
 
     private static void SetReference(
         SerializedObject so,
@@ -1061,6 +2113,28 @@ public static class SafeZoneMainMenuFinalFixEditor
             property.objectReferenceValue =
                 value;
         }
+    }
+
+    // =========================================================
+    // COMPONENT
+    // =========================================================
+
+    private static T GetOrAdd<T>(
+        GameObject go
+    )
+        where T : Component
+    {
+        T existing =
+            go.GetComponent<T>();
+
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        return Undo.AddComponent<T>(
+            go
+        );
     }
 
     // =========================================================
@@ -1114,10 +2188,13 @@ public static class SafeZoneMainMenuFinalFixEditor
 
         rect.offsetMax =
             Vector2.zero;
+
+        rect.localScale =
+            Vector3.one;
     }
 
     // =========================================================
-    // SPRITE
+    // SPRITES
     // =========================================================
 
     private static Sprite LoadRoundedSprite()
@@ -1127,14 +2204,20 @@ public static class SafeZoneMainMenuFinalFixEditor
         );
     }
 
-    private static void EnsureRoundedSprite()
+    private static void EnsureGeneratedSprites()
     {
-        System.IO.Directory.CreateDirectory(
-            "Assets/GeneratedUI"
+        Directory.CreateDirectory(
+            GeneratedFolder
         );
 
-        const int size = 64;
-        const float radius = 8f;
+        CreateRoundedSpriteAsset();
+        CreateWhiteSpriteAsset();
+    }
+
+    private static void CreateRoundedSpriteAsset()
+    {
+        const int size = 128;
+        const float radius = 16f;
 
         Texture2D texture =
             new Texture2D(
@@ -1162,39 +2245,18 @@ public static class SafeZoneMainMenuFinalFixEditor
             )
             {
                 float px =
-                    Mathf.Min(
-                        x,
-                        size - 1 - x
-                    );
+                    x + 0.5f;
 
                 float py =
-                    Mathf.Min(
-                        y,
-                        size - 1 - y
-                    );
+                    y + 0.5f;
 
                 float alpha =
-                    1f;
-
-                if (
-                    px < radius &&
-                    py < radius
-                )
-                {
-                    alpha =
-                        Vector2.Distance(
-                            new Vector2(
-                                radius,
-                                radius
-                            ),
-                            new Vector2(
-                                x,
-                                y
-                            )
-                        ) <= radius
-                            ? 1f
-                            : 0f;
-                }
+                    GetEditorRoundedAlpha(
+                        px,
+                        py,
+                        size,
+                        radius
+                    );
 
                 pixels[
                     y * size + x
@@ -1221,7 +2283,7 @@ public static class SafeZoneMainMenuFinalFixEditor
             texture
         );
 
-        System.IO.File.WriteAllBytes(
+        File.WriteAllBytes(
             RoundedPath,
             png
         );
@@ -1255,14 +2317,212 @@ public static class SafeZoneMainMenuFinalFixEditor
 
             importer.spriteBorder =
                 new Vector4(
-                    8f,
-                    8f,
-                    8f,
-                    8f
+                    16f,
+                    16f,
+                    16f,
+                    16f
                 );
 
             importer.SaveAndReimport();
         }
+    }
+
+    private static float GetEditorRoundedAlpha(
+        float x,
+        float y,
+        float size,
+        float radius
+    )
+    {
+        Vector2 corner;
+
+        if (
+            x < radius &&
+            y < radius
+        )
+        {
+            corner =
+                new Vector2(
+                    radius,
+                    radius
+                );
+        }
+        else if (
+            x > size - radius &&
+            y < radius
+        )
+        {
+            corner =
+                new Vector2(
+                    size - radius,
+                    radius
+                );
+        }
+        else if (
+            x < radius &&
+            y > size - radius
+        )
+        {
+            corner =
+                new Vector2(
+                    radius,
+                    size - radius
+                );
+        }
+        else if (
+            x > size - radius &&
+            y > size - radius
+        )
+        {
+            corner =
+                new Vector2(
+                    size - radius,
+                    size - radius
+                );
+        }
+        else
+        {
+            return 1f;
+        }
+
+        float distance =
+            Vector2.Distance(
+                corner,
+                new Vector2(
+                    x,
+                    y
+                )
+            );
+
+        return Mathf.Clamp01(
+            radius +
+            1f -
+            distance
+        );
+    }
+
+    private static void CreateWhiteSpriteAsset()
+    {
+        const int size = 4;
+
+        Texture2D texture =
+            new Texture2D(
+                size,
+                size,
+                TextureFormat.RGBA32,
+                false
+            );
+
+        Color[] pixels =
+            new Color[
+                size * size
+            ];
+
+        for (
+            int i = 0;
+            i < pixels.Length;
+            i++
+        )
+        {
+            pixels[i] =
+                Color.white;
+        }
+
+        texture.SetPixels(
+            pixels
+        );
+
+        texture.Apply();
+
+        byte[] png =
+            texture.EncodeToPNG();
+
+        Object.DestroyImmediate(
+            texture
+        );
+
+        File.WriteAllBytes(
+            WhitePath,
+            png
+        );
+
+        AssetDatabase.ImportAsset(
+            WhitePath,
+            ImportAssetOptions.ForceSynchronousImport
+        );
+
+        TextureImporter importer =
+            AssetImporter.GetAtPath(
+                WhitePath
+            ) as TextureImporter;
+
+        if (importer != null)
+        {
+            importer.textureType =
+                TextureImporterType.Sprite;
+
+            importer.spriteImportMode =
+                SpriteImportMode.Single;
+
+            importer.alphaIsTransparency =
+                false;
+
+            importer.filterMode =
+                FilterMode.Bilinear;
+
+            importer.spritePixelsPerUnit =
+                100;
+
+            importer.SaveAndReimport();
+        }
+    }
+
+    private static GameObject FindChild(
+        Transform parent,
+        string name
+    )
+    {
+        if (parent == null)
+        {
+            return null;
+        }
+
+        Transform found =
+            parent.Find(name);
+
+        return found != null
+            ? found.gameObject
+            : null;
+    }
+
+    // =========================================================
+    // MANAGER REFERENCES
+    // =========================================================
+
+    private static void AssignManagerReferences(
+        MainMenuModalManager3D manager,
+        GameObject background,
+        GameObject safeArea
+    )
+    {
+        SerializedObject so =
+            new SerializedObject(
+                manager
+            );
+
+        SetReference(
+            so,
+            "background",
+            background
+        );
+
+        SetReference(
+            so,
+            "safeArea",
+            safeArea
+        );
+
+        so.ApplyModifiedProperties();
     }
 }
 

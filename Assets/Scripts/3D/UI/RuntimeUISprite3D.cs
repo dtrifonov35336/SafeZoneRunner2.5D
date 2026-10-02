@@ -74,9 +74,9 @@ public static class RuntimeUISprite3D
             return roundedSprite;
         }
 
-        const int size = 64;
-        const float radius = 8f;
-        const float border = 8f;
+        const int size = 128;
+        const float radius = 16f;
+        const float border = 16f;
 
         Texture2D texture =
             new Texture2D(
@@ -88,6 +88,12 @@ public static class RuntimeUISprite3D
 
         texture.name =
             "RuntimeUIRoundedTexture";
+
+        texture.wrapMode =
+            TextureWrapMode.Clamp;
+
+        texture.filterMode =
+            FilterMode.Bilinear;
 
         Color[] pixels =
             new Color[
@@ -106,42 +112,19 @@ public static class RuntimeUISprite3D
                 x++
             )
             {
-                float distanceX =
-                    Mathf.Min(
-                        x,
-                        size - 1 - x
+                float px =
+                    x + 0.5f;
+
+                float py =
+                    y + 0.5f;
+
+                float alpha =
+                    GetRoundedAlpha(
+                        px,
+                        py,
+                        size,
+                        radius
                     );
-
-                float distanceY =
-                    Mathf.Min(
-                        y,
-                        size - 1 - y
-                    );
-
-                float alpha = 1f;
-
-                if (
-                    distanceX < radius &&
-                    distanceY < radius
-                )
-                {
-                    float cornerDistance =
-                        Vector2.Distance(
-                            new Vector2(
-                                radius,
-                                radius
-                            ),
-                            new Vector2(
-                                x,
-                                y
-                            )
-                        );
-
-                    alpha =
-                        cornerDistance <= radius
-                            ? 1f
-                            : 0f;
-                }
 
                 pixels[
                     y * size + x
@@ -160,12 +143,6 @@ public static class RuntimeUISprite3D
         );
 
         texture.Apply();
-
-        texture.wrapMode =
-            TextureWrapMode.Clamp;
-
-        texture.filterMode =
-            FilterMode.Bilinear;
 
         roundedSprite =
             Sprite.Create(
@@ -195,5 +172,132 @@ public static class RuntimeUISprite3D
             "RuntimeUIRoundedSprite";
 
         return roundedSprite;
+    }
+
+    // =========================================================
+    // ROUND CALCULATION
+    // =========================================================
+
+    private static float GetRoundedAlpha(
+        float x,
+        float y,
+        float size,
+        float radius
+    )
+    {
+        float distance;
+
+        // Верхний левый
+        if (
+            x < radius &&
+            y < radius
+        )
+        {
+            distance =
+                Vector2.Distance(
+                    new Vector2(
+                        radius,
+                        radius
+                    ),
+                    new Vector2(
+                        x,
+                        y
+                    )
+                );
+
+            return GetEdgeAlpha(
+                distance,
+                radius
+            );
+        }
+
+        // Верхний правый
+        if (
+            x > size - radius &&
+            y < radius
+        )
+        {
+            distance =
+                Vector2.Distance(
+                    new Vector2(
+                        size - radius,
+                        radius
+                    ),
+                    new Vector2(
+                        x,
+                        y
+                    )
+                );
+
+            return GetEdgeAlpha(
+                distance,
+                radius
+            );
+        }
+
+        // Нижний левый
+        if (
+            x < radius &&
+            y > size - radius
+        )
+        {
+            distance =
+                Vector2.Distance(
+                    new Vector2(
+                        radius,
+                        size - radius
+                    ),
+                    new Vector2(
+                        x,
+                        y
+                    )
+                );
+
+            return GetEdgeAlpha(
+                distance,
+                radius
+            );
+        }
+
+        // Нижний правый
+        if (
+            x > size - radius &&
+            y > size - radius
+        )
+        {
+            distance =
+                Vector2.Distance(
+                    new Vector2(
+                        size - radius,
+                        size - radius
+                    ),
+                    new Vector2(
+                        x,
+                        y
+                    )
+                );
+
+            return GetEdgeAlpha(
+                distance,
+                radius
+            );
+        }
+
+        return 1f;
+    }
+
+    private static float GetEdgeAlpha(
+        float distance,
+        float radius
+    )
+    {
+        float softness =
+            1f;
+
+        return Mathf.Clamp01(
+            radius +
+            softness -
+            distance
+        );
     }
 }

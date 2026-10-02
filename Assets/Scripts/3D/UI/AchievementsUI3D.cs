@@ -319,16 +319,6 @@ public class AchievementsUI3D : MonoBehaviour
             }
         }
 
-        ConfigureListeners();
-        ConfigureButtons();
-    }
-
-    // =========================================================
-    // BUTTONS
-    // =========================================================
-
-    private void ConfigureButtons()
-    {
         ConfigureButton(
             shelterTab
         );
@@ -340,7 +330,13 @@ public class AchievementsUI3D : MonoBehaviour
         ConfigureButton(
             closeButton
         );
+
+        ConfigureListeners();
     }
+
+    // =========================================================
+    // BUTTON
+    // =========================================================
 
     private void ConfigureButton(
         Button button
@@ -363,15 +359,15 @@ public class AchievementsUI3D : MonoBehaviour
             image.type =
                 Image.Type.Sliced;
 
+            image.raycastTarget =
+                true;
+
             image.preserveAspect =
                 false;
 
-            image.raycastTarget =
-                true;
+            button.targetGraphic =
+                image;
         }
-
-        button.targetGraphic =
-            image;
 
         button.transition =
             Selectable.Transition.None;
@@ -459,13 +455,8 @@ public class AchievementsUI3D : MonoBehaviour
                     currentMode
                 );
 
-        const float cardHeight = 116f;
-        const float gap = 8f;
-
-        float contentHeight =
-            list.Count *
-            (cardHeight + gap) +
-            12f;
+        const float cardHeight = 120f;
+        const float gap = 10f;
 
         contentRoot.anchorMin =
             new Vector2(
@@ -491,7 +482,9 @@ public class AchievementsUI3D : MonoBehaviour
         contentRoot.sizeDelta =
             new Vector2(
                 0f,
-                contentHeight
+                list.Count *
+                (cardHeight + gap) +
+                10f
             );
 
         for (
@@ -532,11 +525,6 @@ public class AchievementsUI3D : MonoBehaviour
 
     private void ClearContent()
     {
-        if (contentRoot == null)
-        {
-            return;
-        }
-
         for (
             int i =
                 contentRoot.childCount - 1;
@@ -577,14 +565,14 @@ public class AchievementsUI3D : MonoBehaviour
             completed
                 ? new Color32(
                     31,
-                    60,
-                    47,
+                    62,
+                    48,
                     255
                 )
                 : new Color32(
-                    25,
-                    39,
-                    47,
+                    27,
+                    43,
+                    51,
                     255
                 );
 
@@ -634,40 +622,10 @@ public class AchievementsUI3D : MonoBehaviour
         rect.anchoredPosition =
             new Vector2(
                 0f,
-                -8f -
+                -5f -
                 index *
                 (height + gap)
             );
-
-        Outline outline =
-            card.AddComponent<
-                Outline
-            >();
-
-        outline.effectColor =
-            completed
-                ? new Color32(
-                    88,
-                    148,
-                    103,
-                    220
-                )
-                : new Color32(
-                    55,
-                    81,
-                    90,
-                    150
-                );
-
-        outline.effectDistance =
-            new Vector2(
-                1f,
-                -1f
-            );
-
-        // -----------------------------------------------------
-        // TITLE
-        // -----------------------------------------------------
 
         CreateText(
             "Title",
@@ -675,9 +633,9 @@ public class AchievementsUI3D : MonoBehaviour
             definition.title,
             17f,
             new Color32(
-                231,
-                233,
-                226,
+                235,
+                236,
+                230,
                 255
             ),
             TextAlignmentOptions.Left,
@@ -687,13 +645,9 @@ public class AchievementsUI3D : MonoBehaviour
             ),
             new Vector2(
                 0.63f,
-                0.93f
+                0.92f
             )
         );
-
-        // -----------------------------------------------------
-        // DESCRIPTION
-        // -----------------------------------------------------
 
         CreateText(
             "Description",
@@ -701,25 +655,21 @@ public class AchievementsUI3D : MonoBehaviour
             definition.description,
             12f,
             new Color32(
-                163,
-                174,
-                171,
+                169,
+                180,
+                177,
                 255
             ),
             TextAlignmentOptions.Left,
             new Vector2(
                 0.035f,
-                0.33f
+                0.34f
             ),
             new Vector2(
                 0.63f,
-                0.63f
+                0.62f
             )
         );
-
-        // -----------------------------------------------------
-        // TARGET
-        // -----------------------------------------------------
 
         string target =
             targetTexts.TryGetValue(
@@ -733,11 +683,11 @@ public class AchievementsUI3D : MonoBehaviour
             "Target",
             card.transform,
             target,
-            10.5f,
+            10f,
             new Color32(
-                117,
-                132,
-                130,
+                124,
+                138,
+                136,
                 255
             ),
             TextAlignmentOptions.Left,
@@ -751,10 +701,6 @@ public class AchievementsUI3D : MonoBehaviour
             )
         );
 
-        // -----------------------------------------------------
-        // REWARD
-        // -----------------------------------------------------
-
         CreateText(
             "Reward",
             card.transform,
@@ -763,25 +709,21 @@ public class AchievementsUI3D : MonoBehaviour
             " МОНЕТ",
             13f,
             new Color32(
-                236,
-                192,
-                68,
+                241,
+                198,
+                72,
                 255
             ),
             TextAlignmentOptions.Center,
             new Vector2(
-                0.70f,
-                0.66f
+                0.69f,
+                0.67f
             ),
             new Vector2(
                 0.97f,
-                0.92f
+                0.91f
             )
         );
-
-        // -----------------------------------------------------
-        // STATUS
-        // -----------------------------------------------------
 
         string status;
 
@@ -795,7 +737,7 @@ public class AchievementsUI3D : MonoBehaviour
             statusColor =
                 new Color32(
                     105,
-                    170,
+                    171,
                     121,
                     255
                 );
@@ -807,8 +749,8 @@ public class AchievementsUI3D : MonoBehaviour
 
             statusColor =
                 new Color32(
-                    241,
-                    195,
+                    244,
+                    201,
                     71,
                     255
                 );
@@ -820,9 +762,9 @@ public class AchievementsUI3D : MonoBehaviour
 
             statusColor =
                 new Color32(
-                    118,
-                    128,
-                    130,
+                    125,
+                    137,
+                    139,
                     255
                 );
         }
@@ -834,9 +776,9 @@ public class AchievementsUI3D : MonoBehaviour
                 status,
                 11f,
                 new Color32(
-                    30,
-                    47,
-                    55,
+                    31,
+                    50,
+                    58,
                     255
                 ),
                 statusColor
@@ -847,12 +789,12 @@ public class AchievementsUI3D : MonoBehaviour
                 RectTransform
             >(),
             new Vector2(
-                0.70f,
-                0.12f
+                0.69f,
+                0.10f
             ),
             new Vector2(
                 0.97f,
-                0.50f
+                0.43f
             )
         );
 
@@ -924,21 +866,21 @@ public class AchievementsUI3D : MonoBehaviour
         image.color =
             selected
                 ? new Color32(
-                    39,
-                    99,
-                    108,
+                    45,
+                    101,
+                    111,
                     255
                 )
                 : new Color32(
-                    29,
-                    48,
-                    57,
+                    30,
+                    51,
+                    60,
                     255
                 );
     }
 
     // =========================================================
-    // ROUNDED IMAGE
+    // IMAGE
     // =========================================================
 
     private static GameObject CreateRoundedImage(
@@ -969,9 +911,6 @@ public class AchievementsUI3D : MonoBehaviour
         image.type =
             Image.Type.Sliced;
 
-        image.preserveAspect =
-            false;
-
         image.color =
             color;
 
@@ -982,14 +921,14 @@ public class AchievementsUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // ROUNDED BUTTON
+    // BUTTON
     // =========================================================
 
     private static GameObject CreateRoundedButton(
         string name,
         Transform parent,
         string label,
-        float fontSize,
+        float size,
         Color background,
         Color textColor
     )
@@ -1017,9 +956,6 @@ public class AchievementsUI3D : MonoBehaviour
         image.type =
             Image.Type.Sliced;
 
-        image.preserveAspect =
-            false;
-
         image.color =
             background;
 
@@ -1035,18 +971,11 @@ public class AchievementsUI3D : MonoBehaviour
         button.transition =
             Selectable.Transition.None;
 
-        button.navigation =
-            new Navigation
-            {
-                mode =
-                    Navigation.Mode.None
-            };
-
         CreateText(
             "Label",
             go.transform,
             label,
-            fontSize,
+            size,
             textColor,
             TextAlignmentOptions.Center,
             Vector2.zero,
