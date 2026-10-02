@@ -112,6 +112,10 @@ public class AchievementsUI3D : MonoBehaviour
                 }
             };
 
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Awake()
     {
         ResolveReferences();
@@ -316,6 +320,68 @@ public class AchievementsUI3D : MonoBehaviour
         }
 
         ConfigureListeners();
+        ConfigureButtons();
+    }
+
+    // =========================================================
+    // BUTTONS
+    // =========================================================
+
+    private void ConfigureButtons()
+    {
+        ConfigureButton(
+            shelterTab
+        );
+
+        ConfigureButton(
+            infiniteTab
+        );
+
+        ConfigureButton(
+            closeButton
+        );
+    }
+
+    private void ConfigureButton(
+        Button button
+    )
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        Image image =
+            button.GetComponent<Image>();
+
+        if (image != null)
+        {
+            image.sprite =
+                RuntimeUISprite3D
+                    .GetRoundedSprite();
+
+            image.type =
+                Image.Type.Sliced;
+
+            image.preserveAspect =
+                false;
+
+            image.raycastTarget =
+                true;
+        }
+
+        button.targetGraphic =
+            image;
+
+        button.transition =
+            Selectable.Transition.None;
+
+        button.navigation =
+            new Navigation
+            {
+                mode =
+                    Navigation.Mode.None
+            };
     }
 
     // =========================================================
@@ -396,12 +462,36 @@ public class AchievementsUI3D : MonoBehaviour
         const float cardHeight = 116f;
         const float gap = 8f;
 
+        float contentHeight =
+            list.Count *
+            (cardHeight + gap) +
+            12f;
+
+        contentRoot.anchorMin =
+            new Vector2(
+                0f,
+                1f
+            );
+
+        contentRoot.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        contentRoot.pivot =
+            new Vector2(
+                0.5f,
+                1f
+            );
+
+        contentRoot.anchoredPosition =
+            Vector2.zero;
+
         contentRoot.sizeDelta =
             new Vector2(
                 0f,
-                list.Count *
-                (cardHeight + gap) +
-                12f
+                contentHeight
             );
 
         for (
@@ -442,6 +532,11 @@ public class AchievementsUI3D : MonoBehaviour
 
     private void ClearContent()
     {
+        if (contentRoot == null)
+        {
+            return;
+        }
+
         for (
             int i =
                 contentRoot.childCount - 1;
@@ -478,24 +573,27 @@ public class AchievementsUI3D : MonoBehaviour
                 definition.id
             );
 
+        Color cardColor =
+            completed
+                ? new Color32(
+                    31,
+                    60,
+                    47,
+                    255
+                )
+                : new Color32(
+                    25,
+                    39,
+                    47,
+                    255
+                );
+
         GameObject card =
-            CreateImage(
+            CreateRoundedImage(
                 "Card_" +
                 definition.id,
                 contentRoot,
-                completed
-                    ? new Color32(
-                        25,
-                        52,
-                        40,
-                        255
-                    )
-                    : new Color32(
-                        20,
-                        31,
-                        39,
-                        255
-                    )
+                cardColor
             );
 
         RectTransform rect =
@@ -521,9 +619,15 @@ public class AchievementsUI3D : MonoBehaviour
                 1f
             );
 
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
+
         rect.sizeDelta =
             new Vector2(
-                0f,
+                -16f,
                 height
             );
 
@@ -543,16 +647,16 @@ public class AchievementsUI3D : MonoBehaviour
         outline.effectColor =
             completed
                 ? new Color32(
-                    90,
-                    150,
-                    104,
+                    88,
+                    148,
+                    103,
                     220
                 )
                 : new Color32(
-                    49,
-                    75,
-                    85,
-                    170
+                    55,
+                    81,
+                    90,
+                    150
                 );
 
         outline.effectDistance =
@@ -560,6 +664,10 @@ public class AchievementsUI3D : MonoBehaviour
                 1f,
                 -1f
             );
+
+        // -----------------------------------------------------
+        // TITLE
+        // -----------------------------------------------------
 
         CreateText(
             "Title",
@@ -583,6 +691,10 @@ public class AchievementsUI3D : MonoBehaviour
             )
         );
 
+        // -----------------------------------------------------
+        // DESCRIPTION
+        // -----------------------------------------------------
+
         CreateText(
             "Description",
             card.transform,
@@ -605,12 +717,16 @@ public class AchievementsUI3D : MonoBehaviour
             )
         );
 
+        // -----------------------------------------------------
+        // TARGET
+        // -----------------------------------------------------
+
         string target =
             targetTexts.TryGetValue(
                 definition.id,
-                out string value
+                out string targetValue
             )
-                ? value
+                ? targetValue
                 : "";
 
         CreateText(
@@ -634,6 +750,10 @@ public class AchievementsUI3D : MonoBehaviour
                 0.27f
             )
         );
+
+        // -----------------------------------------------------
+        // REWARD
+        // -----------------------------------------------------
 
         CreateText(
             "Reward",
@@ -659,49 +779,64 @@ public class AchievementsUI3D : MonoBehaviour
             )
         );
 
+        // -----------------------------------------------------
+        // STATUS
+        // -----------------------------------------------------
+
         string status;
+
+        Color statusColor;
 
         if (claimed)
         {
             status =
                 "ПОЛУЧЕНО";
+
+            statusColor =
+                new Color32(
+                    105,
+                    170,
+                    121,
+                    255
+                );
         }
         else if (completed)
         {
             status =
                 "ЗАБРАТЬ";
+
+            statusColor =
+                new Color32(
+                    241,
+                    195,
+                    71,
+                    255
+                );
         }
         else
         {
             status =
                 "НЕ ВЫПОЛНЕНО";
-        }
 
-        Color statusColor =
-            completed
-                ? new Color32(
-                    241,
-                    195,
-                    71,
-                    255
-                )
-                : new Color32(
+            statusColor =
+                new Color32(
                     118,
                     128,
                     130,
                     255
                 );
+        }
 
         GameObject statusObject =
-            CreateButton(
+            CreateRoundedButton(
                 "Status",
                 card.transform,
                 status,
                 11f,
                 new Color32(
-                    29,
-                    45,
-                    52,
+                    30,
+                    47,
+                    55,
                     255
                 ),
                 statusColor
@@ -755,66 +890,58 @@ public class AchievementsUI3D : MonoBehaviour
 
     private void RefreshTabs()
     {
-        if (shelterTab != null)
-        {
-            Image image =
-                shelterTab.GetComponent<
-                    Image
-                >();
+        SetTabColor(
+            shelterTab,
+            currentMode ==
+            AchievementMode3D.Shelter
+        );
 
-            if (image != null)
-            {
-                image.color =
-                    currentMode ==
-                    AchievementMode3D.Shelter
-                        ? new Color32(
-                            31,
-                            86,
-                            96,
-                            255
-                        )
-                        : new Color32(
-                            27,
-                            38,
-                            46,
-                            255
-                        );
-            }
+        SetTabColor(
+            infiniteTab,
+            currentMode ==
+            AchievementMode3D.Infinite
+        );
+    }
+
+    private void SetTabColor(
+        Button button,
+        bool selected
+    )
+    {
+        if (button == null)
+        {
+            return;
         }
 
-        if (infiniteTab != null)
-        {
-            Image image =
-                infiniteTab.GetComponent<
-                    Image
-                >();
+        Image image =
+            button.GetComponent<Image>();
 
-            if (image != null)
-            {
-                image.color =
-                    currentMode ==
-                    AchievementMode3D.Infinite
-                        ? new Color32(
-                            31,
-                            86,
-                            96,
-                            255
-                        )
-                        : new Color32(
-                            27,
-                            38,
-                            46,
-                            255
-                        );
-            }
+        if (image == null)
+        {
+            return;
         }
+
+        image.color =
+            selected
+                ? new Color32(
+                    39,
+                    99,
+                    108,
+                    255
+                )
+                : new Color32(
+                    29,
+                    48,
+                    57,
+                    255
+                );
     }
 
     // =========================================================
-    // IMAGE
+    // ROUNDED IMAGE
     // =========================================================
 
-    private static GameObject CreateImage(
+    private static GameObject CreateRoundedImage(
         string name,
         Transform parent,
         Color color
@@ -833,22 +960,98 @@ public class AchievementsUI3D : MonoBehaviour
         );
 
         Image image =
-            go.GetComponent<
-                Image
-            >();
+            go.GetComponent<Image>();
 
         image.sprite =
             RuntimeUISprite3D
-                .GetSolidSprite();
+                .GetRoundedSprite();
 
         image.type =
-            Image.Type.Simple;
+            Image.Type.Sliced;
+
+        image.preserveAspect =
+            false;
 
         image.color =
             color;
 
         image.raycastTarget =
             false;
+
+        return go;
+    }
+
+    // =========================================================
+    // ROUNDED BUTTON
+    // =========================================================
+
+    private static GameObject CreateRoundedButton(
+        string name,
+        Transform parent,
+        string label,
+        float fontSize,
+        Color background,
+        Color textColor
+    )
+    {
+        GameObject go =
+            new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
+
+        go.transform.SetParent(
+            parent,
+            false
+        );
+
+        Image image =
+            go.GetComponent<Image>();
+
+        image.sprite =
+            RuntimeUISprite3D
+                .GetRoundedSprite();
+
+        image.type =
+            Image.Type.Sliced;
+
+        image.preserveAspect =
+            false;
+
+        image.color =
+            background;
+
+        image.raycastTarget =
+            true;
+
+        Button button =
+            go.GetComponent<Button>();
+
+        button.targetGraphic =
+            image;
+
+        button.transition =
+            Selectable.Transition.None;
+
+        button.navigation =
+            new Navigation
+            {
+                mode =
+                    Navigation.Mode.None
+            };
+
+        CreateText(
+            "Label",
+            go.transform,
+            label,
+            fontSize,
+            textColor,
+            TextAlignmentOptions.Center,
+            Vector2.zero,
+            Vector2.one
+        );
 
         return go;
     }
@@ -913,75 +1116,6 @@ public class AchievementsUI3D : MonoBehaviour
 
         RuntimeUIText3D.Apply(
             text
-        );
-
-        return go;
-    }
-
-    // =========================================================
-    // BUTTON
-    // =========================================================
-
-    private static GameObject CreateButton(
-        string name,
-        Transform parent,
-        string label,
-        float size,
-        Color background,
-        Color textColor
-    )
-    {
-        GameObject go =
-            new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(Image),
-                typeof(Button)
-            );
-
-        go.transform.SetParent(
-            parent,
-            false
-        );
-
-        Image image =
-            go.GetComponent<
-                Image
-            >();
-
-        image.sprite =
-            RuntimeUISprite3D
-                .GetRoundedSprite();
-
-        image.type =
-            Image.Type.Sliced;
-
-        image.color =
-            background;
-
-        image.raycastTarget =
-            true;
-
-        Button button =
-            go.GetComponent<
-                Button
-            >();
-
-        button.targetGraphic =
-            image;
-
-        button.transition =
-            Selectable.Transition.ColorTint;
-
-        CreateText(
-            "Label",
-            go.transform,
-            label,
-            size,
-            textColor,
-            TextAlignmentOptions.Center,
-            Vector2.zero,
-            Vector2.one
         );
 
         return go;

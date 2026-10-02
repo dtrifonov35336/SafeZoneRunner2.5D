@@ -2,9 +2,10 @@ using UnityEngine;
 
 public static class RunnerLaneSettings3D
 {
-    // Центральная линия дороги = 0.
-    // Полосы находятся симметрично относительно центра.
-    public const float LaneOffset = 1.05f;
+    // Расстояние от центра дороги до каждой полосы.
+    // Было 1.05 — уменьшаем, чтобы игрок и монеты
+    // не уходили слишком далеко влево/вправо.
+    public const float LaneOffset = 0.95f;
 
     public static float GetCenterX()
     {

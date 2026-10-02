@@ -5,6 +5,10 @@ public static class RuntimeUISprite3D
     private static Sprite solidSprite;
     private static Sprite roundedSprite;
 
+    // =========================================================
+    // SOLID
+    // =========================================================
+
     public static Sprite GetSolidSprite()
     {
         if (solidSprite != null)
@@ -59,6 +63,10 @@ public static class RuntimeUISprite3D
         return solidSprite;
     }
 
+    // =========================================================
+    // ROUNDED
+    // =========================================================
+
     public static Sprite GetRoundedSprite()
     {
         if (roundedSprite != null)
@@ -67,7 +75,8 @@ public static class RuntimeUISprite3D
         }
 
         const int size = 64;
-        const float radius = 12f;
+        const float radius = 8f;
+        const float border = 8f;
 
         Texture2D texture =
             new Texture2D(
@@ -82,8 +91,7 @@ public static class RuntimeUISprite3D
 
         Color[] pixels =
             new Color[
-                size *
-                size
+                size * size
             ];
 
         for (
@@ -98,27 +106,26 @@ public static class RuntimeUISprite3D
                 x++
             )
             {
-                float px =
+                float distanceX =
                     Mathf.Min(
                         x,
                         size - 1 - x
                     );
 
-                float py =
+                float distanceY =
                     Mathf.Min(
                         y,
                         size - 1 - y
                     );
 
-                float alpha =
-                    1f;
+                float alpha = 1f;
 
                 if (
-                    px < radius &&
-                    py < radius
+                    distanceX < radius &&
+                    distanceY < radius
                 )
                 {
-                    alpha =
+                    float cornerDistance =
                         Vector2.Distance(
                             new Vector2(
                                 radius,
@@ -128,64 +135,10 @@ public static class RuntimeUISprite3D
                                 x,
                                 y
                             )
-                        ) <= radius
-                            ? 1f
-                            : 0f;
-                }
-                else if (
-                    px < radius &&
-                    py >= size - radius
-                )
-                {
+                        );
+
                     alpha =
-                        Vector2.Distance(
-                            new Vector2(
-                                radius,
-                                size - radius
-                            ),
-                            new Vector2(
-                                x,
-                                y
-                            )
-                        ) <= radius
-                            ? 1f
-                            : 0f;
-                }
-                else if (
-                    px >= size - radius &&
-                    py < radius
-                )
-                {
-                    alpha =
-                        Vector2.Distance(
-                            new Vector2(
-                                size - radius,
-                                radius
-                            ),
-                            new Vector2(
-                                x,
-                                y
-                            )
-                        ) <= radius
-                            ? 1f
-                            : 0f;
-                }
-                else if (
-                    px >= size - radius &&
-                    py >= size - radius
-                )
-                {
-                    alpha =
-                        Vector2.Distance(
-                            new Vector2(
-                                size - radius,
-                                size - radius
-                            ),
-                            new Vector2(
-                                x,
-                                y
-                            )
-                        ) <= radius
+                        cornerDistance <= radius
                             ? 1f
                             : 0f;
                 }
@@ -231,10 +184,10 @@ public static class RuntimeUISprite3D
                 0,
                 SpriteMeshType.FullRect,
                 new Vector4(
-                    12f,
-                    12f,
-                    12f,
-                    12f
+                    border,
+                    border,
+                    border,
+                    border
                 )
             );
 

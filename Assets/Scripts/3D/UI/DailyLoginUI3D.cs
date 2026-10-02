@@ -39,6 +39,10 @@ public class DailyLoginUI3D : MonoBehaviour
     [SerializeField]
     private Button closeButton;
 
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Awake()
     {
         ResolveReferences();
@@ -70,7 +74,7 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // ДОСТУПНОСТЬ
+    // AVAILABILITY
     // =========================================================
 
     public static bool IsRewardAvailable()
@@ -231,7 +235,52 @@ public class DailyLoginUI3D : MonoBehaviour
             }
         }
 
+        ConfigureCloseButton();
         ConfigureListeners();
+    }
+
+    // =========================================================
+    // CLOSE BUTTON
+    // =========================================================
+
+    private void ConfigureCloseButton()
+    {
+        if (closeButton == null)
+        {
+            return;
+        }
+
+        Image image =
+            closeButton.GetComponent<Image>();
+
+        if (image != null)
+        {
+            image.sprite =
+                RuntimeUISprite3D
+                    .GetRoundedSprite();
+
+            image.type =
+                Image.Type.Sliced;
+
+            image.preserveAspect =
+                false;
+
+            image.raycastTarget =
+                true;
+        }
+
+        closeButton.targetGraphic =
+            image;
+
+        closeButton.transition =
+            Selectable.Transition.None;
+
+        closeButton.navigation =
+            new Navigation
+            {
+                mode =
+                    Navigation.Mode.None
+            };
     }
 
     // =========================================================
@@ -285,18 +334,42 @@ public class DailyLoginUI3D : MonoBehaviour
                       " / 7  •  ПОЛУЧЕНО";
         }
 
-        const float width = 0.5f;
+        const float cardWidth = 0.5f;
         const float cardHeight = 150f;
         const float gap = 10f;
 
-        int rows = 4;
+        const int rows = 4;
+
+        float contentHeight =
+            rows *
+            (cardHeight + gap) +
+            16f;
+
+        contentRoot.anchorMin =
+            new Vector2(
+                0f,
+                1f
+            );
+
+        contentRoot.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        contentRoot.pivot =
+            new Vector2(
+                0.5f,
+                1f
+            );
+
+        contentRoot.anchoredPosition =
+            Vector2.zero;
 
         contentRoot.sizeDelta =
             new Vector2(
                 0f,
-                rows *
-                (cardHeight + gap) +
-                16f
+                contentHeight
             );
 
         for (
@@ -309,7 +382,7 @@ public class DailyLoginUI3D : MonoBehaviour
                 day,
                 currentDay,
                 available,
-                width,
+                cardWidth,
                 cardHeight,
                 gap
             );
@@ -324,6 +397,11 @@ public class DailyLoginUI3D : MonoBehaviour
 
     private void ClearContent()
     {
+        if (contentRoot == null)
+        {
+            return;
+        }
+
         for (
             int i =
                 contentRoot.childCount - 1;
@@ -368,45 +446,45 @@ public class DailyLoginUI3D : MonoBehaviour
         bool past =
             day < currentDay;
 
-        Color color;
+        Color cardColor;
 
         if (claimedToday)
         {
-            color =
+            cardColor =
                 new Color32(
-                    27,
-                    58,
-                    42,
+                    31,
+                    62,
+                    46,
                     255
                 );
         }
         else if (current)
         {
-            color =
+            cardColor =
                 new Color32(
                     49,
-                    58,
-                    45,
+                    61,
+                    48,
                     255
                 );
         }
         else
         {
-            color =
+            cardColor =
                 new Color32(
-                    21,
-                    32,
+                    25,
                     39,
+                    47,
                     255
                 );
         }
 
         GameObject card =
-            CreateImage(
+            CreateRoundedImage(
                 "Day_" +
                 (day + 1),
                 contentRoot,
-                color
+                cardColor
             );
 
         RectTransform rect =
@@ -557,6 +635,7 @@ public class DailyLoginUI3D : MonoBehaviour
         // =====================================================
 
         string state;
+
         Color stateColor;
 
         if (claimedToday)
@@ -613,15 +692,15 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         GameObject stateObject =
-            CreateButton(
+            CreateRoundedButton(
                 "StateButton",
                 card.transform,
                 state,
                 11f,
                 new Color32(
-                    28,
-                    43,
-                    50,
+                    30,
+                    47,
+                    55,
                     255
                 ),
                 stateColor
@@ -859,10 +938,10 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // CREATE IMAGE
+    // ROUNDED IMAGE
     // =========================================================
 
-    private static GameObject CreateImage(
+    private static GameObject CreateRoundedImage(
         string name,
         Transform parent,
         Color color
@@ -881,16 +960,17 @@ public class DailyLoginUI3D : MonoBehaviour
         );
 
         Image image =
-            go.GetComponent<
-                Image
-            >();
+            go.GetComponent<Image>();
 
         image.sprite =
             RuntimeUISprite3D
-                .GetSolidSprite();
+                .GetRoundedSprite();
 
         image.type =
-            Image.Type.Simple;
+            Image.Type.Sliced;
+
+        image.preserveAspect =
+            false;
 
         image.color =
             color;
@@ -902,7 +982,82 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // CREATE TEXT
+    // ROUNDED BUTTON
+    // =========================================================
+
+    private static GameObject CreateRoundedButton(
+        string name,
+        Transform parent,
+        string label,
+        float size,
+        Color background,
+        Color textColor
+    )
+    {
+        GameObject go =
+            new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
+
+        go.transform.SetParent(
+            parent,
+            false
+        );
+
+        Image image =
+            go.GetComponent<Image>();
+
+        image.sprite =
+            RuntimeUISprite3D
+                .GetRoundedSprite();
+
+        image.type =
+            Image.Type.Sliced;
+
+        image.preserveAspect =
+            false;
+
+        image.color =
+            background;
+
+        image.raycastTarget =
+            true;
+
+        Button button =
+            go.GetComponent<Button>();
+
+        button.targetGraphic =
+            image;
+
+        button.transition =
+            Selectable.Transition.None;
+
+        button.navigation =
+            new Navigation
+            {
+                mode =
+                    Navigation.Mode.None
+            };
+
+        CreateText(
+            "Label",
+            go.transform,
+            label,
+            size,
+            textColor,
+            TextAlignmentOptions.Center,
+            Vector2.zero,
+            Vector2.one
+        );
+
+        return go;
+    }
+
+    // =========================================================
+    // TEXT
     // =========================================================
 
     private static GameObject CreateText(
@@ -961,75 +1116,6 @@ public class DailyLoginUI3D : MonoBehaviour
 
         RuntimeUIText3D.Apply(
             text
-        );
-
-        return go;
-    }
-
-    // =========================================================
-    // CREATE BUTTON
-    // =========================================================
-
-    private static GameObject CreateButton(
-        string name,
-        Transform parent,
-        string label,
-        float size,
-        Color background,
-        Color textColor
-    )
-    {
-        GameObject go =
-            new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(Image),
-                typeof(Button)
-            );
-
-        go.transform.SetParent(
-            parent,
-            false
-        );
-
-        Image image =
-            go.GetComponent<
-                Image
-            >();
-
-        image.sprite =
-            RuntimeUISprite3D
-                .GetRoundedSprite();
-
-        image.type =
-            Image.Type.Sliced;
-
-        image.color =
-            background;
-
-        image.raycastTarget =
-            true;
-
-        Button button =
-            go.GetComponent<
-                Button
-            >();
-
-        button.targetGraphic =
-            image;
-
-        button.transition =
-            Selectable.Transition.ColorTint;
-
-        CreateText(
-            "Label",
-            go.transform,
-            label,
-            size,
-            textColor,
-            TextAlignmentOptions.Center,
-            Vector2.zero,
-            Vector2.one
         );
 
         return go;

@@ -26,6 +26,10 @@ public class GameSettingsUI3D : MonoBehaviour
     [SerializeField]
     private Button closeButton;
 
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Awake()
     {
         ResolveReferences();
@@ -229,7 +233,222 @@ public class GameSettingsUI3D : MonoBehaviour
             }
         }
 
+        ConfigureInteractiveControls();
         ConfigureListeners();
+    }
+
+    // =========================================================
+    // INTERACTIVE CONTROLS
+    // =========================================================
+
+    private void ConfigureInteractiveControls()
+    {
+        // -----------------------------------------------------
+        // SLIDER
+        // -----------------------------------------------------
+
+        if (volumeSlider != null)
+        {
+            volumeSlider.interactable = true;
+
+            Transform background =
+                volumeSlider.transform.Find(
+                    "Background"
+                );
+
+            if (background != null)
+            {
+                Image image =
+                    background.GetComponent<Image>();
+
+                if (image != null)
+                {
+                    image.raycastTarget = true;
+                }
+            }
+
+            Transform handleArea =
+                volumeSlider.transform.Find(
+                    "Handle Slide Area"
+                );
+
+            if (handleArea != null)
+            {
+                Transform handle =
+                    handleArea.Find(
+                        "Handle"
+                    );
+
+                if (handle != null)
+                {
+                    Image image =
+                        handle.GetComponent<Image>();
+
+                    if (image != null)
+                    {
+                        image.raycastTarget =
+                            true;
+
+                        volumeSlider.targetGraphic =
+                            image;
+                    }
+                }
+            }
+
+            volumeSlider.transition =
+                Selectable.Transition.None;
+        }
+
+        // -----------------------------------------------------
+        // TOGGLE
+        // -----------------------------------------------------
+
+        if (vibrationToggle != null)
+        {
+            vibrationToggle.interactable =
+                true;
+
+            Transform background =
+                vibrationToggle.transform.Find(
+                    "Background"
+                );
+
+            if (background != null)
+            {
+                Image image =
+                    background.GetComponent<Image>();
+
+                if (image != null)
+                {
+                    image.raycastTarget =
+                        true;
+
+                    vibrationToggle.targetGraphic =
+                        image;
+                }
+            }
+
+            Transform checkmark =
+                vibrationToggle.transform.Find(
+                    "Checkmark"
+                );
+
+            if (checkmark != null)
+            {
+                Image image =
+                    checkmark.GetComponent<Image>();
+
+                if (image != null)
+                {
+                    vibrationToggle.graphic =
+                        image;
+
+                    image.raycastTarget =
+                        false;
+                }
+            }
+
+            vibrationToggle.transition =
+                Selectable.Transition.None;
+        }
+
+        ConfigureFPSButton(
+            fps30Button
+        );
+
+        ConfigureFPSButton(
+            fps60Button
+        );
+
+        ConfigureModalButton(
+            closeButton
+        );
+    }
+
+    private void ConfigureFPSButton(
+        Button button
+    )
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        Image image =
+            button.GetComponent<Image>();
+
+        if (image != null)
+        {
+            image.sprite =
+                RuntimeUISprite3D
+                    .GetRoundedSprite();
+
+            image.type =
+                Image.Type.Sliced;
+
+            image.preserveAspect =
+                false;
+
+            image.raycastTarget =
+                true;
+        }
+
+        button.targetGraphic =
+            image;
+
+        // Убираем ColorTint,
+        // чтобы цвет кнопки не умножал Image.color.
+        button.transition =
+            Selectable.Transition.None;
+
+        button.navigation =
+            new Navigation
+            {
+                mode =
+                    Navigation.Mode.None
+            };
+    }
+
+    private void ConfigureModalButton(
+        Button button
+    )
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        Image image =
+            button.GetComponent<Image>();
+
+        if (image != null)
+        {
+            image.sprite =
+                RuntimeUISprite3D
+                    .GetRoundedSprite();
+
+            image.type =
+                Image.Type.Sliced;
+
+            image.preserveAspect =
+                false;
+
+            image.raycastTarget =
+                true;
+        }
+
+        button.targetGraphic =
+            image;
+
+        button.transition =
+            Selectable.Transition.None;
+
+        button.navigation =
+            new Navigation
+            {
+                mode =
+                    Navigation.Mode.None
+            };
     }
 
     // =========================================================
@@ -299,7 +518,7 @@ public class GameSettingsUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // SETTINGS
+    // REFRESH
     // =========================================================
 
     private void Refresh()
@@ -333,6 +552,10 @@ public class GameSettingsUI3D : MonoBehaviour
         RefreshFPSButtons();
     }
 
+    // =========================================================
+    // VOLUME
+    // =========================================================
+
     private void OnVolumeChanged(
         float value
     )
@@ -359,8 +582,13 @@ public class GameSettingsUI3D : MonoBehaviour
         volumeValue.text =
             Mathf.RoundToInt(
                 value * 100f
-            ) + "%";
+            ) +
+            "%";
     }
+
+    // =========================================================
+    // VIBRATION
+    // =========================================================
 
     private void OnVibrationChanged(
         bool value
@@ -372,10 +600,16 @@ public class GameSettingsUI3D : MonoBehaviour
             );
     }
 
+    // =========================================================
+    // FPS
+    // =========================================================
+
     private void Set30FPS()
     {
         GameSettingsManager3D
-            .SetFPS(30);
+            .SetFPS(
+                30
+            );
 
         RefreshFPSButtons();
     }
@@ -383,7 +617,9 @@ public class GameSettingsUI3D : MonoBehaviour
     private void Set60FPS()
     {
         GameSettingsManager3D
-            .SetFPS(60);
+            .SetFPS(
+                60
+            );
 
         RefreshFPSButtons();
     }
@@ -416,9 +652,7 @@ public class GameSettingsUI3D : MonoBehaviour
         }
 
         Image image =
-            button.GetComponent<
-                Image
-            >();
+            button.GetComponent<Image>();
 
         if (image == null)
         {
@@ -429,14 +663,14 @@ public class GameSettingsUI3D : MonoBehaviour
             selected
                 ? new Color32(
                     42,
-                    83,
-                    88,
+                    98,
+                    107,
                     255
                 )
                 : new Color32(
-                    26,
-                    38,
-                    45,
+                    27,
+                    46,
+                    54,
                     255
                 );
     }
