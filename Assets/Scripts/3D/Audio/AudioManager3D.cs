@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class AudioManager3D : MonoBehaviour
 {
@@ -9,13 +10,15 @@ public class AudioManager3D : MonoBehaviour
     [SerializeField] private AudioClip mainMenuMusic;
     [SerializeField] private AudioClip runMusic;
 
-    [Header("Звуки")]
+    [Header("Игровые звуки")]
     [SerializeField] private AudioClip coinClip;
     [SerializeField] private AudioClip heartClip;
     [SerializeField] private AudioClip survivorClip;
     [SerializeField] private AudioClip hitClip;
     [SerializeField] private AudioClip pitFallClip;
     [SerializeField] private AudioClip deathClip;
+
+    [Header("UI")]
     [SerializeField] private AudioClip menuClickClip;
 
     [Header("Громкость")]
@@ -26,9 +29,12 @@ public class AudioManager3D : MonoBehaviour
     [SerializeField] private float sfxVolume = 0.8f;
 
     private AudioSource musicSource;
-    private AudioSource sfxSource;
+    private AudioSource gameplaySfxSource;
+    private AudioSource uiSfxSource;
 
     private bool deathPlayed;
+
+    private string previousSceneName;
 
     private void Awake()
     {
@@ -45,10 +51,11 @@ public class AudioManager3D : MonoBehaviour
 
         DontDestroyOnLoad(gameObject);
 
-        musicSource =
-            gameObject.AddComponent<AudioSource>();
+        // =====================================================
+        // MUSIC SOURCE
+        // =====================================================
 
-        sfxSource =
+        musicSource =
             gameObject.AddComponent<AudioSource>();
 
         musicSource.playOnAwake = false;
@@ -56,10 +63,32 @@ public class AudioManager3D : MonoBehaviour
         musicSource.spatialBlend = 0f;
         musicSource.volume = musicVolume;
 
-        sfxSource.playOnAwake = false;
-        sfxSource.loop = false;
-        sfxSource.spatialBlend = 0f;
-        sfxSource.volume = sfxVolume;
+        // =====================================================
+        // GAMEPLAY SFX SOURCE
+        // =====================================================
+
+        gameplaySfxSource =
+            gameObject.AddComponent<AudioSource>();
+
+        gameplaySfxSource.playOnAwake = false;
+        gameplaySfxSource.loop = false;
+        gameplaySfxSource.spatialBlend = 0f;
+        gameplaySfxSource.volume = sfxVolume;
+
+        // =====================================================
+        // UI SFX SOURCE
+        // =====================================================
+
+        uiSfxSource =
+            gameObject.AddComponent<AudioSource>();
+
+        uiSfxSource.playOnAwake = false;
+        uiSfxSource.loop = false;
+        uiSfxSource.spatialBlend = 0f;
+        uiSfxSource.volume = sfxVolume;
+
+        previousSceneName =
+            SceneManager.GetActiveScene().name;
 
         SceneManager.sceneLoaded +=
             OnSceneLoaded;
@@ -68,6 +97,8 @@ public class AudioManager3D : MonoBehaviour
     private void Start()
     {
         PlayMusicForCurrentScene();
+
+        BindButtonSoundsInCurrentScene();
     }
 
     private void OnDestroy()
@@ -78,35 +109,77 @@ public class AudioManager3D : MonoBehaviour
 
     private void OnSceneLoaded(
         Scene scene,
-        LoadSceneMode mode)
+        LoadSceneMode mode
+    )
     {
+        // =====================================================
+        // ОСТАНАВЛИВАЕМ ИГРОВЫЕ SFX ПРИ ВЫХОДЕ ИЗ ЗАБЕГА
+        // =====================================================
+
+        if (
+            previousSceneName == "MainRoad" &&
+            scene.name != "MainRoad"
+        )
+        {
+            StopGameplaySFX();
+        }
+
         deathPlayed = false;
 
+        previousSceneName =
+            scene.name;
+
+        // =====================================================
+        // МУЗЫКА
+        // =====================================================
+
         PlayMusicForCurrentScene();
+
+        // =====================================================
+        // ЗВУК КНОПОК
+        // =====================================================
+
+        BindButtonSoundsInCurrentScene();
     }
 
     // =========================================================
     // MUSIC
     // =========================================================
 
+    private bool IsMenuScene(
+        string sceneName
+    )
+    {
+        return
+            sceneName == "MainMenu" ||
+            sceneName == "CharacterSelect" ||
+            sceneName == "Equipment" ||
+            sceneName == "Shop" ||
+            sceneName == "Hangar";
+    }
+
     private void PlayMusicForCurrentScene()
     {
         string sceneName =
             SceneManager.GetActiveScene().name;
 
-        AudioClip targetClip = null;
+        AudioClip targetClip =
+            null;
 
-        if (sceneName == "MainMenu")
-        {
-            targetClip =
-                mainMenuMusic;
-        }
-        else if (sceneName == "MainRoad")
+        if (sceneName == "MainRoad")
         {
             targetClip =
                 runMusic;
         }
+        else if (
+            IsMenuScene(sceneName)
+        )
+        {
+            targetClip =
+                mainMenuMusic;
+        }
 
+        // Нет музыки для данной сцены
         if (targetClip == null)
         {
             musicSource.Stop();
@@ -114,6 +187,8 @@ public class AudioManager3D : MonoBehaviour
             return;
         }
 
+        // Уже играет нужная музыка.
+        // Ничего не перезапускаем.
         if (
             musicSource.isPlaying &&
             musicSource.clip == targetClip
@@ -134,32 +209,42 @@ public class AudioManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // SFX
+    // GAMEPLAY SFX
     // =========================================================
 
     public void PlayCoin()
     {
-        PlaySFX(coinClip);
+        PlayGameplaySFX(
+            coinClip
+        );
     }
 
     public void PlayHeart()
     {
-        PlaySFX(heartClip);
+        PlayGameplaySFX(
+            heartClip
+        );
     }
 
     public void PlaySurvivor()
     {
-        PlaySFX(survivorClip);
+        PlayGameplaySFX(
+            survivorClip
+        );
     }
 
     public void PlayHit()
     {
-        PlaySFX(hitClip);
+        PlayGameplaySFX(
+            hitClip
+        );
     }
 
     public void PlayPitFall()
     {
-        PlaySFX(pitFallClip);
+        PlayGameplaySFX(
+            pitFallClip
+        );
     }
 
     public void PlayDeath()
@@ -169,24 +254,95 @@ public class AudioManager3D : MonoBehaviour
 
         deathPlayed = true;
 
-        PlaySFX(deathClip);
+        PlayGameplaySFX(
+            deathClip
+        );
     }
 
-    public void PlayMenuClick()
-    {
-        PlaySFX(menuClickClip);
-    }
-
-    private void PlaySFX(
-        AudioClip clip)
+    private void PlayGameplaySFX(
+        AudioClip clip
+    )
     {
         if (clip == null)
             return;
 
-        sfxSource.PlayOneShot(
+        gameplaySfxSource.PlayOneShot(
             clip,
             sfxVolume
         );
+    }
+
+    public void StopGameplaySFX()
+    {
+        if (gameplaySfxSource == null)
+            return;
+
+        gameplaySfxSource.Stop();
+    }
+
+    // =========================================================
+    // UI SFX
+    // =========================================================
+
+    public void PlayMenuClick()
+    {
+        if (menuClickClip == null)
+            return;
+
+        uiSfxSource.PlayOneShot(
+            menuClickClip,
+            sfxVolume
+        );
+    }
+
+    // =========================================================
+    // АВТОМАТИЧЕСКИЙ ЗВУК ВСЕХ BUTTON
+    // =========================================================
+
+    private void BindButtonSoundsInCurrentScene()
+    {
+        Scene scene =
+            SceneManager.GetActiveScene();
+
+        if (!scene.IsValid())
+            return;
+
+        GameObject[] roots =
+            scene.GetRootGameObjects();
+
+        foreach (
+            GameObject root
+            in roots
+        )
+        {
+            if (root == null)
+                continue;
+
+            Button[] buttons =
+                root.GetComponentsInChildren<Button>(
+                    true
+                );
+
+            foreach (
+                Button button
+                in buttons
+            )
+            {
+                if (button == null)
+                    continue;
+
+                if (
+                    button.GetComponent<
+                        UIButtonSound3D
+                    >() == null
+                )
+                {
+                    button.gameObject.AddComponent<
+                        UIButtonSound3D
+                    >();
+                }
+            }
+        }
     }
 
     // =========================================================
@@ -194,7 +350,8 @@ public class AudioManager3D : MonoBehaviour
     // =========================================================
 
     public void SetMusicVolume(
-        float value)
+        float value
+    )
     {
         musicVolume =
             Mathf.Clamp01(value);
@@ -207,10 +364,23 @@ public class AudioManager3D : MonoBehaviour
     }
 
     public void SetSFXVolume(
-        float value)
+        float value
+    )
     {
         sfxVolume =
             Mathf.Clamp01(value);
+
+        if (gameplaySfxSource != null)
+        {
+            gameplaySfxSource.volume =
+                sfxVolume;
+        }
+
+        if (uiSfxSource != null)
+        {
+            uiSfxSource.volume =
+                sfxVolume;
+        }
     }
 
     public float GetMusicVolume()
