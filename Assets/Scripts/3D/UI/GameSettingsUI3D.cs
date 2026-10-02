@@ -41,7 +41,9 @@ public class GameSettingsUI3D : MonoBehaviour
     private void Update()
     {
         if (!gameObject.activeSelf)
+        {
             return;
+        }
 
         Keyboard keyboard =
             Keyboard.current;
@@ -62,7 +64,9 @@ public class GameSettingsUI3D : MonoBehaviour
         gameObject.SetActive(true);
 
         if (window != null)
+        {
             window.SetActive(true);
+        }
 
         MainMenuModalManager3D modal =
             MainMenuModalManager3D.Instance;
@@ -102,16 +106,24 @@ public class GameSettingsUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // REFERENCES
+    // =========================================================
+
     private void ResolveReferences()
     {
         if (window == null)
         {
             Transform found =
-                transform.Find("Window");
+                transform.Find(
+                    "Window"
+                );
 
             if (found != null)
+            {
                 window =
                     found.gameObject;
+            }
         }
 
         if (volumeSlider == null)
@@ -122,10 +134,12 @@ public class GameSettingsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 volumeSlider =
                     found.GetComponent<
                         Slider
                     >();
+            }
         }
 
         if (volumeValue == null)
@@ -136,10 +150,12 @@ public class GameSettingsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 volumeValue =
                     found.GetComponent<
                         TMP_Text
                     >();
+            }
         }
 
         if (vibrationToggle == null)
@@ -150,10 +166,12 @@ public class GameSettingsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 vibrationToggle =
                     found.GetComponent<
                         Toggle
                     >();
+            }
         }
 
         if (fps30Button == null)
@@ -164,10 +182,12 @@ public class GameSettingsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 fps30Button =
                     found.GetComponent<
                         Button
                     >();
+            }
         }
 
         if (fps60Button == null)
@@ -178,10 +198,12 @@ public class GameSettingsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 fps60Button =
                     found.GetComponent<
                         Button
                     >();
+            }
         }
 
         if (closeButton == null)
@@ -192,14 +214,336 @@ public class GameSettingsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 closeButton =
                     found.GetComponent<
                         Button
                     >();
+            }
         }
 
+        ApplyLayout();
         ConfigureListeners();
     }
+
+    // =========================================================
+    // LAYOUT
+    // =========================================================
+
+    private void ApplyLayout()
+    {
+        if (window != null)
+        {
+            RectTransform windowRect =
+                window.GetComponent<
+                    RectTransform
+                >();
+
+            if (windowRect != null)
+            {
+                SetAnchored(
+                    windowRect,
+                    Vector2.zero,
+                    Vector2.one
+                );
+            }
+        }
+
+        Transform panel =
+            transform.Find(
+                "Window/Panel"
+            );
+
+        if (panel != null)
+        {
+            SetAnchored(
+                panel.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.055f,
+                    0.045f
+                ),
+                new Vector2(
+                    0.945f,
+                    0.955f
+                )
+            );
+        }
+
+        Transform sound =
+            transform.Find(
+                "Window/Panel/SoundSection"
+            );
+
+        if (sound != null)
+        {
+            SetAnchored(
+                sound.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.065f,
+                    0.60f
+                ),
+                new Vector2(
+                    0.935f,
+                    0.80f
+                )
+            );
+        }
+
+        Transform control =
+            transform.Find(
+                "Window/Panel/ControlSection"
+            );
+
+        if (control != null)
+        {
+            SetAnchored(
+                control.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.065f,
+                    0.38f
+                ),
+                new Vector2(
+                    0.935f,
+                    0.58f
+                )
+            );
+        }
+
+        Transform performance =
+            transform.Find(
+                "Window/Panel/PerformanceSection"
+            );
+
+        if (performance != null)
+        {
+            SetAnchored(
+                performance.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.065f,
+                    0.16f
+                ),
+                new Vector2(
+                    0.935f,
+                    0.36f
+                )
+            );
+        }
+
+        if (volumeSlider != null)
+        {
+            SetAnchored(
+                volumeSlider.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.43f,
+                    0.30f
+                ),
+                new Vector2(
+                    0.80f,
+                    0.62f
+                )
+            );
+        }
+
+        if (volumeValue != null)
+        {
+            SetAnchored(
+                volumeValue.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.82f,
+                    0.30f
+                ),
+                new Vector2(
+                    0.94f,
+                    0.62f
+                )
+            );
+        }
+
+        Transform volumeLabel =
+            transform.Find(
+                "Window/Panel/SoundSection/VolumeLabel"
+            );
+
+        if (volumeLabel != null)
+        {
+            SetAnchored(
+                volumeLabel.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.06f,
+                    0.30f
+                ),
+                new Vector2(
+                    0.42f,
+                    0.62f
+                )
+            );
+        }
+
+        if (vibrationToggle != null)
+        {
+            SetAnchored(
+                vibrationToggle.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.80f,
+                    0.28f
+                ),
+                new Vector2(
+                    0.94f,
+                    0.68f
+                )
+            );
+        }
+
+        Transform vibrationLabel =
+            transform.Find(
+                "Window/Panel/ControlSection/VibrationLabel"
+            );
+
+        if (vibrationLabel != null)
+        {
+            SetAnchored(
+                vibrationLabel.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.06f,
+                    0.30f
+                ),
+                new Vector2(
+                    0.55f,
+                    0.62f
+                )
+            );
+        }
+
+        if (fps30Button != null)
+        {
+            SetAnchored(
+                fps30Button.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.06f,
+                    0.14f
+                ),
+                new Vector2(
+                    0.47f,
+                    0.56f
+                )
+            );
+
+            Image image =
+                fps30Button.GetComponent<
+                    Image
+                >();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    true;
+            }
+        }
+
+        if (fps60Button != null)
+        {
+            SetAnchored(
+                fps60Button.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.53f,
+                    0.14f
+                ),
+                new Vector2(
+                    0.94f,
+                    0.56f
+                )
+            );
+
+            Image image =
+                fps60Button.GetComponent<
+                    Image
+                >();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    true;
+            }
+        }
+
+        if (closeButton != null)
+        {
+            SetAnchored(
+                closeButton.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.875f,
+                    0.875f
+                ),
+                new Vector2(
+                    0.955f,
+                    0.95f
+                )
+            );
+
+            Image image =
+                closeButton.GetComponent<
+                    Image
+                >();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    true;
+            }
+        }
+    }
+
+    private static void SetAnchored(
+        RectTransform rect,
+        Vector2 min,
+        Vector2 max
+    )
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
+    }
+
+    // =========================================================
+    // LISTENERS
+    // =========================================================
 
     private void ConfigureListeners()
     {
@@ -269,6 +613,10 @@ public class GameSettingsUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // REFRESH
+    // =========================================================
+
     private void Refresh()
     {
         GameSettingsManager3D.Initialize();
@@ -319,7 +667,9 @@ public class GameSettingsUI3D : MonoBehaviour
     )
     {
         if (volumeValue == null)
+        {
             return;
+        }
 
         volumeValue.text =
             Mathf.RoundToInt(
@@ -376,13 +726,19 @@ public class GameSettingsUI3D : MonoBehaviour
     )
     {
         if (button == null)
+        {
             return;
+        }
 
         Image image =
-            button.GetComponent<Image>();
+            button.GetComponent<
+                Image
+            >();
 
         if (image == null)
+        {
             return;
+        }
 
         image.color =
             selected

@@ -53,7 +53,9 @@ public class DailyLoginUI3D : MonoBehaviour
     private void Update()
     {
         if (!gameObject.activeSelf)
+        {
             return;
+        }
 
         Keyboard keyboard =
             Keyboard.current;
@@ -68,7 +70,7 @@ public class DailyLoginUI3D : MonoBehaviour
     }
 
     // =========================================================
-    // ДОСТУПНОСТЬ НАГРАДЫ
+    // ДОСТУПНОСТЬ
     // =========================================================
 
     public static bool IsRewardAvailable()
@@ -229,7 +231,149 @@ public class DailyLoginUI3D : MonoBehaviour
             }
         }
 
+        ApplyLayout();
         ConfigureListeners();
+    }
+
+    // =========================================================
+    // LAYOUT
+    // =========================================================
+
+    private void ApplyLayout()
+    {
+        if (window != null)
+        {
+            SetAnchored(
+                window.GetComponent<
+                    RectTransform
+                >(),
+                Vector2.zero,
+                Vector2.one
+            );
+        }
+
+        Transform panel =
+            transform.Find(
+                "Window/Panel"
+            );
+
+        if (panel != null)
+        {
+            SetAnchored(
+                panel.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.055f,
+                    0.045f
+                ),
+                new Vector2(
+                    0.945f,
+                    0.955f
+                )
+            );
+        }
+
+        if (streakText != null)
+        {
+            SetAnchored(
+                streakText.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.15f,
+                    0.775f
+                ),
+                new Vector2(
+                    0.85f,
+                    0.835f
+                )
+            );
+        }
+
+        if (scroll != null)
+        {
+            RectTransform scrollRect =
+                scroll.GetComponent<
+                    RectTransform
+                >();
+
+            SetAnchored(
+                scrollRect,
+                new Vector2(
+                    0.055f,
+                    0.045f
+                ),
+                new Vector2(
+                    0.945f,
+                    0.72f
+                )
+            );
+
+            scroll.horizontal =
+                false;
+
+            scroll.vertical =
+                true;
+
+            scroll.movementType =
+                ScrollRect.MovementType.Clamped;
+
+            scroll.scrollSensitivity =
+                65f;
+        }
+
+        if (closeButton != null)
+        {
+            SetAnchored(
+                closeButton.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.875f,
+                    0.875f
+                ),
+                new Vector2(
+                    0.955f,
+                    0.95f
+                )
+            );
+
+            Image image =
+                closeButton.GetComponent<
+                    Image
+                >();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    true;
+            }
+        }
+    }
+
+    private static void SetAnchored(
+        RectTransform rect,
+        Vector2 min,
+        Vector2 max
+    )
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 
     // =========================================================
@@ -257,7 +401,9 @@ public class DailyLoginUI3D : MonoBehaviour
     private void Refresh()
     {
         if (contentRoot == null)
+        {
             return;
+        }
 
         ClearContent();
 
@@ -280,8 +426,11 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         const float width = 0.5f;
-        const float cardHeight = 128f;
-        const float gap = 12f;
+
+        // Было 128/12.
+        // Теперь карточки крупнее и равномернее.
+        const float cardHeight = 150f;
+        const float gap = 10f;
 
         int rows = 4;
 
@@ -444,15 +593,15 @@ public class DailyLoginUI3D : MonoBehaviour
 
         rect.sizeDelta =
             new Vector2(
-                -8f,
+                -10f,
                 height
             );
 
         rect.anchoredPosition =
             new Vector2(
                 column == 0
-                    ? 4f
-                    : -4f,
+                    ? 5f
+                    : -5f,
                 -8f -
                 row *
                 (height + gap)
@@ -510,7 +659,7 @@ public class DailyLoginUI3D : MonoBehaviour
             TextAlignmentOptions.Center,
             new Vector2(
                 0.08f,
-                0.67f
+                0.70f
             ),
             new Vector2(
                 0.92f,
@@ -538,11 +687,11 @@ public class DailyLoginUI3D : MonoBehaviour
             TextAlignmentOptions.Center,
             new Vector2(
                 0.08f,
-                0.38f
+                0.39f
             ),
             new Vector2(
                 0.92f,
-                0.65f
+                0.66f
             )
         );
 
@@ -628,11 +777,11 @@ public class DailyLoginUI3D : MonoBehaviour
             >(),
             new Vector2(
                 0.12f,
-                0.07f
+                0.08f
             ),
             new Vector2(
                 0.88f,
-                0.30f
+                0.31f
             )
         );
 
@@ -641,15 +790,10 @@ public class DailyLoginUI3D : MonoBehaviour
                 Button
             >();
 
-        // =====================================================
-        // ГЛАВНОЕ ИСПРАВЛЕНИЕ
-        // =====================================================
-
         button.interactable =
             current &&
             available;
 
-        // У кнопки должен быть включён raycast.
         Image buttonImage =
             stateObject.GetComponent<
                 Image
@@ -660,10 +804,6 @@ public class DailyLoginUI3D : MonoBehaviour
             buttonImage.raycastTarget =
                 true;
         }
-
-        // =====================================================
-        // CLAIM
-        // =====================================================
 
         if (
             current &&
@@ -712,7 +852,9 @@ public class DailyLoginUI3D : MonoBehaviour
             GetCurrentDayIndex();
 
         if (!IsRewardAvailable())
+        {
             return false;
+        }
 
         if (
             day < 0 ||
@@ -724,10 +866,6 @@ public class DailyLoginUI3D : MonoBehaviour
 
         reward =
             Rewards[day];
-
-        // =====================================================
-        // МОНЕТЫ
-        // =====================================================
 
         int coins =
             PlayerPrefs.GetInt(
@@ -742,10 +880,6 @@ public class DailyLoginUI3D : MonoBehaviour
             "TotalCoins",
             coins
         );
-
-        // =====================================================
-        // СОХРАНЯЕМ ДАТУ
-        // =====================================================
 
         PlayerPrefs.SetString(
             LAST_CLAIM_DATE,
@@ -762,10 +896,6 @@ public class DailyLoginUI3D : MonoBehaviour
 
         PlayerPrefs.Save();
 
-        // =====================================================
-        // ЗВУК НАГРАДЫ
-        // =====================================================
-
         if (
             AudioManager3D.Instance !=
             null
@@ -774,10 +904,6 @@ public class DailyLoginUI3D : MonoBehaviour
             AudioManager3D.Instance
                 .PlayRewardClaim();
         }
-
-        // =====================================================
-        // ОБНОВЛЯЕМ БАЛАНС В МЕНЮ
-        // =====================================================
 
         MainMenuManager menu =
             MainMenuManager.Instance;
@@ -860,8 +986,6 @@ public class DailyLoginUI3D : MonoBehaviour
             ) % 7;
         }
 
-        // Пропустил день —
-        // начинаем серию заново.
         return 0;
     }
 
@@ -925,8 +1049,6 @@ public class DailyLoginUI3D : MonoBehaviour
         image.color =
             color;
 
-        // Карточка не должна забирать raycast
-        // у кнопки внутри неё.
         image.raycastTarget =
             false;
 
@@ -985,7 +1107,6 @@ public class DailyLoginUI3D : MonoBehaviour
         text.alignment =
             alignment;
 
-        // Текст не должен блокировать кнопку.
         text.raycastTarget =
             false;
 
@@ -1024,11 +1145,6 @@ public class DailyLoginUI3D : MonoBehaviour
                 Image
             >();
 
-        // =====================================================
-        // ГЛАВНОЕ:
-        // КНОПКА ДОЛЖНА ПРИНИМАТЬ UI RAYCAST
-        // =====================================================
-
         image.raycastTarget =
             true;
 
@@ -1043,41 +1159,17 @@ public class DailyLoginUI3D : MonoBehaviour
         button.transition =
             Selectable.Transition.ColorTint;
 
-        GameObject text =
-            CreateText(
-                "Label",
-                go.transform,
-                label,
-                size,
-                textColor,
-                TextAlignmentOptions.Center,
-                Vector2.zero,
-                Vector2.one
-            );
+        CreateText(
+            "Label",
+            go.transform,
+            label,
+            size,
+            textColor,
+            TextAlignmentOptions.Center,
+            Vector2.zero,
+            Vector2.one
+        );
 
         return go;
-    }
-
-    // =========================================================
-    // ANCHORS
-    // =========================================================
-
-    private static void SetAnchored(
-        RectTransform rect,
-        Vector2 min,
-        Vector2 max
-    )
-    {
-        rect.anchorMin =
-            min;
-
-        rect.anchorMax =
-            max;
-
-        rect.offsetMin =
-            Vector2.zero;
-
-        rect.offsetMax =
-            Vector2.zero;
     }
 }

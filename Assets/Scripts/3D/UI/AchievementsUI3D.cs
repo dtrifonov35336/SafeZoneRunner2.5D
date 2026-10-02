@@ -127,7 +127,9 @@ public class AchievementsUI3D : MonoBehaviour
     private void Update()
     {
         if (!gameObject.activeSelf)
+        {
             return;
+        }
 
         Keyboard keyboard =
             Keyboard.current;
@@ -148,7 +150,9 @@ public class AchievementsUI3D : MonoBehaviour
         gameObject.SetActive(true);
 
         if (window != null)
+        {
             window.SetActive(true);
+        }
 
         MainMenuModalManager3D modal =
             MainMenuModalManager3D.Instance;
@@ -188,6 +192,10 @@ public class AchievementsUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // REFERENCES
+    // =========================================================
+
     private void ResolveReferences()
     {
         if (window == null)
@@ -198,8 +206,10 @@ public class AchievementsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 window =
                     found.gameObject;
+            }
         }
 
         if (contentRoot == null)
@@ -210,10 +220,12 @@ public class AchievementsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 contentRoot =
                     found.GetComponent<
                         RectTransform
                     >();
+            }
         }
 
         if (scroll == null)
@@ -224,10 +236,12 @@ public class AchievementsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 scroll =
                     found.GetComponent<
                         ScrollRect
                     >();
+            }
         }
 
         if (shelterTab == null)
@@ -238,10 +252,12 @@ public class AchievementsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 shelterTab =
                     found.GetComponent<
                         Button
                     >();
+            }
         }
 
         if (infiniteTab == null)
@@ -252,10 +268,12 @@ public class AchievementsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 infiniteTab =
                     found.GetComponent<
                         Button
                     >();
+            }
         }
 
         if (countText == null)
@@ -266,10 +284,12 @@ public class AchievementsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 countText =
                     found.GetComponent<
                         TMP_Text
                     >();
+            }
         }
 
         if (closeButton == null)
@@ -280,14 +300,196 @@ public class AchievementsUI3D : MonoBehaviour
                 );
 
             if (found != null)
+            {
                 closeButton =
                     found.GetComponent<
                         Button
                     >();
+            }
         }
 
+        ApplyLayout();
         ConfigureListeners();
     }
+
+    // =========================================================
+    // LAYOUT
+    // =========================================================
+
+    private void ApplyLayout()
+    {
+        if (window != null)
+        {
+            SetAnchored(
+                window.GetComponent<
+                    RectTransform
+                >(),
+                Vector2.zero,
+                Vector2.one
+            );
+        }
+
+        Transform panel =
+            transform.Find(
+                "Window/Panel"
+            );
+
+        if (panel != null)
+        {
+            SetAnchored(
+                panel.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.055f,
+                    0.045f
+                ),
+                new Vector2(
+                    0.945f,
+                    0.955f
+                )
+            );
+        }
+
+        if (shelterTab != null)
+        {
+            SetAnchored(
+                shelterTab.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.07f,
+                    0.755f
+                ),
+                new Vector2(
+                    0.49f,
+                    0.835f
+                )
+            );
+        }
+
+        if (infiniteTab != null)
+        {
+            SetAnchored(
+                infiniteTab.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.51f,
+                    0.755f
+                ),
+                new Vector2(
+                    0.93f,
+                    0.835f
+                )
+            );
+        }
+
+        if (countText != null)
+        {
+            SetAnchored(
+                countText.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.50f,
+                    0.705f
+                ),
+                new Vector2(
+                    0.93f,
+                    0.75f
+                )
+            );
+        }
+
+        if (scroll != null)
+        {
+            RectTransform scrollRect =
+                scroll.GetComponent<
+                    RectTransform
+                >();
+
+            SetAnchored(
+                scrollRect,
+                new Vector2(
+                    0.055f,
+                    0.045f
+                ),
+                new Vector2(
+                    0.945f,
+                    0.695f
+                )
+            );
+
+            scroll.horizontal =
+                false;
+
+            scroll.vertical =
+                true;
+
+            scroll.movementType =
+                ScrollRect.MovementType.Clamped;
+
+            scroll.scrollSensitivity =
+                65f;
+        }
+
+        if (closeButton != null)
+        {
+            SetAnchored(
+                closeButton.GetComponent<
+                    RectTransform
+                >(),
+                new Vector2(
+                    0.875f,
+                    0.875f
+                ),
+                new Vector2(
+                    0.955f,
+                    0.95f
+                )
+            );
+
+            Image image =
+                closeButton.GetComponent<
+                    Image
+                >();
+
+            if (image != null)
+            {
+                image.raycastTarget =
+                    true;
+            }
+        }
+    }
+
+    private static void SetAnchored(
+        RectTransform rect,
+        Vector2 min,
+        Vector2 max
+    )
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
+    }
+
+    // =========================================================
+    // LISTENERS
+    // =========================================================
 
     private void ConfigureListeners()
     {
@@ -341,10 +543,16 @@ public class AchievementsUI3D : MonoBehaviour
         Refresh();
     }
 
+    // =========================================================
+    // REFRESH
+    // =========================================================
+
     private void Refresh()
     {
         if (contentRoot == null)
+        {
             return;
+        }
 
         ClearContent();
 
@@ -354,8 +562,8 @@ public class AchievementsUI3D : MonoBehaviour
                     currentMode
                 );
 
-        const float cardHeight = 108f;
-        const float gap = 9f;
+        const float cardHeight = 116f;
+        const float gap = 8f;
 
         contentRoot.sizeDelta =
             new Vector2(
@@ -411,6 +619,10 @@ public class AchievementsUI3D : MonoBehaviour
             );
         }
     }
+
+    // =========================================================
+    // CARD
+    // =========================================================
 
     private void CreateCard(
         AchievementDefinition3D definition,
@@ -526,11 +738,11 @@ public class AchievementsUI3D : MonoBehaviour
             TextAlignmentOptions.Left,
             new Vector2(
                 0.035f,
-                0.66f
+                0.64f
             ),
             new Vector2(
                 0.63f,
-                0.92f
+                0.93f
             )
         );
 
@@ -548,11 +760,11 @@ public class AchievementsUI3D : MonoBehaviour
             TextAlignmentOptions.Left,
             new Vector2(
                 0.035f,
-                0.34f
+                0.33f
             ),
             new Vector2(
                 0.63f,
-                0.65f
+                0.63f
             )
         );
 
@@ -578,7 +790,7 @@ public class AchievementsUI3D : MonoBehaviour
             TextAlignmentOptions.Left,
             new Vector2(
                 0.035f,
-                0.07f
+                0.055f
             ),
             new Vector2(
                 0.63f,
@@ -602,11 +814,11 @@ public class AchievementsUI3D : MonoBehaviour
             TextAlignmentOptions.Center,
             new Vector2(
                 0.70f,
-                0.67f
+                0.66f
             ),
             new Vector2(
                 0.97f,
-                0.91f
+                0.92f
             )
         );
 
@@ -661,11 +873,11 @@ public class AchievementsUI3D : MonoBehaviour
             >(),
             new Vector2(
                 0.70f,
-                0.18f
+                0.12f
             ),
             new Vector2(
                 0.97f,
-                0.53f
+                0.50f
             )
         );
 
@@ -694,6 +906,10 @@ public class AchievementsUI3D : MonoBehaviour
             }
         );
     }
+
+    // =========================================================
+    // TABS
+    // =========================================================
 
     private void RefreshTabs()
     {
@@ -752,6 +968,10 @@ public class AchievementsUI3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // IMAGE
+    // =========================================================
+
     private static GameObject CreateImage(
         string name,
         Transform parent,
@@ -771,7 +991,9 @@ public class AchievementsUI3D : MonoBehaviour
         );
 
         Image image =
-            go.GetComponent<Image>();
+            go.GetComponent<
+                Image
+            >();
 
         image.sprite =
             RuntimeUISprite3D
@@ -785,6 +1007,10 @@ public class AchievementsUI3D : MonoBehaviour
 
         return go;
     }
+
+    // =========================================================
+    // TEXT
+    // =========================================================
 
     private static GameObject CreateText(
         string name,
@@ -847,6 +1073,10 @@ public class AchievementsUI3D : MonoBehaviour
         return go;
     }
 
+    // =========================================================
+    // BUTTON
+    // =========================================================
+
     private static GameObject CreateButton(
         string name,
         Transform parent,
@@ -868,11 +1098,6 @@ public class AchievementsUI3D : MonoBehaviour
                 Image
             >();
 
-        // =====================================================
-        // ГЛАВНОЕ ИСПРАВЛЕНИЕ:
-        // КНОПКА ДОЛЖНА ПРИНИМАТЬ RAYCAST
-        // =====================================================
-
         image.raycastTarget =
             true;
 
@@ -887,37 +1112,17 @@ public class AchievementsUI3D : MonoBehaviour
         button.transition =
             Selectable.Transition.ColorTint;
 
-        GameObject text =
-            CreateText(
-                "Label",
-                go.transform,
-                label,
-                size,
-                textColor,
-                TextAlignmentOptions.Center,
-                Vector2.zero,
-                Vector2.one
-            );
+        CreateText(
+            "Label",
+            go.transform,
+            label,
+            size,
+            textColor,
+            TextAlignmentOptions.Center,
+            Vector2.zero,
+            Vector2.one
+        );
 
         return go;
-    }
-
-    private static void SetAnchored(
-        RectTransform rect,
-        Vector2 min,
-        Vector2 max
-    )
-    {
-        rect.anchorMin =
-            min;
-
-        rect.anchorMax =
-            max;
-
-        rect.offsetMin =
-            Vector2.zero;
-
-        rect.offsetMax =
-            Vector2.zero;
     }
 }
