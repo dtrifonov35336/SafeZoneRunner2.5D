@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[DisallowMultipleComponent]
 [RequireComponent(typeof(Button))]
 public class UIButtonSound3D : MonoBehaviour
 {
@@ -13,6 +14,21 @@ public class UIButtonSound3D : MonoBehaviour
     }
 
     private void OnEnable()
+    {
+        Bind();
+    }
+
+    private void OnDisable()
+    {
+        if (button == null)
+            return;
+
+        button.onClick.RemoveListener(
+            PlayClickSound
+        );
+    }
+
+    public void Bind()
     {
         if (button == null)
         {
@@ -28,16 +44,6 @@ public class UIButtonSound3D : MonoBehaviour
         );
 
         button.onClick.AddListener(
-            PlayClickSound
-        );
-    }
-
-    private void OnDisable()
-    {
-        if (button == null)
-            return;
-
-        button.onClick.RemoveListener(
             PlayClickSound
         );
     }

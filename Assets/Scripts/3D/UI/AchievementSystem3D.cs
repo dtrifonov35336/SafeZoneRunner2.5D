@@ -55,10 +55,6 @@ public static class AchievementSystem3D
             AchievementDefinition3D
         >
         {
-            // =================================================
-            // УБЕЖИЩЕ — СТАРЫЕ
-            // =================================================
-
             new AchievementDefinition3D(
                 "shelter_first",
                 "ПЕРВЫЙ ПРИХОД",
@@ -90,10 +86,6 @@ public static class AchievementSystem3D
                 AchievementMode3D.Shelter,
                 300
             ),
-
-            // =================================================
-            // УБЕЖИЩЕ — НОВЫЕ
-            // =================================================
 
             new AchievementDefinition3D(
                 "shelter_rescue_8",
@@ -135,10 +127,6 @@ public static class AchievementSystem3D
                 450
             ),
 
-            // =================================================
-            // БЕСКОНЕЧНЫЙ — СТАРЫЕ
-            // =================================================
-
             new AchievementDefinition3D(
                 "infinite_1000",
                 "ПЕРВАЯ ТЫСЯЧА",
@@ -178,10 +166,6 @@ public static class AchievementSystem3D
                 AchievementMode3D.Infinite,
                 200
             ),
-
-            // =================================================
-            // БЕСКОНЕЧНЫЙ — НОВЫЕ
-            // =================================================
 
             new AchievementDefinition3D(
                 "infinite_coins_150",
@@ -306,8 +290,7 @@ public static class AchievementSystem3D
 
     public static int GetUnclaimedCount()
     {
-        int count =
-            0;
+        int count = 0;
 
         foreach (
             AchievementDefinition3D achievement
@@ -407,7 +390,20 @@ public static class AchievementSystem3D
         PlayerPrefs.Save();
 
         // =====================================================
-        // СРАЗУ ОБНОВЛЯЕМ БАЛАНС В ГЛАВНОМ МЕНЮ
+        // ЗВУК ПОЛУЧЕНИЯ НАГРАДЫ
+        // =====================================================
+
+        if (
+            AudioManager3D.Instance !=
+            null
+        )
+        {
+            AudioManager3D.Instance
+                .PlayRewardClaim();
+        }
+
+        // =====================================================
+        // ОБНОВЛЕНИЕ БАЛАНСА
         // =====================================================
 
         MainMenuManager menu =

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -21,12 +22,23 @@ public class AudioManager3D : MonoBehaviour
     [Header("UI")]
     [SerializeField] private AudioClip menuClickClip;
 
+    [Header("Награды")]
+    [SerializeField] private AudioClip rewardClaimClip;
+
     [Header("Громкость")]
     [Range(0f, 1f)]
     [SerializeField] private float musicVolume = 0.35f;
 
     [Range(0f, 1f)]
     [SerializeField] private float sfxVolume = 0.8f;
+
+    [Header("Монеты")]
+    [Tooltip("Минимальный интервал между звуками сбора монет.")]
+    [SerializeField] private float coinSoundInterval = 0.07f;
+
+    [Header("Автопривязка UI-кнопок")]
+    [Tooltip("Как часто искать новые динамически созданные кнопки в меню.")]
+    [SerializeField] private float buttonScanInterval = 0.25f;
 
     private AudioSource musicSource;
     private AudioSource gameplaySfxSource;
@@ -35,6 +47,10 @@ public class AudioManager3D : MonoBehaviour
     private bool deathPlayed;
 
     private string previousSceneName;
+
+    private float nextCoinSoundTime;
+
+    private float buttonScanTimer;
 
     private void Awake()
     {
@@ -52,7 +68,7 @@ public class AudioManager3D : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         // =====================================================
-        // MUSIC SOURCE
+        // MUSIC
         // =====================================================
 
         musicSource =
@@ -64,7 +80,7 @@ public class AudioManager3D : MonoBehaviour
         musicSource.volume = musicVolume;
 
         // =====================================================
-        // GAMEPLAY SFX SOURCE
+        // GAMEPLAY SFX
         // =====================================================
 
         gameplaySfxSource =
@@ -76,7 +92,7 @@ public class AudioManager3D : MonoBehaviour
         gameplaySfxSource.volume = sfxVolume;
 
         // =====================================================
-        // UI SFX SOURCE
+        // UI SFX
         // =====================================================
 
         uiSfxSource =
@@ -90,6 +106,12 @@ public class AudioManager3D : MonoBehaviour
         previousSceneName =
             SceneManager.GetActiveScene().name;
 
+        nextCoinSoundTime =
+            0f;
+
+        buttonScanTimer =
+            0f;
+
         SceneManager.sceneLoaded +=
             OnSceneLoaded;
     }
@@ -99,6 +121,32 @@ public class AudioManager3D : MonoBehaviour
         PlayMusicForCurrentScene();
 
         BindButtonSoundsInCurrentScene();
+
+        StartCoroutine(
+            DelayedButtonBind()
+        );
+    }
+
+    private void Update()
+    {
+        string sceneName =
+            SceneManager.GetActiveScene().name;
+
+        // Динамические кнопки нужны главным образом
+        // в меню и его разделах.
+        if (IsMenuScene(sceneName))
+        {
+            buttonScanTimer -=
+                Time.unscaledDeltaTime;
+
+            if (buttonScanTimer <= 0f)
+            {
+                buttonScanTimer =
+                    buttonScanInterval;
+
+                BindButtonSoundsInCurrentScene();
+            }
+        }
     }
 
     private void OnDestroy()
@@ -113,7 +161,7 @@ public class AudioManager3D : MonoBehaviour
     )
     {
         // =====================================================
-        // ОСТАНАВЛИВАЕМ ИГРОВЫЕ SFX ПРИ ВЫХОДЕ ИЗ ЗАБЕГА
+        // ВЫХОД ИЗ ЗАБЕГА
         // =====================================================
 
         if (
@@ -126,6 +174,9 @@ public class AudioManager3D : MonoBehaviour
 
         deathPlayed = false;
 
+        nextCoinSoundTime =
+            0f;
+
         previousSceneName =
             scene.name;
 
@@ -136,8 +187,28 @@ public class AudioManager3D : MonoBehaviour
         PlayMusicForCurrentScene();
 
         // =====================================================
-        // ЗВУК КНОПОК
+        // КНОПКИ
         // =====================================================
+
+        buttonScanTimer =
+            0f;
+
+        BindButtonSoundsInCurrentScene();
+
+        StartCoroutine(
+            DelayedButtonBind()
+        );
+    }
+
+    private IEnumerator DelayedButtonBind()
+    {
+        // Кнопки, создаваемые в Start(),
+        // появятся после первого прохода AudioManager.
+        yield return null;
+
+        BindButtonSoundsInCurrentScene();
+
+        yield return null;
 
         BindButtonSoundsInCurrentScene();
     }
@@ -166,7 +237,9 @@ public class AudioManager3D : MonoBehaviour
         AudioClip targetClip =
             null;
 
-        if (sceneName == "MainRoad")
+        if (
+            sceneName == "MainRoad"
+        )
         {
             targetClip =
                 runMusic;
@@ -179,7 +252,6 @@ public class AudioManager3D : MonoBehaviour
                 mainMenuMusic;
         }
 
-        // Нет музыки для данной сцены
         if (targetClip == null)
         {
             musicSource.Stop();
@@ -187,8 +259,8 @@ public class AudioManager3D : MonoBehaviour
             return;
         }
 
-        // Уже играет нужная музыка.
-        // Ничего не перезапускаем.
+        // Та же музыка уже играет.
+        // Не перезапускаем её.
         if (
             musicSource.isPlaying &&
             musicSource.clip == targetClip
@@ -209,15 +281,41 @@ public class AudioManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // GAMEPLAY SFX
+    // COIN
     // =========================================================
 
     public void PlayCoin()
     {
-        PlayGameplaySFX(
-            coinClip
+        if (coinClip == null)
+            return;
+
+        float now =
+            Time.unscaledTime;
+
+        if (
+            now <
+            nextCoinSoundTime
+        )
+        {
+            return;
+        }
+
+        nextCoinSoundTime =
+            now +
+            Mathf.Max(
+                0.01f,
+                coinSoundInterval
+            );
+
+        gameplaySfxSource.PlayOneShot(
+            coinClip,
+            sfxVolume
         );
     }
+
+    // =========================================================
+    // OTHER GAMEPLAY SFX
+    // =========================================================
 
     public void PlayHeart()
     {
@@ -278,10 +376,13 @@ public class AudioManager3D : MonoBehaviour
             return;
 
         gameplaySfxSource.Stop();
+
+        gameplaySfxSource.pitch =
+            1f;
     }
 
     // =========================================================
-    // UI SFX
+    // UI CLICK
     // =========================================================
 
     public void PlayMenuClick()
@@ -296,52 +397,54 @@ public class AudioManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // АВТОМАТИЧЕСКИЙ ЗВУК ВСЕХ BUTTON
+    // REWARD CLAIM
+    // =========================================================
+
+    public void PlayRewardClaim()
+    {
+        if (rewardClaimClip == null)
+            return;
+
+        uiSfxSource.PlayOneShot(
+            rewardClaimClip,
+            sfxVolume
+        );
+    }
+
+    // =========================================================
+    // BUTTON AUTO BINDING
     // =========================================================
 
     private void BindButtonSoundsInCurrentScene()
     {
-        Scene scene =
-            SceneManager.GetActiveScene();
-
-        if (!scene.IsValid())
-            return;
-
-        GameObject[] roots =
-            scene.GetRootGameObjects();
+        Button[] buttons =
+            FindObjectsByType<Button>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
 
         foreach (
-            GameObject root
-            in roots
+            Button button
+            in buttons
         )
         {
-            if (root == null)
+            if (button == null)
                 continue;
 
-            Button[] buttons =
-                root.GetComponentsInChildren<Button>(
-                    true
-                );
+            UIButtonSound3D sound =
+                button.GetComponent<
+                    UIButtonSound3D
+                >();
 
-            foreach (
-                Button button
-                in buttons
-            )
+            if (sound == null)
             {
-                if (button == null)
-                    continue;
-
-                if (
-                    button.GetComponent<
-                        UIButtonSound3D
-                    >() == null
-                )
-                {
+                sound =
                     button.gameObject.AddComponent<
                         UIButtonSound3D
                     >();
-                }
             }
+
+            sound.Bind();
         }
     }
 

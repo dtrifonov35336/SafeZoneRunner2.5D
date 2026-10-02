@@ -105,7 +105,11 @@ public class DailyLoginUI3D : MonoBehaviour
         }
 
         if (modal != null)
-            modal.OpenModal(gameObject);
+        {
+            modal.OpenModal(
+                gameObject
+            );
+        }
 
         Refresh();
     }
@@ -132,10 +136,13 @@ public class DailyLoginUI3D : MonoBehaviour
         if (window == null)
         {
             Transform found =
-                transform.Find("Window");
+                transform.Find(
+                    "Window"
+                );
 
             if (found != null)
-                window = found.gameObject;
+                window =
+                    found.gameObject;
         }
 
         if (contentRoot == null)
@@ -486,6 +493,7 @@ public class DailyLoginUI3D : MonoBehaviour
         if (claimedToday)
         {
             state = "ПОЛУЧЕНО";
+
             stateColor =
                 new Color32(
                     105,
@@ -497,6 +505,7 @@ public class DailyLoginUI3D : MonoBehaviour
         else if (past)
         {
             state = "ПОЛУЧЕНО";
+
             stateColor =
                 new Color32(
                     105,
@@ -508,6 +517,7 @@ public class DailyLoginUI3D : MonoBehaviour
         else if (current)
         {
             state = "ПОЛУЧИТЬ";
+
             stateColor =
                 new Color32(
                     244,
@@ -519,6 +529,7 @@ public class DailyLoginUI3D : MonoBehaviour
         else
         {
             state = "СКОРО";
+
             stateColor =
                 new Color32(
                     112,
@@ -558,7 +569,9 @@ public class DailyLoginUI3D : MonoBehaviour
         );
 
         Button button =
-            stateObject.GetComponent<Button>();
+            stateObject.GetComponent<
+                Button
+            >();
 
         button.interactable =
             current &&
@@ -638,6 +651,23 @@ public class DailyLoginUI3D : MonoBehaviour
         );
 
         PlayerPrefs.Save();
+
+        // =====================================================
+        // ЗВУК ПОЛУЧЕНИЯ НАГРАДЫ
+        // =====================================================
+
+        if (
+            AudioManager3D.Instance !=
+            null
+        )
+        {
+            AudioManager3D.Instance
+                .PlayRewardClaim();
+        }
+
+        // =====================================================
+        // ОБНОВЛЕНИЕ БАЛАНСА
+        // =====================================================
 
         MainMenuManager menu =
             MainMenuManager.Instance;
@@ -761,7 +791,8 @@ public class DailyLoginUI3D : MonoBehaviour
             RuntimeUISprite3D
                 .GetSolidSprite();
 
-        image.color = color;
+        image.color =
+            color;
 
         return go;
     }
@@ -802,15 +833,27 @@ public class DailyLoginUI3D : MonoBehaviour
                 TextMeshProUGUI
             >();
 
-        text.text = value;
-        text.fontSize = size;
-        text.color = color;
-        text.alignment = alignment;
-        text.raycastTarget = false;
+        text.text =
+            value;
+
+        text.fontSize =
+            size;
+
+        text.color =
+            color;
+
+        text.alignment =
+            alignment;
+
+        text.raycastTarget =
+            false;
+
         text.textWrappingMode =
             TextWrappingModes.Normal;
 
-        RuntimeUIText3D.Apply(text);
+        RuntimeUIText3D.Apply(
+            text
+        );
 
         return go;
     }
@@ -847,7 +890,9 @@ public class DailyLoginUI3D : MonoBehaviour
             );
 
         button.targetGraphic =
-            go.GetComponent<Image>();
+            go.GetComponent<
+                Image
+            >();
 
         return go;
     }
@@ -858,9 +903,16 @@ public class DailyLoginUI3D : MonoBehaviour
         Vector2 max
     )
     {
-        rect.anchorMin = min;
-        rect.anchorMax = max;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        rect.anchorMin =
+            min;
+
+        rect.anchorMax =
+            max;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 }
