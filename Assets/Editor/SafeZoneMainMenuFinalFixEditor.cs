@@ -18,9 +18,6 @@ public static class SafeZoneMainMenuFinalFixEditor
     private const string RoundedPath =
         "Assets/GeneratedUI/SafeZoneRoundedUI.png";
 
-    private const string WhitePath =
-        "Assets/GeneratedUI/SafeZoneWhiteUI.png";
-
     // =========================================================
     // MENU
     // =========================================================
@@ -58,7 +55,7 @@ public static class SafeZoneMainMenuFinalFixEditor
             return;
         }
 
-        EnsureGeneratedSprites();
+        EnsureRoundedSprite();
 
         Transform canvasTransform =
             canvas.transform;
@@ -200,12 +197,15 @@ public static class SafeZoneMainMenuFinalFixEditor
         EditorUtility.DisplayDialog(
             "MainMenu пересобран",
             "Готово.\n\n" +
-            "Старые Window/Panel/Tabs/ScrollView удалены.\n" +
-            "Кнопки пересозданы.\n" +
-            "Крестики теперь квадратные.\n" +
+            "Окна полностью пересозданы.\n" +
+            "Крестики сделаны квадратными.\n" +
+            "Текст крестика увеличен.\n" +
+            "Вкладки достижений уменьшены и подняты.\n" +
+            "Серия Daily Login поднята.\n" +
+            "Настройки подняты ближе к заголовку.\n" +
             "Toggle уменьшен.\n" +
-            "Slider интерактивный.\n" +
-            "Все четыре угла UI исправлены.",
+            "Handle громкости уменьшен.\n" +
+            "ScrollView увеличен по высоте.",
             "OK"
         );
     }
@@ -229,9 +229,7 @@ public static class SafeZoneMainMenuFinalFixEditor
         )
         {
             Transform found =
-                canvas.Find(
-                    name
-                );
+                canvas.Find(name);
 
             if (found != null)
             {
@@ -252,9 +250,7 @@ public static class SafeZoneMainMenuFinalFixEditor
     )
     {
         Transform found =
-            canvas.Find(
-                name
-            );
+            canvas.Find(name);
 
         GameObject root;
 
@@ -287,9 +283,7 @@ public static class SafeZoneMainMenuFinalFixEditor
                 RectTransform
             >();
 
-        SetStretch(
-            rect
-        );
+        SetStretch(rect);
 
         root.transform.localScale =
             Vector3.one;
@@ -338,18 +332,18 @@ public static class SafeZoneMainMenuFinalFixEditor
         CreateHeader(
             panel.transform,
             "НАСТРОЙКИ",
-            out GameObject close
+            out GameObject closeButton
         );
 
         // -----------------------------------------------------
-        // SOUND
+        // ЗВУК
         // -----------------------------------------------------
 
         GameObject sound =
             CreateSection(
                 panel.transform,
                 "SoundSection",
-                0.59f,
+                0.62f,
                 0.82f,
                 "ЗВУК"
             );
@@ -360,15 +354,15 @@ public static class SafeZoneMainMenuFinalFixEditor
             "Общая громкость",
             16f,
             new Color32(
-                232,
                 235,
-                229,
+                237,
+                231,
                 255
             ),
             TextAlignmentOptions.Left,
             new Vector2(
                 0.06f,
-                0.30f
+                0.25f
             ),
             new Vector2(
                 0.40f,
@@ -386,15 +380,15 @@ public static class SafeZoneMainMenuFinalFixEditor
             "100%",
             15f,
             new Color32(
-                239,
-                202,
-                78,
+                241,
+                200,
+                73,
                 255
             ),
             TextAlignmentOptions.Right,
             new Vector2(
                 0.82f,
-                0.30f
+                0.25f
             ),
             new Vector2(
                 0.94f,
@@ -403,15 +397,15 @@ public static class SafeZoneMainMenuFinalFixEditor
         );
 
         // -----------------------------------------------------
-        // CONTROL
+        // УПРАВЛЕНИЕ
         // -----------------------------------------------------
 
         GameObject control =
             CreateSection(
                 panel.transform,
                 "ControlSection",
-                0.33f,
-                0.56f,
+                0.44f,
+                0.58f,
                 "УПРАВЛЕНИЕ"
             );
 
@@ -421,19 +415,19 @@ public static class SafeZoneMainMenuFinalFixEditor
             "Вибрация",
             16f,
             new Color32(
-                232,
                 235,
-                229,
+                237,
+                231,
                 255
             ),
             TextAlignmentOptions.Left,
             new Vector2(
                 0.06f,
-                0.30f
+                0.25f
             ),
             new Vector2(
                 0.55f,
-                0.58f
+                0.62f
             )
         );
 
@@ -442,15 +436,15 @@ public static class SafeZoneMainMenuFinalFixEditor
         );
 
         // -----------------------------------------------------
-        // PERFORMANCE
+        // ПРОИЗВОДИТЕЛЬНОСТЬ
         // -----------------------------------------------------
 
         GameObject performance =
             CreateSection(
                 panel.transform,
                 "PerformanceSection",
-                0.07f,
-                0.30f,
+                0.20f,
+                0.39f,
                 "ПРОИЗВОДИТЕЛЬНОСТЬ"
             );
 
@@ -464,7 +458,7 @@ public static class SafeZoneMainMenuFinalFixEditor
             ),
             new Vector2(
                 0.47f,
-                0.57f
+                0.55f
             ),
             14f
         );
@@ -479,7 +473,7 @@ public static class SafeZoneMainMenuFinalFixEditor
             ),
             new Vector2(
                 0.94f,
-                0.57f
+                0.55f
             ),
             14f
         );
@@ -490,7 +484,7 @@ public static class SafeZoneMainMenuFinalFixEditor
             sound,
             control,
             performance,
-            close
+            closeButton
         );
     }
 
@@ -516,7 +510,7 @@ public static class SafeZoneMainMenuFinalFixEditor
         CreateHeader(
             panel.transform,
             "ДОСТИЖЕНИЯ",
-            out GameObject close
+            out GameObject closeButton
         );
 
         GameObject tabs =
@@ -530,17 +524,18 @@ public static class SafeZoneMainMenuFinalFixEditor
             false
         );
 
+        // Подняли и уменьшили.
         SetAnchored(
             tabs.GetComponent<
                 RectTransform
             >(),
             new Vector2(
                 0.065f,
-                0.735f
+                0.765f
             ),
             new Vector2(
                 0.935f,
-                0.815f
+                0.835f
             )
         );
 
@@ -575,7 +570,7 @@ public static class SafeZoneMainMenuFinalFixEditor
         );
 
         // -----------------------------------------------------
-        // COUNT BOX
+        // COUNT
         // -----------------------------------------------------
 
         GameObject countBox =
@@ -583,7 +578,7 @@ public static class SafeZoneMainMenuFinalFixEditor
                 "CountBox",
                 panel.transform,
                 new Color32(
-                    28,
+                    29,
                     49,
                     57,
                     255
@@ -596,11 +591,11 @@ public static class SafeZoneMainMenuFinalFixEditor
             >(),
             new Vector2(
                 0.62f,
-                0.675f
+                0.71f
             ),
             new Vector2(
                 0.935f,
-                0.72f
+                0.755f
             )
         );
 
@@ -610,19 +605,19 @@ public static class SafeZoneMainMenuFinalFixEditor
             "НЕТ ДОСТУПНЫХ НАГРАД",
             11f,
             new Color32(
-                217,
-                222,
-                215,
+                218,
+                223,
+                216,
                 255
             ),
             TextAlignmentOptions.Center,
             new Vector2(
                 0.62f,
-                0.675f
+                0.71f
             ),
             new Vector2(
                 0.935f,
-                0.72f
+                0.755f
             )
         );
 
@@ -630,16 +625,17 @@ public static class SafeZoneMainMenuFinalFixEditor
         // SCROLL
         // -----------------------------------------------------
 
+        // Увеличили вниз.
         CreateScroll(
             panel.transform,
             "ScrollView",
             new Vector2(
                 0.055f,
-                0.075f
+                0.055f
             ),
             new Vector2(
                 0.945f,
-                0.655f
+                0.695f
             )
         );
 
@@ -647,12 +643,12 @@ public static class SafeZoneMainMenuFinalFixEditor
             controller,
             window,
             tabs,
-            close
+            closeButton
         );
     }
 
     // =========================================================
-    // DAILY
+    // DAILY LOGIN
     // =========================================================
 
     private static void BuildDailyLogin(
@@ -673,7 +669,7 @@ public static class SafeZoneMainMenuFinalFixEditor
         CreateHeader(
             panel.transform,
             "ЕЖЕДНЕВНЫЙ ВХОД",
-            out GameObject close
+            out GameObject closeButton
         );
 
         // -----------------------------------------------------
@@ -686,23 +682,24 @@ public static class SafeZoneMainMenuFinalFixEditor
                 panel.transform,
                 new Color32(
                     49,
-                    62,
+                    63,
                     49,
                     255
                 )
             );
 
+        // Подняли ближе к заголовку.
         SetAnchored(
             streakBox.GetComponent<
                 RectTransform
             >(),
             new Vector2(
                 0.20f,
-                0.755f
+                0.79f
             ),
             new Vector2(
                 0.80f,
-                0.815f
+                0.85f
             )
         );
 
@@ -720,11 +717,11 @@ public static class SafeZoneMainMenuFinalFixEditor
             TextAlignmentOptions.Center,
             new Vector2(
                 0.22f,
-                0.76f
+                0.795f
             ),
             new Vector2(
                 0.78f,
-                0.81f
+                0.845f
             )
         );
 
@@ -737,18 +734,18 @@ public static class SafeZoneMainMenuFinalFixEditor
             "ScrollView",
             new Vector2(
                 0.055f,
-                0.075f
+                0.055f
             ),
             new Vector2(
                 0.945f,
-                0.715f
+                0.75f
             )
         );
 
         AssignDailyReferences(
             controller,
             window,
-            close
+            closeButton
         );
     }
 
@@ -859,17 +856,19 @@ public static class SafeZoneMainMenuFinalFixEditor
                 -2f
             );
 
+        // Немного компактнее по высоте,
+        // чтобы снизу не было огромной пустоты.
         SetAnchored(
             panel.GetComponent<
                 RectTransform
             >(),
             new Vector2(
                 0.095f,
-                0.055f
+                0.075f
             ),
             new Vector2(
                 0.905f,
-                0.945f
+                0.925f
             )
         );
 
@@ -883,31 +882,9 @@ public static class SafeZoneMainMenuFinalFixEditor
     private static void CreateHeader(
         Transform panel,
         string title,
-        out GameObject close
+        out GameObject closeButton
     )
     {
-        CreateText(
-            "Title",
-            panel,
-            title,
-            27f,
-            new Color32(
-                237,
-                239,
-                232,
-                255
-            ),
-            TextAlignmentOptions.Left,
-            new Vector2(
-                0.085f,
-                0.885f
-            ),
-            new Vector2(
-                0.72f,
-                0.95f
-            )
-        );
-
         GameObject accent =
             CreateRoundedImage(
                 "TitleAccent",
@@ -926,33 +903,62 @@ public static class SafeZoneMainMenuFinalFixEditor
             >(),
             new Vector2(
                 0.055f,
-                0.89f
+                0.885f
             ),
             new Vector2(
                 0.068f,
+                0.945f
+            )
+        );
+
+        CreateText(
+            "Title",
+            panel,
+            title,
+            27f,
+            new Color32(
+                237,
+                239,
+                232,
+                255
+            ),
+            TextAlignmentOptions.Left,
+            new Vector2(
+                0.085f,
+                0.875f
+            ),
+            new Vector2(
+                0.72f,
                 0.95f
             )
         );
 
-        close =
+        // -----------------------------------------------------
+        // CLOSE
+        // -----------------------------------------------------
+
+        closeButton =
             CreateButton(
                 panel,
                 "Close",
                 "×",
-                Vector2.zero,
-                Vector2.one,
-                20f
+                new Vector2(
+                    0f,
+                    0f
+                ),
+                new Vector2(
+                    0f,
+                    0f
+                ),
+                30f
             );
 
         RectTransform closeRect =
-            close.GetComponent<
+            closeButton.GetComponent<
                 RectTransform
             >();
 
-        // КРИТИЧНО:
-        // фиксированный квадрат,
-        // НЕ растягиваем якорями.
-
+        // Только фиксированный квадрат.
         closeRect.anchorMin =
             new Vector2(
                 1f,
@@ -973,15 +979,32 @@ public static class SafeZoneMainMenuFinalFixEditor
 
         closeRect.sizeDelta =
             new Vector2(
-                64f,
-                64f
+                58f,
+                58f
             );
 
         closeRect.anchoredPosition =
             new Vector2(
-                -22f,
-                -18f
+                -20f,
+                -15f
             );
+
+        TextMeshProUGUI closeText =
+            closeButton
+                .transform
+                .Find("Label")
+                ?.GetComponent<
+                    TextMeshProUGUI
+                >();
+
+        if (closeText != null)
+        {
+            closeText.fontSize =
+                30f;
+
+            closeText.alignment =
+                TextAlignmentOptions.Center;
+        }
     }
 
     // =========================================================
@@ -1027,9 +1050,9 @@ public static class SafeZoneMainMenuFinalFixEditor
                 "Header",
                 section.transform,
                 new Color32(
-                    41,
-                    61,
-                    69,
+                    42,
+                    62,
+                    70,
                     255
                 )
             );
@@ -1040,7 +1063,7 @@ public static class SafeZoneMainMenuFinalFixEditor
             >(),
             new Vector2(
                 0.015f,
-                0.73f
+                0.69f
             ),
             new Vector2(
                 0.985f,
@@ -1167,11 +1190,25 @@ public static class SafeZoneMainMenuFinalFixEditor
                 )
             );
 
-        SetStretch(
+        SetAnchored(
             background.GetComponent<
                 RectTransform
-            >()
+            >(),
+            new Vector2(
+                0f,
+                0.35f
+            ),
+            new Vector2(
+                1f,
+                0.65f
+            )
         );
+
+        Image backgroundImage =
+            background.GetComponent<Image>();
+
+        backgroundImage.raycastTarget =
+            true;
 
         // -----------------------------------------------------
         // FILL AREA
@@ -1193,12 +1230,12 @@ public static class SafeZoneMainMenuFinalFixEditor
                 RectTransform
             >(),
             new Vector2(
-                0.04f,
-                0.28f
+                0f,
+                0.35f
             ),
             new Vector2(
-                0.96f,
-                0.72f
+                1f,
+                0.65f
             )
         );
 
@@ -1242,10 +1279,7 @@ public static class SafeZoneMainMenuFinalFixEditor
             );
 
         fillRect.sizeDelta =
-            new Vector2(
-                0f,
-                0f
-            );
+            Vector2.zero;
 
         // -----------------------------------------------------
         // HANDLE AREA
@@ -1307,11 +1341,18 @@ public static class SafeZoneMainMenuFinalFixEditor
                 0.5f
             );
 
+        // Было крупнее.
+        // Теперь только немного выше fill-бара.
         handleRect.sizeDelta =
             new Vector2(
-                26f,
-                26f
+                20f,
+                20f
             );
+
+        handle.GetComponent<
+            Image
+        >().raycastTarget =
+            true;
 
         slider.fillRect =
             fillRect;
@@ -1320,7 +1361,9 @@ public static class SafeZoneMainMenuFinalFixEditor
             handleRect;
 
         slider.targetGraphic =
-            handle.GetComponent<Image>();
+            handle.GetComponent<
+                Image
+            >();
 
         return slider;
     }
@@ -1368,15 +1411,16 @@ public static class SafeZoneMainMenuFinalFixEditor
                 0.5f
             );
 
+        // Значительно меньше старого 240x240.
         rect.sizeDelta =
             new Vector2(
-                82f,
-                46f
+                74f,
+                40f
             );
 
         rect.anchoredPosition =
             new Vector2(
-                -26f,
+                -28f,
                 0f
             );
 
@@ -1404,6 +1448,10 @@ public static class SafeZoneMainMenuFinalFixEditor
                 RectTransform
             >()
         );
+
+        background.GetComponent<Image>()
+            .raycastTarget =
+            true;
 
         // -----------------------------------------------------
         // CHECKMARK
@@ -1446,8 +1494,8 @@ public static class SafeZoneMainMenuFinalFixEditor
 
         checkRect.sizeDelta =
             new Vector2(
-                30f,
-                30f
+                26f,
+                26f
             );
 
         checkRect.anchoredPosition =
@@ -1500,16 +1548,49 @@ public static class SafeZoneMainMenuFinalFixEditor
                 RectTransform
             >();
 
-        SetAnchored(
-            rect,
-            min,
-            max
-        );
+        if (
+            min == Vector2.zero &&
+            max == Vector2.zero
+        )
+        {
+            rect.anchorMin =
+                new Vector2(
+                    0.5f,
+                    0.5f
+                );
+
+            rect.anchorMax =
+                new Vector2(
+                    0.5f,
+                    0.5f
+                );
+
+            rect.pivot =
+                new Vector2(
+                    0.5f,
+                    0.5f
+                );
+
+            rect.sizeDelta =
+                new Vector2(
+                    58f,
+                    58f
+                );
+
+            rect.anchoredPosition =
+                Vector2.zero;
+        }
+        else
+        {
+            SetAnchored(
+                rect,
+                min,
+                max
+            );
+        }
 
         Image image =
-            go.GetComponent<
-                Image
-            >();
+            go.GetComponent<Image>();
 
         image.sprite =
             LoadRoundedSprite();
@@ -1525,13 +1606,14 @@ public static class SafeZoneMainMenuFinalFixEditor
                 255
             );
 
+        image.preserveAspect =
+            false;
+
         image.raycastTarget =
             true;
 
         Button button =
-            go.GetComponent<
-                Button
-            >();
+            go.GetComponent<Button>();
 
         button.targetGraphic =
             image;
@@ -1552,19 +1634,19 @@ public static class SafeZoneMainMenuFinalFixEditor
             label,
             fontSize,
             new Color32(
-                234,
-                236,
-                230,
+                235,
+                237,
+                231,
                 255
             ),
             TextAlignmentOptions.Center,
             new Vector2(
-                0.05f,
-                0.04f
+                0.04f,
+                0.03f
             ),
             new Vector2(
-                0.95f,
-                0.96f
+                0.96f,
+                0.97f
             )
         );
 
@@ -1748,11 +1830,11 @@ public static class SafeZoneMainMenuFinalFixEditor
         image.type =
             Image.Type.Sliced;
 
-        image.color =
-            color;
-
         image.preserveAspect =
             false;
+
+        image.color =
+            color;
 
         image.raycastTarget =
             false;
@@ -1787,13 +1869,10 @@ public static class SafeZoneMainMenuFinalFixEditor
             false
         );
 
-        RectTransform rect =
+        SetAnchored(
             go.GetComponent<
                 RectTransform
-            >();
-
-        SetAnchored(
-            rect,
+            >(),
             min,
             max
         );
@@ -1829,7 +1908,7 @@ public static class SafeZoneMainMenuFinalFixEditor
     }
 
     // =========================================================
-    // REFERENCES SETTINGS
+    // SETTINGS REFERENCES
     // =========================================================
 
     private static void AssignSettingsReferences(
@@ -1924,7 +2003,7 @@ public static class SafeZoneMainMenuFinalFixEditor
     }
 
     // =========================================================
-    // REFERENCES ACHIEVEMENTS
+    // ACHIEVEMENTS REFERENCES
     // =========================================================
 
     private static void AssignAchievementsReferences(
@@ -2019,7 +2098,7 @@ public static class SafeZoneMainMenuFinalFixEditor
     }
 
     // =========================================================
-    // REFERENCES DAILY
+    // DAILY REFERENCES
     // =========================================================
 
     private static void AssignDailyReferences(
@@ -2194,7 +2273,7 @@ public static class SafeZoneMainMenuFinalFixEditor
     }
 
     // =========================================================
-    // SPRITES
+    // SPRITE
     // =========================================================
 
     private static Sprite LoadRoundedSprite()
@@ -2204,18 +2283,12 @@ public static class SafeZoneMainMenuFinalFixEditor
         );
     }
 
-    private static void EnsureGeneratedSprites()
+    private static void EnsureRoundedSprite()
     {
         Directory.CreateDirectory(
             GeneratedFolder
         );
 
-        CreateRoundedSpriteAsset();
-        CreateWhiteSpriteAsset();
-    }
-
-    private static void CreateRoundedSpriteAsset()
-    {
         const int size = 128;
         const float radius = 16f;
 
@@ -2226,6 +2299,12 @@ public static class SafeZoneMainMenuFinalFixEditor
                 TextureFormat.RGBA32,
                 false
             );
+
+        texture.wrapMode =
+            TextureWrapMode.Clamp;
+
+        texture.filterMode =
+            FilterMode.Bilinear;
 
         Color[] pixels =
             new Color[
@@ -2251,7 +2330,7 @@ public static class SafeZoneMainMenuFinalFixEditor
                     y + 0.5f;
 
                 float alpha =
-                    GetEditorRoundedAlpha(
+                    GetRoundedAlpha(
                         px,
                         py,
                         size,
@@ -2327,7 +2406,7 @@ public static class SafeZoneMainMenuFinalFixEditor
         }
     }
 
-    private static float GetEditorRoundedAlpha(
+    private static float GetRoundedAlpha(
         float x,
         float y,
         float size,
@@ -2399,130 +2478,6 @@ public static class SafeZoneMainMenuFinalFixEditor
             1f -
             distance
         );
-    }
-
-    private static void CreateWhiteSpriteAsset()
-    {
-        const int size = 4;
-
-        Texture2D texture =
-            new Texture2D(
-                size,
-                size,
-                TextureFormat.RGBA32,
-                false
-            );
-
-        Color[] pixels =
-            new Color[
-                size * size
-            ];
-
-        for (
-            int i = 0;
-            i < pixels.Length;
-            i++
-        )
-        {
-            pixels[i] =
-                Color.white;
-        }
-
-        texture.SetPixels(
-            pixels
-        );
-
-        texture.Apply();
-
-        byte[] png =
-            texture.EncodeToPNG();
-
-        Object.DestroyImmediate(
-            texture
-        );
-
-        File.WriteAllBytes(
-            WhitePath,
-            png
-        );
-
-        AssetDatabase.ImportAsset(
-            WhitePath,
-            ImportAssetOptions.ForceSynchronousImport
-        );
-
-        TextureImporter importer =
-            AssetImporter.GetAtPath(
-                WhitePath
-            ) as TextureImporter;
-
-        if (importer != null)
-        {
-            importer.textureType =
-                TextureImporterType.Sprite;
-
-            importer.spriteImportMode =
-                SpriteImportMode.Single;
-
-            importer.alphaIsTransparency =
-                false;
-
-            importer.filterMode =
-                FilterMode.Bilinear;
-
-            importer.spritePixelsPerUnit =
-                100;
-
-            importer.SaveAndReimport();
-        }
-    }
-
-    private static GameObject FindChild(
-        Transform parent,
-        string name
-    )
-    {
-        if (parent == null)
-        {
-            return null;
-        }
-
-        Transform found =
-            parent.Find(name);
-
-        return found != null
-            ? found.gameObject
-            : null;
-    }
-
-    // =========================================================
-    // MANAGER REFERENCES
-    // =========================================================
-
-    private static void AssignManagerReferences(
-        MainMenuModalManager3D manager,
-        GameObject background,
-        GameObject safeArea
-    )
-    {
-        SerializedObject so =
-            new SerializedObject(
-                manager
-            );
-
-        SetReference(
-            so,
-            "background",
-            background
-        );
-
-        SetReference(
-            so,
-            "safeArea",
-            safeArea
-        );
-
-        so.ApplyModifiedProperties();
     }
 }
 
