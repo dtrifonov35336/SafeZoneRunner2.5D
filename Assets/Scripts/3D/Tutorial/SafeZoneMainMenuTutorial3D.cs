@@ -9,11 +9,17 @@ using UnityEngine.UI;
 
 public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 {
-    private const string COMPLETED_KEY = "SafeZoneMainMenuTutorialCompleted";
-    private const string STARTED_KEY = "SafeZoneMainMenuTutorialStarted";
-    private const string UPGRADE_COMPLETED_KEY = "SafeZoneUpgradeTutorialCompleted";
-    private const string TUTORIAL_ACHIEVEMENT_ID = "tutorial_completed";
-    private const string MAIN_MENU_SCENE = "MainMenu";
+    private const string COMPLETED_KEY =
+        "SafeZoneMainMenuTutorialCompleted";
+
+    private const string STARTED_KEY =
+        "SafeZoneMainMenuTutorialStarted";
+
+    private const string UPGRADE_COMPLETED_KEY =
+        "SafeZoneUpgradeTutorialCompleted";
+
+    private const string TUTORIAL_ACHIEVEMENT_ID =
+        "tutorial_completed";
 
     private static SafeZoneMainMenuTutorial3D instance;
 
@@ -27,7 +33,6 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     private Image instructionBackground;
 
     private TMP_Text instructionText;
-
     private Button currentTargetButton;
 
     private readonly List<SelectableState> savedSelectables =
@@ -57,10 +62,10 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private void Start()
     {
-        StartCoroutine(DelayedStart());
+        StartCoroutine(StartRoutine());
     }
 
-    private IEnumerator DelayedStart()
+    private IEnumerator StartRoutine()
     {
         yield return null;
         yield return new WaitForSecondsRealtime(0.5f);
@@ -82,7 +87,22 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     public void TryStart()
     {
-        StartMainMenuTutorialImmediately();
+        if (tutorialRoutine != null)
+            return;
+
+        if (IsCompleted())
+            return;
+
+        if (!IsUpgradeTutorialCompleted())
+            return;
+
+        tutorialRoutine =
+            StartCoroutine(TutorialRoutine());
+    }
+
+    public void StartMainMenuTutorialImmediately()
+    {
+        TryStart();
     }
 
     private IEnumerator TutorialRoutine()
@@ -90,12 +110,14 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         PlayerPrefs.SetInt(STARTED_KEY, 1);
         PlayerPrefs.Save();
 
-        // ВАЖНО:
-        // Снаряжение и Ангар проходят отдельным обучением.
-        // Здесь начинаем только после него.
-        //
-        // Далее все разделы главного меню открываются
-        // поверх MainMenu. Никаких LoadScene для этих окон.
+        /*
+         * Снаряжение и Ангар проходят своим отдельным обучением.
+         *
+         * Этот скрипт начинается ПОСЛЕ них.
+         *
+         * Все остальные разделы находятся поверх MainMenu.
+         * Никаких LoadScene здесь нет.
+         */
 
         yield return RunShopTutorial();
         yield return RunCharactersTutorial();
@@ -106,24 +128,16 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return RunFinalTutorial();
 
         CompleteTutorial();
+
         tutorialRoutine = null;
     }
 
     // =========================================================
-    // MAIN MENU
+    // WAIT / FIND
     // =========================================================
 
-    private IEnumerator WaitForMainMenu()
-    {
-        while (SceneManager.GetActiveScene().name != MAIN_MENU_SCENE)
-            yield return null;
-
-        yield return null;
-        yield return new WaitForEndOfFrame();
-    }
-
     private IEnumerator WaitForObject<T>(
-        float timeout = 10f)
+        float timeout = 8f)
         where T : UnityEngine.Object
     {
         float timer = 0f;
@@ -136,6 +150,27 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 yield break;
 
             timer += Time.unscaledDeltaTime;
+
+            yield return null;
+        }
+    }
+
+    private IEnumerator WaitUntilActive(
+        GameObject target,
+        float timeout = 8f)
+    {
+        if (target == null)
+            yield break;
+
+        float timer = 0f;
+
+        while (timer < timeout)
+        {
+            if (target.activeInHierarchy)
+                yield break;
+
+            timer += Time.unscaledDeltaTime;
+
             yield return null;
         }
     }
@@ -143,14 +178,16 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     private T FindObjectIncludingInactive<T>()
         where T : UnityEngine.Object
     {
-        T[] objects = Resources.FindObjectsOfTypeAll<T>();
+        T[] objects =
+            Resources.FindObjectsOfTypeAll<T>();
 
         foreach (T obj in objects)
         {
             if (obj == null)
                 continue;
 
-            GameObject go = GetGameObject(obj);
+            GameObject go =
+                GetGameObject(obj);
 
             if (go == null)
                 continue;
@@ -164,9 +201,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         return null;
     }
 
-    private GameObject GetGameObject(UnityEngine.Object obj)
+    private GameObject GetGameObject(
+        UnityEngine.Object obj)
     {
-        Component component = obj as Component;
+        Component component =
+            obj as Component;
 
         if (component != null)
             return component.gameObject;
@@ -180,8 +219,6 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator RunShopTutorial()
     {
-        yield return WaitForMainMenu();
-
         MainMenuManager menu =
             FindObjectIncludingInactive<MainMenuManager>();
 
@@ -189,10 +226,12 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             yield break;
 
         Button shop =
-            FindButtonFromMember(menu, "shopButton");
+            FindButtonFromMember(
+                menu,
+                "shopButton");
 
         if (shop == null)
-            shop = FindButtonByText("МАГАЗИН");
+            shop = FindMainMenuButtonByText("МАГАЗИН");
 
         if (shop == null)
             yield break;
@@ -200,62 +239,133 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         ShowTargetOverlay(
             shop,
             "МАГАЗИН\n\n" +
-            "Здесь можно покупать доступные товары за игровые ресурсы.\n\n" +
+            "Здесь можно покупать доступные товары " +
+            "за игровые ресурсы.\n\n" +
             "Нажми на кнопку «Магазин».");
 
         yield return WaitForTargetClick(shop);
 
-        // Магазин НЕ меняет сцену.
-        // Ждём появления его реального менеджера/окна.
-        yield return WaitForObject<ShopManager>(5f);
+        /*
+         * Главное:
+         * магазин открывает сам MainMenuManager.
+         * Мы ничего самостоятельно не открываем.
+         */
 
-        ShopManager manager =
+        yield return WaitForObject<ShopManager>();
+
+        ShopManager shopManager =
             FindObjectIncludingInactive<ShopManager>();
 
-        if (manager != null)
+        if (shopManager == null)
+            yield break;
+
+        yield return WaitUntilManagerActive(
+            shopManager);
+
+        ShowInfoOverlay(
+            "МАГАЗИН\n\n" +
+            "Здесь отображаются доступные товары, " +
+            "их стоимость и содержимое.\n\n" +
+            "Покупать ничего не нужно.");
+
+        yield return WaitForOk();
+
+        Button item =
+            FindShopItemButton(
+                shopManager);
+
+        if (item != null)
+        {
+            ShowTargetOverlay(
+                item,
+                "ТОВАР\n\n" +
+                "Здесь можно посмотреть содержимое " +
+                "и стоимость товара.\n\n" +
+                "Покупать его сейчас не требуется.");
+
+            yield return WaitForOk();
+        }
+
+        Button close =
+            FindButtonFromMember(
+                shopManager,
+                "closeButton");
+
+        if (close == null)
+        {
+            close =
+                FindButtonFromMember(
+                    shopManager,
+                    "backButton");
+        }
+
+        if (close == null)
+        {
+            close =
+                FindButtonInObject(
+                    shopManager.gameObject,
+                    "ЗАКРЫТЬ",
+                    "НАЗАД",
+                    "ВЫЙТИ");
+        }
+
+        if (close != null)
+        {
+            ShowTargetOverlay(
+                close,
+                "НАЗАД\n\n" +
+                "Нажми эту кнопку, чтобы закрыть магазин " +
+                "и вернуться в главное меню.");
+
+            yield return WaitForTargetClick(close);
+        }
+        else
         {
             ShowInfoOverlay(
                 "МАГАЗИН\n\n" +
-                "Здесь отображаются доступные покупки, их стоимость и содержимое.\n\n" +
-                "Покупать ничего не нужно.");
+                "Закрой окно магазина кнопкой «Назад».");
 
             yield return WaitForOk();
-
-            Button item =
-                FindFirstMeaningfulButton(manager.gameObject);
-
-            if (item != null)
-            {
-                ShowTargetOverlay(
-                    item,
-                    "ТОВАР\n\n" +
-                    "Здесь можно посмотреть содержимое и стоимость товара.\n\n" +
-                    "Покупать его во время обучения не требуется.");
-
-                yield return WaitForOk();
-            }
-
-            Button close =
-                FindButtonFromMember(manager, "closeButton");
-
-            if (close == null)
-            {
-                close =
-                    FindButtonInObject(
-                        manager.gameObject,
-                        "ЗАКРЫТЬ",
-                        "НАЗАД",
-                        "ВЫЙТИ");
-            }
-
-            if (close != null)
-            {
-                ShowButtonOnlyHighlight(close);
-                yield return WaitForTargetClick(close);
-            }
         }
 
-        yield return WaitForMainMenu();
+        yield return WaitForMainMenuWindow();
+    }
+
+    private Button FindShopItemButton(
+        ShopManager manager)
+    {
+        if (manager == null)
+            return null;
+
+        Button button =
+            FindButtonFromMember(
+                manager,
+                "purchaseButton");
+
+        if (button != null)
+            return button;
+
+        button =
+            FindButtonFromMember(
+                manager,
+                "buyButton");
+
+        if (button != null)
+            return button;
+
+        button =
+            FindButtonFromMember(
+                manager,
+                "itemButton");
+
+        if (button != null)
+            return button;
+
+        return FindFirstMeaningfulButton(
+            manager.gameObject,
+            "ЗАКРЫТЬ",
+            "НАЗАД",
+            "ВЫЙТИ");
     }
 
     // =========================================================
@@ -264,7 +374,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator RunCharactersTutorial()
     {
-        yield return WaitForMainMenu();
+        yield return WaitForMainMenuWindow();
 
         MainMenuManager menu =
             FindObjectIncludingInactive<MainMenuManager>();
@@ -273,10 +383,14 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             yield break;
 
         Button characters =
-            FindButtonFromMember(menu, "charactersButton");
+            FindButtonFromMember(
+                menu,
+                "charactersButton");
 
         if (characters == null)
-            characters = FindButtonByText("ПЕРСОНАЖИ");
+            characters =
+                FindMainMenuButtonByText(
+                    "ПЕРСОНАЖИ");
 
         if (characters == null)
             yield break;
@@ -284,76 +398,156 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         ShowTargetOverlay(
             characters,
             "ПЕРСОНАЖИ\n\n" +
-            "Здесь можно выбирать персонажей, открывать новых героев " +
-            "и смотреть их бонусы.\n\n" +
+            "Здесь можно выбирать персонажей, " +
+            "открывать новых героев и смотреть их бонусы.\n\n" +
             "Нажми на кнопку «Персонажи».");
 
-        yield return WaitForTargetClick(characters);
+        yield return WaitForTargetClick(
+            characters);
 
-        // Персонажи теперь окно поверх MainMenu.
-        yield return WaitForObject<CharacterSelectManager>(5f);
+        yield return WaitForObject<CharacterSelectManager>();
 
         CharacterSelectManager manager =
             FindObjectIncludingInactive<CharacterSelectManager>();
 
-        if (manager != null)
+        if (manager == null)
+            yield break;
+
+        yield return WaitUntilManagerActive(
+            manager);
+
+        ShowInfoOverlay(
+            "ПЕРСОНАЖИ\n\n" +
+            "У каждого персонажа есть собственный бонус.\n\n" +
+            "Здесь можно выбрать персонажа для забегов.");
+
+        yield return WaitForOk();
+
+        Button card =
+            FindCharacterCardButton(
+                manager);
+
+        if (card != null)
         {
-            ShowInfoOverlay(
-                "ПЕРСОНАЖИ\n\n" +
-                "У каждого персонажа есть собственный бонус.\n\n" +
-                "Здесь можно выбрать персонажа для забегов.");
+            ShowTargetOverlay(
+                card,
+                "КАРТОЧКИ ПЕРСОНАЖЕЙ\n\n" +
+                "Здесь находятся доступные персонажи.\n\n" +
+                "Нажми на карточку, чтобы посмотреть " +
+                "информацию о персонаже.");
 
             yield return WaitForOk();
+        }
 
-            Button action =
-                FindButtonFromMember(manager, "actionButton");
+        Button action =
+            FindButtonFromMember(
+                manager,
+                "actionButton");
 
-            if (action != null)
+        if (action != null)
+        {
+            ShowTargetOverlay(
+                action,
+                "ДЕЙСТВИЕ ПЕРСОНАЖА\n\n" +
+                "Здесь отображается действие для выбранного персонажа.\n\n" +
+                "Покупать персонажа во время обучения не нужно.");
+
+            yield return WaitForOk();
+        }
+
+        Button close =
+            FindButtonFromMember(
+                manager,
+                "closeButton");
+
+        if (close == null)
+        {
+            close =
+                FindButtonFromMember(
+                    manager,
+                    "backButton");
+        }
+
+        if (close == null)
+        {
+            close =
+                FindButtonInObject(
+                    manager.gameObject,
+                    "ЗАКРЫТЬ",
+                    "НАЗАД",
+                    "ВЫЙТИ");
+        }
+
+        if (close != null)
+        {
+            ShowTargetOverlay(
+                close,
+                "НАЗАД\n\n" +
+                "Нажми эту кнопку, чтобы закрыть раздел персонажей.");
+
+            yield return WaitForTargetClick(close);
+        }
+
+        yield return WaitForMainMenuWindow();
+    }
+
+    private Button FindCharacterCardButton(
+        CharacterSelectManager manager)
+    {
+        if (manager == null)
+            return null;
+
+        Button button =
+            FindButtonFromMember(
+                manager,
+                "characterButton");
+
+        if (button != null)
+            return button;
+
+        button =
+            FindButtonFromMember(
+                manager,
+                "selectButton");
+
+        if (button != null)
+            return button;
+
+        Button[] buttons =
+            manager.gameObject
+                .GetComponentsInChildren<Button>(
+                    true);
+
+        foreach (Button b in buttons)
+        {
+            if (b == null ||
+                !b.gameObject.activeInHierarchy)
+                continue;
+
+            if (b == FindButtonFromMember(
+                    manager,
+                    "closeButton"))
+                continue;
+
+            TMP_Text text =
+                b.GetComponentInChildren<TMP_Text>(
+                    true);
+
+            if (text == null)
+                continue;
+
+            string value =
+                Normalize(text.text);
+
+            if (value.Contains("ВЫБРАТЬ") ||
+                value.Contains("КУПИТЬ") ||
+                value.Contains("ПОЛУЧИТЬ"))
             {
-                ShowTargetOverlay(
-                    action,
-                    "ДЕЙСТВИЕ ПЕРСОНАЖА\n\n" +
-                    "Здесь отображается действие для выбранного персонажа.\n\n" +
-                    "Покупать персонажа сейчас не нужно.");
-
-                yield return WaitForOk();
-            }
-
-            Button card =
-                FindFirstCharacterButton(manager.gameObject);
-
-            if (card != null && card != action)
-            {
-                ShowTargetOverlay(
-                    card,
-                    "КАРТОЧКИ ПЕРСОНАЖЕЙ\n\n" +
-                    "Здесь находятся доступные персонажи.\n\n" +
-                    "Нажми на карточку, чтобы посмотреть информацию о персонаже.");
-
-                yield return WaitForOk();
-            }
-
-            Button close =
-                FindButtonFromMember(manager, "closeButton");
-
-            if (close == null)
-            {
-                close =
-                    FindButtonInObject(
-                        manager.gameObject,
-                        "ЗАКРЫТЬ",
-                        "НАЗАД",
-                        "ВЫЙТИ");
-            }
-
-            if (close != null)
-            {
-                ShowButtonOnlyHighlight(close);
-                yield return WaitForTargetClick(close);
+                return b;
             }
         }
 
-        yield return WaitForMainMenu();
+        return null;
     }
 
     // =========================================================
@@ -362,16 +556,21 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator RunDailyTutorial()
     {
-        yield return WaitForMainMenu();
+        yield return WaitForMainMenuWindow();
 
         Button daily =
-            FindUtilityButton("DailyLogin");
+            FindUtilityButton(
+                "DailyLogin");
 
         if (daily == null)
-            daily = FindButtonByText("ЕЖЕДНЕВНЫЙ");
+            daily =
+                FindMainMenuButtonByText(
+                    "ЕЖЕДНЕВНЫЙ");
 
         if (daily == null)
-            daily = FindButtonByText("ВХОД");
+            daily =
+                FindMainMenuButtonByText(
+                    "ВХОД");
 
         if (daily == null)
             yield break;
@@ -382,67 +581,71 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             "Здесь каждый день доступна награда.\n\n" +
             "Нажми на кнопку ежедневного входа.");
 
-        yield return WaitForTargetClick(daily);
+        yield return WaitForTargetClick(
+            daily);
 
-        yield return WaitForObject<DailyLoginUI3D>(5f);
+        yield return WaitForObject<DailyLoginUI3D>();
 
         DailyLoginUI3D ui =
             FindObjectIncludingInactive<DailyLoginUI3D>();
 
-        if (ui != null)
+        if (ui == null)
+            yield break;
+
+        yield return WaitUntilManagerActive(ui);
+
+        ShowInfoOverlay(
+            "ЕЖЕДНЕВНЫЙ ВХОД\n\n" +
+            "Каждый день ты можешь получать награду.\n\n" +
+            "Регулярные входы продолжают серию.");
+
+        yield return WaitForOk();
+
+        Button claim =
+            FindButtonInObject(
+                ui.gameObject,
+                "ЗАБРАТЬ",
+                "ПОЛУЧИТЬ");
+
+        if (claim != null &&
+            claim.interactable)
         {
-            ShowInfoOverlay(
-                "ЕЖЕДНЕВНЫЙ ВХОД\n\n" +
-                "Каждый день ты можешь получать награду.\n\n" +
-                "Регулярные входы продолжают серию.");
+            ShowTargetOverlay(
+                claim,
+                "ЗАБРАТЬ НАГРАДУ\n\n" +
+                "Нажми «Забрать», чтобы получить доступную награду.");
 
-            yield return WaitForOk();
-
-            Button claim =
-                FindButtonInObject(
-                    ui.gameObject,
-                    "ЗАБРАТЬ",
-                    "ПОЛУЧИТЬ");
-
-            if (claim != null && claim.interactable)
-            {
-                ShowTargetOverlay(
-                    claim,
-                    "ЗАБРАТЬ НАГРАДУ\n\n" +
-                    "Нажми «Забрать», чтобы получить доступную награду.");
-
-                yield return WaitForTargetClick(claim);
-            }
-            else
-            {
-                ShowInfoOverlay(
-                    "НАГРАДА\n\n" +
-                    "Когда награда будет доступна, её можно будет забрать этой кнопкой.");
-
-                yield return WaitForOk();
-            }
-
-            Button close =
-                FindButtonFromMember(ui, "closeButton");
-
-            if (close == null)
-            {
-                close =
-                    FindButtonInObject(
-                        ui.gameObject,
-                        "ЗАКРЫТЬ",
-                        "НАЗАД",
-                        "ВЫЙТИ");
-            }
-
-            if (close != null)
-            {
-                ShowButtonOnlyHighlight(close);
-                yield return WaitForTargetClick(close);
-            }
+            yield return WaitForTargetClick(
+                claim);
         }
 
-        yield return WaitForMainMenu();
+        Button close =
+            FindButtonFromMember(
+                ui,
+                "closeButton");
+
+        if (close == null)
+        {
+            close =
+                FindButtonInObject(
+                    ui.gameObject,
+                    "ЗАКРЫТЬ",
+                    "НАЗАД",
+                    "ВЫЙТИ");
+        }
+
+        if (close != null)
+        {
+            ShowTargetOverlay(
+                close,
+                "НАЗАД\n\n" +
+                "Нажми эту кнопку, чтобы закрыть ежедневные награды.");
+
+            yield return WaitForTargetClick(
+                close);
+        }
+
+        yield return WaitForMainMenuWindow();
     }
 
     // =========================================================
@@ -451,7 +654,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator RunProfileTutorial()
     {
-        yield return WaitForMainMenu();
+        yield return WaitForMainMenuWindow();
 
         MainMenuManager menu =
             FindObjectIncludingInactive<MainMenuManager>();
@@ -465,6 +668,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 "profileAvatarButton");
 
         if (profile == null)
+            profile =
+                FindMainMenuButtonByText(
+                    "ПРОФИЛЬ");
+
+        if (profile == null)
             yield break;
 
         ShowTargetOverlay(
@@ -473,11 +681,15 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             "Здесь можно изменить имя и аватар профиля.\n\n" +
             "Нажми на аватар профиля.");
 
+        /*
+         * Критически важно:
+         * НЕ вызываем Open().
+         * НЕ SetActive().
+         * Открытие выполняет реальная кнопка MainMenuManager.
+         */
         yield return WaitForTargetClick(profile);
 
-        // НЕ открываем профиль сами.
-        // Его открывает MainMenuManager.
-        yield return WaitForObject<ProfileSettingsPanel>(5f);
+        yield return WaitForObject<ProfileSettingsPanel>();
 
         ProfileSettingsPanel panel =
             FindObjectIncludingInactive<ProfileSettingsPanel>();
@@ -485,13 +697,12 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (panel == null)
             yield break;
 
-        // Ждём именно активации реального окна.
-        yield return WaitUntilGameObjectActive(
-            panel.panel,
-            5f);
+        yield return WaitUntilManagerActive(panel);
 
         Button avatar =
-            FindButtonFromMember(panel, "avatarButton");
+            FindButtonFromMember(
+                panel,
+                "avatarButton");
 
         if (avatar != null)
         {
@@ -502,50 +713,59 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
             yield return WaitForOk();
         }
-        else
-        {
-            ShowInfoOverlay(
-                "АВАТАР\n\n" +
-                "Здесь можно изменить изображение профиля.");
-
-            yield return WaitForOk();
-        }
 
         ShowInfoOverlay(
             "ИМЯ ПРОФИЛЯ\n\n" +
-            "Здесь можно изменить имя, которое отображается в профиле.");
+            "Здесь можно изменить имя, " +
+            "которое отображается в профиле.");
 
         yield return WaitForOk();
 
         Toggle autoToggle =
-            FindToggleFromMember(panel, "autoToggle");
+            FindToggleFromMember(
+                panel,
+                "autoToggle");
 
         if (autoToggle != null)
         {
             ShowTargetOverlayGeneric(
                 autoToggle,
                 "АВТОМАТИЧЕСКАЯ ПОДСТАНОВКА\n\n" +
-                "Эта настройка автоматически использует аватар выбранного персонажа.");
+                "Эта настройка автоматически использует " +
+                "аватар выбранного персонажа.");
 
             yield return WaitForOk();
         }
 
         Button upload =
-            FindButtonFromMember(panel, "uploadButton");
+            FindButtonFromMember(
+                panel,
+                "uploadButton");
 
         if (upload != null)
         {
             ShowTargetOverlay(
                 upload,
                 "ЗАГРУЗКА ФОТО\n\n" +
-                "Здесь можно загрузить собственную фотографию с телефона.\n\n" +
+                "Здесь можно загрузить собственную фотографию " +
+                "с телефона.\n\n" +
                 "Нажимать сейчас не нужно.");
 
             yield return WaitForOk();
         }
 
         Button close =
-            FindButtonFromMember(panel, "closeButton");
+            FindButtonFromMember(
+                panel,
+                "closeButton");
+
+        if (close == null)
+        {
+            close =
+                FindButtonFromMember(
+                    panel,
+                    "backButton");
+        }
 
         if (close == null)
         {
@@ -559,31 +779,17 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         if (close != null)
         {
-            ShowButtonOnlyHighlight(close);
+            ShowTargetOverlay(
+                close,
+                "НАЗАД\n\n" +
+                "Нажми эту кнопку, чтобы закрыть профиль.");
+
             yield return WaitForTargetClick(close);
         }
 
-        yield return WaitForMainMenu();
+        yield return WaitForMainMenuWindow();
 
         UnlockTutorialAchievement();
-    }
-
-    private IEnumerator WaitUntilGameObjectActive(
-        GameObject target,
-        float timeout)
-    {
-        if (target == null)
-            yield break;
-
-        float timer = 0f;
-
-        while (!target.activeInHierarchy && timer < timeout)
-        {
-            timer += Time.unscaledDeltaTime;
-            yield return null;
-        }
-
-        yield return null;
     }
 
     // =========================================================
@@ -592,13 +798,28 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator RunSettingsTutorial()
     {
-        yield return WaitForMainMenu();
+        yield return WaitForMainMenuWindow();
+
+        MainMenuManager menu =
+            FindObjectIncludingInactive<MainMenuManager>();
+
+        if (menu == null)
+            yield break;
 
         Button settings =
-            FindButtonByText("НАСТРОЙКИ");
+            FindButtonFromMember(
+                menu,
+                "settingsButton");
 
         if (settings == null)
-            settings = FindButtonByText("НАСТРОЙКА");
+            settings =
+                FindMainMenuButtonByText(
+                    "НАСТРОЙКИ");
+
+        if (settings == null)
+            settings =
+                FindMainMenuButtonByText(
+                    "НАСТРОЙКА");
 
         if (settings == null)
             yield break;
@@ -606,87 +827,135 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         ShowTargetOverlay(
             settings,
             "НАСТРОЙКИ\n\n" +
-            "Здесь можно настроить громкость и вибрацию игры.\n\n" +
+            "Здесь можно настроить звук, вибрацию " +
+            "и производительность игры.\n\n" +
             "Нажми на кнопку «Настройки».");
 
-        yield return WaitForTargetClick(settings);
+        yield return WaitForTargetClick(
+            settings);
 
-        yield return WaitForObject<GameSettingsUI3D>(5f);
+        yield return WaitForObject<GameSettingsUI3D>();
 
         GameSettingsUI3D gameSettings =
             FindObjectIncludingInactive<GameSettingsUI3D>();
 
-        if (gameSettings != null)
+        if (gameSettings == null)
+            yield break;
+
+        yield return WaitUntilManagerActive(
+            gameSettings);
+
+        // ГРОМКОСТЬ
+        Slider volume =
+            FindSliderFromMember(
+                gameSettings,
+                "volumeSlider");
+
+        if (volume != null)
         {
-            Slider volume =
-                FindSliderFromMember(
-                    gameSettings,
-                    "volumeSlider");
+            ShowTargetOverlayGeneric(
+                volume,
+                "ГРОМКОСТЬ\n\n" +
+                "Ползунок позволяет изменить громкость игры.");
 
-            if (volume != null)
+            yield return WaitForOk();
+        }
+
+        // ВИБРАЦИЯ
+        Toggle vibration =
+            FindToggleFromMember(
+                gameSettings,
+                "vibrationToggle");
+
+        if (vibration != null)
+        {
+            ShowTargetOverlayGeneric(
+                vibration,
+                "ВИБРАЦИЯ\n\n" +
+                "Эта настройка включает или отключает вибрацию.");
+
+            yield return WaitForOk();
+        }
+
+        // ПРОИЗВОДИТЕЛЬНОСТЬ
+        Button fps30 =
+            FindButtonFromMember(
+                gameSettings,
+                "fps30Button");
+
+        Button fps60 =
+            FindButtonFromMember(
+                gameSettings,
+                "fps60Button");
+
+        if (fps30 != null ||
+            fps60 != null)
+        {
+            ShowInfoOverlay(
+                "ПРОИЗВОДИТЕЛЬНОСТЬ\n\n" +
+                "Здесь можно выбрать ограничение частоты кадров.\n\n" +
+                "30 FPS снижает нагрузку на устройство " +
+                "и может помочь экономить заряд.\n\n" +
+                "60 FPS делает движение более плавным, " +
+                "но требует больше ресурсов.");
+
+            yield return WaitForOk();
+
+            if (fps30 != null)
             {
-                ShowTargetOverlayGeneric(
-                    volume,
-                    "ГРОМКОСТЬ\n\n" +
-                    "Ползунок позволяет изменить громкость игры.");
+                ShowTargetOverlay(
+                    fps30,
+                    "30 FPS\n\n" +
+                    "Ограничение частоты кадров до 30 FPS.");
 
                 yield return WaitForOk();
             }
-            else
+
+            if (fps60 != null)
             {
-                ShowInfoOverlay(
-                    "ГРОМКОСТЬ\n\n" +
-                    "С помощью ползунка можно изменить громкость игры.");
+                ShowTargetOverlay(
+                    fps60,
+                    "60 FPS\n\n" +
+                    "Ограничение частоты кадров до 60 FPS.");
 
                 yield return WaitForOk();
-            }
-
-            Toggle vibration =
-                FindToggleFromMember(
-                    gameSettings,
-                    "vibrationToggle");
-
-            if (vibration != null)
-            {
-                ShowTargetOverlayGeneric(
-                    vibration,
-                    "ВИБРАЦИЯ\n\n" +
-                    "Эта настройка включает или отключает вибрацию.");
-
-                yield return WaitForOk();
-            }
-            else
-            {
-                ShowInfoOverlay(
-                    "ВИБРАЦИЯ\n\n" +
-                    "Здесь можно включить или отключить вибрацию.");
-
-                yield return WaitForOk();
-            }
-
-            Button close =
-                FindButtonFromMember(
-                    gameSettings,
-                    "closeButton");
-
-            if (close == null)
-            {
-                close =
-                    FindButtonInObject(
-                        gameSettings.gameObject,
-                        "ЗАКРЫТЬ",
-                        "НАЗАД",
-                        "ВЫЙТИ");
-            }
-
-            if (close != null)
-            {
-                ShowButtonOnlyHighlight(close);
-                yield return WaitForTargetClick(close);
             }
         }
 
-        yield return WaitForMainMenu();
+        Button close =
+            FindButtonFromMember(
+                gameSettings,
+                "closeButton");
+
+        if (close == null)
+        {
+            close =
+                FindButtonFromMember(
+                    gameSettings,
+                    "backButton");
+        }
+
+        if (close == null)
+        {
+            close =
+                FindButtonInObject(
+                    gameSettings.gameObject,
+                    "ЗАКРЫТЬ",
+                    "НАЗАД",
+                    "ВЫЙТИ");
+        }
+
+        if (close != null)
+        {
+            ShowTargetOverlay(
+                close,
+                "НАЗАД\n\n" +
+                "Нажми эту кнопку, чтобы закрыть настройки.");
+
+            yield return WaitForTargetClick(close);
+        }
+
+        yield return WaitForMainMenuWindow();
     }
 
     // =========================================================
@@ -695,13 +964,28 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator RunAchievementsTutorial()
     {
-        yield return WaitForMainMenu();
+        yield return WaitForMainMenuWindow();
+
+        MainMenuManager menu =
+            FindObjectIncludingInactive<MainMenuManager>();
+
+        if (menu == null)
+            yield break;
 
         Button achievementsButton =
-            FindButtonByText("ДОСТИЖЕНИЯ");
+            FindButtonFromMember(
+                menu,
+                "achievementsButton");
 
         if (achievementsButton == null)
-            achievementsButton = FindButtonByText("ДОСТИЖЕНИЕ");
+            achievementsButton =
+                FindMainMenuButtonByText(
+                    "ДОСТИЖЕНИЯ");
+
+        if (achievementsButton == null)
+            achievementsButton =
+                FindMainMenuButtonByText(
+                    "ДОСТИЖЕНИЕ");
 
         if (achievementsButton == null)
             yield break;
@@ -712,96 +996,116 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             "Здесь находятся выполненные цели и награды.\n\n" +
             "Нажми на кнопку «Достижения».");
 
-        yield return WaitForTargetClick(achievementsButton);
+        yield return WaitForTargetClick(
+            achievementsButton);
 
-        yield return WaitForObject<AchievementsUI3D>(5f);
+        yield return WaitForObject<AchievementsUI3D>();
 
         AchievementsUI3D achievements =
             FindObjectIncludingInactive<AchievementsUI3D>();
 
-        if (achievements != null)
+        if (achievements == null)
+            yield break;
+
+        yield return WaitUntilManagerActive(
+            achievements);
+
+        ShowInfoOverlay(
+            "ДОСТИЖЕНИЯ\n\n" +
+            "После выполнения достижения его награду " +
+            "нужно забрать вручную.");
+
+        yield return WaitForOk();
+
+        Button shelter =
+            FindButtonInObject(
+                achievements.gameObject,
+                "ДО УБЕЖИЩА",
+                "УБЕЖИЩЕ");
+
+        if (shelter != null)
         {
-            ShowInfoOverlay(
-                "ДОСТИЖЕНИЯ\n\n" +
-                "После выполнения достижения его награду нужно забрать вручную.");
+            ShowTargetOverlay(
+                shelter,
+                "ДО УБЕЖИЩА\n\n" +
+                "Здесь находятся достижения режима «До убежища».");
 
             yield return WaitForOk();
+        }
 
-            Button shelter =
-                FindButtonInObject(
-                    achievements.gameObject,
-                    "ДО УБЕЖИЩА",
-                    "УБЕЖИЩЕ");
+        Button endless =
+            FindButtonInObject(
+                achievements.gameObject,
+                "БЕСКОНЕЧНЫЙ",
+                "БЕСКОНЕЧНОСТЬ");
 
-            if (shelter != null)
-            {
-                ShowTargetOverlay(
-                    shelter,
-                    "ДО УБЕЖИЩА\n\n" +
-                    "Здесь находятся достижения режима «До убежища».");
+        if (endless != null)
+        {
+            ShowTargetOverlay(
+                endless,
+                "БЕСКОНЕЧНЫЙ\n\n" +
+                "Здесь находятся достижения бесконечного режима.");
 
-                yield return WaitForTargetClick(shelter);
-            }
+            yield return WaitForOk();
+        }
 
-            Button endless =
-                FindButtonInObject(
-                    achievements.gameObject,
-                    "БЕСКОНЕЧНЫЙ",
-                    "БЕСКОНЕЧНОСТЬ");
+        UnlockTutorialAchievement();
 
-            if (endless != null)
-            {
-                ShowTargetOverlay(
-                    endless,
-                    "БЕСКОНЕЧНЫЙ\n\n" +
-                    "Здесь находятся достижения бесконечного режима.");
+        yield return new WaitForSecondsRealtime(0.2f);
 
-                yield return WaitForTargetClick(endless);
-            }
+        Button claim =
+            FindButtonInObject(
+                achievements.gameObject,
+                "ЗАБРАТЬ");
 
-            UnlockTutorialAchievement();
+        if (claim != null &&
+            claim.interactable)
+        {
+            ShowTargetOverlay(
+                claim,
+                "НАГРАДА ЗА ОБУЧЕНИЕ\n\n" +
+                "Ты прошёл обучение.\n\n" +
+                "Нажми «Забрать», чтобы получить +50 монет.");
 
-            yield return new WaitForSecondsRealtime(0.3f);
+            yield return WaitForTargetClick(
+                claim);
+        }
 
-            Button claim =
-                FindButtonInObject(
-                    achievements.gameObject,
-                    "ЗАБРАТЬ");
+        Button close =
+            FindButtonFromMember(
+                achievements,
+                "closeButton");
 
-            if (claim != null && claim.interactable)
-            {
-                ShowTargetOverlay(
-                    claim,
-                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\n" +
-                    "Ты прошёл обучение.\n\n" +
-                    "Нажми «Забрать», чтобы получить +50 монет.");
+        if (close == null)
+        {
+            close =
+                FindButtonFromMember(
+                    achievements,
+                    "backButton");
+        }
 
-                yield return WaitForTargetClick(claim);
-            }
-            else
-            {
-                ShowInfoOverlay(
-                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\n" +
-                    "За прохождение обучения доступна награда +50 монет.");
-
-                yield return WaitForOk();
-            }
-
-            Button close =
+        if (close == null)
+        {
+            close =
                 FindButtonInObject(
                     achievements.gameObject,
                     "ЗАКРЫТЬ",
                     "НАЗАД",
                     "ВЫЙТИ");
-
-            if (close != null)
-            {
-                ShowButtonOnlyHighlight(close);
-                yield return WaitForTargetClick(close);
-            }
         }
 
-        yield return WaitForMainMenu();
+        if (close != null)
+        {
+            ShowTargetOverlay(
+                close,
+                "НАЗАД\n\n" +
+                "Нажми эту кнопку, чтобы закрыть достижения.");
+
+            yield return WaitForTargetClick(
+                close);
+        }
+
+        yield return WaitForMainMenuWindow();
     }
 
     // =========================================================
@@ -812,8 +1116,10 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     {
         ShowInfoOverlay(
             "ОБУЧЕНИЕ ЗАВЕРШЕНО!\n\n" +
-            "Поздравляем! Ты прошёл обучение.\n\n" +
-            "Теперь ты знаешь основные разделы игры.");
+            "Ты прошёл обучение главного меню.\n\n" +
+            "Теперь ты знаешь, где находятся магазин, " +
+            "персонажи, ежедневные награды, профиль, " +
+            "настройки и достижения.");
 
         yield return WaitForOk();
     }
@@ -832,7 +1138,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogWarning(
-                "[MainMenuTutorial] Не удалось активировать достижение: " +
+                "[MainMenuTutorial] " +
+                "Не удалось активировать достижение: " +
                 e.Message);
         }
     }
@@ -867,13 +1174,14 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
         scaler.referenceResolution =
-            new Vector2(1080f, 1920f);
+            new Vector2(1920f, 1080f);
 
         scaler.matchWidthOrHeight = 0.5f;
 
         overlayRoot =
             canvasObject.GetComponent<RectTransform>();
 
+        // DIM
         GameObject dimObject =
             new GameObject(
                 "Dim",
@@ -891,10 +1199,15 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             dimObject.GetComponent<Image>();
 
         dimImage.color =
-            new Color(0f, 0f, 0f, 0.72f);
+            new Color(
+                0f,
+                0f,
+                0f,
+                0.72f);
 
         dimImage.raycastTarget = true;
 
+        // HIGHLIGHT
         GameObject highlightObject =
             new GameObject(
                 "Highlight",
@@ -915,10 +1228,15 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             Image.Type.Sliced;
 
         highlightImage.color =
-            new Color(1f, 0.82f, 0.25f, 0.28f);
+            new Color(
+                1f,
+                0.82f,
+                0.25f,
+                0.32f);
 
         highlightImage.raycastTarget = false;
 
+        // PANEL
         GameObject panelObject =
             new GameObject(
                 "InstructionBackground",
@@ -939,7 +1257,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             Image.Type.Sliced;
 
         instructionBackground.color =
-            new Color(0f, 0f, 0f, 0.82f);
+            new Color(
+                0f,
+                0f,
+                0f,
+                0.90f);
 
         instructionBackground.raycastTarget = false;
 
@@ -955,12 +1277,24 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         panelRect.pivot =
             new Vector2(0.5f, 0.5f);
 
+        /*
+         * Было 760x330.
+         *
+         * OK находился за пределами панели.
+         *
+         * Теперь панель выше и OK находится ВНУТРИ.
+         */
         panelRect.sizeDelta =
-            new Vector2(760f, 330f);
+            new Vector2(
+                700f,
+                380f);
 
         panelRect.anchoredPosition =
-            new Vector2(0f, 120f);
+            new Vector2(
+                0f,
+                0f);
 
+        // TEXT
         GameObject textObject =
             new GameObject(
                 "InstructionText",
@@ -977,16 +1311,31 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         RectTransform textRect =
             instructionText.rectTransform;
 
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-
         textRect.offsetMin =
-            new Vector2(35f, 25f);
+            new Vector2(
+                35f,
+                82f);
 
         textRect.offsetMax =
-            new Vector2(-35f, -25f);
+            new Vector2(
+                -35f,
+                -25f);
 
-        instructionText.color = Color.white;
+        /*
+         * Нижние 90 px оставляем под кнопку OK.
+         */
+        textRect.offsetMin =
+            new Vector2(
+                40f,
+                90f);
+
+        textRect.offsetMax =
+            new Vector2(
+                -40f,
+                -35f);
+
+        instructionText.color =
+            Color.white;
 
         instructionText.fontSize = 28f;
         instructionText.fontSizeMin = 18f;
@@ -1000,12 +1349,16 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             TextWrappingModes.Normal;
 
         instructionText.overflowMode =
-            TextOverflowModes.Truncate;
+            TextOverflowModes.Ellipsis;
 
-        instructionText.outlineWidth = 0.18f;
-        instructionText.outlineColor = Color.black;
+        instructionText.outlineWidth =
+            0.18f;
 
-        instructionText.raycastTarget = false;
+        instructionText.outlineColor =
+            Color.black;
+
+        instructionText.raycastTarget =
+            false;
     }
 
     private void DestroyOverlay()
@@ -1013,10 +1366,14 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         RestoreSelectables();
 
         if (overlayCanvas != null)
-            Destroy(overlayCanvas.gameObject);
+        {
+            Destroy(
+                overlayCanvas.gameObject);
+        }
 
         overlayCanvas = null;
         overlayRoot = null;
+
         dimImage = null;
         highlightImage = null;
         instructionBackground = null;
@@ -1028,7 +1385,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     // INFO
     // =========================================================
 
-    private void ShowInfoOverlay(string text)
+    private void ShowInfoOverlay(
+        string text)
     {
         CreateOverlay();
 
@@ -1036,23 +1394,31 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         dimImage.raycastTarget = true;
 
-        highlightImage.gameObject.SetActive(false);
+        highlightImage.gameObject.SetActive(
+            false);
 
-        instructionBackground.gameObject.SetActive(true);
+        instructionBackground.gameObject.SetActive(
+            true);
 
         ShowInstructionText(text);
 
         PositionInstructionPanel(
-            new Vector2(0f, 120f));
+            new Vector2(
+                0f,
+                0f));
     }
 
-    private void ShowInstructionText(string text)
+    private void ShowInstructionText(
+        string text)
     {
         if (instructionText == null)
             return;
 
-        instructionText.gameObject.SetActive(true);
-        instructionText.text = text;
+        instructionText.gameObject.SetActive(
+            true);
+
+        instructionText.text =
+            text;
 
         Canvas.ForceUpdateCanvases();
     }
@@ -1073,13 +1439,16 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         CreateOverlay();
 
-        currentTargetButton = target;
+        currentTargetButton =
+            target;
 
-        DisableAllSelectablesExcept(target);
+        DisableAllSelectablesExcept(
+            target);
 
         dimImage.raycastTarget = false;
 
-        highlightImage.gameObject.SetActive(true);
+        highlightImage.gameObject.SetActive(
+            true);
 
         PositionHighlight(
             target.transform as RectTransform);
@@ -1088,6 +1457,14 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             target.transform as RectTransform);
 
         ShowInstructionText(text);
+
+        Canvas.ForceUpdateCanvases();
+
+        PositionHighlight(
+            target.transform as RectTransform);
+
+        PositionInstructionNearTarget(
+            target.transform as RectTransform);
     }
 
     private void ShowTargetOverlayGeneric(
@@ -1102,11 +1479,13 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         CreateOverlay();
 
-        DisableAllSelectablesExcept(target);
+        DisableAllSelectablesExcept(
+            target);
 
         dimImage.raycastTarget = false;
 
-        highlightImage.gameObject.SetActive(true);
+        highlightImage.gameObject.SetActive(
+            true);
 
         PositionHighlight(
             target.transform as RectTransform);
@@ -1115,28 +1494,13 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             target.transform as RectTransform);
 
         ShowInstructionText(text);
-    }
 
-    private void ShowButtonOnlyHighlight(
-        Button target)
-    {
-        if (target == null)
-            return;
-
-        CreateOverlay();
-
-        currentTargetButton = target;
-
-        DisableAllSelectablesExcept(target);
-
-        dimImage.raycastTarget = false;
-
-        instructionBackground.gameObject.SetActive(false);
-        instructionText.gameObject.SetActive(false);
-
-        highlightImage.gameObject.SetActive(true);
+        Canvas.ForceUpdateCanvases();
 
         PositionHighlight(
+            target.transform as RectTransform);
+
+        PositionInstructionNearTarget(
             target.transform as RectTransform);
     }
 
@@ -1144,25 +1508,20 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     // HIGHLIGHT
     // =========================================================
 
-    private void PositionHighlight(
-    RectTransform target)
+    private void PositionHighlight(RectTransform target)
     {
-        if (
-            target == null ||
+        if (target == null ||
             highlightImage == null ||
-            overlayCanvas == null
-        )
-        {
+            overlayCanvas == null)
             return;
-        }
 
         RectTransform canvasRect =
             overlayCanvas.GetComponent<RectTransform>();
 
-        Vector3[] corners =
-            new Vector3[4];
-
+        Vector3[] corners = new Vector3[4];
         target.GetWorldCorners(corners);
+
+        Camera targetCamera = GetTargetCamera(target);
 
         Vector2 min;
         Vector2 max;
@@ -1170,105 +1529,97 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             RectTransformUtility.WorldToScreenPoint(
-                null,
-                corners[0]
-            ),
+                targetCamera,
+                corners[0]),
             null,
-            out min
-        );
+            out min);
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             RectTransformUtility.WorldToScreenPoint(
-                null,
-                corners[2]
-            ),
+                targetCamera,
+                corners[2]),
             null,
-            out max
-        );
+            out max);
+
+        Vector2 center = (min + max) * 0.5f;
+
+        Vector2 size = new Vector2(
+            Mathf.Abs(max.x - min.x),
+            Mathf.Abs(max.y - min.y));
 
         RectTransform rect =
             highlightImage.rectTransform;
 
-        rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
 
-        rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = center;
 
-        rect.pivot =
-            new Vector2(0.5f, 0.5f);
-
-        rect.anchoredPosition =
-            (min + max) * 0.5f;
-
-        rect.sizeDelta =
-            new Vector2(
-                Mathf.Abs(max.x - min.x) + 20f,
-                Mathf.Abs(max.y - min.y) + 20f
-            );
+        rect.sizeDelta = new Vector2(
+            Mathf.Max(size.x + 16f, 30f),
+            Mathf.Max(size.y + 16f, 30f));
     }
 
-    private void PositionInstructionNearTarget(
-        RectTransform target)
+    private Camera GetTargetCamera(RectTransform target)
     {
-        if (
-            target == null ||
+        if (target == null)
+            return null;
+
+        Canvas canvas =
+            target.GetComponentInParent<Canvas>();
+
+        if (canvas == null)
+            return Camera.main;
+
+        if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            return null;
+
+        if (canvas.worldCamera != null)
+            return canvas.worldCamera;
+
+        return Camera.main;
+    }
+
+    // =========================================================
+    // TEXT POSITION
+    // =========================================================
+
+    private void PositionInstructionNearTarget(
+    RectTransform target)
+    {
+        if (target == null ||
             instructionBackground == null ||
-            overlayCanvas == null
-        )
-        {
+            overlayCanvas == null)
             return;
-        }
 
         RectTransform canvasRect =
             overlayCanvas.GetComponent<RectTransform>();
 
-        Vector3[] corners =
-            new Vector3[4];
-
+        Vector3[] corners = new Vector3[4];
         target.GetWorldCorners(corners);
 
-        Vector2 min;
-        Vector2 max;
+        Camera targetCamera = GetTargetCamera(target);
+
+        Vector2 bl;
+        Vector2 tr;
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             RectTransformUtility.WorldToScreenPoint(
-                null,
-                corners[0]
-            ),
+                targetCamera,
+                corners[0]),
             null,
-            out min
-        );
+            out bl);
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             RectTransformUtility.WorldToScreenPoint(
-                null,
-                corners[2]
-            ),
+                targetCamera,
+                corners[2]),
             null,
-            out max
-        );
-
-        Vector2 targetCenter =
-            (min + max) * 0.5f;
-
-        float targetTop =
-            max.y;
-
-        float targetBottom =
-            min.y;
-
-        RectTransform panel =
-            instructionBackground.rectTransform;
-
-        float panelWidth =
-            panel.sizeDelta.x;
-
-        float panelHeight =
-            panel.sizeDelta.y;
+            out tr);
 
         float canvasWidth =
             canvasRect.rect.width;
@@ -1276,105 +1627,63 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         float canvasHeight =
             canvasRect.rect.height;
 
-        const float gap = 30f;
+        RectTransform panel =
+            instructionBackground.rectTransform;
+
+        float halfW =
+            panel.rect.width * 0.5f;
+
+        float halfH =
+            panel.rect.height * 0.5f;
+
+        Vector2 targetCenter =
+            (bl + tr) * 0.5f;
+
+        const float gap = 24f;
 
         Vector2 position;
 
-        // Сначала пытаемся поставить текст ПОД кнопкой.
-        float belowY =
-            targetBottom -
-            gap -
-            panelHeight * 0.5f;
-
-        if (
-            belowY -
-            panelHeight * 0.5f >=
-            -canvasHeight * 0.5f
-        )
+        // Сначала справа
+        if (tr.x + gap + halfW <= canvasWidth * 0.5f)
         {
-            position =
-                new Vector2(
-                    targetCenter.x,
-                    belowY
-                );
+            position = new Vector2(
+                tr.x + gap + halfW,
+                targetCenter.y);
         }
+        // Потом слева
+        else if (bl.x - gap - halfW >= -canvasWidth * 0.5f)
+        {
+            position = new Vector2(
+                bl.x - gap - halfW,
+                targetCenter.y);
+        }
+        // Потом сверху
+        else if (tr.y + gap + halfH <= canvasHeight * 0.5f)
+        {
+            position = new Vector2(
+                targetCenter.x,
+                tr.y + gap + halfH);
+        }
+        // И только потом снизу
         else
         {
-            // Если снизу места нет — над кнопкой.
-            float aboveY =
-                targetTop +
-                gap +
-                panelHeight * 0.5f;
-
-            if (
-                aboveY +
-                panelHeight * 0.5f <=
-                canvasHeight * 0.5f
-            )
-            {
-                position =
-                    new Vector2(
-                        targetCenter.x,
-                        aboveY
-                    );
-            }
-            else
-            {
-                // Если и сверху нет места —
-                // справа/слева от кнопки.
-                float rightX =
-                    max.x +
-                    gap +
-                    panelWidth * 0.5f;
-
-                if (
-                    rightX +
-                    panelWidth * 0.5f <=
-                    canvasWidth * 0.5f
-                )
-                {
-                    position =
-                        new Vector2(
-                            rightX,
-                            targetCenter.y
-                        );
-                }
-                else
-                {
-                    float leftX =
-                        min.x -
-                        gap -
-                        panelWidth * 0.5f;
-
-                    position =
-                        new Vector2(
-                            leftX,
-                            targetCenter.y
-                        );
-                }
-            }
+            position = new Vector2(
+                targetCenter.x,
+                bl.y - gap - halfH);
         }
 
-        position.x =
-            Mathf.Clamp(
-                position.x,
-                -canvasWidth * 0.5f +
-                panelWidth * 0.5f,
-                canvasWidth * 0.5f -
-                panelWidth * 0.5f
-            );
+        // Жёстко удерживаем всю панель внутри экрана.
+        position.x = Mathf.Clamp(
+            position.x,
+            -canvasWidth * 0.5f + halfW + 12f,
+            canvasWidth * 0.5f - halfW - 12f);
 
-        position.y =
-            Mathf.Clamp(
-                position.y,
-                -canvasHeight * 0.5f +
-                panelHeight * 0.5f,
-                canvasHeight * 0.5f -
-                panelHeight * 0.5f
-            );
+        position.y = Mathf.Clamp(
+            position.y,
+            -canvasHeight * 0.5f + halfH + 12f,
+            canvasHeight * 0.5f - halfH - 12f);
 
-        panel.anchoredPosition =
-            position;
+        PositionInstructionPanel(position);
     }
 
     private void PositionInstructionPanel(
@@ -1395,11 +1704,14 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator WaitForOk()
     {
-        Button ok = CreateOkButton();
+        Button ok =
+            CreateOkButton();
 
         if (ok == null)
         {
-            yield return new WaitForSecondsRealtime(1f);
+            yield return new WaitForSecondsRealtime(
+                1f);
+
             DestroyOverlay();
             yield break;
         }
@@ -1407,14 +1719,19 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         bool clicked = false;
 
         UnityEngine.Events.UnityAction action =
-            () => clicked = true;
+            () =>
+            {
+                clicked = true;
+            };
 
-        ok.onClick.AddListener(action);
+        ok.onClick.AddListener(
+            action);
 
         while (!clicked)
             yield return null;
 
-        ok.onClick.RemoveListener(action);
+        ok.onClick.RemoveListener(
+            action);
 
         DestroyOverlay();
 
@@ -1423,7 +1740,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private Button CreateOkButton()
     {
-        if (overlayRoot == null)
+        if (overlayRoot == null ||
+            instructionBackground == null)
             return null;
 
         GameObject obj =
@@ -1431,13 +1749,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 "TutorialOK",
                 typeof(RectTransform),
                 typeof(Image),
-                typeof(Button)
-            );
+                typeof(Button));
 
         obj.transform.SetParent(
             instructionBackground.transform,
-            false
-        );
+            false);
 
         RectTransform rect =
             obj.GetComponent<RectTransform>();
@@ -1449,19 +1765,13 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             new Vector2(0.5f, 0f);
 
         rect.pivot =
-            new Vector2(0.5f, 1f);
+            new Vector2(0.5f, 0f);
 
         rect.sizeDelta =
-            new Vector2(
-                220f,
-                60f
-            );
+            new Vector2(220f, 54f);
 
         rect.anchoredPosition =
-            new Vector2(
-                0f,
-                -15f
-            );
+            new Vector2(0f, 16f);
 
         Image image =
             obj.GetComponent<Image>();
@@ -1477,63 +1787,47 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 55,
                 120,
                 78,
-                255
-            );
+                255);
 
         image.raycastTarget = true;
 
         Button button =
             obj.GetComponent<Button>();
 
-        button.targetGraphic =
-            image;
+        button.targetGraphic = image;
+
+        button.transition =
+            Selectable.Transition.ColorTint;
 
         GameObject textObj =
             new GameObject(
                 "Text",
                 typeof(RectTransform),
-                typeof(TextMeshProUGUI)
-            );
+                typeof(TextMeshProUGUI));
 
         textObj.transform.SetParent(
             obj.transform,
-            false
-        );
+            false);
 
-        RectTransform textRect =
-            textObj.GetComponent<RectTransform>();
-
-        textRect.anchorMin =
-            Vector2.zero;
-
-        textRect.anchorMax =
-            Vector2.one;
-
-        textRect.offsetMin =
-            Vector2.zero;
-
-        textRect.offsetMax =
-            Vector2.zero;
+        StretchFull(
+            textObj.GetComponent<RectTransform>());
 
         TMP_Text text =
             textObj.GetComponent<TMP_Text>();
 
         text.text = "OK";
-        text.fontSize = 25f;
+        text.fontSize = 23f;
         text.alignment =
             TextAlignmentOptions.Center;
 
-        text.color =
-            Color.white;
-
-        text.raycastTarget =
-            false;
+        text.color = Color.white;
+        text.raycastTarget = false;
 
         return button;
     }
 
     // =========================================================
-    // TARGET CLICK
+    // CLICK
     // =========================================================
 
     private IEnumerator WaitForTargetClick(
@@ -1545,15 +1839,25 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         bool clicked = false;
 
         UnityEngine.Events.UnityAction action =
-            () => clicked = true;
+            () =>
+            {
+                clicked = true;
+            };
 
-        target.onClick.AddListener(action);
+        target.onClick.AddListener(
+            action);
 
-        while (!clicked && target != null)
+        while (!clicked &&
+               target != null)
+        {
             yield return null;
+        }
 
         if (target != null)
-            target.onClick.RemoveListener(action);
+        {
+            target.onClick.RemoveListener(
+                action);
+        }
 
         DestroyOverlay();
 
@@ -1579,11 +1883,19 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             if (selectable == null)
                 continue;
 
+            if (overlayCanvas != null &&
+                selectable.transform.IsChildOf(
+                    overlayCanvas.transform))
+                continue;
+
             savedSelectables.Add(
                 new SelectableState
                 {
-                    selectable = selectable,
-                    interactable = selectable.interactable
+                    selectable =
+                        selectable,
+
+                    interactable =
+                        selectable.interactable
                 });
 
             selectable.interactable =
@@ -1596,21 +1908,24 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private void RestoreSelectables()
     {
-        foreach (SelectableState state in savedSelectables)
+        foreach (SelectableState state
+                 in savedSelectables)
         {
             if (state.selectable != null)
+            {
                 state.selectable.interactable =
                     state.interactable;
+            }
         }
 
         savedSelectables.Clear();
     }
 
     // =========================================================
-    // BUTTON SEARCH
+    // MAIN MENU BUTTONS
     // =========================================================
 
-    private Button FindButtonByText(
+    private Button FindMainMenuButtonByText(
         params string[] values)
     {
         Button[] buttons =
@@ -1624,19 +1939,25 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 !button.gameObject.activeInHierarchy)
                 continue;
 
+            if (!button.gameObject.scene.IsValid())
+                continue;
+
             TMP_Text text =
-                button.GetComponentInChildren<TMP_Text>(true);
+                button.GetComponentInChildren<TMP_Text>(
+                    true);
 
             if (text == null)
                 continue;
 
             string current =
-                text.text.Trim().ToUpperInvariant();
+                Normalize(text.text);
 
             foreach (string value in values)
             {
-                if (current.Contains(
-                    value.ToUpperInvariant()))
+                if (current ==
+                    Normalize(value) ||
+                    current.Contains(
+                        Normalize(value)))
                 {
                     return button;
                 }
@@ -1654,7 +1975,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             return null;
 
         Button[] buttons =
-            root.GetComponentsInChildren<Button>(true);
+            root.GetComponentsInChildren<Button>(
+                true);
 
         foreach (Button button in buttons)
         {
@@ -1663,18 +1985,22 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 continue;
 
             TMP_Text text =
-                button.GetComponentInChildren<TMP_Text>(true);
+                button.GetComponentInChildren<TMP_Text>(
+                    true);
 
             if (text == null)
                 continue;
 
             string current =
-                text.text.Trim().ToUpperInvariant();
+                Normalize(text.text);
 
             foreach (string value in values)
             {
-                if (current.Contains(
-                    value.ToUpperInvariant()))
+                string wanted =
+                    Normalize(value);
+
+                if (current == wanted ||
+                    current.Contains(wanted))
                 {
                     return button;
                 }
@@ -1684,6 +2010,58 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         return null;
     }
 
+    private Button FindFirstMeaningfulButton(
+        GameObject root,
+        params string[] excluded)
+    {
+        if (root == null)
+            return null;
+
+        Button[] buttons =
+            root.GetComponentsInChildren<Button>(
+                true);
+
+        foreach (Button button in buttons)
+        {
+            if (button == null ||
+                !button.gameObject.activeInHierarchy)
+                continue;
+
+            TMP_Text text =
+                button.GetComponentInChildren<TMP_Text>(
+                    true);
+
+            if (text == null ||
+                string.IsNullOrWhiteSpace(
+                    text.text))
+                continue;
+
+            string value =
+                Normalize(text.text);
+
+            bool excludedButton = false;
+
+            foreach (string ex in excluded)
+            {
+                if (value.Contains(
+                    Normalize(ex)))
+                {
+                    excludedButton = true;
+                    break;
+                }
+            }
+
+            if (!excludedButton)
+                return button;
+        }
+
+        return null;
+    }
+
+    // =========================================================
+    // REFLECTION BUTTON
+    // =========================================================
+
     private Button FindButtonFromMember(
         object owner,
         string memberName)
@@ -1691,7 +2069,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (owner == null)
             return null;
 
-        Type type = owner.GetType();
+        Type type =
+            owner.GetType();
 
         FieldInfo field =
             type.GetField(
@@ -1702,12 +2081,12 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         if (field != null)
         {
-            Button result =
+            Button button =
                 ConvertToButton(
                     field.GetValue(owner));
 
-            if (result != null)
-                return result;
+            if (button != null)
+                return button;
         }
 
         PropertyInfo property =
@@ -1721,7 +2100,9 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             property.CanRead)
         {
             return ConvertToButton(
-                property.GetValue(owner, null));
+                property.GetValue(
+                    owner,
+                    null));
         }
 
         return null;
@@ -1733,13 +2114,22 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (value == null)
             return null;
 
-        if (value is Button button)
+        Button button =
+            value as Button;
+
+        if (button != null)
             return button;
 
-        if (value is GameObject go)
+        GameObject go =
+            value as GameObject;
+
+        if (go != null)
             return go.GetComponent<Button>();
 
-        if (value is Component component)
+        Component component =
+            value as Component;
+
+        if (component != null)
             return component.GetComponent<Button>();
 
         return null;
@@ -1756,7 +2146,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (owner == null)
             return null;
 
-        Type type = owner.GetType();
+        Type type =
+            owner.GetType();
 
         FieldInfo field =
             type.GetField(
@@ -1766,8 +2157,10 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 BindingFlags.NonPublic);
 
         if (field != null)
+        {
             return ConvertToToggle(
                 field.GetValue(owner));
+        }
 
         PropertyInfo property =
             type.GetProperty(
@@ -1780,7 +2173,9 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             property.CanRead)
         {
             return ConvertToToggle(
-                property.GetValue(owner, null));
+                property.GetValue(
+                    owner,
+                    null));
         }
 
         return null;
@@ -1792,13 +2187,22 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (value == null)
             return null;
 
-        if (value is Toggle toggle)
+        Toggle toggle =
+            value as Toggle;
+
+        if (toggle != null)
             return toggle;
 
-        if (value is GameObject go)
+        GameObject go =
+            value as GameObject;
+
+        if (go != null)
             return go.GetComponent<Toggle>();
 
-        if (value is Component component)
+        Component component =
+            value as Component;
+
+        if (component != null)
             return component.GetComponent<Toggle>();
 
         return null;
@@ -1815,7 +2219,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (owner == null)
             return null;
 
-        Type type = owner.GetType();
+        Type type =
+            owner.GetType();
 
         FieldInfo field =
             type.GetField(
@@ -1825,7 +2230,10 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 BindingFlags.NonPublic);
 
         if (field != null)
-            return field.GetValue(owner) as Slider;
+        {
+            return field.GetValue(owner)
+                as Slider;
+        }
 
         PropertyInfo property =
             type.GetProperty(
@@ -1846,106 +2254,44 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     }
 
     // =========================================================
-    // FIRST BUTTONS
-    // =========================================================
-
-    private Button FindFirstMeaningfulButton(
-        GameObject root)
-    {
-        if (root == null)
-            return null;
-
-        Button[] buttons =
-            root.GetComponentsInChildren<Button>(true);
-
-        foreach (Button button in buttons)
-        {
-            if (button == null ||
-                !button.gameObject.activeInHierarchy)
-                continue;
-
-            TMP_Text text =
-                button.GetComponentInChildren<TMP_Text>(true);
-
-            if (text != null &&
-                !string.IsNullOrWhiteSpace(text.text))
-            {
-                return button;
-            }
-        }
-
-        return null;
-    }
-
-    private Button FindFirstCharacterButton(
-        GameObject root)
-    {
-        if (root == null)
-            return null;
-
-        Button[] buttons =
-            root.GetComponentsInChildren<Button>(true);
-
-        foreach (Button button in buttons)
-        {
-            if (button == null ||
-                !button.gameObject.activeInHierarchy)
-                continue;
-
-            TMP_Text text =
-                button.GetComponentInChildren<TMP_Text>(true);
-
-            if (text == null)
-                continue;
-
-            string value =
-                text.text.Trim().ToUpperInvariant();
-
-            if (
-                value.Contains("ВЫБРАТЬ") ||
-                value.Contains("КУПИТЬ"))
-            {
-                return button;
-            }
-        }
-
-        return null;
-    }
-
-    // =========================================================
-    // DAILY
+    // UTILITY BUTTON
     // =========================================================
 
     private Button FindUtilityButton(
         string requiredAction)
     {
         MainMenuUtilityButton3D[] utilities =
-            FindObjectsByType<MainMenuUtilityButton3D>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            FindObjectsByType<
+                MainMenuUtilityButton3D>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
 
-        foreach (MainMenuUtilityButton3D utility in utilities)
+        foreach (
+            MainMenuUtilityButton3D utility
+            in utilities)
         {
             if (utility == null)
                 continue;
 
             string action =
-                GetActionValue(utility);
+                GetActionValue(
+                    utility);
 
             if (!string.Equals(
                 action,
                 requiredAction,
                 StringComparison.OrdinalIgnoreCase))
-            {
                 continue;
-            }
 
             Button button =
                 utility.GetComponent<Button>();
 
             if (button == null)
+            {
                 button =
-                    utility.GetComponentInChildren<Button>(true);
+                    utility.GetComponentInChildren<Button>(
+                        true);
+            }
 
             if (button != null)
                 return button;
@@ -1954,9 +2300,14 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         return null;
     }
 
-    private string GetActionValue(object target)
+    private string GetActionValue(
+        object target)
     {
-        Type type = target.GetType();
+        if (target == null)
+            return string.Empty;
+
+        Type type =
+            target.GetType();
 
         FieldInfo[] fields =
             type.GetFields(
@@ -1978,38 +2329,56 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 return value.ToString();
         }
 
-        PropertyInfo[] properties =
-            type.GetProperties(
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic);
-
-        foreach (PropertyInfo property in properties)
-        {
-            if (!property.Name
-                .ToLowerInvariant()
-                .Contains("action"))
-                continue;
-
-            if (!property.CanRead)
-                continue;
-
-            object value;
-
-            try
-            {
-                value = property.GetValue(target, null);
-            }
-            catch
-            {
-                continue;
-            }
-
-            if (value != null)
-                return value.ToString();
-        }
-
         return string.Empty;
+    }
+
+    // =========================================================
+    // MANAGER ACTIVE
+    // =========================================================
+
+    private IEnumerator WaitUntilManagerActive(
+        object manager,
+        float timeout = 8f)
+    {
+        if (manager == null)
+            yield break;
+
+        GameObject go =
+            GetGameObject(
+                manager as UnityEngine.Object);
+
+        if (go == null)
+            yield break;
+
+        yield return WaitUntilActive(
+            go,
+            timeout);
+    }
+
+    private IEnumerator WaitForMainMenuWindow()
+    {
+        float timer = 0f;
+
+        while (timer < 8f)
+        {
+            MainMenuManager menu =
+                FindObjectIncludingInactive<
+                    MainMenuManager>();
+
+            if (menu != null)
+            {
+                GameObject go =
+                    menu.gameObject;
+
+                if (go.activeInHierarchy)
+                    yield break;
+            }
+
+            timer +=
+                Time.unscaledDeltaTime;
+
+            yield return null;
+        }
     }
 
     // =========================================================
@@ -2046,7 +2415,24 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         DestroyOverlay();
 
         Debug.Log(
-            "[MainMenuTutorial] Полное обучение меню завершено.");
+            "[MainMenuTutorial] " +
+            "Полное обучение меню завершено.");
+    }
+
+    // =========================================================
+    // NORMALIZE
+    // =========================================================
+
+    private string Normalize(
+        string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        return value
+            .Trim()
+            .ToUpperInvariant()
+            .Replace("Ё", "Е");
     }
 
     // =========================================================
@@ -2056,11 +2442,17 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     private void StretchFull(
         RectTransform rect)
     {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
+        rect.anchorMin =
+            Vector2.zero;
 
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        rect.anchorMax =
+            Vector2.one;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
 
         rect.pivot =
             new Vector2(
@@ -2112,30 +2504,5 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         }
 
         tutorial.StartMainMenuTutorialImmediately();
-    }
-
-    private void StartMainMenuTutorialImmediately()
-    {
-        if (tutorialRoutine != null)
-            return;
-
-        if (IsCompleted())
-            return;
-
-        if (!IsUpgradeTutorialCompleted())
-            return;
-
-        if (
-            SceneManager.GetActiveScene().name !=
-            MAIN_MENU_SCENE
-        )
-        {
-            return;
-        }
-
-        tutorialRoutine =
-            StartCoroutine(
-                TutorialRoutine()
-            );
     }
 }
