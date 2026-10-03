@@ -56,6 +56,14 @@ public static class AchievementSystem3D
         >
         {
             new AchievementDefinition3D(
+                "tutorial_completed",
+                "ПЕРВЫЕ ШАГИ",
+                "Пройди полное обучение игры.",
+                AchievementMode3D.Shelter,
+                50
+            ),
+
+            new AchievementDefinition3D(
                 "shelter_first",
                 "ПЕРВЫЙ ПРИХОД",
                 "Впервые доберись до убежища.",
