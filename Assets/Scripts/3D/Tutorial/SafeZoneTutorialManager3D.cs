@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,17 +33,13 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     [SerializeField]
     private bool startAutomatically = true;
 
-    [Header("Остановка обычного спавна")]
+    [Header("Обычный спавн")]
     [SerializeField]
     private bool stopNormalSpawners = true;
 
-    [Header("Замедление обучения")]
+    [Header("Замедление")]
     [SerializeField]
-    private bool slowTimeDuringHint = true;
-
-    [SerializeField]
-    [Range(0.05f, 1f)]
-    private float hintTimeScale = 0.15f;
+    private bool slowTimeDuringHint = false;
 
     [Header("UI")]
     [SerializeField]
@@ -103,6 +100,29 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     private string rescueMessage =
         "Подбеги к выжившему и спаси его.";
 
+    [Header("Учебные объекты")]
+    [SerializeField]
+    private float tutorialSpawnDistance = 42f;
+
+    [SerializeField]
+    private float tutorialCoinSpacing = 2.0f;
+
+    [SerializeField]
+    private int tutorialCoinCount = 6;
+
+    private PlayerMovement3D player;
+    private ObstacleSpawner3D obstacleSpawner;
+    private PickupSpawner3D pickupSpawner;
+    private RescuedPersonSpawner rescuedSpawner;
+    private HUDManager hud;
+
+    private int startCoins;
+    private int startRescued;
+    private int startLane;
+
+    private readonly List<GameObject> tutorialObjects =
+        new List<GameObject>();
+
     public TutorialStage CurrentStage
     {
         get;
@@ -124,19 +144,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     public event Action<TutorialStage> StageChanged;
-
-    private PlayerMovement3D player;
-    private ObstacleSpawner3D obstacleSpawner;
-    private PickupSpawner3D pickupSpawner;
-    private RescuedPersonSpawner rescuedSpawner;
-    private HUDManager hud;
-
-    private int startCoins;
-    private int startRescued;
-    private int startLane;
-
-    private float previousTimeScale = 1f;
-    private bool timeScaleChanged;
 
     private void Awake()
     {
@@ -161,6 +168,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 SkipTutorial
             );
         }
+
+        PrepareTextAppearance();
 
         HideHintImmediate();
     }
@@ -254,6 +263,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
+        IsRunning = true;
+
         startLane =
             player.GetCurrentLane();
 
@@ -267,12 +278,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 ? hud.GetRescued()
                 : 0;
 
-        IsRunning = true;
-
         if (stopNormalSpawners)
         {
             StopNormalSpawners();
         }
+
+        ClearTutorialObjects();
 
         SetStage(
             TutorialStage.Move
@@ -280,7 +291,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // STAGES
+    // CHECK
     // =========================================================
 
     private void CheckCurrentStage()
@@ -376,51 +387,61 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // STAGE
+    // =========================================================
+
     private void CompleteCurrentStage()
     {
-        RestoreTimeScale();
-
         switch (CurrentStage)
         {
             case TutorialStage.Move:
+
                 SetStage(
                     TutorialStage.Jump
                 );
+
                 break;
 
             case TutorialStage.Jump:
+
                 SetStage(
                     TutorialStage.Coins
                 );
+
                 break;
 
             case TutorialStage.Coins:
+
                 SetStage(
                     TutorialStage.Slide
                 );
+
                 break;
 
             case TutorialStage.Slide:
+
                 SetStage(
                     TutorialStage.DoubleJump
                 );
+
                 break;
 
             case TutorialStage.DoubleJump:
+
                 SetStage(
                     TutorialStage.Rescue
                 );
+
                 break;
 
             case TutorialStage.Rescue:
+
                 CompleteTutorial();
+
                 break;
         }
     }
-
-    // =========================================================
-    // STAGE SET
-    // =========================================================
 
     private void SetStage(
         TutorialStage stage
@@ -428,14 +449,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     {
         CurrentStage = stage;
 
-        if (stage == TutorialStage.Completed ||
-            stage == TutorialStage.None)
-        {
-            HideHint();
-            return;
-        }
-
         UpdateStageBaseline();
+
+        ClearTutorialObjects();
 
         switch (stage)
         {
@@ -457,6 +473,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     2
                 );
 
+                SpawnJumpObstacle();
+
                 break;
 
             case TutorialStage.Coins:
@@ -466,6 +484,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     coinsMessage,
                     3
                 );
+
+                SpawnTutorialCoins();
 
                 break;
 
@@ -477,6 +497,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     4
                 );
 
+                SpawnSlideObstacle();
+
                 break;
 
             case TutorialStage.DoubleJump:
@@ -487,6 +509,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     5
                 );
 
+                SpawnDoubleJumpObstacle();
+
                 break;
 
             case TutorialStage.Rescue:
@@ -496,6 +520,20 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     rescueMessage,
                     6
                 );
+
+                SpawnRescuedPerson();
+
+                break;
+
+            case TutorialStage.Completed:
+
+                HideHint();
+
+                break;
+
+            case TutorialStage.None:
+
+                HideHint();
 
                 break;
         }
@@ -543,6 +581,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
             titleText.color =
                 Color.white;
+
+            titleText.fontStyle =
+                FontStyles.Normal;
+
+            titleText.fontWeight =
+                FontWeight.Regular;
         }
 
         if (messageText != null)
@@ -552,6 +596,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
             messageText.color =
                 Color.white;
+
+            messageText.fontStyle =
+                FontStyles.Normal;
+
+            messageText.fontWeight =
+                FontWeight.Regular;
         }
 
         if (progressText != null)
@@ -564,8 +614,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     1f,
                     1f,
                     1f,
-                    0.8f
+                    0.85f
                 );
+
+            progressText.fontStyle =
+                FontStyles.Normal;
+
+            progressText.fontWeight =
+                FontWeight.Regular;
         }
 
         if (skipButton != null)
@@ -573,12 +629,98 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             skipButton.interactable = true;
         }
 
-        ApplyHintTimeScale();
+        ApplyTextOutline();
+
+        // Замедление полностью отключено.
+        Time.timeScale = 1f;
+    }
+
+    private void PrepareTextAppearance()
+    {
+        if (titleText != null)
+        {
+            titleText.color =
+                Color.white;
+
+            titleText.fontStyle =
+                FontStyles.Normal;
+
+            titleText.fontWeight =
+                FontWeight.Regular;
+
+            titleText.textWrappingMode =
+                TextWrappingModes.Normal;
+
+            titleText.outlineWidth =
+                0.18f;
+
+            titleText.outlineColor =
+                new Color(
+                    0f,
+                    0f,
+                    0f,
+                    0.95f
+                );
+        }
+
+        if (messageText != null)
+        {
+            messageText.color =
+                Color.white;
+
+            messageText.fontStyle =
+                FontStyles.Normal;
+
+            messageText.fontWeight =
+                FontWeight.Regular;
+
+            messageText.textWrappingMode =
+                TextWrappingModes.Normal;
+
+            messageText.outlineWidth =
+                0.18f;
+
+            messageText.outlineColor =
+                new Color(
+                    0f,
+                    0f,
+                    0f,
+                    0.95f
+                );
+        }
+
+        if (progressText != null)
+        {
+            progressText.color =
+                Color.white;
+
+            progressText.fontStyle =
+                FontStyles.Normal;
+
+            progressText.fontWeight =
+                FontWeight.Regular;
+
+            progressText.outlineWidth =
+                0.15f;
+
+            progressText.outlineColor =
+                new Color(
+                    0f,
+                    0f,
+                    0f,
+                    0.95f
+                );
+        }
+    }
+
+    private void ApplyTextOutline()
+    {
+        PrepareTextAppearance();
     }
 
     private void HideHint()
     {
-        RestoreTimeScale();
+        Time.timeScale = 1f;
 
         if (hintPanel != null)
         {
@@ -588,6 +730,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void HideHintImmediate()
     {
+        Time.timeScale = 1f;
+
         if (hintPanel != null)
         {
             hintPanel.SetActive(false);
@@ -595,40 +739,538 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // TIME
+    // TUTORIAL OBSTACLES
     // =========================================================
 
-    private void ApplyHintTimeScale()
+    private void SpawnJumpObstacle()
     {
-        if (!slowTimeDuringHint)
-        {
-            return;
-        }
-
-        previousTimeScale =
-            Time.timeScale;
-
-        Time.timeScale =
-            Mathf.Clamp(
-                hintTimeScale,
-                0.05f,
-                1f
+        GameObject prefab =
+            FindObstaclePrefab(
+                ObstacleType.Normal
             );
 
-        timeScaleChanged = true;
+        if (prefab == null)
+        {
+            Debug.LogWarning(
+                "[Tutorial] Не найдено обычное препятствие для обучения прыжку."
+            );
+
+            return;
+        }
+
+        SpawnTutorialObstacle(
+            prefab,
+            false
+        );
     }
 
-    private void RestoreTimeScale()
+    private void SpawnSlideObstacle()
     {
-        if (!timeScaleChanged)
+        GameObject prefab =
+            FindObstaclePrefab(
+                ObstacleType.Slide
+            );
+
+        if (prefab == null)
+        {
+            Debug.LogWarning(
+                "[Tutorial] Не найдено препятствие Slide для обучения."
+            );
+
+            return;
+        }
+
+        SpawnTutorialObstacle(
+            prefab,
+            false
+        );
+    }
+
+    private void SpawnDoubleJumpObstacle()
+    {
+        GameObject prefab =
+            FindObstaclePrefab(
+                ObstacleType.DoubleJump
+            );
+
+        if (prefab == null)
+        {
+            Debug.LogWarning(
+                "[Tutorial] Не найдено препятствие DoubleJump для обучения."
+            );
+
+            return;
+        }
+
+        SpawnTutorialObstacle(
+            prefab,
+            false
+        );
+    }
+
+    private GameObject FindObstaclePrefab(
+        ObstacleType requiredType
+    )
+    {
+        if (obstacleSpawner == null)
+        {
+            return null;
+        }
+
+        if (
+            obstacleSpawner.obstaclePrefabs == null ||
+            obstacleSpawner.obstaclePrefabs.Length == 0
+        )
+        {
+            return null;
+        }
+
+        foreach (
+            GameObject prefab
+            in obstacleSpawner.obstaclePrefabs
+        )
+        {
+            if (prefab == null)
+            {
+                continue;
+            }
+
+            ObstacleType3D type =
+                prefab.GetComponentInChildren<
+                    ObstacleType3D
+                >(true);
+
+            if (type == null)
+            {
+                continue;
+            }
+
+            if (type.type == requiredType)
+            {
+                return prefab;
+            }
+        }
+
+        return null;
+    }
+
+    private void SpawnTutorialObstacle(
+        GameObject prefab,
+        bool generateCoins
+    )
+    {
+        if (
+            prefab == null ||
+            player == null ||
+            obstacleSpawner == null
+        )
         {
             return;
         }
 
-        Time.timeScale =
-            previousTimeScale;
+        float laneX =
+            GetCurrentLaneX();
 
-        timeScaleChanged = false;
+        float spawnZ =
+            player.transform.position.z +
+            tutorialSpawnDistance;
+
+        float spawnY =
+            prefab.transform.position.y;
+
+        SpawnHeightOffset3D heightOverride =
+            prefab.GetComponent<
+                SpawnHeightOffset3D
+            >();
+
+        if (heightOverride != null)
+        {
+            spawnY =
+                heightOverride.spawnY;
+        }
+
+        GameObject instance =
+            Instantiate(
+                prefab,
+                new Vector3(
+                    laneX,
+                    spawnY,
+                    spawnZ
+                ),
+                Quaternion.identity
+            );
+
+        instance.name =
+            "TutorialObstacle";
+
+        tutorialObjects.Add(
+            instance
+        );
+
+        RunnerDepthSorter3D depthSorter =
+            instance.GetComponent<
+                RunnerDepthSorter3D
+            >();
+
+        if (depthSorter == null)
+        {
+            instance.AddComponent<
+                RunnerDepthSorter3D
+            >();
+        }
+
+        GroundSnap3D groundSnap =
+            instance.GetComponent<
+                GroundSnap3D
+            >();
+
+        if (groundSnap == null)
+        {
+            groundSnap =
+                instance.AddComponent<
+                    GroundSnap3D
+                >();
+        }
+
+        groundSnap.groundY =
+            obstacleSpawner.obstacleGroundY;
+
+        groundSnap.heightOffset =
+            obstacleSpawner.obstacleHeightOffset;
+
+        groundSnap.SnapToGround();
+
+        ObstacleMover3D mover =
+            instance.GetComponent<
+                ObstacleMover3D
+            >();
+
+        if (mover == null)
+        {
+            mover =
+                instance.AddComponent<
+                    ObstacleMover3D
+                >();
+        }
+
+        mover.laneX =
+            laneX;
+
+        mover.spawnZ =
+            spawnZ;
+
+        mover.speed =
+            obstacleSpawner.CurrentObstacleSpeed;
+
+        mover.ApplyInitialState();
+
+        SpawnReveal3D reveal =
+            instance.GetComponent<
+                SpawnReveal3D
+            >();
+
+        if (reveal == null)
+        {
+            reveal =
+                instance.AddComponent<
+                    SpawnReveal3D
+                >();
+        }
+
+        reveal.Initialize(
+            player.transform.position.z +
+            obstacleSpawner.revealZ
+        );
+
+        if (
+            pickupSpawner != null &&
+            generateCoins
+        )
+        {
+            pickupSpawner.RegisterObstacleSpawned(
+                instance,
+                true
+            );
+        }
+    }
+
+    // =========================================================
+    // TUTORIAL COINS
+    // =========================================================
+
+    private void SpawnTutorialCoins()
+    {
+        if (
+            pickupSpawner == null ||
+            pickupSpawner.coinPrefab == null ||
+            player == null
+        )
+        {
+            Debug.LogWarning(
+                "[Tutorial] Coin prefab не найден."
+            );
+
+            return;
+        }
+
+        float laneX =
+            GetCurrentLaneX();
+
+        float startZ =
+            player.transform.position.z +
+            tutorialSpawnDistance;
+
+        float groundY =
+            pickupSpawner.coinPrefab
+                .transform.position.y;
+
+        for (
+            int i = 0;
+            i < tutorialCoinCount;
+            i++
+        )
+        {
+            float z =
+                startZ +
+                i *
+                tutorialCoinSpacing;
+
+            SpawnTutorialCoin(
+                laneX,
+                groundY,
+                z
+            );
+        }
+    }
+
+    private void SpawnTutorialCoin(
+        float laneX,
+        float y,
+        float z
+    )
+    {
+        GameObject instance =
+            Instantiate(
+                pickupSpawner.coinPrefab,
+                new Vector3(
+                    laneX,
+                    y,
+                    z
+                ),
+                Quaternion.identity
+            );
+
+        instance.name =
+            "TutorialCoin";
+
+        tutorialObjects.Add(
+            instance
+        );
+
+        RunnerDepthSorter3D depthSorter =
+            instance.GetComponent<
+                RunnerDepthSorter3D
+            >();
+
+        if (depthSorter == null)
+        {
+            instance.AddComponent<
+                RunnerDepthSorter3D
+            >();
+        }
+
+        PickupMover3D mover =
+            instance.GetComponent<
+                PickupMover3D
+            >();
+
+        if (mover != null)
+        {
+            mover.laneX =
+                laneX;
+
+            mover.spawnZ =
+                z;
+
+            mover.ApplyInitialState();
+        }
+
+        SpawnReveal3D reveal =
+            instance.GetComponent<
+                SpawnReveal3D
+            >();
+
+        if (reveal == null)
+        {
+            reveal =
+                instance.AddComponent<
+                    SpawnReveal3D
+                >();
+        }
+
+        float referenceSpawnZ =
+            obstacleSpawner != null
+                ? obstacleSpawner.spawnZ
+                : 90f;
+
+        float referenceRevealZ =
+            obstacleSpawner != null
+                ? obstacleSpawner.revealZ
+                : 70f;
+
+        reveal.InitializeSynchronized(
+            z,
+            referenceSpawnZ,
+            referenceRevealZ
+        );
+    }
+
+    // =========================================================
+    // RESCUE
+    // =========================================================
+
+    private void SpawnRescuedPerson()
+    {
+        if (
+            rescuedSpawner == null ||
+            rescuedSpawner.rescuedPersonPrefab == null ||
+            player == null
+        )
+        {
+            Debug.LogWarning(
+                "[Tutorial] Prefab спасаемого человека не найден."
+            );
+
+            return;
+        }
+
+        float laneX =
+            GetCurrentLaneX();
+
+        float spawnZ =
+            player.transform.position.z +
+            tutorialSpawnDistance;
+
+        GameObject instance =
+            Instantiate(
+                rescuedSpawner.rescuedPersonPrefab,
+                new Vector3(
+                    laneX,
+                    rescuedSpawner.spawnY,
+                    spawnZ
+                ),
+                Quaternion.identity
+            );
+
+        instance.name =
+            "TutorialRescuedPerson";
+
+        tutorialObjects.Add(
+            instance
+        );
+
+        RunnerDepthSorter3D depthSorter =
+            instance.GetComponent<
+                RunnerDepthSorter3D
+            >();
+
+        if (depthSorter == null)
+        {
+            instance.AddComponent<
+                RunnerDepthSorter3D
+            >();
+        }
+
+        SpawnReveal3D reveal =
+            instance.GetComponent<
+                SpawnReveal3D
+            >();
+
+        if (reveal == null)
+        {
+            reveal =
+                instance.AddComponent<
+                    SpawnReveal3D
+                >();
+        }
+
+        reveal.fadeDuration =
+            0.35f;
+
+        reveal.Initialize(
+            player.transform.position.z +
+            rescuedSpawner.revealZ
+        );
+
+        RescuedPerson person =
+            instance.GetComponent<
+                RescuedPerson
+            >();
+
+        if (person != null)
+        {
+            person.laneX =
+                laneX;
+
+            person.spawnZ =
+                spawnZ;
+
+            person.ApplyInitialState();
+        }
+    }
+
+    // =========================================================
+    // LANES
+    // =========================================================
+
+    private float GetCurrentLaneX()
+    {
+        if (
+            player != null &&
+            player.lanePositions != null &&
+            player.lanePositions.Length >= 2
+        )
+        {
+            int lane =
+                Mathf.Clamp(
+                    player.GetCurrentLane(),
+                    0,
+                    player.lanePositions.Length - 1
+                );
+
+            return player.lanePositions[lane];
+        }
+
+        return
+            player != null &&
+            player.GetCurrentLane() == 0
+                ? -0.8f
+                : 0.8f;
+    }
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
+
+    private void ClearTutorialObjects()
+    {
+        for (
+            int i =
+                tutorialObjects.Count - 1;
+            i >= 0;
+            i--
+        )
+        {
+            GameObject obj =
+                tutorialObjects[i];
+
+            if (obj != null)
+            {
+                Destroy(obj);
+            }
+        }
+
+        tutorialObjects.Clear();
     }
 
     // =========================================================
@@ -683,12 +1325,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
-        RestoreTimeScale();
+        Time.timeScale = 1f;
 
         IsRunning = false;
 
         CurrentStage =
             TutorialStage.Completed;
+
+        ClearTutorialObjects();
 
         RestoreNormalSpawners();
 
@@ -712,7 +1356,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     public void SkipTutorial()
     {
-        RestoreTimeScale();
+        Time.timeScale = 1f;
+
+        ClearTutorialObjects();
 
         if (!IsRunning)
         {
@@ -725,10 +1371,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
             return;
         }
-
-        Debug.Log(
-            "[Tutorial] Обучение пропущено."
-        );
 
         IsRunning = false;
 
@@ -748,6 +1390,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         StageChanged?.Invoke(
             TutorialStage.Completed
+        );
+
+        Debug.Log(
+            "[Tutorial] Обучение пропущено."
         );
     }
 
@@ -790,17 +1436,13 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     {
         if (pauseStatus)
         {
-            RestoreTimeScale();
-        }
-        else if (IsRunning)
-        {
-            ApplyHintTimeScale();
+            Time.timeScale = 1f;
         }
     }
 
     private void OnDestroy()
     {
-        RestoreTimeScale();
+        Time.timeScale = 1f;
 
         if (Instance == this)
         {
