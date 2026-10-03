@@ -82,19 +82,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     public void TryStart()
     {
-        if (tutorialRoutine != null)
-            return;
-
-        if (IsCompleted())
-            return;
-
-        if (!IsUpgradeTutorialCompleted())
-            return;
-
-        if (SceneManager.GetActiveScene().name != MAIN_MENU_SCENE)
-            return;
-
-        tutorialRoutine = StartCoroutine(TutorialRoutine());
+        StartMainMenuTutorialImmediately();
     }
 
     private IEnumerator TutorialRoutine()
@@ -1157,12 +1145,13 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     // =========================================================
 
     private void PositionHighlight(
-        RectTransform target)
+    RectTransform target)
     {
         if (
             target == null ||
             highlightImage == null ||
-            overlayCanvas == null)
+            overlayCanvas == null
+        )
         {
             return;
         }
@@ -1170,32 +1159,33 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         RectTransform canvasRect =
             overlayCanvas.GetComponent<RectTransform>();
 
-        Vector3[] corners = new Vector3[4];
+        Vector3[] corners =
+            new Vector3[4];
 
         target.GetWorldCorners(corners);
 
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvasRect,
-            RectTransformUtility.WorldToScreenPoint(
-                null,
-                corners[0]),
-            null,
-            out Vector2 bl);
+        Vector2 min;
+        Vector2 max;
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             RectTransformUtility.WorldToScreenPoint(
                 null,
-                corners[2]),
+                corners[0]
+            ),
             null,
-            out Vector2 tr);
+            out min
+        );
 
-        Vector2 center = (bl + tr) * 0.5f;
-
-        Vector2 size =
-            new Vector2(
-                Mathf.Abs(tr.x - bl.x),
-                Mathf.Abs(tr.y - bl.y));
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            RectTransformUtility.WorldToScreenPoint(
+                null,
+                corners[2]
+            ),
+            null,
+            out max
+        );
 
         RectTransform rect =
             highlightImage.rectTransform;
@@ -1209,15 +1199,15 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         rect.pivot =
             new Vector2(0.5f, 0.5f);
 
-        rect.anchoredPosition = center;
+        rect.anchoredPosition =
+            (min + max) * 0.5f;
 
         rect.sizeDelta =
-            size + new Vector2(16f, 16f);
+            new Vector2(
+                Mathf.Abs(max.x - min.x) + 20f,
+                Mathf.Abs(max.y - min.y) + 20f
+            );
     }
-
-    // =========================================================
-    // TEXT POSITION
-    // =========================================================
 
     private void PositionInstructionNearTarget(
         RectTransform target)
@@ -1225,7 +1215,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (
             target == null ||
             instructionBackground == null ||
-            overlayCanvas == null)
+            overlayCanvas == null
+        )
         {
             return;
         }
@@ -1233,83 +1224,157 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         RectTransform canvasRect =
             overlayCanvas.GetComponent<RectTransform>();
 
-        Vector3[] corners = new Vector3[4];
+        Vector3[] corners =
+            new Vector3[4];
 
         target.GetWorldCorners(corners);
 
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvasRect,
-            RectTransformUtility.WorldToScreenPoint(
-                null,
-                corners[0]),
-            null,
-            out Vector2 bl);
+        Vector2 min;
+        Vector2 max;
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             RectTransformUtility.WorldToScreenPoint(
                 null,
-                corners[2]),
+                corners[0]
+            ),
             null,
-            out Vector2 tr);
+            out min
+        );
 
-        Vector2 center = (bl + tr) * 0.5f;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            RectTransformUtility.WorldToScreenPoint(
+                null,
+                corners[2]
+            ),
+            null,
+            out max
+        );
 
-        float width = canvasRect.rect.width;
-        float height = canvasRect.rect.height;
+        Vector2 targetCenter =
+            (min + max) * 0.5f;
 
-        float halfW =
-            instructionBackground.rectTransform.rect.width * 0.5f;
+        float targetTop =
+            max.y;
 
-        float halfH =
-            instructionBackground.rectTransform.rect.height * 0.5f;
+        float targetBottom =
+            min.y;
 
-        const float gap = 35f;
+        RectTransform panel =
+            instructionBackground.rectTransform;
+
+        float panelWidth =
+            panel.sizeDelta.x;
+
+        float panelHeight =
+            panel.sizeDelta.y;
+
+        float canvasWidth =
+            canvasRect.rect.width;
+
+        float canvasHeight =
+            canvasRect.rect.height;
+
+        const float gap = 30f;
 
         Vector2 position;
 
-        if (tr.x + gap + halfW < width * 0.5f)
+        // Сначала пытаемся поставить текст ПОД кнопкой.
+        float belowY =
+            targetBottom -
+            gap -
+            panelHeight * 0.5f;
+
+        if (
+            belowY -
+            panelHeight * 0.5f >=
+            -canvasHeight * 0.5f
+        )
         {
             position =
                 new Vector2(
-                    tr.x + gap + halfW,
-                    center.y);
-        }
-        else if (bl.x - gap - halfW > -width * 0.5f)
-        {
-            position =
-                new Vector2(
-                    bl.x - gap - halfW,
-                    center.y);
-        }
-        else if (tr.y + gap + halfH < height * 0.5f)
-        {
-            position =
-                new Vector2(
-                    center.x,
-                    tr.y + gap + halfH);
+                    targetCenter.x,
+                    belowY
+                );
         }
         else
         {
-            position =
-                new Vector2(
-                    center.x,
-                    bl.y - gap - halfH);
+            // Если снизу места нет — над кнопкой.
+            float aboveY =
+                targetTop +
+                gap +
+                panelHeight * 0.5f;
+
+            if (
+                aboveY +
+                panelHeight * 0.5f <=
+                canvasHeight * 0.5f
+            )
+            {
+                position =
+                    new Vector2(
+                        targetCenter.x,
+                        aboveY
+                    );
+            }
+            else
+            {
+                // Если и сверху нет места —
+                // справа/слева от кнопки.
+                float rightX =
+                    max.x +
+                    gap +
+                    panelWidth * 0.5f;
+
+                if (
+                    rightX +
+                    panelWidth * 0.5f <=
+                    canvasWidth * 0.5f
+                )
+                {
+                    position =
+                        new Vector2(
+                            rightX,
+                            targetCenter.y
+                        );
+                }
+                else
+                {
+                    float leftX =
+                        min.x -
+                        gap -
+                        panelWidth * 0.5f;
+
+                    position =
+                        new Vector2(
+                            leftX,
+                            targetCenter.y
+                        );
+                }
+            }
         }
 
         position.x =
             Mathf.Clamp(
                 position.x,
-                -width * 0.5f + halfW,
-                width * 0.5f - halfW);
+                -canvasWidth * 0.5f +
+                panelWidth * 0.5f,
+                canvasWidth * 0.5f -
+                panelWidth * 0.5f
+            );
 
         position.y =
             Mathf.Clamp(
                 position.y,
-                -height * 0.5f + halfH,
-                height * 0.5f - halfH);
+                -canvasHeight * 0.5f +
+                panelHeight * 0.5f,
+                canvasHeight * 0.5f -
+                panelHeight * 0.5f
+            );
 
-        PositionInstructionPanel(position);
+        panel.anchoredPosition =
+            position;
     }
 
     private void PositionInstructionPanel(
@@ -1318,7 +1383,9 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (instructionBackground == null)
             return;
 
-        instructionBackground.rectTransform.anchoredPosition =
+        instructionBackground
+            .rectTransform
+            .anchoredPosition =
             position;
     }
 
@@ -1364,29 +1431,37 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 "TutorialOK",
                 typeof(RectTransform),
                 typeof(Image),
-                typeof(Button));
+                typeof(Button)
+            );
 
         obj.transform.SetParent(
-            overlayRoot,
-            false);
+            instructionBackground.transform,
+            false
+        );
 
         RectTransform rect =
             obj.GetComponent<RectTransform>();
 
         rect.anchorMin =
-            new Vector2(0.5f, 0.5f);
+            new Vector2(0.5f, 0f);
 
         rect.anchorMax =
-            new Vector2(0.5f, 0.5f);
+            new Vector2(0.5f, 0f);
 
         rect.pivot =
-            new Vector2(0.5f, 0.5f);
+            new Vector2(0.5f, 1f);
 
         rect.sizeDelta =
-            new Vector2(250f, 70f);
+            new Vector2(
+                220f,
+                60f
+            );
 
         rect.anchoredPosition =
-            new Vector2(0f, -175f);
+            new Vector2(
+                0f,
+                -15f
+            );
 
         Image image =
             obj.GetComponent<Image>();
@@ -1398,36 +1473,61 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             Image.Type.Sliced;
 
         image.color =
-            new Color32(55, 120, 78, 255);
+            new Color32(
+                55,
+                120,
+                78,
+                255
+            );
+
+        image.raycastTarget = true;
 
         Button button =
             obj.GetComponent<Button>();
 
-        button.targetGraphic = image;
+        button.targetGraphic =
+            image;
 
         GameObject textObj =
             new GameObject(
                 "Text",
                 typeof(RectTransform),
-                typeof(TextMeshProUGUI));
+                typeof(TextMeshProUGUI)
+            );
 
         textObj.transform.SetParent(
             obj.transform,
-            false);
+            false
+        );
 
-        StretchFull(
-            textObj.GetComponent<RectTransform>());
+        RectTransform textRect =
+            textObj.GetComponent<RectTransform>();
+
+        textRect.anchorMin =
+            Vector2.zero;
+
+        textRect.anchorMax =
+            Vector2.one;
+
+        textRect.offsetMin =
+            Vector2.zero;
+
+        textRect.offsetMax =
+            Vector2.zero;
 
         TMP_Text text =
             textObj.GetComponent<TMP_Text>();
 
         text.text = "OK";
-        text.fontSize = 26f;
+        text.fontSize = 25f;
         text.alignment =
             TextAlignmentOptions.Center;
 
-        text.color = Color.white;
-        text.raycastTarget = false;
+        text.color =
+            Color.white;
+
+        text.raycastTarget =
+            false;
 
         return button;
     }
@@ -1966,5 +2066,76 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             new Vector2(
                 0.5f,
                 0.5f);
+    }
+
+    public static void StartAfterUpgradeTutorial()
+    {
+        if (
+            PlayerPrefs.GetInt(
+                COMPLETED_KEY,
+                0
+            ) == 1
+        )
+        {
+            return;
+        }
+
+        PlayerPrefs.SetInt(
+            UPGRADE_COMPLETED_KEY,
+            1
+        );
+
+        PlayerPrefs.Save();
+
+        SafeZoneMainMenuTutorial3D tutorial =
+            instance;
+
+        if (tutorial == null)
+        {
+            tutorial =
+                FindFirstObjectByType<
+                    SafeZoneMainMenuTutorial3D
+                >();
+        }
+
+        if (tutorial == null)
+        {
+            GameObject go =
+                new GameObject(
+                    "SafeZoneMainMenuTutorial3D"
+                );
+
+            tutorial =
+                go.AddComponent<
+                    SafeZoneMainMenuTutorial3D
+                >();
+        }
+
+        tutorial.StartMainMenuTutorialImmediately();
+    }
+
+    private void StartMainMenuTutorialImmediately()
+    {
+        if (tutorialRoutine != null)
+            return;
+
+        if (IsCompleted())
+            return;
+
+        if (!IsUpgradeTutorialCompleted())
+            return;
+
+        if (
+            SceneManager.GetActiveScene().name !=
+            MAIN_MENU_SCENE
+        )
+        {
+            return;
+        }
+
+        tutorialRoutine =
+            StartCoroutine(
+                TutorialRoutine()
+            );
     }
 }

@@ -246,7 +246,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 TutorialStep.HangarBack
             )
             {
-                CompleteTutorial();
+                FinishUpgradeTutorialAndStartMainMenuTutorial();
             }
 
             return;
@@ -1856,5 +1856,32 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 0.5f,
                 0.5f
             );
+    }
+
+    private void FinishUpgradeTutorialAndStartMainMenuTutorial()
+    {
+        currentStep = TutorialStep.Complete;
+
+        waitingForUpgradeResult = false;
+
+        RestoreSelectables();
+        DestroyOverlay();
+
+        PlayerPrefs.SetInt(
+            COMPLETED_KEY,
+            1
+        );
+
+        PlayerPrefs.DeleteKey(
+            PENDING_KEY
+        );
+
+        PlayerPrefs.Save();
+
+        Debug.Log(
+            "[UpgradeTutorial] Снаряжение и Ангар завершены. Запускаем обучение главного меню."
+        );
+
+        SafeZoneMainMenuTutorial3D.StartAfterUpgradeTutorial();
     }
 }
