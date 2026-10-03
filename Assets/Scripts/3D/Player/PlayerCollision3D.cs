@@ -24,21 +24,62 @@ public class PlayerCollision : MonoBehaviour
         if (playerMovement == null)
         {
             playerMovement =
-                GetComponent<
-                    PlayerMovement3D
-                >();
+                GetComponent<PlayerMovement3D>();
         }
     }
 
-    private void OnTriggerEnter(
-        Collider other)
+    // =========================================================
+    // ОБУЧЕНИЕ — ПОЛНОЕ БЕССМЕРТИЕ
+    // =========================================================
+
+    public void SetTutorialInvulnerable(
+        bool value
+    )
     {
-        if (!other.CompareTag("Obstacle") &&
-            !other.transform.root.CompareTag("Obstacle"))
+        isInvulnerable = value;
+
+        if (value)
+        {
+            if (pitRoutine != null)
+            {
+                StopCoroutine(pitRoutine);
+                pitRoutine = null;
+            }
+
+            if (reviveInvulnerabilityRoutine != null)
+            {
+                StopCoroutine(
+                    reviveInvulnerabilityRoutine
+                );
+
+                reviveInvulnerabilityRoutine = null;
+            }
+        }
+    }
+
+    public bool IsTutorialInvulnerable()
+    {
+        return isInvulnerable;
+    }
+
+    // =========================================================
+    // COLLISION
+    // =========================================================
+
+    private void OnTriggerEnter(
+        Collider other
+    )
+    {
+        if (
+            !other.CompareTag("Obstacle") &&
+            !other.transform.root.CompareTag("Obstacle")
+        )
         {
             return;
         }
 
+        // Во время обучения полностью игнорируем
+        // любые препятствия и ямы.
         if (isInvulnerable)
             return;
 
@@ -111,7 +152,8 @@ public class PlayerCollision : MonoBehaviour
     // =========================================================
 
     private void HandleNormalObstacle(
-        ObstacleMover3D mover)
+        ObstacleMover3D mover
+    )
     {
         if (
             playerMovement != null &&
@@ -132,7 +174,8 @@ public class PlayerCollision : MonoBehaviour
 
     private void HandlePit(
         ObstacleMover3D mover,
-        Collider pitCollider)
+        Collider pitCollider
+    )
     {
         if (
             playerMovement == null ||
@@ -159,112 +202,50 @@ public class PlayerCollision : MonoBehaviour
 
     private IEnumerator WaitForRealPitEntry(
         ObstacleMover3D mover,
-        Collider pitCollider)
+        Collider pitCollider
+    )
     {
         while (true)
         {
             if (
+                isInvulnerable ||
                 playerMovement == null ||
                 playerMovement.IsJumping() ||
                 playerMovement.IsDead() ||
                 playerMovement.IsDying()
             )
             {
-                pitRoutine =
-                    null;
-
+                pitRoutine = null;
                 yield break;
             }
 
-            if (
-                mover == null ||
-                !mover.isActiveAndEnabled ||
-                pitCollider == null ||
-                !pitCollider.enabled ||
-                !pitCollider.gameObject.activeInHierarchy
-            )
+            if (mover == null)
             {
-                pitRoutine =
-                    null;
-
+                pitRoutine = null;
                 yield break;
             }
 
-            Bounds pitBounds =
-                pitCollider.bounds;
+            float playerZ =
+                transform.position.z;
 
-            Vector3 playerPosition =
-                transform.position;
+            float pitZ =
+                mover.transform.position.z;
 
-            bool insideX =
-                playerPosition.x >=
-                    pitBounds.min.x -
-                    pitCheckTolerance &&
-                playerPosition.x <=
-                    pitBounds.max.x +
-                    pitCheckTolerance;
-
-            bool insideZ =
-                playerPosition.z >=
-                    pitBounds.min.z -
-                    pitCheckTolerance &&
-                playerPosition.z <=
-                    pitBounds.max.z +
-                    pitCheckTolerance;
-
-            if (
-                insideX &&
-                insideZ
-            )
-            {
-                MarkObstacleHit(
-                    mover
+            float distance =
+                Mathf.Abs(
+                    playerZ - pitZ
                 );
 
-                if (HUDManager.Instance != null)
-                {
-                    if (
-                        RunModeChallengeManager3D.Instance != null
-                    )
-                    {
-                        RunModeChallengeManager3D.Instance
-                            .OnPlayerHit();
-                    }
-
-                    HUDManager.Instance.SetHealth(
-                        0f
-                    );
-                }
-
-                if (
-                    AudioManager3D.Instance != null
-                )
-                {
-                    AudioManager3D.Instance
-                        .PlayPitFall();
-                }
-
-                playerMovement.FallIntoPit();
-
-                if (chase != null)
-                {
-                    chase.TriggerGameOverImmediate();
-                }
-
-                pitRoutine =
-                    null;
-
-                yield break;
-            }
-
             if (
-                pitBounds.max.z <
-                playerPosition.z -
+                distance <=
                 pitCheckTolerance
             )
             {
-                pitRoutine =
-                    null;
+                HitPlayer(
+                    mover
+                );
+
+                pitRoutine = null;
 
                 yield break;
             }
@@ -274,11 +255,12 @@ public class PlayerCollision : MonoBehaviour
     }
 
     // =========================================================
-    // SPECIAL
+    // SLIDE
     // =========================================================
 
     private void HandleSlide(
-        ObstacleMover3D mover)
+        ObstacleMover3D mover
+    )
     {
         if (
             playerMovement != null &&
@@ -293,8 +275,13 @@ public class PlayerCollision : MonoBehaviour
         );
     }
 
+    // =========================================================
+    // DOUBLE JUMP
+    // =========================================================
+
     private void HandleDoubleJump(
-        ObstacleMover3D mover)
+        ObstacleMover3D mover
+    )
     {
         if (
             playerMovement != null &&
@@ -314,8 +301,12 @@ public class PlayerCollision : MonoBehaviour
     // =========================================================
 
     private void HitPlayer(
-        ObstacleMover3D mover)
+        ObstacleMover3D mover
+    )
     {
+        if (isInvulnerable)
+            return;
+
         MarkObstacleHit(
             mover
         );
@@ -341,7 +332,8 @@ public class PlayerCollision : MonoBehaviour
             );
 
             if (
-                RunModeChallengeManager3D.Instance != null
+                RunModeChallengeManager3D.Instance !=
+                null
             )
             {
                 RunModeChallengeManager3D.Instance
@@ -350,7 +342,8 @@ public class PlayerCollision : MonoBehaviour
         }
 
         if (
-            AudioManager3D.Instance != null
+            AudioManager3D.Instance !=
+            null
         )
         {
             AudioManager3D.Instance
@@ -392,7 +385,8 @@ public class PlayerCollision : MonoBehaviour
     }
 
     private void MarkObstacleHit(
-        ObstacleMover3D mover)
+        ObstacleMover3D mover
+    )
     {
         if (mover != null)
         {
@@ -402,13 +396,12 @@ public class PlayerCollision : MonoBehaviour
     }
 
     // =========================================================
-    // НЕУЯЗВИМОСТЬ
+    // НЕУЯЗВИМОСТЬ ПОСЛЕ УДАРА
     // =========================================================
 
     private IEnumerator Invulnerability()
     {
-        isInvulnerable =
-            true;
+        isInvulnerable = true;
 
         string charId =
             ProfileManager
@@ -426,8 +419,7 @@ public class PlayerCollision : MonoBehaviour
                 SpriteRenderer
             >();
 
-        float elapsed =
-            0f;
+        float elapsed = 0f;
 
         while (elapsed < duration)
         {
@@ -445,12 +437,10 @@ public class PlayerCollision : MonoBehaviour
 
         if (sr != null)
         {
-            sr.enabled =
-                true;
+            sr.enabled = true;
         }
 
-        isInvulnerable =
-            false;
+        isInvulnerable = false;
     }
 
     // =========================================================
@@ -458,9 +448,13 @@ public class PlayerCollision : MonoBehaviour
     // =========================================================
 
     public void ActivateReviveInvulnerability(
-        float duration)
+        float duration
+    )
     {
-        if (reviveInvulnerabilityRoutine != null)
+        if (
+            reviveInvulnerabilityRoutine !=
+            null
+        )
         {
             StopCoroutine(
                 reviveInvulnerabilityRoutine
@@ -479,18 +473,17 @@ public class PlayerCollision : MonoBehaviour
     }
 
     private IEnumerator ReviveInvulnerability(
-        float duration)
+        float duration
+    )
     {
-        isInvulnerable =
-            true;
+        isInvulnerable = true;
 
         SpriteRenderer sr =
             GetComponentInChildren<
                 SpriteRenderer
             >();
 
-        float elapsed =
-            0f;
+        float elapsed = 0f;
 
         while (elapsed < duration)
         {
@@ -502,14 +495,11 @@ public class PlayerCollision : MonoBehaviour
 
         if (sr != null)
         {
-            sr.enabled =
-                true;
+            sr.enabled = true;
         }
 
-        isInvulnerable =
-            false;
+        isInvulnerable = false;
 
-        reviveInvulnerabilityRoutine =
-            null;
+        reviveInvulnerabilityRoutine = null;
     }
 }
