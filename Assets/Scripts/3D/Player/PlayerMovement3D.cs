@@ -1216,6 +1216,13 @@ public class PlayerMovement3D : MonoBehaviour
         isDead = true;
 
         RestoreNormalCollider();
+
+        // Яма и обычная смерть должны завершать забег
+        // через тот же Game Over, что и смерть от HP.
+        if (ChaseManager.Instance != null)
+        {
+            ChaseManager.Instance.TriggerGameOverImmediate();
+        }
     }
 
     // =========================================================
