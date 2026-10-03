@@ -8,7 +8,11 @@ public class PlayerCollision : MonoBehaviour
     public float invulnerabilityTime = 1.5f;
 
     [Header("Яма")]
-    public float pitCheckTolerance = 0.05f;
+    [Tooltip(
+        "Небольшой запас при проверке входа игрока " +
+        "в реальную область коллайдера ямы."
+    )]
+    public float pitCheckTolerance = 0.02f;
 
     [Header("Ссылки")]
     public ChaseManager chase;
@@ -40,12 +44,6 @@ public class PlayerCollision : MonoBehaviour
 
         if (value)
         {
-            if (pitRoutine != null)
-            {
-                StopCoroutine(pitRoutine);
-                pitRoutine = null;
-            }
-
             if (reviveInvulnerabilityRoutine != null)
             {
                 StopCoroutine(
@@ -91,11 +89,86 @@ public class PlayerCollision : MonoBehaviour
             return;
         }
 
+        ObstacleType3D obstacle =
+            other.GetComponentInParent<
+                ObstacleType3D
+            >();
+
         /*
-         * Во время обучения столкновение всё равно
-         * обрабатываем визуально/физически.
+         * Сначала определяем тип препятствия.
          *
-         * Но здоровье не уменьшаем.
+         * Это важно для ямы: даже во время обучения
+         * яма не должна превращаться в обычный удар.
+         */
+        if (obstacle != null)
+        {
+            switch (obstacle.type)
+            {
+                case ObstacleType.Pit:
+
+                    HandlePit(
+                        mover,
+                        other
+                    );
+
+                    return;
+
+                case ObstacleType.Normal:
+
+                    if (isInvulnerable)
+                    {
+                        HandleTutorialHit(
+                            mover
+                        );
+
+                        return;
+                    }
+
+                    HandleNormalObstacle(
+                        mover
+                    );
+
+                    return;
+
+                case ObstacleType.Slide:
+
+                    if (isInvulnerable)
+                    {
+                        HandleTutorialHit(
+                            mover
+                        );
+
+                        return;
+                    }
+
+                    HandleSlide(
+                        mover
+                    );
+
+                    return;
+
+                case ObstacleType.DoubleJump:
+
+                    if (isInvulnerable)
+                    {
+                        HandleTutorialHit(
+                            mover
+                        );
+
+                        return;
+                    }
+
+                    HandleDoubleJump(
+                        mover
+                    );
+
+                    return;
+            }
+        }
+
+        /*
+         * Запасной вариант для препятствия без
+         * ObstacleType3D.
          */
         if (isInvulnerable)
         {
@@ -106,55 +179,9 @@ public class PlayerCollision : MonoBehaviour
             return;
         }
 
-        ObstacleType3D obstacle =
-            other.GetComponentInParent<
-                ObstacleType3D
-            >();
-
-        if (obstacle == null)
-        {
-            HandleNormalObstacle(
-                mover
-            );
-
-            return;
-        }
-
-        switch (obstacle.type)
-        {
-            case ObstacleType.Normal:
-
-                HandleNormalObstacle(
-                    mover
-                );
-
-                break;
-
-            case ObstacleType.Pit:
-
-                HandlePit(
-                    mover,
-                    other
-                );
-
-                break;
-
-            case ObstacleType.Slide:
-
-                HandleSlide(
-                    mover
-                );
-
-                break;
-
-            case ObstacleType.DoubleJump:
-
-                HandleDoubleJump(
-                    mover
-                );
-
-                break;
-        }
+        HandleNormalObstacle(
+            mover
+        );
     }
 
     // =========================================================
@@ -171,8 +198,10 @@ public class PlayerCollision : MonoBehaviour
         }
 
         /*
-         * Отдача персонажа.
-         * Жизнь НЕ трогаем.
+         * Жизнь НЕ уменьшаем.
+         *
+         * При этом сохраняем обычную реакцию
+         * на столкновение.
          */
         if (playerMovement != null)
         {
@@ -186,17 +215,11 @@ public class PlayerCollision : MonoBehaviour
             chase.PushBack(1f);
         }
 
-        /*
-         * Обычный звук столкновения.
-         */
         if (AudioManager3D.Instance != null)
         {
             AudioManager3D.Instance.PlayHit();
         }
 
-        /*
-         * Обычная тряска камеры.
-         */
         if (CameraShake.Instance != null)
         {
             CameraShake.Instance.Shake(
@@ -244,11 +267,22 @@ public class PlayerCollision : MonoBehaviour
             return;
         }
 
+        /*
+         * Прыжок полностью защищает от ямы.
+         */
         if (playerMovement.IsJumping())
+        {
             return;
+        }
 
+        /*
+         * Если уже запущена проверка этой ямы —
+         * второй раз её не запускаем.
+         */
         if (pitRoutine != null)
+        {
             return;
+        }
 
         pitRoutine =
             StartCoroutine(
@@ -266,10 +300,32 @@ public class PlayerCollision : MonoBehaviour
     {
         while (true)
         {
+            /*
+             * Объект больше не существует.
+             */
             if (
-                isInvulnerable ||
+                mover == null ||
+                pitCollider == null
+            )
+            {
+                pitRoutine = null;
+                yield break;
+            }
+
+            /*
+             * Игрок уже прыгает —
+             * яму можно безопасно перепрыгнуть.
+             */
+            if (
                 playerMovement == null ||
-                playerMovement.IsJumping() ||
+                playerMovement.IsJumping()
+            )
+            {
+                pitRoutine = null;
+                yield break;
+            }
+
+            if (
                 playerMovement.IsDead() ||
                 playerMovement.IsDying()
             )
@@ -278,34 +334,109 @@ public class PlayerCollision : MonoBehaviour
                 yield break;
             }
 
-            if (mover == null)
+            /*
+             * Во время tutorial обычная яма сейчас
+             * не используется, но если она появится,
+             * не превращаем её в обычный урон.
+             */
+            if (isInvulnerable)
             {
                 pitRoutine = null;
                 yield break;
             }
 
+            /*
+             * =================================================
+             * ГЛАВНОЕ ИСПРАВЛЕНИЕ
+             * =================================================
+             *
+             * Больше НЕ сравниваем позицию игрока
+             * с transform.position ямы.
+             *
+             * Проверяем реальную область коллайдера ямы.
+             *
+             * Поэтому провал начинается именно тогда,
+             * когда игрок входит в саму яму.
+             */
+
+            Bounds pitBounds =
+                pitCollider.bounds;
+
             float playerZ =
                 transform.position.z;
 
-            float pitZ =
-                mover.transform.position.z;
+            float minZ =
+                pitBounds.min.z -
+                pitCheckTolerance;
 
-            float distance =
-                Mathf.Abs(
-                    playerZ - pitZ
-                );
+            float maxZ =
+                pitBounds.max.z +
+                pitCheckTolerance;
+
+            /*
+             * Проверяем X тоже.
+             *
+             * Это особенно важно, если в будущем
+             * ширина ямы по полосе изменится.
+             */
+            float playerX =
+                transform.position.x;
+
+            float minX =
+                pitBounds.min.x -
+                pitCheckTolerance;
+
+            float maxX =
+                pitBounds.max.x +
+                pitCheckTolerance;
+
+            bool insideZ =
+                playerZ >= minZ &&
+                playerZ <= maxZ;
+
+            bool insideX =
+                playerX >= minX &&
+                playerX <= maxX;
 
             if (
-                distance <=
-                pitCheckTolerance
+                insideX &&
+                insideZ
             )
             {
-                HitPlayer(
-                    mover
-                );
+                /*
+                 * Игрок реально находится
+                 * внутри области ямы.
+                 */
+                if (mover != null)
+                {
+                    mover.hasHitPlayer = true;
+                }
+
+                if (
+                    AudioManager3D.Instance != null
+                )
+                {
+                    AudioManager3D.Instance
+                        .PlayPitFall();
+                }
+
+                playerMovement.FallIntoPit();
 
                 pitRoutine = null;
 
+                yield break;
+            }
+
+            /*
+             * Если яма уже полностью прошла игрока,
+             * больше ждать её не нужно.
+             */
+            if (
+                pitBounds.max.z <
+                playerZ - pitCheckTolerance
+            )
+            {
+                pitRoutine = null;
                 yield break;
             }
 
@@ -364,7 +495,9 @@ public class PlayerCollision : MonoBehaviour
     )
     {
         if (isInvulnerable)
+        {
             return;
+        }
 
         MarkObstacleHit(
             mover
@@ -473,10 +606,16 @@ public class PlayerCollision : MonoBehaviour
 
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        while (
+            elapsed <
+            duration
+        )
         {
             if (sr != null)
-                sr.enabled = !sr.enabled;
+            {
+                sr.enabled =
+                    !sr.enabled;
+            }
 
             yield return null;
 
@@ -485,7 +624,9 @@ public class PlayerCollision : MonoBehaviour
         }
 
         if (sr != null)
+        {
             sr.enabled = true;
+        }
 
         isInvulnerable = false;
     }
@@ -532,7 +673,10 @@ public class PlayerCollision : MonoBehaviour
 
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        while (
+            elapsed <
+            duration
+        )
         {
             yield return null;
 
@@ -541,7 +685,9 @@ public class PlayerCollision : MonoBehaviour
         }
 
         if (sr != null)
+        {
             sr.enabled = true;
+        }
 
         isInvulnerable = false;
 
