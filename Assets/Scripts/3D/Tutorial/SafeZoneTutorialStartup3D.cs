@@ -47,17 +47,6 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
 
     [SerializeField] private float returnToMenuDelay = 0.45f;
 
-    [Header("Текст первого запуска")]
-    [TextArea(4, 8)]
-    [SerializeField]
-    private string playInstruction =
-    "ДОБРО ПОЖАЛОВАТЬ В SAFE ZONE RUNNER!\n\n" +
-    "Рад приветствовать тебя. Тебе предстоит пройти путь через опасный мир, " +
-    "добраться до убежища и спасти тех, кто ещё остался в живых.\n\n" +
-    "Нажми «Играть», чтобы начать забег.\n\n" +
-    "Сначала ты пройдёшь короткое обучение основным механикам. " +
-    "После него мы вернёмся в главное меню и разберём остальные разделы.";
-
     private Canvas overlayCanvas;
     private RectTransform overlayRoot;
 
@@ -307,7 +296,12 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
 
         ShowPlayOverlay(
             play,
-            playInstruction
+            "ДОБРО ПОЖАЛОВАТЬ В SAFE ZONE RUNNER!\n\n" +
+            "Рад приветствовать тебя. Тебе предстоит пройти путь через опасный мир, " +
+            "добраться до убежища и спасти тех, кто ещё остался в живых.\n\n" +
+            "Нажми «Играть», чтобы начать забег.\n\n" +
+            "Сначала ты пройдёшь короткое обучение основным механикам. " +
+            "После него мы вернёмся в главное меню и разберём остальные разделы."
         );
 
         /*
@@ -1087,11 +1081,39 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
     // =========================================================
 
     private void ShowInstructionText(
-        string text
-    )
+    string text
+)
     {
         if (instructionText == null)
             return;
+
+        TMP_FontAsset font =
+            Resources.Load<TMP_FontAsset>(
+                "Fonts/UI/Generated/GolosText-Medium"
+            );
+
+        if (font == null)
+        {
+            font =
+                Resources.Load<TMP_FontAsset>(
+                    "Fonts/UI/Generated/GolosText-SemiBold"
+                );
+        }
+
+        if (font == null)
+        {
+            font =
+                TMP_Settings.defaultFontAsset;
+        }
+
+        if (font != null)
+        {
+            instructionText.font =
+                font;
+
+            instructionText.fontSharedMaterial =
+                font.material;
+        }
 
         instructionText.gameObject.SetActive(
             true
@@ -1103,10 +1125,39 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
         instructionText.color =
             Color.white;
 
+        instructionText.faceColor =
+            Color.white;
+
         instructionText.alpha =
             1f;
 
-        instructionText.ForceMeshUpdate();
+        instructionText.fontSize =
+            28f;
+
+        instructionText.fontSizeMin =
+            18f;
+
+        instructionText.fontSizeMax =
+            28f;
+
+        instructionText.enableAutoSizing =
+            true;
+
+        instructionText.alignment =
+            TextAlignmentOptions.Center;
+
+        instructionText.textWrappingMode =
+            TextWrappingModes.Normal;
+
+        instructionText.overflowMode =
+            TextOverflowModes.Ellipsis;
+
+        instructionText.raycastTarget =
+            false;
+
+        instructionText.ForceMeshUpdate(
+            true
+        );
 
         Canvas.ForceUpdateCanvases();
     }
