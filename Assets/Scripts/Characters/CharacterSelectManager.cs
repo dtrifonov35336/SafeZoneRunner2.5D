@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using System.Linq;
 
 [System.Serializable]
 public class CharacterEntry
@@ -19,10 +20,7 @@ public class CharacterEntry
     public Sprite fullBody;
 
     [Header("Покупка")]
-    [Tooltip("Если выключено — персонаж доступен для просмотра, но купить его пока нельзя.")]
-    public bool availableForPurchase = true;
-
-    [Tooltip("Цена в кристаллах. Для Выжившего не используется.")]
+    [Tooltip("Цена в кристаллах.")]
     public int price = 0;
 }
 
@@ -34,8 +32,13 @@ public class CharacterSelectManager : MonoBehaviour
     public List<CharacterEntry> characters =
         new List<CharacterEntry>();
 
+    [Header("Конфигурация доступности")]
+    [Tooltip(
+        "Конфиг из Assets/Resources/CharacterAvailabilityConfig.asset"
+    )]
+    public CharacterAvailabilityConfig availabilityConfig;
+
     [Header("Fallback")]
-    [Tooltip("Спрайт-заглушка, если у персонажа нет портрета")]
     public Sprite fallbackSprite;
 
     [Header("UI — Превью")]
@@ -72,6 +75,17 @@ public class CharacterSelectManager : MonoBehaviour
     private const string SelectedCharKey =
         "SelectedCharacter";
 
+    // Фиксированный порядок персонажей в разделе.
+    private static readonly string[] CharacterOrder =
+    {
+        "survivor",
+        "medic",
+        "military",
+        "firefighter",
+        "mechanic",
+        "scout"
+    };
+
     // =========================================================
     // UNITY
     // =========================================================
@@ -88,11 +102,16 @@ public class CharacterSelectManager : MonoBehaviour
         }
 
         Instance = this;
+
+        LoadAvailabilityConfig();
+
+        // Всегда приводим список к нужному порядку
+        // до создания карточек и определения selectedIndex.
+        SortCharactersByReleaseOrder();
     }
 
     private void Start()
     {
-        // Кнопка назад
         if (backButton != null)
         {
             backButton.onClick.RemoveListener(
@@ -104,7 +123,6 @@ public class CharacterSelectManager : MonoBehaviour
             );
         }
 
-        // Основная кнопка
         if (actionButton != null)
         {
             actionButton.onClick.RemoveListener(
@@ -118,7 +136,6 @@ public class CharacterSelectManager : MonoBehaviour
 
         UpdateTopCurrencies();
 
-        // Загружаем выбранного персонажа
         selectedIndex =
             PlayerPrefs.GetInt(
                 SelectedCharKey,
@@ -133,8 +150,7 @@ public class CharacterSelectManager : MonoBehaviour
             selectedIndex = 0;
         }
 
-        // Дополнительная защита:
-        // если сохранённый персонаж больше недоступен,
+        // Если сохранённый персонаж закрыт,
         // возвращаемся к Выжившему.
         if (
             characters.Count > 0 &&
@@ -143,15 +159,15 @@ public class CharacterSelectManager : MonoBehaviour
             )
         )
         {
-            selectedIndex =
+            int survivorIndex =
                 FindCharacterIndex(
                     "survivor"
                 );
 
-            if (selectedIndex < 0)
-            {
-                selectedIndex = 0;
-            }
+            selectedIndex =
+                survivorIndex >= 0
+                    ? survivorIndex
+                    : 0;
 
             PlayerPrefs.SetInt(
                 SelectedCharKey,
@@ -169,6 +185,121 @@ public class CharacterSelectManager : MonoBehaviour
     }
 
     // =========================================================
+    // SORT
+    // =========================================================
+
+    private void SortCharactersByReleaseOrder()
+    {
+        if (
+            characters == null ||
+            characters.Count <= 1
+        )
+        {
+            return;
+        }
+
+        characters =
+            characters
+                .OrderBy(
+                    GetCharacterOrderIndex
+                )
+                .ToList();
+    }
+
+    private int GetCharacterOrderIndex(
+        CharacterEntry character
+    )
+    {
+        if (character == null)
+        {
+            return int.MaxValue;
+        }
+
+        string id =
+            character.id == null
+                ? ""
+                : character.id.ToLowerInvariant();
+
+        for (
+            int i = 0;
+            i < CharacterOrder.Length;
+            i++
+        )
+        {
+            if (
+                CharacterOrder[i] == id
+            )
+            {
+                return i;
+            }
+        }
+
+        // Любой новый персонаж,
+        // которого ещё нет в списке,
+        // попадёт после основных шести.
+        return CharacterOrder.Length;
+    }
+
+    // =========================================================
+    // CONFIG
+    // =========================================================
+
+    private void LoadAvailabilityConfig()
+    {
+        if (availabilityConfig != null)
+        {
+            return;
+        }
+
+        availabilityConfig =
+            Resources.Load<CharacterAvailabilityConfig>(
+                "CharacterAvailabilityConfig"
+            );
+
+        if (availabilityConfig == null)
+        {
+            Debug.LogError(
+                "[Characters] Не найден " +
+                "CharacterAvailabilityConfig " +
+                "в Assets/Resources/"
+            );
+        }
+    }
+
+    private bool IsAvailableForPurchase(
+        CharacterEntry character
+    )
+    {
+        if (character == null)
+        {
+            return false;
+        }
+
+        if (
+            character.id != null &&
+            character.id.ToLowerInvariant() ==
+            "survivor"
+        )
+        {
+            return true;
+        }
+
+        if (availabilityConfig == null)
+        {
+            LoadAvailabilityConfig();
+        }
+
+        if (availabilityConfig == null)
+        {
+            return false;
+        }
+
+        return availabilityConfig.IsAvailable(
+            character.id
+        );
+    }
+
+    // =========================================================
     // CARDS
     // =========================================================
 
@@ -182,7 +313,6 @@ public class CharacterSelectManager : MonoBehaviour
             return;
         }
 
-        // Удаляем старые карточки
         for (
             int i =
                 cardsContainer.childCount - 1;
@@ -199,7 +329,6 @@ public class CharacterSelectManager : MonoBehaviour
 
         spawnedCards.Clear();
 
-        // Создаём карточки
         for (
             int i = 0;
             i < characters.Count;
@@ -209,6 +338,11 @@ public class CharacterSelectManager : MonoBehaviour
             CharacterEntry character =
                 characters[i];
 
+            if (character == null)
+            {
+                continue;
+            }
+
             GameObject cardGO =
                 Instantiate(
                     cardPrefab,
@@ -216,16 +350,12 @@ public class CharacterSelectManager : MonoBehaviour
                 );
 
             CharacterCard card =
-                cardGO.GetComponent<
-                    CharacterCard
-                >();
+                cardGO.GetComponent<CharacterCard>();
 
             if (card == null)
             {
                 card =
-                    cardGO.AddComponent<
-                        CharacterCard
-                    >();
+                    cardGO.AddComponent<CharacterCard>();
             }
 
             int index = i;
@@ -235,9 +365,15 @@ public class CharacterSelectManager : MonoBehaviour
                     character.id
                 );
 
+            bool available =
+                IsAvailableForPurchase(
+                    character
+                );
+
             card.Setup(
                 character,
                 unlocked,
+                available,
                 () =>
                 {
                     ShowCharacter(index);
@@ -272,10 +408,6 @@ public class CharacterSelectManager : MonoBehaviour
         CharacterEntry character =
             characters[index];
 
-        // =====================================================
-        // PREVIEW
-        // =====================================================
-
         if (previewImage != null)
         {
             Sprite target =
@@ -305,10 +437,6 @@ public class CharacterSelectManager : MonoBehaviour
                 true;
         }
 
-        // =====================================================
-        // TEXT
-        // =====================================================
-
         if (nameText != null)
         {
             nameText.text =
@@ -318,12 +446,10 @@ public class CharacterSelectManager : MonoBehaviour
         if (perkText != null)
         {
             perkText.text =
-                character.perk;
+                GetCharacterPerk(
+                    character.id
+                );
         }
-
-        // =====================================================
-        // STATE
-        // =====================================================
 
         bool unlocked =
             IsUnlocked(
@@ -339,10 +465,6 @@ public class CharacterSelectManager : MonoBehaviour
             IsCurrentlySelected(
                 character.id
             );
-
-        // =====================================================
-        // ACTION BUTTON
-        // =====================================================
 
         if (actionButtonText != null)
         {
@@ -370,9 +492,6 @@ public class CharacterSelectManager : MonoBehaviour
 
         if (actionButton != null)
         {
-            // Нельзя нажать:
-            // - если уже выбран;
-            // - если персонаж закрыт для предрелиза.
             actionButton.interactable =
                 !isCurrent &&
                 (
@@ -380,10 +499,6 @@ public class CharacterSelectManager : MonoBehaviour
                     available
                 );
         }
-
-        // =====================================================
-        // PRICE
-        // =====================================================
 
         bool showPrice =
             !unlocked &&
@@ -404,10 +519,6 @@ public class CharacterSelectManager : MonoBehaviour
                     ? character.price.ToString()
                     : "";
         }
-
-        // =====================================================
-        // SELECTED CARDS
-        // =====================================================
 
         foreach (
             CharacterCard card
@@ -459,10 +570,6 @@ public class CharacterSelectManager : MonoBehaviour
                 character
             );
 
-        // =====================================================
-        // УЖЕ ОТКРЫТ
-        // =====================================================
-
         if (unlocked)
         {
             PlayerPrefs.SetInt(
@@ -479,10 +586,6 @@ public class CharacterSelectManager : MonoBehaviour
             return;
         }
 
-        // =====================================================
-        // ЗАКРЫТ ДЛЯ ПРЕДРЕЛИЗА
-        // =====================================================
-
         if (!available)
         {
             if (
@@ -494,20 +597,11 @@ public class CharacterSelectManager : MonoBehaviour
                 );
             }
 
-            Debug.Log(
-                $"[Characters] {character.displayName} пока недоступен"
-            );
-
             return;
         }
 
-        // =====================================================
-        // ПОКУПКА
-        // =====================================================
-
         if (character.price <= 0)
         {
-            // Защита от некорректной настройки цены.
             UnlockCharacter(
                 character
             );
@@ -578,12 +672,6 @@ public class CharacterSelectManager : MonoBehaviour
                     $"Не хватает {missing} кристаллов"
                 );
             }
-
-            Debug.Log(
-                $"[Characters] Недостаточно кристаллов. " +
-                $"Нужно: {character.price}, " +
-                $"есть: {balance}"
-            );
         }
     }
 
@@ -621,32 +709,6 @@ public class CharacterSelectManager : MonoBehaviour
     }
 
     // =========================================================
-    // AVAILABILITY
-    // =========================================================
-
-    private bool IsAvailableForPurchase(
-        CharacterEntry character
-    )
-    {
-        if (character == null)
-        {
-            return false;
-        }
-
-        // Выживший всегда доступен.
-        if (
-            character.id
-                .ToLowerInvariant() ==
-            "survivor"
-        )
-        {
-            return true;
-        }
-
-        return character.availableForPurchase;
-    }
-
-    // =========================================================
     // UNLOCKED
     // =========================================================
 
@@ -661,7 +723,6 @@ public class CharacterSelectManager : MonoBehaviour
             return false;
         }
 
-        // Выживший всегда открыт.
         if (
             id.ToLowerInvariant() ==
             "survivor"
@@ -699,12 +760,19 @@ public class CharacterSelectManager : MonoBehaviour
             return false;
         }
 
-        return characters[selected]
-            .id == id;
+        if (
+            characters[selected] == null
+        )
+        {
+            return false;
+        }
+
+        return characters[selected].id ==
+            id;
     }
 
     // =========================================================
-    // FIND CHARACTER
+    // FIND
     // =========================================================
 
     private int FindCharacterIndex(
@@ -726,8 +794,7 @@ public class CharacterSelectManager : MonoBehaviour
         {
             if (
                 characters[i] != null &&
-                characters[i].id ==
-                    id
+                characters[i].id == id
             )
             {
                 return i;
@@ -771,5 +838,50 @@ public class CharacterSelectManager : MonoBehaviour
         SceneManager.LoadScene(
             mainMenuScene
         );
+    }
+
+    private string GetCharacterPerk(
+    string id
+)
+    {
+        switch (
+            id.ToLowerInvariant()
+        )
+        {
+            case "survivor":
+                return
+                    "Выносливый и маневренный.\n" +
+                    "+5% к скорости смены полос.";
+
+            case "medic":
+                return
+                    "Опытный медик.\n" +
+                    "+20% к восстановлению здоровья сердцами.";
+
+            case "military":
+                return
+                    "Подготовленный боец.\n" +
+                    "-10% урона от препятствий.";
+
+            case "firefighter":
+                return
+                    "Спасатель, привыкший преодолевать препятствия.\n" +
+                    "+10% к высоте прыжка.";
+
+            case "mechanic":
+                return
+                    "Механик с практичным подходом к ресурсам.\n" +
+                    "+20% к количеству собранных монет.";
+
+            case "scout":
+                return
+                    "Разведчик с хорошей реакцией.\n" +
+                    "+5 м к дальности обнаружения препятствий.";
+
+            default:
+                return
+                    "Особый персонаж.\n" +
+                    "Бонус пока не задан.";
+        }
     }
 }

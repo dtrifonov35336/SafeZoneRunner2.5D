@@ -3,7 +3,20 @@ using UnityEngine;
 public static class BonusCalculator
 {
     // =========================================================
+    // БОНУСЫ ПЕРСОНАЖЕЙ
+    // =========================================================
+
+    private const string SurvivorId = "survivor";
+    private const string MilitaryId = "military";
+    private const string MedicId = "medic";
+    private const string FirefighterId = "firefighter";
+    private const string MechanicId = "mechanic";
+    private const string ScoutId = "scout";
+
+    // =========================================================
     // МАНЕВРЕННОСТЬ
+    // Выживший: +5%
+    // Улучшение скорости: +3% за уровень
     // =========================================================
 
     public static float GetSpeedMultiplier(string charId)
@@ -30,11 +43,18 @@ public static class BonusCalculator
 
         mult += speedLvl * 0.03f;
 
+        // Бонус Выжившего
+        if (charId == SurvivorId)
+        {
+            mult += 0.05f;
+        }
+
         return mult;
     }
 
     // =========================================================
     // HP
+    // Улучшение здоровья +0.5 HP за уровень
     // =========================================================
 
     public static float GetMaxHealth(string charId)
@@ -90,11 +110,15 @@ public static class BonusCalculator
     }
 
     // =========================================================
-    // РЮКЗАК — ТОЛЬКО СОБРАННЫЕ МОНЕТЫ
+    // РЮКЗАК — СОБРАННЫЕ МОНЕТЫ
+    //
+    // Механик: +20%
+    // Улучшение рюкзака: +20% за уровень
     // =========================================================
 
     public static float GetCoinPickupMultiplier(
-        string charId)
+        string charId
+    )
     {
         int backpackLvl =
             PlayerPrefs.GetInt(
@@ -102,15 +126,25 @@ public static class BonusCalculator
                 0
             );
 
-        return 1f + backpackLvl * 0.20f;
+        float multiplier =
+            1f +
+            backpackLvl * 0.20f;
+
+        if (charId == MechanicId)
+        {
+            multiplier += 0.20f;
+        }
+
+        return multiplier;
     }
 
     // =========================================================
-    // УСТОЙЧИВОСТЬ
+    // УСТОЙЧИВОСТЬ К ОТБРАСЫВАНИЮ
     // =========================================================
 
     public static float GetKnockbackResistance(
-        string charId)
+        string charId
+    )
     {
         float resistance = 1f;
 
@@ -133,7 +167,10 @@ public static class BonusCalculator
     // ВОССТАНОВЛЕНИЕ ПОСЛЕ УДАРА
     // =========================================================
 
-    public static float GetKnockbackRecoverySpeed(string charId, float baseSpeed)
+    public static float GetKnockbackRecoverySpeed(
+        string charId,
+        float baseSpeed
+    )
     {
         int staminaLvl =
             PlayerPrefs.GetInt(
@@ -146,19 +183,26 @@ public static class BonusCalculator
             (1f + staminaLvl * 0.08f);
     }
 
-    // Совместимость со старым PlayerMovement3D.
     public static float GetRecoverySpeed(
-        string charId)
+        string charId
+    )
     {
-        return GetKnockbackRecoverySpeed(charId, 0.25f);
+        return GetKnockbackRecoverySpeed(
+            charId,
+            0.25f
+        );
     }
 
     // =========================================================
     // АПТЕЧКА
+    //
+    // Медик: +20%
+    // Улучшение аптечки: +20% за уровень
     // =========================================================
 
     public static float GetHeartHealMultiplier(
-        string charId)
+        string charId
+    )
     {
         int medkitLvl =
             PlayerPrefs.GetInt(
@@ -166,7 +210,16 @@ public static class BonusCalculator
                 0
             );
 
-        return 1f + medkitLvl * 0.20f;
+        float multiplier =
+            1f +
+            medkitLvl * 0.20f;
+
+        if (charId == MedicId)
+        {
+            multiplier += 0.20f;
+        }
+
+        return multiplier;
     }
 
     // =========================================================
@@ -175,7 +228,8 @@ public static class BonusCalculator
 
     public static float GetCollisionInvulnerabilityTime(
         string charId,
-        float baseTime)
+        float baseTime
+    )
     {
         int radioLvl =
             PlayerPrefs.GetInt(
@@ -183,18 +237,23 @@ public static class BonusCalculator
                 0
             );
 
-        return baseTime +
-               radioLvl * 0.2f;
+        return
+            baseTime +
+            radioLvl * 0.2f;
     }
 
     // =========================================================
-    // ФОНАРЬ
+    // ФОНАРЬ / ОБНАРУЖЕНИЕ ПРЕПЯТСТВИЙ
+    //
+    // Разведчик: +5 м
+    // Улучшение фонаря: +5 м за уровень
     // =========================================================
 
     public static float GetObstacleRevealZ(
         string charId,
         float baseRevealZ,
-        float spawnZ)
+        float spawnZ
+    )
     {
         int flashlightLvl =
             PlayerPrefs.GetInt(
@@ -206,8 +265,11 @@ public static class BonusCalculator
             baseRevealZ +
             flashlightLvl * 5f;
 
-        // Объект не должен становиться видимым
-        // раньше собственного спавна.
+        if (charId == ScoutId)
+        {
+            result += 5f;
+        }
+
         return Mathf.Min(
             result,
             spawnZ - 1f
@@ -215,11 +277,15 @@ public static class BonusCalculator
     }
 
     // =========================================================
-    // БРОНЯ
+    // БРОНЯ / УРОН ОТ ПРЕПЯТСТВИЙ
+    //
+    // Военный: -10%
+    // Улучшение брони: -10% за уровень
     // =========================================================
 
     public static float GetObstacleDamageMultiplier(
-        string charId)
+        string charId
+    )
     {
         int armorLvl =
             PlayerPrefs.GetInt(
@@ -231,6 +297,11 @@ public static class BonusCalculator
             1f -
             armorLvl * 0.10f;
 
+        if (charId == MilitaryId)
+        {
+            multiplier -= 0.10f;
+        }
+
         return Mathf.Max(
             0.5f,
             multiplier
@@ -239,10 +310,14 @@ public static class BonusCalculator
 
     // =========================================================
     // УСКОРИТЕЛЬ — ПРЫЖОК
+    //
+    // Пожарный: +10%
+    // Улучшение ускорителя: +5% за уровень
     // =========================================================
 
     public static float GetJumpHeightMultiplier(
-        string charId)
+        string charId
+    )
     {
         int boosterLvl =
             PlayerPrefs.GetInt(
@@ -250,8 +325,16 @@ public static class BonusCalculator
                 0
             );
 
-        return 1f +
-               boosterLvl * 0.05f;
+        float multiplier =
+            1f +
+            boosterLvl * 0.05f;
+
+        if (charId == FirefighterId)
+        {
+            multiplier += 0.10f;
+        }
+
+        return multiplier;
     }
 
     // =========================================================
@@ -259,10 +342,58 @@ public static class BonusCalculator
     // =========================================================
 
     public static string GetBonusSummary(
-        string charId)
+        string charId
+    )
     {
         var sb =
             new System.Text.StringBuilder();
+
+        // -----------------------------------------------------
+        // БОНУС ПЕРСОНАЖА
+        // -----------------------------------------------------
+
+        switch (charId)
+        {
+            case SurvivorId:
+                sb.AppendLine(
+                    "• +5% к маневренности"
+                );
+                break;
+
+            case MedicId:
+                sb.AppendLine(
+                    "• +20% к лечению сердцами"
+                );
+                break;
+
+            case MilitaryId:
+                sb.AppendLine(
+                    "• -10% получаемого урона"
+                );
+                break;
+
+            case FirefighterId:
+                sb.AppendLine(
+                    "• +10% к высоте прыжка"
+                );
+                break;
+
+            case MechanicId:
+                sb.AppendLine(
+                    "• +20% к собранным монетам"
+                );
+                break;
+
+            case ScoutId:
+                sb.AppendLine(
+                    "• +5 м к дальности обнаружения"
+                );
+                break;
+        }
+
+        // -----------------------------------------------------
+        // БОНУСЫ УРОВНЯ
+        // -----------------------------------------------------
 
         int lvl =
             ProfileManager.GetLevel(charId);
@@ -292,6 +423,10 @@ public static class BonusCalculator
                 "• +10% к награде за спасение (Ур. 25)"
             );
 
+        // -----------------------------------------------------
+        // УЛУЧШЕНИЕ СКОРОСТИ
+        // -----------------------------------------------------
+
         int speedLvl =
             PlayerPrefs.GetInt(
                 $"Upgrade_speed_{charId}",
@@ -304,6 +439,10 @@ public static class BonusCalculator
                 $"• +{speedLvl * 3}% к скорости смены полосы"
             );
         }
+
+        // -----------------------------------------------------
+        // ВЫНОСЛИВОСТЬ
+        // -----------------------------------------------------
 
         int staminaLvl =
             PlayerPrefs.GetInt(
@@ -318,6 +457,10 @@ public static class BonusCalculator
             );
         }
 
+        // -----------------------------------------------------
+        // ЗДОРОВЬЕ
+        // -----------------------------------------------------
+
         int healthLvl =
             PlayerPrefs.GetInt(
                 $"Upgrade_health_{charId}",
@@ -330,6 +473,10 @@ public static class BonusCalculator
                 $"• +{healthLvl * 0.5f:0.0} HP"
             );
         }
+
+        // -----------------------------------------------------
+        // СОПРОТИВЛЕНИЕ
+        // -----------------------------------------------------
 
         int resistanceLvl =
             PlayerPrefs.GetInt(
@@ -344,6 +491,10 @@ public static class BonusCalculator
             );
         }
 
+        // -----------------------------------------------------
+        // НАГРАДА
+        // -----------------------------------------------------
+
         int rewardLvl =
             PlayerPrefs.GetInt(
                 $"Upgrade_reward_{charId}",
@@ -356,6 +507,10 @@ public static class BonusCalculator
                 $"• +{rewardLvl * 5}% награда за спасение"
             );
         }
+
+        // -----------------------------------------------------
+        // АПТЕЧКА
+        // -----------------------------------------------------
 
         int medkitLvl =
             PlayerPrefs.GetInt(
@@ -370,6 +525,10 @@ public static class BonusCalculator
             );
         }
 
+        // -----------------------------------------------------
+        // РАЦИЯ
+        // -----------------------------------------------------
+
         int radioLvl =
             PlayerPrefs.GetInt(
                 $"EquipLevel_radio_{charId}",
@@ -382,6 +541,10 @@ public static class BonusCalculator
                 $"• +{radioLvl * 0.2f:0.0} сек неуязвимости"
             );
         }
+
+        // -----------------------------------------------------
+        // ФОНАРЬ
+        // -----------------------------------------------------
 
         int flashlightLvl =
             PlayerPrefs.GetInt(
@@ -396,6 +559,10 @@ public static class BonusCalculator
             );
         }
 
+        // -----------------------------------------------------
+        // РЮКЗАК
+        // -----------------------------------------------------
+
         int backpackLvl =
             PlayerPrefs.GetInt(
                 $"EquipLevel_backpack_{charId}",
@@ -409,6 +576,10 @@ public static class BonusCalculator
             );
         }
 
+        // -----------------------------------------------------
+        // БРОНЯ
+        // -----------------------------------------------------
+
         int armorLvl =
             PlayerPrefs.GetInt(
                 $"EquipLevel_armor_{charId}",
@@ -421,6 +592,10 @@ public static class BonusCalculator
                 $"• -{armorLvl * 10}% получаемого урона"
             );
         }
+
+        // -----------------------------------------------------
+        // УСКОРИТЕЛЬ
+        // -----------------------------------------------------
 
         int boosterLvl =
             PlayerPrefs.GetInt(
@@ -445,7 +620,8 @@ public static class BonusCalculator
     // =========================================================
 
     public static string GetLevelThresholdBonus(
-        int newLevel)
+        int newLevel
+    )
     {
         switch (newLevel)
         {

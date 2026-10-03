@@ -31,6 +31,7 @@ public class CharacterCard : MonoBehaviour
     public void Setup(
         CharacterEntry entry,
         bool unlocked,
+        bool availableForPurchase,
         System.Action onClick
     )
     {
@@ -71,22 +72,6 @@ public class CharacterCard : MonoBehaviour
         }
 
         // =====================================================
-        // AVAILABLE
-        // =====================================================
-
-        bool available =
-            entry.availableForPurchase;
-
-        if (
-            entry.id != null &&
-            entry.id.ToLowerInvariant() ==
-                "survivor"
-        )
-        {
-            available = true;
-        }
-
-        // =====================================================
         // LOCK
         // =====================================================
 
@@ -103,7 +88,7 @@ public class CharacterCard : MonoBehaviour
 
         bool showPrice =
             !unlocked &&
-            available &&
+            availableForPurchase &&
             entry.price > 0;
 
         if (priceBadge != null)
@@ -122,16 +107,15 @@ public class CharacterCard : MonoBehaviour
         }
 
         // =====================================================
-        // BUTTON
+        // CARD BUTTON
         // =====================================================
 
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
 
-            // Даже закрытый для предрелиза
-            // персонаж остаётся кликабельным,
-            // чтобы его можно было посмотреть.
+            // Карточка всегда должна позволять
+            // открыть персонажа для просмотра.
             button.interactable =
                 true;
 
