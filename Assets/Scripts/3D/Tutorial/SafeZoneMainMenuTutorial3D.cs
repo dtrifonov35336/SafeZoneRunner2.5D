@@ -1308,6 +1308,12 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         instructionText =
             textObject.GetComponent<TextMeshProUGUI>();
 
+        // Назначаем тот же рабочий TMP-шрифт,
+        // который используется остальным 3D UI проекта.
+        RuntimeUIText3D.Apply(
+            instructionText
+        );
+
         RectTransform textRect =
             instructionText.rectTransform;
 
@@ -1813,7 +1819,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             textObj.GetComponent<RectTransform>());
 
         TMP_Text text =
-            textObj.GetComponent<TMP_Text>();
+    textObj.GetComponent<TMP_Text>();
 
         text.text = "OK";
         text.fontSize = 23f;
@@ -1822,6 +1828,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         text.color = Color.white;
         text.raycastTarget = false;
+
+        // Назначаем корректный TMP-шрифт и материал.
+        RuntimeUIText3D.Apply(
+            text
+        );
 
         return button;
     }
