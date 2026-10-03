@@ -1,416 +1,353 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 {
-    public static SafeZoneMainMenuTutorial3D Instance
-    {
-        get;
-        private set;
-    }
+    private const string COMPLETED_KEY = "SafeZoneMainMenuTutorialCompleted";
+    private const string STARTED_KEY = "SafeZoneMainMenuTutorialStarted";
+    private const string UPGRADE_COMPLETED_KEY = "SafeZoneUpgradeTutorialCompleted";
 
-    private const string COMPLETED_KEY =
-        "SafeZoneMainMenuTutorialCompleted";
+    private const string MAIN_MENU_SCENE = "MainMenu";
+    private const string EQUIPMENT_SCENE = "Equipment";
+    private const string HANGAR_SCENE = "Hangar";
+    private const string SHOP_SCENE = "Shop";
+    private const string CHARACTER_SCENE = "CharacterSelect";
 
-    private const string STARTED_KEY =
-        "SafeZoneMainMenuTutorialStarted";
+    private const string TUTORIAL_ACHIEVEMENT_ID = "tutorial_completed";
 
-    private const string TUTORIAL_ACHIEVEMENT_ID =
-        "tutorial_completed";
-
-    private const string MAIN_MENU_SCENE =
-        "MainMenu";
-
-    private const string SHOP_SCENE =
-        "Shop";
-
-    private const string CHARACTER_SCENE =
-        "CharacterSelect";
-
-    private enum TutorialStep
-    {
-        None,
-
-        // Главный экран
-        MainMenuShop,
-        ShopIntro,
-        ShopControls,
-        ShopBack,
-
-        // Персонажи
-        MainMenuCharacters,
-        CharactersIntro,
-        CharactersControls,
-        CharactersBack,
-
-        // Ежедневный вход
-        DailyIntro,
-        DailyClaim,
-        DailyBack,
-
-        // Профиль
-        ProfileAvatar,
-        ProfileName,
-        ProfileAuto,
-        ProfileUpload,
-        ProfileBack,
-
-        // Достижения
-        AchievementsIntro,
-        AchievementsShelter,
-        AchievementsInfinite,
-        AchievementsClaim,
-        AchievementsBack,
-
-        Final,
-        Complete
-    }
-
-    [Header("Общие настройки")]
-    [SerializeField]
-    private bool autoStart = true;
-
-    [SerializeField]
-    private float startDelay = 0.6f;
-
-    [SerializeField]
-    private float sceneDelay = 0.35f;
-
-    [Header("Overlay")]
-    [SerializeField]
-    private int overlaySortingOrder = 5000;
-
-    [SerializeField]
-    private Color dimColor =
-        new Color(0f, 0f, 0f, 0.72f);
-
-    [SerializeField]
-    private Color highlightColor =
-        new Color(1f, 0.82f, 0.25f, 1f);
-
-    [SerializeField]
-    private float highlightPadding = 8f;
-
-    [Header("Информационная панель")]
-    [SerializeField]
-    private Color instructionBackgroundColor =
-        new Color(0f, 0f, 0f, 0.72f);
-
-    [SerializeField]
-    private float instructionFontSize = 28f;
-
-    [SerializeField]
-    private float instructionFontMinSize = 19f;
-
-    [SerializeField]
-    private float instructionWidth = 700f;
-
-    [SerializeField]
-    private float instructionHeight = 300f;
-
-    [SerializeField]
-    private float instructionHorizontalPadding = 35f;
-
-    [SerializeField]
-    private float instructionVerticalPadding = 25f;
-
-    [SerializeField]
-    private Color instructionColor =
-        Color.white;
-
-    [SerializeField]
-    private Color instructionOutlineColor =
-        new Color(0f, 0f, 0f, 0.95f);
-
-    [Header("Сцены")]
-    [SerializeField]
-    private string mainMenuScene =
-        MAIN_MENU_SCENE;
-
-    [SerializeField]
-    private string shopScene =
-        SHOP_SCENE;
-
-    [SerializeField]
-    private string characterScene =
-        CHARACTER_SCENE;
-
-    private TutorialStep currentStep =
-        TutorialStep.None;
+    private static SafeZoneMainMenuTutorial3D instance;
 
     private Coroutine tutorialRoutine;
 
+    private GameObject overlayRoot;
     private Canvas overlayCanvas;
-    private RectTransform overlayRoot;
-
     private Image dimImage;
     private Image highlightImage;
-    private Image instructionBackground;
 
-    private TextMeshProUGUI instructionText;
+    private GameObject infoPanel;
+    private TMP_Text infoText;
+    private Button okButton;
 
-    private Button currentTargetButton;
+    private readonly List<Selectable> disabledSelectables =
+        new List<Selectable>();
 
-    private readonly List<SelectableState>
-        savedSelectables =
-            new List<SelectableState>();
-
-    private class SelectableState
-    {
-        public Selectable selectable;
-        public bool interactable;
-    }
-
-    // =========================================================
-    // UNITY
-    // =========================================================
+    private bool clickedTarget;
 
     private void Awake()
     {
-        if (
-            Instance != null &&
-            Instance != this
-        )
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
-        Instance = this;
-
+        instance = this;
         DontDestroyOnLoad(gameObject);
-
-        SceneManager.sceneLoaded +=
-            OnSceneLoaded;
-    }
-
-    private void Start()
-    {
-        if (!autoStart)
-        {
-            return;
-        }
-
-        TryStart();
-    }
-
-    private void Update()
-    {
-        if (
-            currentTargetButton == null ||
-            highlightImage == null ||
-            overlayCanvas == null
-        )
-        {
-            return;
-        }
-
-        if (
-            !currentTargetButton.gameObject
-                .activeInHierarchy
-        )
-        {
-            return;
-        }
-
-        PositionHighlight(
-            currentTargetButton
-        );
     }
 
     private void OnDestroy()
     {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
+        if (instance == this)
+            instance = null;
 
-        SceneManager.sceneLoaded -=
-            OnSceneLoaded;
+        DestroyOverlay();
     }
 
-    private void OnSceneLoaded(
-        Scene scene,
-        LoadSceneMode mode
-    )
+    private void Start()
     {
-        if (IsCompleted())
-        {
-            return;
-        }
-
-        if (
-            tutorialRoutine == null
-        )
-        {
-            tutorialRoutine =
-                StartCoroutine(
-                    ContinueAfterSceneLoad()
-                );
-        }
+        StartCoroutine(DelayedTryStart());
     }
 
-    // =========================================================
-    // START
-    // =========================================================
+    private IEnumerator DelayedTryStart()
+    {
+        yield return null;
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        TryStart();
+    }
 
     public void TryStart()
     {
-        if (IsCompleted())
-        {
+        if (tutorialRoutine != null)
             return;
-        }
 
-        if (!IsUpgradeTutorialCompleted())
-        {
+        if (PlayerPrefs.GetInt(COMPLETED_KEY, 0) == 1)
             return;
-        }
 
-        if (
-            tutorialRoutine != null
-        )
-        {
+        if (PlayerPrefs.GetInt(UPGRADE_COMPLETED_KEY, 0) != 1)
             return;
-        }
 
-        if (
-            SceneManager.GetActiveScene()
-                .name != mainMenuScene
-        )
-        {
+        if (SceneManager.GetActiveScene().name != MAIN_MENU_SCENE)
             return;
-        }
 
-        tutorialRoutine =
-            StartCoroutine(
-                StartTutorialRoutine()
-            );
+        tutorialRoutine = StartCoroutine(StartTutorialRoutine());
     }
 
     private IEnumerator StartTutorialRoutine()
     {
-        yield return null;
-
-        yield return new WaitForSecondsRealtime(
-            startDelay
-        );
-
-        PlayerPrefs.SetInt(
-            STARTED_KEY,
-            1
-        );
-
+        PlayerPrefs.SetInt(STARTED_KEY, 1);
         PlayerPrefs.Save();
 
-        // -----------------------------------------------------
-        // МАГАЗИН
-        // -----------------------------------------------------
-
+        yield return RunEquipmentTutorial();
+        yield return RunHangarTutorial();
         yield return RunShopTutorial();
-
-        // -----------------------------------------------------
-        // ПЕРСОНАЖИ
-        // -----------------------------------------------------
-
         yield return RunCharactersTutorial();
-
-        // -----------------------------------------------------
-        // ЕЖЕДНЕВНЫЙ ВХОД
-        // -----------------------------------------------------
-
-        yield return RunDailyTutorial();
-
-        // -----------------------------------------------------
-        // ПРОФИЛЬ
-        // -----------------------------------------------------
-
+        yield return RunDailyLoginTutorial();
         yield return RunProfileTutorial();
-
-        // -----------------------------------------------------
-        // ДОСТИЖЕНИЯ
-        // -----------------------------------------------------
-
+        yield return RunSettingsTutorial();
         yield return RunAchievementsTutorial();
-
-        // -----------------------------------------------------
-        // ФИНАЛ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.Final;
-
-        yield return ShowFinalWindow();
+        yield return RunFinalTutorial();
 
         CompleteTutorial();
 
         tutorialRoutine = null;
     }
 
-    private IEnumerator ContinueAfterSceneLoad()
+    // =========================================================
+    // SCENE / OBJECT WAIT
+    // =========================================================
+
+    private IEnumerator WaitForScene(
+        string sceneName,
+        float timeout = 20f)
     {
-        yield return new WaitForSecondsRealtime(
-            sceneDelay
-        );
+        float timer = 0f;
 
-        tutorialRoutine = null;
-
-        if (
-            IsCompleted()
-        )
+        while (SceneManager.GetActiveScene().name != sceneName)
         {
-            yield break;
+            timer += Time.unscaledDeltaTime;
+
+            if (timer >= timeout)
+                yield break;
+
+            yield return null;
         }
 
-        switch (currentStep)
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForSecondsRealtime(0.15f);
+    }
+
+    private IEnumerator WaitForMainMenu()
+    {
+        if (SceneManager.GetActiveScene().name != MAIN_MENU_SCENE)
+            yield return WaitForScene(MAIN_MENU_SCENE);
+
+        yield return new WaitForSecondsRealtime(0.15f);
+    }
+
+    private IEnumerator WaitForObject<T>(
+        float timeout = 10f) where T : UnityEngine.Object
+    {
+        float timer = 0f;
+
+        while (FindObjectIncludingInactive<T>() == null)
         {
-            case TutorialStep.ShopIntro:
-            case TutorialStep.ShopControls:
-            case TutorialStep.ShopBack:
+            timer += Time.unscaledDeltaTime;
 
-                yield return ContinueShopTutorial();
+            if (timer >= timeout)
+                yield break;
 
-                yield return RunCharactersTutorial();
-                yield return RunDailyTutorial();
-                yield return RunProfileTutorial();
-                yield return RunAchievementsTutorial();
-
-                currentStep =
-                    TutorialStep.Final;
-
-                yield return ShowFinalWindow();
-
-                CompleteTutorial();
-
-                break;
-
-            case TutorialStep.CharactersIntro:
-            case TutorialStep.CharactersControls:
-            case TutorialStep.CharactersBack:
-
-                yield return ContinueCharactersTutorial();
-
-                yield return RunDailyTutorial();
-                yield return RunProfileTutorial();
-                yield return RunAchievementsTutorial();
-
-                currentStep =
-                    TutorialStep.Final;
-
-                yield return ShowFinalWindow();
-
-                CompleteTutorial();
-
-                break;
+            yield return null;
         }
+
+        yield return null;
+    }
+
+    private T FindObjectIncludingInactive<T>()
+        where T : UnityEngine.Object
+    {
+        T[] objects =
+            Resources.FindObjectsOfTypeAll<T>();
+
+        for (int i = 0; i < objects.Length; i++)
+        {
+            T obj = objects[i];
+
+            if (obj == null)
+                continue;
+
+            GameObject go = GetGameObject(obj);
+
+            if (go == null)
+                continue;
+
+            if (!go.scene.IsValid())
+                continue;
+
+            return obj;
+        }
+
+        return null;
+    }
+
+    private GameObject GetGameObject(UnityEngine.Object obj)
+    {
+        Component component = obj as Component;
+
+        if (component != null)
+            return component.gameObject;
+
+        GameObject go = obj as GameObject;
+
+        if (go != null)
+            return go;
+
+        return null;
     }
 
     // =========================================================
-    // SHOP
+    // СНАРЯЖЕНИЕ
+    // =========================================================
+
+    private IEnumerator RunEquipmentTutorial()
+    {
+        yield return WaitForMainMenu();
+
+        MainMenuManager menu =
+            FindObjectIncludingInactive<MainMenuManager>();
+
+        if (menu == null)
+            yield break;
+
+        Button equipmentButton =
+            FindButtonFromMember(menu, "equipmentButton");
+
+        if (equipmentButton == null)
+            equipmentButton = FindButtonByText("Снаряжение");
+
+        if (equipmentButton == null)
+            yield break;
+
+        ShowTargetOverlay(
+            equipmentButton,
+            "СНАРЯЖЕНИЕ\n\nЗдесь ты улучшаешь экипировку, которая помогает выживать во время забега."
+        );
+
+        yield return WaitForTargetClick(equipmentButton);
+
+        yield return WaitForScene(EQUIPMENT_SCENE);
+
+        yield return WaitForObject<EquipmentManager>();
+
+        EquipmentManager equipment =
+            FindObjectIncludingInactive<EquipmentManager>();
+
+        if (equipment != null)
+        {
+            ShowInfoOverlay(
+                "СНАРЯЖЕНИЕ\n\nУлучшения экипировки дают постоянные преимущества и помогают собирать больше ресурсов во время забега."
+            );
+
+            yield return WaitForOk();
+
+            Button upgradeButton =
+                FindUpgradeButton(equipment.gameObject);
+
+            if (upgradeButton != null)
+            {
+                ShowTargetOverlay(
+                    upgradeButton,
+                    "УЛУЧШЕНИЕ\n\nЗдесь можно улучшить экипировку. Первое улучшение уже доступно."
+                );
+
+                yield return WaitForOk();
+            }
+
+            Button backButton =
+                FindButtonFromMember(equipment, "backButton");
+
+            if (backButton != null)
+            {
+                ShowButtonOnlyHighlight(backButton);
+
+                yield return WaitForTargetClick(backButton);
+            }
+        }
+
+        yield return WaitForScene(MAIN_MENU_SCENE);
+    }
+
+    // =========================================================
+    // АНГАР
+    // =========================================================
+
+    private IEnumerator RunHangarTutorial()
+    {
+        yield return WaitForMainMenu();
+
+        MainMenuManager menu =
+            FindObjectIncludingInactive<MainMenuManager>();
+
+        if (menu == null)
+            yield break;
+
+        Button hangarButton =
+            FindButtonFromMember(menu, "hangarButton");
+
+        if (hangarButton == null)
+            hangarButton = FindButtonByText("Ангар");
+
+        if (hangarButton == null)
+            yield break;
+
+        ShowTargetOverlay(
+            hangarButton,
+            "АНГАР\n\nЗдесь находится основное улучшение транспорта и его характеристики."
+        );
+
+        yield return WaitForTargetClick(hangarButton);
+
+        yield return WaitForScene(HANGAR_SCENE);
+
+        yield return WaitForObject<HangarManager>();
+
+        HangarManager hangar =
+            FindObjectIncludingInactive<HangarManager>();
+
+        if (hangar != null)
+        {
+            ShowInfoOverlay(
+                "АНГАР\n\nУлучшения ангара повышают возможности твоего убежища и помогают развивать его по мере прохождения."
+            );
+
+            yield return WaitForOk();
+
+            Button upgradeButton =
+                FindUpgradeButton(hangar.gameObject);
+
+            if (upgradeButton != null)
+            {
+                ShowTargetOverlay(
+                    upgradeButton,
+                    "УЛУЧШЕНИЕ\n\nЗдесь находится улучшение ангара."
+                );
+
+                yield return WaitForOk();
+            }
+
+            Button backButton =
+                FindButtonFromMember(hangar, "backButton");
+
+            if (backButton != null)
+            {
+                ShowButtonOnlyHighlight(backButton);
+
+                yield return WaitForTargetClick(backButton);
+            }
+        }
+
+        yield return WaitForScene(MAIN_MENU_SCENE);
+    }
+
+    // =========================================================
+    // МАГАЗИН
     // =========================================================
 
     private IEnumerator RunShopTutorial()
@@ -418,173 +355,71 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            MainMenuManager.Instance;
+            FindObjectIncludingInactive<MainMenuManager>();
 
         if (menu == null)
-        {
-            menu =
-                FindFirstObjectByType<
-                    MainMenuManager
-                >();
-        }
-
-        if (menu == null)
-        {
             yield break;
-        }
 
-        if (
-            menu.shopButton == null
-        )
-        {
-            Debug.LogWarning(
-                "[MainMenuTutorial] " +
-                "MainMenuManager.shopButton не назначена."
-            );
+        Button shopButton =
+            FindButtonFromMember(menu, "shopButton");
 
+        if (shopButton == null)
+            shopButton = FindButtonByText("Магазин");
+
+        if (shopButton == null)
             yield break;
-        }
-
-        currentStep =
-            TutorialStep.MainMenuShop;
 
         ShowTargetOverlay(
-            menu.shopButton,
-            "МАГАЗИН\n\n" +
-            "Здесь находятся наборы с монетами " +
-            "и кристаллами.\n\n" +
-            "Нажми на кнопку «Магазин», чтобы посмотреть раздел."
+            shopButton,
+            "МАГАЗИН\n\nЗдесь можно приобретать полезные предметы и улучшения за заработанные ресурсы."
         );
 
-        yield return WaitForTargetClick(
-            menu.shopButton
-        );
+        yield return WaitForTargetClick(shopButton);
 
-        yield return new WaitForSecondsRealtime(
-            sceneDelay
-        );
+        yield return WaitForScene(SHOP_SCENE);
 
-        yield return ContinueShopTutorial();
-    }
-
-    private IEnumerator ContinueShopTutorial()
-    {
-        if (
-            SceneManager.GetActiveScene()
-                .name != shopScene
-        )
-        {
-            yield return LoadSceneIfNeeded(
-                shopScene
-            );
-        }
-
-        yield return WaitForSceneReady();
+        yield return WaitForObject<ShopManager>();
 
         ShopManager shop =
-            FindFirstObjectByType<ShopManager>();
+            FindObjectIncludingInactive<ShopManager>();
 
-        if (shop == null)
+        if (shop != null)
         {
-            Debug.LogWarning(
-                "[MainMenuTutorial] ShopManager не найден."
-            );
-
-            yield return ReturnToMainMenu();
-
-            yield break;
-        }
-
-        // -----------------------------------------------------
-        // ОПИСАНИЕ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.ShopIntro;
-
-        ShowInfoOverlay(
-            "МАГАЗИН\n\n" +
-            "Здесь можно покупать наборы с монетами " +
-            "и кристаллами.\n\n" +
-            "У каждого набора указана его стоимость " +
-            "и содержимое.\n\n" +
-            "Покупать ничего не требуется."
-        );
-
-        yield return WaitForOk();
-
-        // -----------------------------------------------------
-        // КАРТОЧКА
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.ShopControls;
-
-        Button firstShopButton =
-            FindFirstMeaningfulButton(
-                shop.transform,
-                "КУПИТЬ",
-                "ПОКУПКА",
-                "НАБОР"
-            );
-
-        if (
-            firstShopButton != null
-        )
-        {
-            ShowTargetOverlay(
-                firstShopButton,
-                "Так выглядит набор магазина.\n\n" +
-                "Здесь можно посмотреть его содержимое " +
-                "и стоимость.\n\n" +
-                "Покупка во время обучения не требуется."
+            ShowInfoOverlay(
+                "МАГАЗИН\n\nСледи за доступными покупками и используй монеты и кристаллы с пользой."
             );
 
             yield return WaitForOk();
-        }
 
-        // -----------------------------------------------------
-        // НАЗАД
-        // -----------------------------------------------------
+            Button itemButton =
+                FindFirstMeaningfulButton(shop.gameObject);
 
-        currentStep =
-            TutorialStep.ShopBack;
-
-        Button back =
-            shop.backButton;
-
-        if (back == null)
-        {
-            back =
-                FindButtonByText(
-                    shop.transform,
-                    "НАЗАД",
-                    "ЗАКРЫТЬ",
-                    "ВЫЙТИ"
+            if (itemButton != null)
+            {
+                ShowTargetOverlay(
+                    itemButton,
+                    "ТОВАРЫ\n\nВыбирай нужные предметы и покупай их, когда накопишь достаточно ресурсов."
                 );
+
+                yield return WaitForOk();
+            }
+
+            Button backButton =
+                FindButtonFromMember(shop, "backButton");
+
+            if (backButton != null)
+            {
+                ShowButtonOnlyHighlight(backButton);
+
+                yield return WaitForTargetClick(backButton);
+            }
         }
 
-        if (back != null)
-        {
-            // ВАЖНО:
-            // Для кнопки назад только подсветка.
-            // Никакого текста.
-            ShowButtonOnlyHighlight(
-                back
-            );
-
-            yield return WaitForTargetClick(
-                back
-            );
-        }
-
-        RestoreSelectables();
-
-        yield return WaitForMainMenu();
+        yield return WaitForScene(MAIN_MENU_SCENE);
     }
 
     // =========================================================
-    // CHARACTERS
+    // ПЕРСОНАЖИ
     // =========================================================
 
     private IEnumerator RunCharactersTutorial()
@@ -592,332 +427,163 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            MainMenuManager.Instance;
+            FindObjectIncludingInactive<MainMenuManager>();
 
         if (menu == null)
-        {
-            menu =
-                FindFirstObjectByType<
-                    MainMenuManager
-                >();
-        }
-
-        if (menu == null)
-        {
             yield break;
-        }
 
-        if (
-            menu.charactersButton == null
-        )
-        {
-            Debug.LogWarning(
-                "[MainMenuTutorial] " +
-                "MainMenuManager.charactersButton не назначена."
-            );
+        Button charactersButton =
+            FindButtonFromMember(menu, "charactersButton");
 
+        if (charactersButton == null)
+            charactersButton = FindButtonByText("Персонажи");
+
+        if (charactersButton == null)
             yield break;
-        }
-
-        currentStep =
-            TutorialStep.MainMenuCharacters;
 
         ShowTargetOverlay(
-            menu.charactersButton,
-            "ПЕРСОНАЖИ\n\n" +
-            "Здесь можно выбирать персонажей, " +
-            "покупать новых персонажей и смотреть " +
-            "их особенности и бонусы.\n\n" +
-            "Нажми на кнопку «Персонажи»."
+            charactersButton,
+            "ПЕРСОНАЖИ\n\nЗдесь можно выбирать персонажа и открывать новые способности."
         );
 
-        yield return WaitForTargetClick(
-            menu.charactersButton
-        );
+        yield return WaitForTargetClick(charactersButton);
 
-        yield return new WaitForSecondsRealtime(
-            sceneDelay
-        );
+        yield return WaitForScene(CHARACTER_SCENE);
 
-        yield return ContinueCharactersTutorial();
-    }
+        yield return new WaitForSecondsRealtime(0.3f);
 
-    private IEnumerator ContinueCharactersTutorial()
-    {
-        if (
-            SceneManager.GetActiveScene()
-                .name != characterScene
-        )
-        {
-            yield return LoadSceneIfNeeded(
-                characterScene
-            );
-        }
+        CharacterSelectManager characterManager =
+            FindObjectIncludingInactive<CharacterSelectManager>();
 
-        yield return WaitForSceneReady();
-
-        CharacterSelectManager characters =
-            FindFirstObjectByType<
-                CharacterSelectManager
-            >();
-
-        if (characters == null)
-        {
-            Debug.LogWarning(
-                "[MainMenuTutorial] " +
-                "CharacterSelectManager не найден."
-            );
-
-            yield return ReturnToMainMenu();
-
-            yield break;
-        }
-
-        // -----------------------------------------------------
-        // ОПИСАНИЕ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.CharactersIntro;
-
-        ShowInfoOverlay(
-            "ПЕРСОНАЖИ\n\n" +
-            "Здесь можно выбирать персонажа " +
-            "для забегов.\n\n" +
-            "У каждого персонажа есть собственный бонус."
-        );
-
-        yield return WaitForOk();
-
-        // -----------------------------------------------------
-        // КАРТОЧКА / ПЕРСОНАЖ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.CharactersControls;
-
-        Button characterAction =
-            characters.actionButton;
-
-        if (
-            characterAction != null
-        )
-        {
-            ShowTargetOverlay(
-                characterAction,
-                "В этой области отображается действие " +
-                "для выбранного персонажа.\n\n" +
-                "Если персонаж закрыт, здесь можно " +
-                "увидеть его покупку.\n\n" +
-                "Покупать персонажа сейчас не нужно."
-            );
-
-            yield return WaitForOk();
-        }
-        else
+        if (characterManager != null)
         {
             ShowInfoOverlay(
-                "Выбери карточку персонажа, чтобы посмотреть " +
-                "его характеристики и бонус."
+                "ПЕРСОНАЖИ\n\nУ каждого персонажа есть собственный бонус. Покупка персонажа активирует его способность."
             );
 
             yield return WaitForOk();
-        }
 
-        // -----------------------------------------------------
-        // КАРТОЧКИ
-        // -----------------------------------------------------
+            Button characterButton =
+                FindFirstCharacterButton(
+                    characterManager.gameObject);
 
-        Button cardButton =
-            FindFirstMeaningfulButton(
-                characters.cardsContainer,
-                "ВЫБРАТЬ",
-                "КУПИТЬ"
-            );
-
-        if (
-            cardButton != null &&
-            cardButton != characterAction
-        )
-        {
-            ShowTargetOverlay(
-                cardButton,
-                "Карточки персонажей находятся здесь.\n\n" +
-                "Нажми на карточку, чтобы посмотреть " +
-                "конкретного персонажа."
-            );
-
-            yield return WaitForOk();
-        }
-
-        // -----------------------------------------------------
-        // НАЗАД
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.CharactersBack;
-
-        Button back =
-            characters.backButton;
-
-        if (back == null)
-        {
-            back =
-                FindButtonByText(
-                    characters.transform,
-                    "НАЗАД",
-                    "ЗАКРЫТЬ",
-                    "ВЫЙТИ"
+            if (characterButton != null)
+            {
+                ShowTargetOverlay(
+                    characterButton,
+                    "ВЫБОР ПЕРСОНАЖА\n\nЗдесь можно выбрать доступного персонажа и посмотреть его бонус."
                 );
+
+                yield return WaitForOk();
+            }
         }
 
-        if (back != null)
+        Button backButtonCharacter =
+            FindButtonByText("НАЗАД");
+
+        if (backButtonCharacter == null)
+            backButtonCharacter = FindButtonByText("Назад");
+
+        if (backButtonCharacter != null)
         {
-            // Только подсветка.
-            ShowButtonOnlyHighlight(
-                back
-            );
+            ShowButtonOnlyHighlight(backButtonCharacter);
 
             yield return WaitForTargetClick(
-                back
-            );
+                backButtonCharacter);
         }
 
-        RestoreSelectables();
-
-        yield return WaitForMainMenu();
+        yield return WaitForScene(MAIN_MENU_SCENE);
     }
 
     // =========================================================
-    // DAILY LOGIN
+    // ЕЖЕДНЕВНЫЙ ВХОД
     // =========================================================
 
-    private IEnumerator RunDailyTutorial()
+    private IEnumerator RunDailyLoginTutorial()
     {
         yield return WaitForMainMenu();
+
+        Button dailyButton =
+            FindUtilityButton("DailyLogin");
+
+        if (dailyButton == null)
+            dailyButton = FindButtonByText("Ежедневный");
+
+        if (dailyButton == null)
+            dailyButton = FindButtonByText("Вход");
+
+        if (dailyButton == null)
+            yield break;
+
+        ShowTargetOverlay(
+            dailyButton,
+            "ЕЖЕДНЕВНЫЙ ВХОД\n\nЗа ежедневный вход можно получать награды и поддерживать серию посещений."
+        );
+
+        yield return WaitForTargetClick(dailyButton);
+
+        yield return WaitForObject<DailyLoginUI3D>();
 
         DailyLoginUI3D daily =
-            FindFirstObjectByType<
-                DailyLoginUI3D
-            >();
+            FindObjectIncludingInactive<DailyLoginUI3D>();
 
-        Button dailyOpen =
-            FindButtonByText(
-                null,
-                "ЕЖЕДНЕВНЫЙ ВХОД",
-                "ЕЖЕДНЕВНЫЙ",
-                "ДЕНЬ"
-            );
-
-        if (
-            daily == null &&
-            dailyOpen != null
-        )
-        {
-            RestoreSelectables();
-
-            dailyOpen.interactable =
-                true;
-
-            dailyOpen.onClick.Invoke();
-
-            yield return new WaitForSecondsRealtime(
-                0.25f
-            );
-
-            daily =
-                FindFirstObjectByType<
-                    DailyLoginUI3D
-                >();
-        }
-
-        if (daily == null)
-        {
-            Debug.LogWarning(
-                "[MainMenuTutorial] " +
-                "DailyLoginUI3D не найден."
-            );
-
-            yield break;
-        }
-
-        currentStep =
-            TutorialStep.DailyIntro;
-
-        ShowInfoOverlay(
-            "ЕЖЕДНЕВНЫЙ ВХОД\n\n" +
-            "Каждый день здесь доступна награда.\n\n" +
-            "Награда зависит от дня серии. " +
-            "Если заходить регулярно, серия продолжается."
-        );
-
-        yield return WaitForOk();
-
-        currentStep =
-            TutorialStep.DailyClaim;
-
-        Button claim =
-            FindButtonByText(
-                daily.transform,
-                "ЗАБРАТЬ",
-                "ПОЛУЧИТЬ",
-                "ПОЛУЧИТЬ НАГРАДУ"
-            );
-
-        if (claim != null)
-        {
-            ShowTargetOverlay(
-                claim,
-                "Нажми «Забрать», чтобы получить " +
-                "сегодняшнюю награду."
-            );
-
-            yield return WaitForTargetClick(
-                claim
-            );
-        }
-        else
+        if (daily != null)
         {
             ShowInfoOverlay(
-                "Сегодняшняя награда уже получена.\n\n" +
-                "Следующая доступная награда появится " +
-                "в новый день."
+                "ЕЖЕДНЕВНЫЕ НАГРАДЫ\n\nЗа каждый день серии доступна отдельная награда."
             );
 
             yield return WaitForOk();
+
+            Button claimButton =
+                FindButtonByText("ЗАБРАТЬ");
+
+            if (claimButton == null)
+                claimButton = FindButtonByText("Забрать");
+
+            if (claimButton != null &&
+                claimButton.interactable)
+            {
+                ShowTargetOverlay(
+                    claimButton,
+                    "НАГРАДА\n\nНажми кнопку, чтобы забрать доступную награду."
+                );
+
+                yield return WaitForTargetClick(
+                    claimButton);
+            }
+            else
+            {
+                ShowInfoOverlay(
+                    "НАГРАДА\n\nКогда награда станет доступна, её можно будет забрать здесь."
+                );
+
+                yield return WaitForOk();
+            }
+
+            Button closeButton =
+                FindButtonFromMember(
+                    daily,
+                    "closeButton");
+
+            if (closeButton == null)
+                closeButton = FindButtonByText("ЗАКРЫТЬ");
+
+            if (closeButton == null)
+                closeButton = FindButtonByText("Закрыть");
+
+            if (closeButton != null)
+            {
+                ShowButtonOnlyHighlight(closeButton);
+
+                yield return WaitForTargetClick(
+                    closeButton);
+            }
         }
-
-        currentStep =
-            TutorialStep.DailyBack;
-
-        Button close =
-            FindButtonByText(
-                daily.transform,
-                "ЗАКРЫТЬ",
-                "НАЗАД",
-                "ВЫЙТИ"
-            );
-
-        if (close != null)
-        {
-            ShowButtonOnlyHighlight(
-                close
-            );
-
-            yield return WaitForTargetClick(
-                close
-            );
-        }
-
-        RestoreSelectables();
-
-        yield return new WaitForSecondsRealtime(
-            0.25f
-        );
     }
 
     // =========================================================
-    // PROFILE
+    // ПРОФИЛЬ
     // =========================================================
 
     private IEnumerator RunProfileTutorial()
@@ -925,532 +591,870 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            MainMenuManager.Instance;
+            FindObjectIncludingInactive<MainMenuManager>();
 
         if (menu == null)
-        {
-            menu =
-                FindFirstObjectByType<
-                    MainMenuManager
-                >();
-        }
-
-        if (menu == null)
-        {
             yield break;
-        }
+
+        Button profileButton =
+            FindButtonFromMember(
+                menu,
+                "profileAvatarButton");
+
+        if (profileButton == null)
+            yield break;
+
+        ShowTargetOverlay(
+            profileButton,
+            "ПРОФИЛЬ\n\nЗдесь находятся данные игрока, имя, аватар и дополнительные настройки профиля."
+        );
+
+        yield return WaitForTargetClick(profileButton);
+
+        yield return new WaitForSecondsRealtime(0.3f);
 
         ProfileSettingsPanel profile =
-            menu.profileSettingsPanel;
+            FindObjectIncludingInactive<ProfileSettingsPanel>();
 
-        if (profile == null)
+        if (profile != null)
         {
-            profile =
-                FindFirstObjectByType<
-                    ProfileSettingsPanel
-                >();
-        }
-
-        if (profile == null)
-        {
-            Debug.LogWarning(
-                "[MainMenuTutorial] " +
-                "ProfileSettingsPanel не найден."
+            ShowInfoOverlay(
+                "ПРОФИЛЬ\n\nЗдесь можно изменить внешний вид профиля и основные данные игрока."
             );
 
-            yield break;
-        }
+            yield return WaitForOk();
 
-        if (
-            menu.profileAvatarButton != null
-        )
-        {
-            RestoreSelectables();
+            Button avatarButton =
+                FindButtonFromMember(
+                    profile,
+                    "avatarButton");
 
-            menu.profileAvatarButton.interactable =
-                true;
-
-            menu.profileAvatarButton.onClick.Invoke();
-
-            yield return new WaitForSecondsRealtime(
-                0.25f
-            );
-        }
-        else
-        {
-            profile.OpenPanel();
-
-            yield return new WaitForSecondsRealtime(
-                0.25f
-            );
-        }
-
-        // -----------------------------------------------------
-        // АВАТАР
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.ProfileAvatar;
-
-        Button avatarButton =
-            GetButtonByFieldName(
-                profile,
-                "avatarButton"
-            );
-
-        if (avatarButton == null)
-        {
-            avatarButton =
-                FindButtonByText(
-                    profile.transform,
-                    "АВАТАР",
-                    "ПЕРСОНАЖ"
+            if (avatarButton != null)
+            {
+                ShowTargetOverlay(
+                    avatarButton,
+                    "АВАТАР\n\nЗдесь можно выбрать изображение для своего профиля."
                 );
-        }
 
-        if (avatarButton != null)
-        {
-            ShowTargetOverlay(
-                avatarButton,
-                "Здесь можно изменить аватар профиля.\n\n" +
-                "Можно выбрать один из доступных вариантов."
-            );
-        }
-        else
-        {
+                yield return WaitForOk();
+            }
+
             ShowInfoOverlay(
-                "АВАТАР\n\n" +
-                "В профиле можно изменить изображение, " +
-                "которое отображается рядом с именем."
-            );
-        }
-
-        yield return WaitForOk();
-
-        // -----------------------------------------------------
-        // ИМЯ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.ProfileName;
-
-        TMP_InputField nameInput =
-            GetInputByFieldName(
-                profile,
-                "nameInput"
+                "ИМЯ И ПРОФИЛЬ\n\nВ профиле отображается твоя игровая информация."
             );
 
-        if (nameInput == null)
-        {
-            nameInput =
-                profile.GetComponentInChildren<
-                    TMP_InputField
-                >(true);
-        }
+            yield return WaitForOk();
 
-        if (nameInput != null)
-        {
-            ShowInfoOverlay(
-                "ИМЯ ПРОФИЛЯ\n\n" +
-                "Здесь можно изменить имя профиля.\n\n" +
-                "Нажимать сейчас не нужно."
-            );
-        }
-        else
-        {
-            ShowInfoOverlay(
-                "ИМЯ ПРОФИЛЯ\n\n" +
-                "Имя можно изменить в настройках профиля."
-            );
-        }
+            Button uploadButton =
+                FindButtonFromMember(
+                    profile,
+                    "uploadButton");
 
-        yield return WaitForOk();
-
-        // -----------------------------------------------------
-        // АВТОПОДСТАНОВКА
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.ProfileAuto;
-
-        Toggle autoToggle =
-            GetToggleByFieldName(
-                profile,
-                "autoToggle"
-            );
-
-        if (autoToggle != null)
-        {
-            ShowInfoOverlay(
-                "АВТОМАТИЧЕСКАЯ ПОДСТАНОВКА\n\n" +
-                "Эта функция позволяет автоматически " +
-                "использовать аватар выбранного персонажа."
-            );
-        }
-        else
-        {
-            ShowInfoOverlay(
-                "АВТОМАТИЧЕСКАЯ ПОДСТАНОВКА\n\n" +
-                "Здесь можно включить автоматическое " +
-                "использование аватара выбранного персонажа."
-            );
-        }
-
-        yield return WaitForOk();
-
-        // -----------------------------------------------------
-        // ЗАГРУЗКА
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.ProfileUpload;
-
-        Button uploadButton =
-            GetButtonByFieldName(
-                profile,
-                "uploadButton"
-            );
-
-        if (uploadButton == null)
-        {
-            uploadButton =
-                FindButtonByText(
-                    profile.transform,
-                    "ЗАГРУЗИТЬ",
-                    "ФОТО",
-                    "УСТРОЙСТВА"
+            if (uploadButton != null)
+            {
+                ShowTargetOverlay(
+                    uploadButton,
+                    "ИЗОБРАЖЕНИЕ\n\nЭта кнопка позволяет выбрать изображение профиля."
                 );
+
+                yield return WaitForOk();
+            }
+
+            Button closeButton =
+                FindButtonFromMember(
+                    profile,
+                    "closeButton");
+
+            if (closeButton == null)
+                closeButton = FindButtonByText("ЗАКРЫТЬ");
+
+            if (closeButton == null)
+                closeButton = FindButtonByText("Закрыть");
+
+            if (closeButton != null)
+            {
+                ShowButtonOnlyHighlight(closeButton);
+
+                yield return WaitForTargetClick(
+                    closeButton);
+            }
         }
 
-        if (uploadButton != null)
-        {
-            ShowTargetOverlay(
-                uploadButton,
-                "Здесь можно загрузить собственную " +
-                "фотографию с телефона.\n\n" +
-                "Нажимать сейчас не нужно."
-            );
-        }
-        else
-        {
-            ShowInfoOverlay(
-                "ФОТО С ТЕЛЕФОНА\n\n" +
-                "В профиле можно загрузить собственную " +
-                "фотографию с устройства."
-            );
-        }
+        UnlockTutorialAchievement();
 
-        yield return WaitForOk();
-
-        // -----------------------------------------------------
-        // ЗАКРЫТЬ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.ProfileBack;
-
-        Button close =
-            GetButtonByFieldName(
-                profile,
-                "closeButton"
-            );
-
-        if (close == null)
-        {
-            close =
-                FindButtonByText(
-                    profile.transform,
-                    "ЗАКРЫТЬ",
-                    "ГОТОВО",
-                    "НАЗАД"
-                );
-        }
-
-        if (close != null)
-        {
-            ShowButtonOnlyHighlight(
-                close
-            );
-
-            yield return WaitForTargetClick(
-                close
-            );
-        }
-        else
-        {
-            profile.ClosePanel();
-        }
-
-        RestoreSelectables();
-
-        yield return new WaitForSecondsRealtime(
-            0.25f
-        );
-
-        // После профиля активируем достижение.
-        AchievementSystem3D.Unlock(
-            TUTORIAL_ACHIEVEMENT_ID
-        );
+        yield return new WaitForSecondsRealtime(0.2f);
     }
 
     // =========================================================
-    // ACHIEVEMENTS
+    // НАСТРОЙКИ
+    // =========================================================
+
+    private IEnumerator RunSettingsTutorial()
+    {
+        yield return WaitForMainMenu();
+
+        Button settingsButton =
+            FindUtilityButton("Settings");
+
+        if (settingsButton == null)
+            settingsButton = FindButtonByText("Настройки");
+
+        if (settingsButton == null)
+            yield break;
+
+        ShowTargetOverlay(
+            settingsButton,
+            "НАСТРОЙКИ\n\nЗдесь можно настроить звук и вибрацию игры."
+        );
+
+        yield return WaitForTargetClick(settingsButton);
+
+        yield return WaitForObject<GameSettingsUI3D>();
+
+        GameSettingsUI3D settings =
+            FindObjectIncludingInactive<GameSettingsUI3D>();
+
+        if (settings != null)
+        {
+            Slider volumeSlider =
+                FindComponentFromMember<Slider>(
+                    settings,
+                    "volumeSlider");
+
+            if (volumeSlider != null)
+            {
+                ShowComponentOverlay(
+                    volumeSlider,
+                    "ГРОМКОСТЬ\n\nЗдесь можно изменить уровень звука игры."
+                );
+
+                yield return WaitForOk();
+            }
+
+            Toggle vibrationToggle =
+                FindComponentFromMember<Toggle>(
+                    settings,
+                    "vibrationToggle");
+
+            if (vibrationToggle != null)
+            {
+                ShowComponentOverlay(
+                    vibrationToggle,
+                    "ВИБРАЦИЯ\n\nЭта настройка включает или отключает вибрацию во время игры."
+                );
+
+                yield return WaitForOk();
+            }
+
+            Button closeButton =
+                FindButtonFromMember(
+                    settings,
+                    "closeButton");
+
+            if (closeButton == null)
+                closeButton = FindButtonByText("ЗАКРЫТЬ");
+
+            if (closeButton == null)
+                closeButton = FindButtonByText("Закрыть");
+
+            if (closeButton != null)
+            {
+                ShowButtonOnlyHighlight(closeButton);
+
+                yield return WaitForTargetClick(
+                    closeButton);
+            }
+        }
+
+        yield return new WaitForSecondsRealtime(0.2f);
+    }
+
+    // =========================================================
+    // ДОСТИЖЕНИЯ
     // =========================================================
 
     private IEnumerator RunAchievementsTutorial()
     {
         yield return WaitForMainMenu();
 
-        AchievementsUI3D achievements =
-            FindFirstObjectByType<
-                AchievementsUI3D
-            >();
+        Button achievementsButton =
+            FindUtilityButton("Achievements");
 
-        Button open =
-            FindButtonByText(
-                null,
-                "ДОСТИЖЕНИЯ",
-                "ДОСТИЖЕНИЕ"
-            );
+        if (achievementsButton == null)
+            achievementsButton =
+                FindButtonByText("Достижения");
 
-        if (
-            achievements == null &&
-            open != null
-        )
-        {
-            RestoreSelectables();
-
-            open.interactable =
-                true;
-
-            open.onClick.Invoke();
-
-            yield return new WaitForSecondsRealtime(
-                0.3f
-            );
-
-            achievements =
-                FindFirstObjectByType<
-                    AchievementsUI3D
-                >();
-        }
-
-        if (achievements == null)
-        {
-            Debug.LogWarning(
-                "[MainMenuTutorial] " +
-                "AchievementsUI3D не найден."
-            );
-
+        if (achievementsButton == null)
             yield break;
-        }
 
-        currentStep =
-            TutorialStep.AchievementsIntro;
-
-        ShowInfoOverlay(
-            "ДОСТИЖЕНИЯ\n\n" +
-            "Здесь находятся выполненные цели.\n\n" +
-            "После выполнения достижения его награду " +
-            "нужно забрать вручную."
+        ShowTargetOverlay(
+            achievementsButton,
+            "ДОСТИЖЕНИЯ\n\nЗдесь отображаются выполненные задания и награды за них."
         );
 
-        yield return WaitForOk();
+        yield return WaitForTargetClick(
+            achievementsButton);
 
-        // -----------------------------------------------------
-        // ДО УБЕЖИЩА
-        // -----------------------------------------------------
+        yield return WaitForObject<AchievementsUI3D>();
 
-        currentStep =
-            TutorialStep.AchievementsShelter;
+        AchievementsUI3D achievements =
+            FindObjectIncludingInactive<AchievementsUI3D>();
 
-        Button shelter =
-            FindButtonByText(
-                achievements.transform,
-                "ДО УБЕЖИЩА",
-                "УБЕЖИЩЕ"
-            );
-
-        if (shelter != null)
-        {
-            ShowTargetOverlay(
-                shelter,
-                "Здесь находятся достижения режима «До убежища»."
-            );
-
-            yield return WaitForTargetClick(
-                shelter
-            );
-        }
-        else
+        if (achievements != null)
         {
             ShowInfoOverlay(
-                "ДО УБЕЖИЩА\n\n" +
-                "Здесь находятся достижения " +
-                "режима прохождения до убежища."
+                "ДОСТИЖЕНИЯ\n\nДостижения можно выполнять во время игры. За некоторые из них доступны награды."
             );
 
             yield return WaitForOk();
+
+            Button safeZoneTab =
+                FindButtonByText("ДО УБЕЖИЩА");
+
+            if (safeZoneTab == null)
+                safeZoneTab =
+                    FindButtonByText("До убежища");
+
+            if (safeZoneTab != null)
+            {
+                ShowTargetOverlay(
+                    safeZoneTab,
+                    "ДО УБЕЖИЩА\n\nЗдесь находятся достижения режима «До убежища»."
+                );
+
+                yield return WaitForTargetClick(
+                    safeZoneTab);
+            }
+
+            Button endlessTab =
+                FindButtonByText("БЕСКОНЕЧНЫЙ");
+
+            if (endlessTab == null)
+                endlessTab =
+                    FindButtonByText("Бесконечный");
+
+            if (endlessTab != null)
+            {
+                ShowTargetOverlay(
+                    endlessTab,
+                    "БЕСКОНЕЧНЫЙ\n\nЗдесь находятся достижения бесконечного режима."
+                );
+
+                yield return WaitForTargetClick(
+                    endlessTab);
+            }
+
+            // AchievementSystem3D является static class.
+            UnlockTutorialAchievement();
+
+            yield return new WaitForSecondsRealtime(0.3f);
+
+            Button claimButton =
+                FindAchievementClaimButton();
+
+            if (claimButton != null &&
+                claimButton.interactable)
+            {
+                ShowTargetOverlay(
+                    claimButton,
+                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\nТы прошёл обучение. Нажми кнопку, чтобы забрать награду."
+                );
+
+                yield return WaitForTargetClick(
+                    claimButton);
+            }
+            else
+            {
+                ShowInfoOverlay(
+                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\nЗа прохождение обучения доступна награда. Её можно забрать в списке достижений."
+                );
+
+                yield return WaitForOk();
+            }
+
+            Button closeButton =
+                FindButtonByText("ЗАКРЫТЬ");
+
+            if (closeButton == null)
+                closeButton =
+                    FindButtonByText("Закрыть");
+
+            if (closeButton == null)
+                closeButton =
+                    FindButtonByText("НАЗАД");
+
+            if (closeButton == null)
+                closeButton =
+                    FindButtonByText("Назад");
+
+            if (closeButton != null)
+            {
+                ShowButtonOnlyHighlight(closeButton);
+
+                yield return WaitForTargetClick(
+                    closeButton);
+            }
         }
 
-        // -----------------------------------------------------
-        // БЕСКОНЕЧНЫЙ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.AchievementsInfinite;
-
-        Button infinite =
-            FindButtonByText(
-                achievements.transform,
-                "БЕСКОНЕЧНЫЙ",
-                "БЕСКОНЕЧНОСТЬ"
-            );
-
-        if (infinite != null)
-        {
-            ShowTargetOverlay(
-                infinite,
-                "Здесь находятся достижения бесконечного режима."
-            );
-
-            yield return WaitForTargetClick(
-                infinite
-            );
-        }
-        else
-        {
-            ShowInfoOverlay(
-                "БЕСКОНЕЧНЫЙ\n\n" +
-                "В этом разделе находятся достижения " +
-                "бесконечного режима."
-            );
-
-            yield return WaitForOk();
-        }
-
-        // -----------------------------------------------------
-        // ДОСТИЖЕНИЕ ЗА ОБУЧЕНИЕ
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.AchievementsClaim;
-
-        AchievementSystem3D.Unlock(
-            TUTORIAL_ACHIEVEMENT_ID
-        );
-
-        yield return new WaitForSecondsRealtime(
-            0.2f
-        );
-
-        achievements =
-            FindFirstObjectByType<
-                AchievementsUI3D
-            >();
-
-        Button claim =
-            FindAchievementClaimButton(
-                TUTORIAL_ACHIEVEMENT_ID
-            );
-
-        if (claim != null)
-        {
-            ShowTargetOverlay(
-                claim,
-                "Это награда за прохождение обучения.\n\n" +
-                "Нажми «Забрать», чтобы получить +50 монет."
-            );
-
-            yield return WaitForTargetClick(
-                claim
-            );
-        }
-        else
-        {
-            ShowInfoOverlay(
-                "НАГРАДА ЗА ОБУЧЕНИЕ\n\n" +
-                "За прохождение обучения доступна награда +50 монет."
-            );
-
-            yield return WaitForOk();
-        }
-
-        // -----------------------------------------------------
-        // НАЗАД
-        // -----------------------------------------------------
-
-        currentStep =
-            TutorialStep.AchievementsBack;
-
-        Button close =
-            FindButtonByText(
-                achievements.transform,
-                "ЗАКРЫТЬ",
-                "НАЗАД",
-                "ВЫЙТИ"
-            );
-
-        if (close != null)
-        {
-            ShowButtonOnlyHighlight(
-                close
-            );
-
-            yield return WaitForTargetClick(
-                close
-            );
-        }
-
-        RestoreSelectables();
-
-        yield return new WaitForSecondsRealtime(
-            0.3f
-        );
+        yield return new WaitForSecondsRealtime(0.2f);
     }
 
     // =========================================================
-    // FINAL
+    // ФИНАЛ
     // =========================================================
 
-    private IEnumerator ShowFinalWindow()
+    private IEnumerator RunFinalTutorial()
     {
-        RestoreSelectables();
-
-        CreateOverlay();
-
-        DisableAllSelectablesExcept(
-            null
-        );
-
-        if (highlightImage != null)
-        {
-            highlightImage.gameObject.SetActive(
-                false
-            );
-        }
-
-        ShowInstructionText(
+        ShowInfoOverlay(
             "ОБУЧЕНИЕ ЗАВЕРШЕНО!\n\n" +
-            "Отлично! Ты освоил основные возможности игры.\n\n" +
-            "Теперь ты знаешь, как проходить забеги, " +
-            "улучшать персонажа и снаряжение, " +
-            "получать ежедневные награды, " +
-            "настраивать профиль и забирать награды " +
-            "за достижения."
+            "Теперь ты знаешь основные разделы игры.\n\n" +
+            "Исследуй мир, улучшай экипировку, открывай персонажей и собирай ресурсы."
         );
 
-        Button ok =
-            CreateOverlayOkButton();
+        yield return WaitForOk();
+    }
 
-        if (ok != null)
-        {
-            yield return WaitForButtonPress(
-                ok
-            );
-        }
+    private void CompleteTutorial()
+    {
+        PlayerPrefs.SetInt(COMPLETED_KEY, 1);
+        PlayerPrefs.DeleteKey(STARTED_KEY);
+        PlayerPrefs.Save();
 
         DestroyOverlay();
+    }
+
+    // =========================================================
+    // ACHIEVEMENT
+    // =========================================================
+
+    private void UnlockTutorialAchievement()
+    {
+        try
+        {
+            AchievementSystem3D.Unlock(
+                TUTORIAL_ACHIEVEMENT_ID);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(
+                "[SafeZoneMainMenuTutorial3D] " +
+                "Не удалось активировать достижение обучения: " +
+                e.Message
+            );
+        }
+    }
+
+    // =========================================================
+    // UTILITY BUTTONS
+    // =========================================================
+
+    private Button FindUtilityButton(
+        string requiredAction)
+    {
+        MainMenuUtilityButton3D[] utilities =
+            FindObjectsByType<MainMenuUtilityButton3D>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        for (int i = 0; i < utilities.Length; i++)
+        {
+            MainMenuUtilityButton3D utility =
+                utilities[i];
+
+            if (utility == null)
+                continue;
+
+            string actionValue =
+                GetActionValue(utility);
+
+            if (string.IsNullOrEmpty(actionValue))
+                continue;
+
+            if (!string.Equals(
+                    actionValue,
+                    requiredAction,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            Button button =
+                utility.GetComponent<Button>();
+
+            if (button == null)
+                button =
+                    utility.GetComponentInChildren<Button>(
+                        true);
+
+            if (button != null)
+                return button;
+        }
+
+        return null;
+    }
+
+    private string GetActionValue(object target)
+    {
+        Type type = target.GetType();
+
+        FieldInfo[] fields =
+            type.GetFields(
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        for (int i = 0; i < fields.Length; i++)
+        {
+            FieldInfo field = fields[i];
+
+            if (!field.Name.ToLowerInvariant()
+                .Contains("action"))
+            {
+                continue;
+            }
+
+            object value =
+                field.GetValue(target);
+
+            if (value != null)
+                return value.ToString();
+        }
+
+        PropertyInfo[] properties =
+            type.GetProperties(
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        for (int i = 0; i < properties.Length; i++)
+        {
+            PropertyInfo property =
+                properties[i];
+
+            if (!property.Name.ToLowerInvariant()
+                .Contains("action"))
+            {
+                continue;
+            }
+
+            if (!property.CanRead)
+                continue;
+
+            object value =
+                property.GetValue(
+                    target,
+                    null);
+
+            if (value != null)
+                return value.ToString();
+        }
+
+        return string.Empty;
+    }
+
+    // =========================================================
+    // MEMBER SEARCH
+    // =========================================================
+
+    private Button FindButtonFromMember(
+        object owner,
+        string memberName)
+    {
+        if (owner == null)
+            return null;
+
+        Type type = owner.GetType();
+
+        FieldInfo field =
+            type.GetField(
+                memberName,
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        if (field != null)
+        {
+            object value =
+                field.GetValue(owner);
+
+            Button result =
+                ConvertToButton(value);
+
+            if (result != null)
+                return result;
+        }
+
+        PropertyInfo property =
+            type.GetProperty(
+                memberName,
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        if (property != null &&
+            property.CanRead)
+        {
+            object value =
+                property.GetValue(
+                    owner,
+                    null);
+
+            Button result =
+                ConvertToButton(value);
+
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
+    private T FindComponentFromMember<T>(
+        object owner,
+        string memberName)
+        where T : Component
+    {
+        if (owner == null)
+            return null;
+
+        Type type = owner.GetType();
+
+        FieldInfo field =
+            type.GetField(
+                memberName,
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        if (field != null)
+        {
+            object value =
+                field.GetValue(owner);
+
+            T component =
+                value as T;
+
+            if (component != null)
+                return component;
+
+            GameObject go =
+                value as GameObject;
+
+            if (go != null)
+                return go.GetComponent<T>();
+        }
+
+        PropertyInfo property =
+            type.GetProperty(
+                memberName,
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        if (property != null &&
+            property.CanRead)
+        {
+            object value =
+                property.GetValue(
+                    owner,
+                    null);
+
+            T component =
+                value as T;
+
+            if (component != null)
+                return component;
+
+            GameObject go =
+                value as GameObject;
+
+            if (go != null)
+                return go.GetComponent<T>();
+        }
+
+        return null;
+    }
+
+    private Button ConvertToButton(object value)
+    {
+        if (value == null)
+            return null;
+
+        Button button =
+            value as Button;
+
+        if (button != null)
+            return button;
+
+        GameObject go =
+            value as GameObject;
+
+        if (go != null)
+            return go.GetComponent<Button>();
+
+        Component component =
+            value as Component;
+
+        if (component != null)
+        {
+            button =
+                component.GetComponent<Button>();
+
+            if (button != null)
+                return button;
+
+            button =
+                component.GetComponentInChildren<Button>(
+                    true);
+        }
+
+        return button;
+    }
+
+    // =========================================================
+    // BUTTON SEARCH
+    // =========================================================
+
+    private Button FindButtonByText(
+        string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return null;
+
+        TMP_Text[] texts =
+            FindObjectsByType<TMP_Text>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        for (int i = 0; i < texts.Length; i++)
+        {
+            TMP_Text text = texts[i];
+
+            if (text == null)
+                continue;
+
+            string value = text.text;
+
+            if (string.IsNullOrWhiteSpace(value))
+                continue;
+
+            if (!value.Trim().Contains(
+                    searchText,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            Button button =
+                text.GetComponentInParent<Button>();
+
+            if (button != null)
+                return button;
+        }
+
+        return null;
+    }
+
+    private Button FindFirstMeaningfulButton(
+        GameObject root)
+    {
+        if (root == null)
+            return null;
+
+        Button[] buttons =
+            root.GetComponentsInChildren<Button>(
+                true);
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Button button = buttons[i];
+
+            if (button == null ||
+                !button.interactable)
+            {
+                continue;
+            }
+
+            string text =
+                GetButtonText(button);
+
+            if (string.IsNullOrWhiteSpace(text))
+                continue;
+
+            if (text.Contains(
+                    "НАЗАД",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (text.Contains(
+                    "ЗАКРЫТЬ",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return button;
+        }
+
+        return null;
+    }
+
+    private Button FindFirstCharacterButton(
+        GameObject root)
+    {
+        if (root == null)
+            return null;
+
+        Button[] buttons =
+            root.GetComponentsInChildren<Button>(
+                true);
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Button button = buttons[i];
+
+            if (button == null ||
+                !button.interactable)
+            {
+                continue;
+            }
+
+            string text =
+                GetButtonText(button);
+
+            if (text.Contains(
+                    "НАЗАД",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (text.Contains(
+                    "ЗАКРЫТЬ",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (text.Contains(
+                    "КУПИТЬ",
+                    StringComparison.OrdinalIgnoreCase) ||
+                text.Contains(
+                    "ВЫБРАТЬ",
+                    StringComparison.OrdinalIgnoreCase) ||
+                text.Contains(
+                    "ИГРАТЬ",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return button;
+            }
+        }
+
+        return null;
+    }
+
+    private Button FindUpgradeButton(
+        GameObject root)
+    {
+        if (root == null)
+            return null;
+
+        Button[] buttons =
+            root.GetComponentsInChildren<Button>(
+                true);
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Button button = buttons[i];
+
+            if (button == null ||
+                !button.interactable)
+            {
+                continue;
+            }
+
+            string text =
+                GetButtonText(button);
+
+            if (text.Contains(
+                    "УЛУЧШ",
+                    StringComparison.OrdinalIgnoreCase) ||
+                text.Contains(
+                    "ПОВЫС",
+                    StringComparison.OrdinalIgnoreCase) ||
+                text.Contains(
+                    "КУПИТЬ",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return button;
+            }
+        }
+
+        return null;
+    }
+
+    private Button FindAchievementClaimButton()
+    {
+        Button[] buttons =
+            FindObjectsByType<Button>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Button button = buttons[i];
+
+            if (button == null)
+                continue;
+
+            string text =
+                GetButtonText(button);
+
+            if (text.Contains(
+                    "ЗАБРАТЬ",
+                    StringComparison.OrdinalIgnoreCase) ||
+                text.Contains(
+                    "ЗАБРАТЬ НАГРАДУ",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return button;
+            }
+        }
+
+        return null;
+    }
+
+    private string GetButtonText(Button button)
+    {
+        if (button == null)
+            return string.Empty;
+
+        TMP_Text text =
+            button.GetComponentInChildren<TMP_Text>(
+                true);
+
+        if (text != null)
+            return text.text.Trim();
+
+        Text legacyText =
+            button.GetComponentInChildren<Text>(
+                true);
+
+        if (legacyText != null)
+            return legacyText.text.Trim();
+
+        return button.name;
     }
 
     // =========================================================
@@ -1464,51 +1468,39 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         GameObject canvasObject =
             new GameObject(
                 "SafeZoneMainMenuTutorialOverlay",
+                typeof(RectTransform),
                 typeof(Canvas),
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster)
             );
 
+        overlayRoot = canvasObject;
+
+        DontDestroyOnLoad(canvasObject);
+
         overlayCanvas =
-            canvasObject.GetComponent<
-                Canvas
-            >();
+            canvasObject.GetComponent<Canvas>();
 
         overlayCanvas.renderMode =
             RenderMode.ScreenSpaceOverlay;
 
-        overlayCanvas.sortingOrder =
-            overlaySortingOrder;
+        overlayCanvas.sortingOrder = 30000;
 
         CanvasScaler scaler =
-            canvasObject.GetComponent<
-                CanvasScaler
-            >();
+            canvasObject.GetComponent<CanvasScaler>();
 
         scaler.uiScaleMode =
             CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
         scaler.referenceResolution =
-            new Vector2(
-                1080f,
-                1920f
-            );
+            new Vector2(1080f, 1920f);
 
         scaler.screenMatchMode =
             CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
 
-        scaler.matchWidthOrHeight =
-            0.5f;
+        scaler.matchWidthOrHeight = 0.5f;
 
-        overlayRoot =
-            canvasObject.GetComponent<
-                RectTransform
-            >();
-
-        // -----------------------------------------------------
-        // Затемнение
-        // -----------------------------------------------------
-
+        // DIM
         GameObject dimObject =
             new GameObject(
                 "Dim",
@@ -1517,34 +1509,23 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             );
 
         dimObject.transform.SetParent(
-            overlayRoot,
-            false
-        );
+            canvasObject.transform,
+            false);
 
         RectTransform dimRect =
-            dimObject.GetComponent<
-                RectTransform
-            >();
+            dimObject.GetComponent<RectTransform>();
 
-        StretchFull(
-            dimRect
-        );
+        StretchFullScreen(dimRect);
 
         dimImage =
             dimObject.GetComponent<Image>();
 
         dimImage.color =
-            dimColor;
+            new Color(0f, 0f, 0f, 0.72f);
 
-        // По умолчанию блокирует UI.
-        // Для реального target-click отключается.
-        dimImage.raycastTarget =
-            true;
+        dimImage.raycastTarget = false;
 
-        // -----------------------------------------------------
-        // Подсветка
-        // -----------------------------------------------------
-
+        // HIGHLIGHT
         GameObject highlightObject =
             new GameObject(
                 "Highlight",
@@ -1553,776 +1534,52 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             );
 
         highlightObject.transform.SetParent(
-            overlayRoot,
-            false
-        );
+            canvasObject.transform,
+            false);
 
         highlightImage =
             highlightObject.GetComponent<Image>();
 
-        highlightImage.sprite =
-            RuntimeUISprite3D.GetRoundedSprite();
-
-        highlightImage.type =
-            Image.Type.Sliced;
-
         highlightImage.color =
-            new Color(
-                highlightColor.r,
-                highlightColor.g,
-                highlightColor.b,
-                0.22f
-            );
+            new Color(1f, 1f, 1f, 0.10f);
 
-        highlightImage.raycastTarget =
-            false;
+        highlightImage.raycastTarget = false;
 
-        // -----------------------------------------------------
-        // Информационный фон
-        // -----------------------------------------------------
-
-        GameObject backgroundObject =
+        // PANEL
+        infoPanel =
             new GameObject(
-                "InstructionBackground",
+                "InfoPanel",
                 typeof(RectTransform),
                 typeof(Image)
             );
 
-        backgroundObject.transform.SetParent(
-            overlayRoot,
-            false
-        );
+        infoPanel.transform.SetParent(
+            canvasObject.transform,
+            false);
 
-        instructionBackground =
-            backgroundObject.GetComponent<Image>();
+        RectTransform panelRect =
+            infoPanel.GetComponent<RectTransform>();
 
-        instructionBackground.sprite =
-            RuntimeUISprite3D.GetRoundedSprite();
+        panelRect.anchorMin =
+            new Vector2(0.08f, 0.18f);
 
-        instructionBackground.type =
-            Image.Type.Sliced;
+        panelRect.anchorMax =
+            new Vector2(0.92f, 0.45f);
 
-        instructionBackground.color =
-            instructionBackgroundColor;
+        panelRect.offsetMin = Vector2.zero;
+        panelRect.offsetMax = Vector2.zero;
 
-        instructionBackground.raycastTarget =
-            false;
+        Image panelImage =
+            infoPanel.GetComponent<Image>();
 
-        RectTransform backgroundRect =
-            instructionBackground.rectTransform;
+        panelImage.color =
+            new Color(
+                0.04f,
+                0.07f,
+                0.09f,
+                0.96f);
 
-        backgroundRect.sizeDelta =
-            new Vector2(
-                instructionWidth,
-                instructionHeight
-            );
-
-        backgroundRect.anchorMin =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        backgroundRect.anchorMax =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        backgroundRect.pivot =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        backgroundRect.anchoredPosition =
-            new Vector2(
-                0f,
-                120f
-            );
-
-        // -----------------------------------------------------
-        // Текст
-        // -----------------------------------------------------
-
-        GameObject textObject =
-            new GameObject(
-                "Instruction",
-                typeof(RectTransform),
-                typeof(TextMeshProUGUI)
-            );
-
-        textObject.transform.SetParent(
-            backgroundObject.transform,
-            false
-        );
-
-        instructionText =
-            textObject.GetComponent<
-                TextMeshProUGUI
-            >();
-
-        RectTransform textRect =
-            instructionText.rectTransform;
-
-        textRect.anchorMin =
-            Vector2.zero;
-
-        textRect.anchorMax =
-            Vector2.one;
-
-        textRect.offsetMin =
-            new Vector2(
-                instructionHorizontalPadding,
-                instructionVerticalPadding
-            );
-
-        textRect.offsetMax =
-            new Vector2(
-                -instructionHorizontalPadding,
-                -instructionVerticalPadding
-            );
-
-        instructionText.color =
-            instructionColor;
-
-        instructionText.fontSize =
-            instructionFontSize;
-
-        instructionText.fontSizeMin =
-            instructionFontMinSize;
-
-        instructionText.fontSizeMax =
-            instructionFontSize;
-
-        instructionText.enableAutoSizing =
-            true;
-
-        instructionText.alignment =
-            TextAlignmentOptions.Center;
-
-        instructionText.textWrappingMode =
-            TextWrappingModes.Normal;
-
-        instructionText.overflowMode =
-            TextOverflowModes.Ellipsis;
-
-        instructionText.outlineWidth =
-            0.18f;
-
-        instructionText.outlineColor =
-            instructionOutlineColor;
-
-        instructionText.raycastTarget =
-            false;
-    }
-
-    private void DestroyOverlay()
-    {
-        RestoreSelectables();
-
-        if (
-            overlayCanvas != null
-        )
-        {
-            Destroy(
-                overlayCanvas.gameObject
-            );
-        }
-
-        overlayCanvas = null;
-        overlayRoot = null;
-        dimImage = null;
-        highlightImage = null;
-        instructionBackground = null;
-        instructionText = null;
-        currentTargetButton = null;
-    }
-
-    // =========================================================
-    // INFO OVERLAY
-    // =========================================================
-
-    private void ShowInfoOverlay(
-        string text
-    )
-    {
-        CreateOverlay();
-
-        DisableAllSelectablesExcept(
-            null
-        );
-
-        if (dimImage != null)
-        {
-            dimImage.raycastTarget =
-                true;
-        }
-
-        if (highlightImage != null)
-        {
-            highlightImage.gameObject.SetActive(
-                false
-            );
-        }
-
-        PositionInstructionPanel(
-            new Vector2(
-                0f,
-                120f
-            )
-        );
-
-        ShowInstructionText(
-            text
-        );
-    }
-
-    private void ShowInstructionText(
-        string text
-    )
-    {
-        if (
-            instructionText == null
-        )
-        {
-            return;
-        }
-
-        instructionText.gameObject.SetActive(
-            true
-        );
-
-        instructionText.text =
-            text;
-
-        Canvas.ForceUpdateCanvases();
-    }
-
-    private void PositionInstructionPanel(
-        Vector2 position
-    )
-    {
-        if (
-            instructionBackground == null
-        )
-        {
-            return;
-        }
-
-        RectTransform rect =
-            instructionBackground
-                .rectTransform;
-
-        rect.anchorMin =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        rect.anchorMax =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        rect.pivot =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        rect.sizeDelta =
-            new Vector2(
-                instructionWidth,
-                instructionHeight
-            );
-
-        rect.anchoredPosition =
-            position;
-    }
-
-    // =========================================================
-    // TARGET OVERLAY
-    // =========================================================
-
-    private void ShowTargetOverlay(
-        Button target,
-        string text
-    )
-    {
-        if (
-            target == null
-        )
-        {
-            ShowInfoOverlay(
-                text
-            );
-
-            return;
-        }
-
-        CreateOverlay();
-
-        currentTargetButton =
-            target;
-
-        DisableAllSelectablesExcept(
-            target
-        );
-
-        // Самое важное:
-        // затемнение не должно перехватывать
-        // клик по подсвеченной кнопке.
-        if (dimImage != null)
-        {
-            dimImage.raycastTarget =
-                false;
-        }
-
-        PositionHighlight(
-            target
-        );
-
-        PositionInstructionNearTarget(
-            target
-        );
-
-        ShowInstructionText(
-            text
-        );
-    }
-
-    private void ShowButtonOnlyHighlight(
-        Button target
-    )
-    {
-        if (
-            target == null
-        )
-        {
-            return;
-        }
-
-        CreateOverlay();
-
-        currentTargetButton =
-            target;
-
-        DisableAllSelectablesExcept(
-            target
-        );
-
-        if (dimImage != null)
-        {
-            dimImage.raycastTarget =
-                false;
-        }
-
-        if (instructionBackground != null)
-        {
-            instructionBackground.gameObject
-                .SetActive(false);
-        }
-
-        if (instructionText != null)
-        {
-            instructionText.gameObject
-                .SetActive(false);
-        }
-
-        PositionHighlight(
-            target
-        );
-    }
-
-    // =========================================================
-    // HIGHLIGHT
-    // =========================================================
-
-    private void PositionHighlight(
-        Button target
-    )
-    {
-        if (
-            highlightImage == null ||
-            overlayCanvas == null ||
-            target == null
-        )
-        {
-            return;
-        }
-
-        RectTransform targetRect =
-            target.GetComponent<
-                RectTransform
-            >();
-
-        if (targetRect == null)
-        {
-            return;
-        }
-
-        RectTransform canvasRect =
-            overlayCanvas.GetComponent<
-                RectTransform
-            >();
-
-        Vector3[] corners =
-            new Vector3[4];
-
-        targetRect.GetWorldCorners(
-            corners
-        );
-
-        Vector2 bottomLeft;
-        Vector2 topRight;
-
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                RectTransformUtility
-                    .WorldToScreenPoint(
-                        null,
-                        corners[0]
-                    ),
-                null,
-                out bottomLeft
-            );
-
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                RectTransformUtility
-                    .WorldToScreenPoint(
-                        null,
-                        corners[2]
-                    ),
-                null,
-                out topRight
-            );
-
-        Vector2 size =
-            new Vector2(
-                Mathf.Abs(
-                    topRight.x -
-                    bottomLeft.x
-                ),
-                Mathf.Abs(
-                    topRight.y -
-                    bottomLeft.y
-                )
-            );
-
-        Vector2 center =
-            (bottomLeft + topRight) *
-            0.5f;
-
-        RectTransform highlightRect =
-            highlightImage.rectTransform;
-
-        highlightRect.anchorMin =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        highlightRect.anchorMax =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        highlightRect.pivot =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        highlightRect.anchoredPosition =
-            center;
-
-        highlightRect.sizeDelta =
-            size +
-            new Vector2(
-                highlightPadding * 2f,
-                highlightPadding * 2f
-            );
-    }
-
-    // =========================================================
-    // TEXT POSITION
-    // =========================================================
-
-    private void PositionInstructionNearTarget(
-        Button target
-    )
-    {
-        if (
-            instructionBackground == null ||
-            overlayCanvas == null ||
-            target == null
-        )
-        {
-            return;
-        }
-
-        RectTransform targetRect =
-            target.GetComponent<
-                RectTransform
-            >();
-
-        RectTransform canvasRect =
-            overlayCanvas.GetComponent<
-                RectTransform
-            >();
-
-        if (
-            targetRect == null ||
-            canvasRect == null
-        )
-        {
-            return;
-        }
-
-        Vector3[] corners =
-            new Vector3[4];
-
-        targetRect.GetWorldCorners(
-            corners
-        );
-
-        Vector2 bottomLeft;
-        Vector2 topRight;
-
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                RectTransformUtility
-                    .WorldToScreenPoint(
-                        null,
-                        corners[0]
-                    ),
-                null,
-                out bottomLeft
-            );
-
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                RectTransformUtility
-                    .WorldToScreenPoint(
-                        null,
-                        corners[2]
-                    ),
-                null,
-                out topRight
-            );
-
-        Vector2 center =
-            (bottomLeft + topRight) *
-            0.5f;
-
-        float canvasWidth =
-            canvasRect.rect.width;
-
-        float canvasHeight =
-            canvasRect.rect.height;
-
-        float panelHalfWidth =
-            instructionWidth *
-            0.5f;
-
-        float panelHalfHeight =
-            instructionHeight *
-            0.5f;
-
-        float targetTop =
-            topRight.y;
-
-        float targetBottom =
-            bottomLeft.y;
-
-        float targetLeft =
-            bottomLeft.x;
-
-        float targetRight =
-            topRight.x;
-
-        const float gap = 35f;
-
-        Vector2 position;
-
-        // Справа
-        if (
-            targetRight +
-            gap +
-            panelHalfWidth
-            <=
-            canvasWidth * 0.5f
-        )
-        {
-            position =
-                new Vector2(
-                    targetRight +
-                    gap +
-                    panelHalfWidth,
-                    center.y
-                );
-        }
-        // Слева
-        else if (
-            targetLeft -
-            gap -
-            panelHalfWidth
-            >=
-            -canvasWidth * 0.5f
-        )
-        {
-            position =
-                new Vector2(
-                    targetLeft -
-                    gap -
-                    panelHalfWidth,
-                    center.y
-                );
-        }
-        // Сверху
-        else if (
-            targetTop +
-            gap +
-            panelHalfHeight
-            <=
-            canvasHeight * 0.5f
-        )
-        {
-            position =
-                new Vector2(
-                    center.x,
-                    targetTop +
-                    gap +
-                    panelHalfHeight
-                );
-        }
-        // Снизу
-        else
-        {
-            position =
-                new Vector2(
-                    center.x,
-                    targetBottom -
-                    gap -
-                    panelHalfHeight
-                );
-        }
-
-        position.x =
-            Mathf.Clamp(
-                position.x,
-                -canvasWidth * 0.5f +
-                panelHalfWidth,
-                canvasWidth * 0.5f -
-                panelHalfWidth
-            );
-
-        position.y =
-            Mathf.Clamp(
-                position.y,
-                -canvasHeight * 0.5f +
-                panelHalfHeight,
-                canvasHeight * 0.5f -
-                panelHalfHeight
-            );
-
-        PositionInstructionPanel(
-            position
-        );
-    }
-
-    // =========================================================
-    // BUTTONS
-    // =========================================================
-
-    private Button CreateOverlayOkButton()
-    {
-        if (
-            overlayRoot == null
-        )
-        {
-            return null;
-        }
-
-        GameObject buttonObject =
-            new GameObject(
-                "TutorialOK",
-                typeof(RectTransform),
-                typeof(Image),
-                typeof(Button)
-            );
-
-        buttonObject.transform.SetParent(
-            overlayRoot,
-            false
-        );
-
-        RectTransform rect =
-            buttonObject.GetComponent<
-                RectTransform
-            >();
-
-        rect.anchorMin =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        rect.anchorMax =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        rect.pivot =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
-
-        rect.sizeDelta =
-            new Vector2(
-                250f,
-                70f
-            );
-
-        rect.anchoredPosition =
-            new Vector2(
-                0f,
-                -180f
-            );
-
-        Image image =
-            buttonObject.GetComponent<Image>();
-
-        image.sprite =
-            RuntimeUISprite3D.GetRoundedSprite();
-
-        image.type =
-            Image.Type.Sliced;
-
-        image.color =
-            new Color32(
-                55,
-                120,
-                78,
-                255
-            );
-
-        Button button =
-            buttonObject.GetComponent<Button>();
-
-        button.targetGraphic =
-            image;
-
+        // TEXT
         GameObject textObject =
             new GameObject(
                 "Text",
@@ -2331,144 +1588,241 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             );
 
         textObject.transform.SetParent(
-            buttonObject.transform,
-            false
-        );
+            infoPanel.transform,
+            false);
 
         RectTransform textRect =
-            textObject.GetComponent<
-                RectTransform
-            >();
+            textObject.GetComponent<RectTransform>();
 
-        StretchFull(
-            textRect
-        );
+        textRect.anchorMin =
+            new Vector2(0.08f, 0.25f);
 
-        TextMeshProUGUI text =
-            textObject.GetComponent<
-                TextMeshProUGUI
-            >();
+        textRect.anchorMax =
+            new Vector2(0.92f, 0.88f);
 
-        text.text =
-            "OK";
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
 
-        text.fontSize =
-            26f;
+        infoText =
+            textObject.GetComponent<TextMeshProUGUI>();
 
-        text.alignment =
+        infoText.alignment =
             TextAlignmentOptions.Center;
 
-        text.color =
-            Color.white;
+        infoText.fontSizeMin = 26f;
+        infoText.fontSizeMax = 52f;
+        infoText.enableAutoSizing = true;
+        infoText.textWrappingMode =
+            TextWrappingModes.Normal;
 
-        text.raycastTarget =
-            false;
-
-        return button;
-    }
-
-    private IEnumerator WaitForOk()
-    {
-        Button ok =
-            CreateOverlayOkButton();
-
-        if (ok == null)
-        {
-            yield return new WaitForSecondsRealtime(
-                1f
+        // OK
+        GameObject okObject =
+            new GameObject(
+                "OK",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
             );
 
-            yield break;
-        }
+        okObject.transform.SetParent(
+            infoPanel.transform,
+            false);
 
-        yield return WaitForButtonPress(
-            ok
-        );
+        RectTransform okRect =
+            okObject.GetComponent<RectTransform>();
 
-        DestroyOverlay();
+        okRect.anchorMin =
+            new Vector2(0.30f, 0.05f);
 
-        yield return null;
+        okRect.anchorMax =
+            new Vector2(0.70f, 0.22f);
+
+        okRect.offsetMin = Vector2.zero;
+        okRect.offsetMax = Vector2.zero;
+
+        Image okImage =
+            okObject.GetComponent<Image>();
+
+        okImage.color =
+            new Color(
+                0.12f,
+                0.55f,
+                0.30f,
+                1f);
+
+        okButton =
+            okObject.GetComponent<Button>();
+
+        GameObject okTextObject =
+            new GameObject(
+                "Text",
+                typeof(RectTransform),
+                typeof(TextMeshProUGUI)
+            );
+
+        okTextObject.transform.SetParent(
+            okObject.transform,
+            false);
+
+        RectTransform okTextRect =
+            okTextObject.GetComponent<RectTransform>();
+
+        StretchFullScreen(okTextRect);
+
+        TMP_Text okText =
+            okTextObject.GetComponent<TMP_Text>();
+
+        okText.text = "ПОНЯТНО";
+        okText.alignment =
+            TextAlignmentOptions.Center;
+
+        okText.fontSize = 30f;
+        okText.fontStyle =
+            FontStyles.Bold;
     }
 
-    private IEnumerator WaitForButtonPress(
-        Button button
-    )
+    private void ShowInfoOverlay(string text)
     {
-        if (button == null)
+        CreateOverlay();
+
+        infoPanel.SetActive(true);
+        infoText.text = text;
+
+        highlightImage.gameObject.SetActive(false);
+
+        DisableOtherSelectables();
+
+        okButton.onClick.RemoveAllListeners();
+
+        clickedTarget = false;
+
+        okButton.onClick.AddListener(() =>
         {
-            yield break;
-        }
+            clickedTarget = true;
+        });
+    }
 
-        bool clicked =
-            false;
+    private void ShowTargetOverlay(
+        Button target,
+        string text)
+    {
+        CreateOverlay();
 
-        UnityEngine.Events.UnityAction action =
-            () =>
-            {
-                clicked = true;
-            };
+        if (target == null)
+            return;
 
-        button.onClick.AddListener(
-            action
-        );
+        infoPanel.SetActive(true);
+        infoText.text = text;
 
-        while (
-            !clicked &&
-            button != null
-        )
-        {
-            yield return null;
-        }
+        PositionHighlight(target);
 
-        if (button != null)
-        {
-            button.onClick.RemoveListener(
-                action
-            );
-        }
+        DisableOtherSelectablesExcept(target);
+
+        highlightImage.gameObject.SetActive(true);
+
+        clickedTarget = false;
+    }
+
+    private void ShowComponentOverlay(
+        Component target,
+        string text)
+    {
+        CreateOverlay();
+
+        if (target == null)
+            return;
+
+        infoPanel.SetActive(true);
+        infoText.text = text;
+
+        PositionHighlight(target);
+
+        DisableOtherSelectables();
+
+        highlightImage.gameObject.SetActive(true);
+
+        clickedTarget = false;
+
+        if (target is Selectable selectable)
+            selectable.interactable = false;
+    }
+
+    private void ShowButtonOnlyHighlight(
+        Button target)
+    {
+        CreateOverlay();
+
+        if (target == null)
+            return;
+
+        infoPanel.SetActive(false);
+
+        PositionHighlight(target);
+
+        DisableOtherSelectablesExcept(target);
+
+        highlightImage.gameObject.SetActive(true);
+
+        clickedTarget = false;
     }
 
     private IEnumerator WaitForTargetClick(
-        Button target
-    )
+        Button target)
     {
         if (target == null)
-        {
             yield break;
-        }
 
-        bool clicked =
-            false;
+        clickedTarget = false;
 
-        UnityEngine.Events.UnityAction action =
+        UnityEngine.Events.UnityAction callback =
             () =>
             {
-                clicked = true;
+                clickedTarget = true;
             };
 
-        target.onClick.AddListener(
-            action
-        );
+        target.onClick.AddListener(callback);
 
-        while (
-            !clicked
-        )
+        float timer = 0f;
+
+        while (!clickedTarget)
         {
-            if (
-                target == null
-            )
-            {
+            if (target == null)
                 break;
-            }
+
+            timer += Time.unscaledDeltaTime;
+
+            if (timer > 120f)
+                break;
+
+            PositionHighlight(target);
 
             yield return null;
         }
 
         if (target != null)
+            target.onClick.RemoveListener(callback);
+
+        RestoreSelectables();
+
+        DestroyOverlay();
+
+        yield return null;
+    }
+
+    private IEnumerator WaitForOk()
+    {
+        clickedTarget = false;
+
+        float timer = 0f;
+
+        while (!clickedTarget)
         {
-            target.onClick.RemoveListener(
-                action
-            );
+            timer += Time.unscaledDeltaTime;
+
+            if (timer > 120f)
+                break;
+
+            yield return null;
         }
 
         RestoreSelectables();
@@ -2479,482 +1833,206 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     }
 
     // =========================================================
-    // SCENES
+    // HIGHLIGHT
     // =========================================================
 
-    private IEnumerator LoadSceneIfNeeded(
-        string sceneName
-    )
+    private void PositionHighlight(
+        Component target)
     {
-        if (
-            SceneManager.GetActiveScene()
-                .name == sceneName
-        )
+        if (target == null ||
+            highlightImage == null ||
+            overlayCanvas == null)
         {
-            yield break;
+            return;
         }
 
-        RestoreSelectables();
+        RectTransform targetRect =
+            target.transform as RectTransform;
 
-        SceneManager.LoadScene(
-            sceneName
-        );
+        if (targetRect == null)
+            return;
 
-        yield return new WaitUntil(
-            () =>
-                SceneManager.GetActiveScene()
-                    .name == sceneName
-        );
-    }
+        Camera camera = null;
 
-    private IEnumerator ReturnToMainMenu()
-    {
-        RestoreSelectables();
+        Canvas targetCanvas =
+            targetRect.GetComponentInParent<Canvas>();
 
-        if (
-            SceneManager.GetActiveScene()
-                .name != mainMenuScene
-        )
+        if (targetCanvas != null &&
+            targetCanvas.renderMode !=
+            RenderMode.ScreenSpaceOverlay)
         {
-            SceneManager.LoadScene(
-                mainMenuScene
-            );
-
-            yield return new WaitUntil(
-                () =>
-                    SceneManager.GetActiveScene()
-                        .name ==
-                    mainMenuScene
-            );
+            camera = targetCanvas.worldCamera;
         }
 
-        yield return new WaitForSecondsRealtime(
-            sceneDelay
-        );
-    }
+        Vector3[] corners =
+            new Vector3[4];
 
-    private IEnumerator WaitForMainMenu()
-    {
-        if (
-            SceneManager.GetActiveScene()
-                .name != mainMenuScene
-        )
-        {
-            yield return ReturnToMainMenu();
-        }
+        targetRect.GetWorldCorners(corners);
 
-        yield return new WaitForSecondsRealtime(
-            sceneDelay
-        );
-    }
+        Vector2 min =
+            RectTransformUtility.WorldToScreenPoint(
+                camera,
+                corners[0]);
 
-    private IEnumerator WaitForSceneReady()
-    {
-        yield return null;
-        yield return new WaitForEndOfFrame();
+        Vector2 max =
+            RectTransformUtility.WorldToScreenPoint(
+                camera,
+                corners[2]);
 
-        yield return new WaitForSecondsRealtime(
-            sceneDelay
-        );
+        RectTransform canvasRect =
+            overlayCanvas.transform as RectTransform;
+
+        Vector2 localMin;
+        Vector2 localMax;
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                min,
+                null,
+                out localMin);
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                max,
+                null,
+                out localMax);
+
+        RectTransform highlightRect =
+            highlightImage.rectTransform;
+
+        highlightRect.position =
+            (Vector3)((localMin + localMax) * 0.5f);
+
+        highlightRect.sizeDelta =
+            new Vector2(
+                Mathf.Abs(
+                    localMax.x - localMin.x) + 24f,
+                Mathf.Abs(
+                    localMax.y - localMin.y) + 24f);
     }
 
     // =========================================================
     // SELECTABLES
     // =========================================================
 
-    private void DisableAllSelectablesExcept(
-        Selectable target
-    )
+    private void DisableOtherSelectables()
     {
-        savedSelectables.Clear();
+        RestoreSelectables();
 
-        Selectable[] all =
+        Selectable[] selectables =
             FindObjectsByType<Selectable>(
-                FindObjectsSortMode.None
-            );
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
 
-        foreach (
-            Selectable selectable
-            in all
-        )
+        for (int i = 0;
+             i < selectables.Length;
+             i++)
         {
+            Selectable selectable =
+                selectables[i];
+
             if (selectable == null)
-            {
                 continue;
-            }
 
-            savedSelectables.Add(
-                new SelectableState
-                {
-                    selectable =
-                        selectable,
+            if (!selectable.gameObject.scene.IsValid())
+                continue;
 
-                    interactable =
-                        selectable.interactable
-                }
-            );
+            if (!selectable.interactable)
+                continue;
 
-            selectable.interactable =
-                selectable == target;
+            disabledSelectables.Add(
+                selectable);
+
+            selectable.interactable = false;
+        }
+    }
+
+    private void DisableOtherSelectablesExcept(
+        Button target)
+    {
+        RestoreSelectables();
+
+        Selectable[] selectables =
+            FindObjectsByType<Selectable>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int i = 0;
+             i < selectables.Length;
+             i++)
+        {
+            Selectable selectable =
+                selectables[i];
+
+            if (selectable == null)
+                continue;
+
+            if (selectable == target)
+                continue;
+
+            if (!selectable.gameObject.scene.IsValid())
+                continue;
+
+            if (!selectable.interactable)
+                continue;
+
+            disabledSelectables.Add(
+                selectable);
+
+            selectable.interactable = false;
         }
 
         if (target != null)
-        {
-            target.interactable =
-                true;
-        }
+            target.interactable = true;
     }
 
     private void RestoreSelectables()
     {
-        foreach (
-            SelectableState state
-            in savedSelectables
-        )
+        for (int i = 0;
+             i < disabledSelectables.Count;
+             i++)
         {
-            if (
-                state.selectable != null
-            )
-            {
-                state.selectable.interactable =
-                    state.interactable;
-            }
+            Selectable selectable =
+                disabledSelectables[i];
+
+            if (selectable != null)
+                selectable.interactable = true;
         }
 
-        savedSelectables.Clear();
+        disabledSelectables.Clear();
     }
 
     // =========================================================
-    // SEARCH
+    // CLEANUP
     // =========================================================
 
-    private Button FindButtonByText(
-        Transform root,
-        params string[] values
-    )
+    private void DestroyOverlay()
     {
-        Button[] buttons;
-
-        if (root == null)
-        {
-            buttons =
-                FindObjectsByType<Button>(
-                    FindObjectsSortMode.None
-                );
-        }
-        else
-        {
-            buttons =
-                root.GetComponentsInChildren<Button>(
-                    true
-                );
-        }
-
-        foreach (
-            Button button
-            in buttons
-        )
-        {
-            if (
-                button == null ||
-                !button.gameObject.activeInHierarchy
-            )
-            {
-                continue;
-            }
-
-            TMP_Text text =
-                button.GetComponentInChildren<
-                    TMP_Text
-                >(true);
-
-            if (text == null)
-            {
-                continue;
-            }
-
-            string value =
-                text.text
-                    .Trim()
-                    .ToUpperInvariant();
-
-            foreach (
-                string search
-                in values
-            )
-            {
-                if (
-                    value.Contains(
-                        search.ToUpperInvariant()
-                    )
-                )
-                {
-                    return button;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private Button FindFirstMeaningfulButton(
-        Transform root,
-        params string[] values
-    )
-    {
-        if (root == null)
-        {
-            return null;
-        }
-
-        Button button =
-            FindButtonByText(
-                root,
-                values
-            );
-
-        if (button != null)
-        {
-            return button;
-        }
-
-        Button[] buttons =
-            root.GetComponentsInChildren<Button>(
-                true
-            );
-
-        foreach (
-            Button candidate
-            in buttons
-        )
-        {
-            if (
-                candidate != null &&
-                candidate.gameObject.activeInHierarchy
-            )
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
-    private Button GetButtonByFieldName(
-        MonoBehaviour component,
-        string fieldName
-    )
-    {
-        if (component == null)
-        {
-            return null;
-        }
-
-        System.Reflection.FieldInfo field =
-            component.GetType().GetField(
-                fieldName,
-                System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic
-            );
-
-        if (field == null)
-        {
-            return null;
-        }
-
-        return field.GetValue(
-            component
-        ) as Button;
-    }
-
-    private TMP_InputField GetInputByFieldName(
-        MonoBehaviour component,
-        string fieldName
-    )
-    {
-        if (component == null)
-        {
-            return null;
-        }
-
-        System.Reflection.FieldInfo field =
-            component.GetType().GetField(
-                fieldName,
-                System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic
-            );
-
-        if (field == null)
-        {
-            return null;
-        }
-
-        return field.GetValue(
-            component
-        ) as TMP_InputField;
-    }
-
-    private Toggle GetToggleByFieldName(
-        MonoBehaviour component,
-        string fieldName
-    )
-    {
-        if (component == null)
-        {
-            return null;
-        }
-
-        System.Reflection.FieldInfo field =
-            component.GetType().GetField(
-                fieldName,
-                System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic
-            );
-
-        if (field == null)
-        {
-            return null;
-        }
-
-        return field.GetValue(
-            component
-        ) as Toggle;
-    }
-
-    private Button FindAchievementClaimButton(
-        string achievementId
-    )
-    {
-        AchievementsUI3D ui =
-            FindFirstObjectByType<
-                AchievementsUI3D
-            >();
-
-        if (ui == null)
-        {
-            return null;
-        }
-
-        Button[] buttons =
-            ui.GetComponentsInChildren<Button>(
-                true
-            );
-
-        foreach (
-            Button button
-            in buttons
-        )
-        {
-            if (
-                button == null ||
-                !button.gameObject.activeInHierarchy
-            )
-            {
-                continue;
-            }
-
-            TMP_Text text =
-                button.GetComponentInChildren<
-                    TMP_Text
-                >(true);
-
-            if (text == null)
-            {
-                continue;
-            }
-
-            string value =
-                text.text
-                    .Trim()
-                    .ToUpperInvariant();
-
-            if (
-                value == "ЗАБРАТЬ" ||
-                value.Contains("ЗАБРАТЬ")
-            )
-            {
-                return button;
-            }
-        }
-
-        return null;
-    }
-
-    // =========================================================
-    // PREFS
-    // =========================================================
-
-    private bool IsCompleted()
-    {
-        return
-            PlayerPrefs.GetInt(
-                COMPLETED_KEY,
-                0
-            ) == 1;
-    }
-
-    private bool IsUpgradeTutorialCompleted()
-    {
-        return
-            PlayerPrefs.GetInt(
-                "SafeZoneUpgradeTutorialCompleted",
-                0
-            ) == 1;
-    }
-
-    private void CompleteTutorial()
-    {
-        currentStep =
-            TutorialStep.Complete;
-
         RestoreSelectables();
 
-        PlayerPrefs.SetInt(
-            COMPLETED_KEY,
-            1
-        );
+        if (overlayRoot != null)
+        {
+            Destroy(overlayRoot);
+            overlayRoot = null;
+        }
 
-        PlayerPrefs.DeleteKey(
-            STARTED_KEY
-        );
-
-        PlayerPrefs.Save();
-
-        DestroyOverlay();
-
-        Debug.Log(
-            "[MainMenuTutorial] " +
-            "Полное обучение меню завершено."
-        );
+        overlayCanvas = null;
+        dimImage = null;
+        highlightImage = null;
+        infoPanel = null;
+        infoText = null;
+        okButton = null;
     }
 
-    // =========================================================
-    // RECT
-    // =========================================================
-
-    private void StretchFull(
-        RectTransform rect
-    )
+    private void StretchFullScreen(
+        RectTransform rect)
     {
-        rect.anchorMin =
-            Vector2.zero;
-
-        rect.anchorMax =
-            Vector2.one;
-
-        rect.offsetMin =
-            Vector2.zero;
-
-        rect.offsetMax =
-            Vector2.zero;
-
-        rect.pivot =
-            new Vector2(
-                0.5f,
-                0.5f
-            );
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.localScale = Vector3.one;
     }
 }
