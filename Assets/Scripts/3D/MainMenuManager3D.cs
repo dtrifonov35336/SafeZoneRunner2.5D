@@ -44,10 +44,7 @@ public class MainMenuManager : MonoBehaviour
 
     private void Awake()
     {
-        if (
-            Instance != null &&
-            Instance != this
-        )
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -58,109 +55,101 @@ public class MainMenuManager : MonoBehaviour
 
     private void Start()
     {
+        RefreshBalances();
+        UpdateProfileUI();
+        RefreshPlayerImg();
+        ConfigureEquipmentButtonText();
+        ConfigureButtons();
+        ShowPendingLevelToast();
+    }
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
+    private void ConfigureButtons()
+    {
+        RemoveListeners();
+
+        if (playButton != null)
+            playButton.onClick.AddListener(OnPlayClicked);
+
+        if (charactersButton != null)
+            charactersButton.onClick.AddListener(OnCharactersClicked);
+
+        if (equipmentButton != null)
+            equipmentButton.onClick.AddListener(OnEquipmentClicked);
+
+        if (shopButton != null)
+            shopButton.onClick.AddListener(OnShopClicked);
+
+        if (hangarButton != null)
+            hangarButton.onClick.AddListener(OnHangarClicked);
+
+        if (profileAvatarButton != null)
+        {
+            profileAvatarButton.interactable = true;
+
+            profileAvatarButton.onClick.AddListener(
+                OnProfileAvatarClicked);
+        }
+    }
+
+    private void RemoveListeners()
+    {
+        if (playButton != null)
+            playButton.onClick.RemoveListener(OnPlayClicked);
+
+        if (charactersButton != null)
+            charactersButton.onClick.RemoveListener(OnCharactersClicked);
+
+        if (equipmentButton != null)
+            equipmentButton.onClick.RemoveListener(OnEquipmentClicked);
+
+        if (shopButton != null)
+            shopButton.onClick.RemoveListener(OnShopClicked);
+
+        if (hangarButton != null)
+            hangarButton.onClick.RemoveListener(OnHangarClicked);
+
+        if (profileAvatarButton != null)
+            profileAvatarButton.onClick.RemoveListener(
+                OnProfileAvatarClicked);
+    }
+
+    private void OnDestroy()
+    {
+        RemoveListeners();
+
+        if (Instance == this)
+            Instance = null;
+    }
+
+    // =========================================================
+    // BALANCE
+    // =========================================================
+
+    private void RefreshBalances()
+    {
         int savedCoins =
             PlayerPrefs.GetInt(
                 "TotalCoins",
-                0
-            );
+                0);
 
         int savedDiamonds =
             PlayerPrefs.GetInt(
                 "TotalDiamonds",
-                0
-            );
+                0);
 
         if (coinsText != null)
-        {
-            coinsText.text =
-                savedCoins.ToString();
-        }
+            coinsText.text = savedCoins.ToString();
 
         if (diamondsText != null)
-        {
-            diamondsText.text =
-                savedDiamonds.ToString();
-        }
-
-        UpdateProfileUI();
-        RefreshPlayerImg();
-
-        /*
-         * Исправляем текст кнопки "Снаряжение",
-         * чтобы он всегда оставался внутри самой кнопки.
-         */
-        ConfigureEquipmentButtonText();
-
-        if (playButton != null)
-        {
-            playButton.onClick.AddListener(
-                OnPlayClicked
-            );
-        }
-
-        if (charactersButton != null)
-        {
-            charactersButton.onClick.AddListener(
-                OnCharactersClicked
-            );
-        }
-
-        if (equipmentButton != null)
-        {
-            equipmentButton.onClick.AddListener(
-                OnEquipmentClicked
-            );
-        }
-
-        if (shopButton != null)
-        {
-            shopButton.onClick.AddListener(
-                OnShopClicked
-            );
-        }
-
-        if (hangarButton != null)
-        {
-            hangarButton.onClick.AddListener(
-                OnHangarClicked
-            );
-        }
-
-        if (profileAvatarButton != null)
-        {
-            profileAvatarButton.onClick.AddListener(
-                OpenProfileSettings
-            );
-        }
-
-        string pending =
-            PlayerPrefs.GetString(
-                "PendingLevelToast",
-                ""
-            );
-
-        if (!string.IsNullOrEmpty(pending))
-        {
-            PlayerPrefs.DeleteKey(
-                "PendingLevelToast"
-            );
-
-            PlayerPrefs.Save();
-
-            if (
-                ToastNotification.Instance != null
-            )
-            {
-                ToastNotification.Instance.Show(
-                    pending,
-                    4f
-                );
-            }
-        }
+            diamondsText.text = savedDiamonds.ToString();
     }
 
     // =========================================================
-    // EQUIPMENT BUTTON TEXT
+    // EQUIPMENT TEXT
     // =========================================================
 
     private void ConfigureEquipmentButtonText()
@@ -170,66 +159,37 @@ public class MainMenuManager : MonoBehaviour
 
         TextMeshProUGUI text =
             equipmentButton.GetComponentInChildren<
-                TextMeshProUGUI
-            >(true);
+                TextMeshProUGUI>(true);
 
         if (text == null)
             return;
 
-        RectTransform buttonRect =
-            equipmentButton.GetComponent<
-                RectTransform
-            >();
-
         RectTransform textRect =
-            text.GetComponent<
-                RectTransform
-            >();
+            text.GetComponent<RectTransform>();
 
-        if (
-            buttonRect == null ||
-            textRect == null
-        )
-        {
+        if (textRect == null)
             return;
-        }
 
-        /*
-         * Текст растягивается внутри кнопки
-         * с небольшими внутренними отступами.
-         *
-         * Поэтому даже если сама кнопка стоит
-         * близко к краю экрана, текст не вылезет.
-         */
         textRect.anchorMin =
-            new Vector2(
-                0f,
-                0f
-            );
+            Vector2.zero;
 
         textRect.anchorMax =
-            new Vector2(
-                1f,
-                1f
-            );
+            Vector2.one;
 
         textRect.pivot =
             new Vector2(
                 0.5f,
-                0.5f
-            );
+                0.5f);
 
         textRect.offsetMin =
             new Vector2(
                 12f,
-                4f
-            );
+                4f);
 
         textRect.offsetMax =
             new Vector2(
                 -12f,
-                -4f
-            );
+                -4f);
 
         text.alignment =
             TextAlignmentOptions.Center;
@@ -240,10 +200,6 @@ public class MainMenuManager : MonoBehaviour
         text.overflowMode =
             TextOverflowModes.Ellipsis;
 
-        /*
-         * Если надпись всё равно слишком длинная,
-         * TMP уменьшит её, а не выпустит за пределы.
-         */
         text.enableAutoSizing = true;
 
         text.fontSizeMin = 18f;
@@ -258,17 +214,12 @@ public class MainMenuManager : MonoBehaviour
 
     private void PlayMenuClickSound()
     {
-        if (
-            AudioManager3D.Instance != null
-        )
-        {
-            AudioManager3D.Instance
-                .PlayMenuClick();
-        }
+        if (AudioManager3D.Instance != null)
+            AudioManager3D.Instance.PlayMenuClick();
     }
 
     // =========================================================
-    // ИГРОК
+    // PLAYER
     // =========================================================
 
     public void RefreshPlayerImg()
@@ -277,58 +228,58 @@ public class MainMenuManager : MonoBehaviour
             return;
 
         string charId =
-            ProfileManager
-                .GetSelectedCharacterId();
+            ProfileManager.GetSelectedCharacterId();
 
-        Sprite s =
+        Sprite sprite =
             Resources.Load<Sprite>(
-                $"MenuPlayerImg/{charId}"
-            );
+                $"MenuPlayerImg/{charId}");
 
-        if (s != null)
+        if (sprite != null)
         {
-            playerImg.sprite =
-                s;
-
-            playerImg.enabled =
-                true;
-
-            playerImg.preserveAspect =
-                true;
-
-            playerImg.color =
-                Color.white;
+            playerImg.sprite = sprite;
+            playerImg.enabled = true;
+            playerImg.preserveAspect = true;
+            playerImg.color = Color.white;
         }
         else
         {
-            Debug.LogWarning(
-                $"[MainMenu] Не найден спрайт MenuPlayerImg/{charId}"
-            );
-
             playerImg.color =
                 new Color(
                     0.4f,
                     0.45f,
                     0.55f,
-                    1f
-                );
+                    1f);
         }
     }
 
     // =========================================================
-    // ПРОФИЛЬ
+    // PROFILE
     // =========================================================
 
-    private void OpenProfileSettings()
+    private void OnProfileAvatarClicked()
     {
         PlayMenuClickSound();
 
-        if (
-            profileSettingsPanel != null
-        )
+        OpenProfileSettings();
+    }
+
+    public void OpenProfileSettings()
+    {
+        if (profileSettingsPanel == null)
         {
-            profileSettingsPanel.OpenPanel();
+            profileSettingsPanel =
+                FindFirstObjectByType<ProfileSettingsPanel>(
+                    FindObjectsInactive.Include);
         }
+
+        if (profileSettingsPanel == null)
+        {
+            Debug.LogWarning(
+                "[MainMenu] ProfileSettingsPanel не найден.");
+            return;
+        }
+
+        profileSettingsPanel.OpenPanel();
     }
 
     public void RefreshProfileAvatar()
@@ -336,23 +287,16 @@ public class MainMenuManager : MonoBehaviour
         if (profileAvatar == null)
             return;
 
-        Sprite s =
+        Sprite sprite =
             ProfileSettingsPanel
                 .GetCurrentAvatarSprite();
 
-        if (s != null)
+        if (sprite != null)
         {
-            profileAvatar.sprite =
-                s;
-
-            profileAvatar.enabled =
-                true;
-
-            profileAvatar.preserveAspect =
-                true;
-
-            profileAvatar.color =
-                Color.white;
+            profileAvatar.sprite = sprite;
+            profileAvatar.enabled = true;
+            profileAvatar.preserveAspect = true;
+            profileAvatar.color = Color.white;
         }
     }
 
@@ -369,23 +313,18 @@ public class MainMenuManager : MonoBehaviour
     private void UpdateProfileUI()
     {
         string charId =
-            ProfileManager
-                .GetSelectedCharacterId();
+            ProfileManager.GetSelectedCharacterId();
 
         int level =
-            ProfileManager
-                .GetLevel(charId);
+            ProfileManager.GetLevel(charId);
 
         int xp =
-            ProfileManager
-                .GetXP(charId);
+            ProfileManager.GetXP(charId);
 
         int needed =
-            ProfileManager
-                .XPForNextLevel(
-                    charId,
-                    level
-                );
+            ProfileManager.XPForNextLevel(
+                charId,
+                level);
 
         RefreshProfileName();
 
@@ -410,18 +349,15 @@ public class MainMenuManager : MonoBehaviour
 
             profileXPBarFill.sizeDelta =
                 new Vector2(
-                    profileXPBarMaxWidth *
-                    ratio,
-                    profileXPBarFill
-                        .sizeDelta.y
-                );
+                    profileXPBarMaxWidth * ratio,
+                    profileXPBarFill.sizeDelta.y);
         }
 
         RefreshProfileAvatar();
     }
 
     // =========================================================
-    // НАВИГАЦИЯ
+    // NAVIGATION
     // =========================================================
 
     private void OnPlayClicked()
@@ -429,8 +365,7 @@ public class MainMenuManager : MonoBehaviour
         PlayMenuClickSound();
 
         RunModeSelectionUI.Open(
-            gameSceneName
-        );
+            gameSceneName);
     }
 
     private void OnCharactersClicked()
@@ -438,8 +373,7 @@ public class MainMenuManager : MonoBehaviour
         PlayMenuClickSound();
 
         SceneManager.LoadScene(
-            "CharacterSelect"
-        );
+            "CharacterSelect");
     }
 
     private void OnEquipmentClicked()
@@ -447,8 +381,7 @@ public class MainMenuManager : MonoBehaviour
         PlayMenuClickSound();
 
         SceneManager.LoadScene(
-            "Equipment"
-        );
+            "Equipment");
     }
 
     private void OnShopClicked()
@@ -456,8 +389,7 @@ public class MainMenuManager : MonoBehaviour
         PlayMenuClickSound();
 
         SceneManager.LoadScene(
-            "Shop"
-        );
+            "Shop");
     }
 
     private void OnHangarClicked()
@@ -465,8 +397,7 @@ public class MainMenuManager : MonoBehaviour
         PlayMenuClickSound();
 
         SceneManager.LoadScene(
-            "Hangar"
-        );
+            "Hangar");
     }
 
     public void OnQuitClicked()
@@ -474,10 +405,36 @@ public class MainMenuManager : MonoBehaviour
         PlayMenuClickSound();
 
 #if UNITY_EDITOR
-        UnityEditor.EditorApplication
-            .isPlaying = false;
+        UnityEditor.EditorApplication.isPlaying = false;
 #else
         Application.Quit();
 #endif
+    }
+
+    // =========================================================
+    // LEVEL TOAST
+    // =========================================================
+
+    private void ShowPendingLevelToast()
+    {
+        string pending =
+            PlayerPrefs.GetString(
+                "PendingLevelToast",
+                "");
+
+        if (string.IsNullOrEmpty(pending))
+            return;
+
+        PlayerPrefs.DeleteKey(
+            "PendingLevelToast");
+
+        PlayerPrefs.Save();
+
+        if (ToastNotification.Instance != null)
+        {
+            ToastNotification.Instance.Show(
+                pending,
+                4f);
+        }
     }
 }
