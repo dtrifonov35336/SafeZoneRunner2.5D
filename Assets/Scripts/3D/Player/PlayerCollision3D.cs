@@ -294,38 +294,18 @@ public class PlayerCollision : MonoBehaviour
     }
 
     private IEnumerator WaitForRealPitEntry(
-        ObstacleMover3D mover,
-        Collider pitCollider
-    )
+    ObstacleMover3D mover,
+    Collider pitCollider
+)
     {
         while (true)
         {
             /*
-             * Объект больше не существует.
-             */
-            if (
-                mover == null ||
-                pitCollider == null
-            )
-            {
-                pitRoutine = null;
-                yield break;
-            }
-
-            /*
-             * Игрок уже прыгает —
-             * яму можно безопасно перепрыгнуть.
+             * Если игрок уже начал падать,
+             * больше ничего проверять не нужно.
              */
             if (
                 playerMovement == null ||
-                playerMovement.IsJumping()
-            )
-            {
-                pitRoutine = null;
-                yield break;
-            }
-
-            if (
                 playerMovement.IsDead() ||
                 playerMovement.IsDying()
             )
@@ -335,9 +315,19 @@ public class PlayerCollision : MonoBehaviour
             }
 
             /*
-             * Во время tutorial обычная яма сейчас
-             * не используется, но если она появится,
-             * не превращаем её в обычный урон.
+             * Прыжок позволяет перепрыгнуть яму.
+             */
+            if (playerMovement.IsJumping())
+            {
+                pitRoutine = null;
+                yield break;
+            }
+
+            /*
+             * В tutorial сохраняем полную
+             * неуязвимость игрока.
+             *
+             * Обычный забег сюда не попадает.
              */
             if (isInvulnerable)
             {
@@ -346,41 +336,32 @@ public class PlayerCollision : MonoBehaviour
             }
 
             /*
-             * =================================================
-             * ГЛАВНОЕ ИСПРАВЛЕНИЕ
-             * =================================================
+             * Collider мог исчезнуть после того,
+             * как препятствие начало удаляться.
              *
-             * Больше НЕ сравниваем позицию игрока
-             * с transform.position ямы.
-             *
-             * Проверяем реальную область коллайдера ямы.
-             *
-             * Поэтому провал начинается именно тогда,
-             * когда игрок входит в саму яму.
+             * Если это произошло до входа в яму —
+             * просто прекращаем проверку.
+             */
+            if (pitCollider == null)
+            {
+                pitRoutine = null;
+                yield break;
+            }
+
+            /*
+             * =====================================================
+             * ПРОВЕРЯЕМ РЕАЛЬНУЮ ОБЛАСТЬ ЯМЫ
+             * =====================================================
              */
 
             Bounds pitBounds =
                 pitCollider.bounds;
 
-            float playerZ =
-                transform.position.z;
-
-            float minZ =
-                pitBounds.min.z -
-                pitCheckTolerance;
-
-            float maxZ =
-                pitBounds.max.z +
-                pitCheckTolerance;
-
-            /*
-             * Проверяем X тоже.
-             *
-             * Это особенно важно, если в будущем
-             * ширина ямы по полосе изменится.
-             */
             float playerX =
                 transform.position.x;
+
+            float playerZ =
+                transform.position.z;
 
             float minX =
                 pitBounds.min.x -
@@ -390,13 +371,27 @@ public class PlayerCollision : MonoBehaviour
                 pitBounds.max.x +
                 pitCheckTolerance;
 
-            bool insideZ =
-                playerZ >= minZ &&
-                playerZ <= maxZ;
+            float minZ =
+                pitBounds.min.z -
+                pitCheckTolerance;
+
+            float maxZ =
+                pitBounds.max.z +
+                pitCheckTolerance;
 
             bool insideX =
                 playerX >= minX &&
                 playerX <= maxX;
+
+            bool insideZ =
+                playerZ >= minZ &&
+                playerZ <= maxZ;
+
+            /*
+             * =====================================================
+             * ИГРОК ВОШЁЛ ИМЕННО В ЯМУ
+             * =====================================================
+             */
 
             if (
                 insideX &&
@@ -404,13 +399,14 @@ public class PlayerCollision : MonoBehaviour
             )
             {
                 /*
-                 * Игрок реально находится
-                 * внутри области ямы.
+                 * ВАЖНО:
+                 *
+                 * Сначала запускаем падение игрока.
+                 *
+                 * Не ставим mover.hasHitPlayer = true
+                 * до этого момента, чтобы ObstacleMover3D
+                 * не мог повлиять на процесс смерти.
                  */
-                if (mover != null)
-                {
-                    mover.hasHitPlayer = true;
-                }
 
                 if (
                     AudioManager3D.Instance != null
@@ -420,20 +416,40 @@ public class PlayerCollision : MonoBehaviour
                         .PlayPitFall();
                 }
 
+                pitRoutine = null;
+
+                /*
+                 * FallIntoPit() самостоятельно:
+                 *
+                 * 1. блокирует управление;
+                 * 2. переводит игрока в isDying;
+                 * 3. запускает анимацию падения;
+                 * 4. после падения вызывает Die().
+                 */
                 playerMovement.FallIntoPit();
 
-                pitRoutine = null;
+                /*
+                 * Теперь препятствие можно считать
+                 * обработанным.
+                 *
+                 * Это делаем ПОСЛЕ запуска смерти.
+                 */
+                if (mover != null)
+                {
+                    mover.hasHitPlayer = true;
+                }
 
                 yield break;
             }
 
             /*
              * Если яма уже полностью прошла игрока,
-             * больше ждать её не нужно.
+             * падения быть не должно.
              */
             if (
                 pitBounds.max.z <
-                playerZ - pitCheckTolerance
+                playerZ -
+                pitCheckTolerance
             )
             {
                 pitRoutine = null;
