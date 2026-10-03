@@ -24,103 +24,63 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         "SafeZoneTutorialCompleted";
 
     [Header("Основные настройки")]
-    [SerializeField]
-    private bool tutorialEnabled = true;
-
-    [SerializeField]
-    private bool forceTutorialForTesting = false;
-
-    [SerializeField]
-    private bool startAutomatically = true;
+    [SerializeField] private bool tutorialEnabled = true;
+    [SerializeField] private bool forceTutorialForTesting = false;
+    [SerializeField] private bool startAutomatically = true;
 
     [Header("Обычный спавн")]
-    [SerializeField]
-    private bool stopNormalSpawners = true;
+    [SerializeField] private bool stopNormalSpawners = true;
 
     [Header("UI")]
-    [SerializeField]
-    private GameObject hintPanel;
+    [SerializeField] private GameObject hintPanel;
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI messageText;
+    [SerializeField] private TextMeshProUGUI progressText;
+    [SerializeField] private Button okButton;
+    [SerializeField] private Button skipButton;
 
-    [SerializeField]
-    private TextMeshProUGUI titleText;
-
-    [SerializeField]
-    private TextMeshProUGUI messageText;
-
-    [SerializeField]
-    private TextMeshProUGUI progressText;
-
-    [SerializeField]
-    private Button okButton;
-
-    [SerializeField]
-    private Button skipButton;
-
-    [Header("Сообщения")]
-    [SerializeField]
-    private string moveTitle = "Перемещение";
-
+    [Header("Текст")]
+    [SerializeField] private string moveTitle = "Перемещение";
     [SerializeField]
     private string moveMessage =
-        "Свайпни вправо, чтобы перейти на соседнюю полосу.";
+        "Нажми ОК и свайпни вправо.";
 
-    [SerializeField]
-    private string jumpTitle = "Прыжок";
-
+    [SerializeField] private string jumpTitle = "Прыжок";
     [SerializeField]
     private string jumpMessage =
-        "Нажми ОК, затем прыгни через препятствие.";
+        "Нажми ОК и прыгни через препятствие.";
 
-    [SerializeField]
-    private string coinsTitle = "Монеты";
-
+    [SerializeField] private string coinsTitle = "Монеты";
     [SerializeField]
     private string coinsMessage =
-        "Нажми ОК и собери монеты на дороге.";
+        "Нажми ОК и собери все монеты.";
 
-    [SerializeField]
-    private string slideTitle = "Скольжение";
-
+    [SerializeField] private string slideTitle = "Скольжение";
     [SerializeField]
     private string slideMessage =
         "Нажми ОК и проскользни под препятствием.";
 
-    [SerializeField]
-    private string doubleJumpTitle = "Двойной прыжок";
-
+    [SerializeField] private string doubleJumpTitle = "Двойной прыжок";
     [SerializeField]
     private string doubleJumpMessage =
-        "Нажми ОК, прыгни, затем сделай второй прыжок в воздухе.";
+        "Нажми ОК, прыгни, затем сделай второй прыжок.";
 
-    [SerializeField]
-    private string rescueTitle = "Спасение";
-
+    [SerializeField] private string rescueTitle = "Спасение";
     [SerializeField]
     private string rescueMessage =
-        "Нажми ОК и подбеги к выжившему.";
+        "Нажми ОК и спаси человека.";
 
     [Header("Учебные объекты")]
-    [SerializeField]
-    private float tutorialSpawnDistance = 38f;
-
-    [SerializeField]
-    private float tutorialCoinSpacing = 2f;
-
-    [SerializeField]
-    private int tutorialCoinCount = 6;
-
-    [SerializeField]
-    private float repeatObstacleDelay = 0.35f;
+    [SerializeField] private float tutorialSpawnDistance = 38f;
+    [SerializeField] private float tutorialCoinSpacing = 2f;
+    [SerializeField] private int tutorialCoinCount = 6;
+    [SerializeField] private float repeatObstacleDelay = 0.35f;
 
     private PlayerMovement3D player;
     private ObstacleSpawner3D obstacleSpawner;
     private PickupSpawner3D pickupSpawner;
     private RescuedPersonSpawner rescuedSpawner;
     private HUDManager hud;
-
-    private int startCoins;
-    private int startRescued;
-    private int startLane;
 
     private readonly List<GameObject> tutorialObjects =
         new List<GameObject>();
@@ -130,34 +90,39 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     private bool hintConfirmed;
     private float nextObstacleSpawnTime;
 
-    public TutorialStage CurrentStage
-    {
-        get;
-        private set;
-    } = TutorialStage.None;
+    private int startLane;
+    private int startCoins;
+    private int startRescued;
 
-    public bool IsRunning
-    {
-        get;
-        private set;
-    }
+    private int tutorialCoinsCollected;
+    private int tutorialCoinsTarget;
 
-    public bool TutorialEnabled
-    {
-        get
-        {
-            return tutorialEnabled;
-        }
-    }
+    private bool moveActionStarted;
+    private bool moveActionFinished;
+
+    private bool jumpStarted;
+    private bool jumpFinished;
+
+    private bool slideStarted;
+    private bool slideFinished;
+
+    private bool doubleJumpStarted;
+    private bool doubleJumpFinished;
+
+    private bool rescueFinished;
+
+    public TutorialStage CurrentStage { get; private set; }
+        = TutorialStage.None;
+
+    public bool IsRunning { get; private set; }
+
+    public bool TutorialEnabled => tutorialEnabled;
 
     public event Action<TutorialStage> StageChanged;
 
     private void Awake()
     {
-        if (
-            Instance != null &&
-            Instance != this
-        )
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -169,28 +134,17 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         if (okButton != null)
         {
-            okButton.onClick.RemoveListener(
-                ConfirmHint
-            );
-
-            okButton.onClick.AddListener(
-                ConfirmHint
-            );
+            okButton.onClick.RemoveListener(ConfirmHint);
+            okButton.onClick.AddListener(ConfirmHint);
         }
 
         if (skipButton != null)
         {
-            skipButton.onClick.RemoveListener(
-                SkipTutorial
-            );
-
-            skipButton.onClick.AddListener(
-                SkipTutorial
-            );
+            skipButton.onClick.RemoveListener(SkipTutorial);
+            skipButton.onClick.AddListener(SkipTutorial);
         }
 
         PrepareTextAppearance();
-
         HideHintImmediate();
     }
 
@@ -198,15 +152,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        if (!startAutomatically)
-        {
+        if (!startAutomatically || !tutorialEnabled)
             return;
-        }
-
-        if (!tutorialEnabled)
-        {
-            return;
-        }
 
         bool completed =
             PlayerPrefs.GetInt(
@@ -214,13 +161,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 0
             ) == 1;
 
-        if (
-            completed &&
-            !forceTutorialForTesting
-        )
-        {
+        if (completed && !forceTutorialForTesting)
             return;
-        }
 
         StartTutorial();
     }
@@ -228,48 +170,28 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     private void Update()
     {
         if (!IsRunning)
-        {
             return;
-        }
 
         if (player == null)
-        {
-            player =
-                FindFirstObjectByType<PlayerMovement3D>();
-        }
+            player = FindFirstObjectByType<PlayerMovement3D>();
 
         if (hud == null)
-        {
-            hud =
-                FindFirstObjectByType<HUDManager>();
-        }
+            hud = FindFirstObjectByType<HUDManager>();
 
         if (!hintConfirmed)
-        {
             return;
-        }
 
         CheckCurrentStage();
-
         UpdateRepeatingObstacle();
     }
 
     private void CacheReferences()
     {
-        player =
-            FindFirstObjectByType<PlayerMovement3D>();
-
-        obstacleSpawner =
-            FindFirstObjectByType<ObstacleSpawner3D>();
-
-        pickupSpawner =
-            FindFirstObjectByType<PickupSpawner3D>();
-
-        rescuedSpawner =
-            FindFirstObjectByType<RescuedPersonSpawner>();
-
-        hud =
-            FindFirstObjectByType<HUDManager>();
+        player = FindFirstObjectByType<PlayerMovement3D>();
+        obstacleSpawner = FindFirstObjectByType<ObstacleSpawner3D>();
+        pickupSpawner = FindFirstObjectByType<PickupSpawner3D>();
+        rescuedSpawner = FindFirstObjectByType<RescuedPersonSpawner>();
+        hud = FindFirstObjectByType<HUDManager>();
     }
 
     // =========================================================
@@ -279,9 +201,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     public void StartTutorial()
     {
         if (!tutorialEnabled)
-        {
             return;
-        }
 
         CacheReferences();
 
@@ -290,7 +210,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             Debug.LogWarning(
                 "[Tutorial] PlayerMovement3D не найден."
             );
-
             return;
         }
 
@@ -298,41 +217,22 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         IsRunning = true;
 
-        startLane =
-            player.GetCurrentLane();
-
-        startCoins =
-            hud != null
-                ? hud.GetCoins()
-                : 0;
-
-        startRescued =
-            hud != null
-                ? hud.GetRescued()
-                : 0;
-
         if (stopNormalSpawners)
-        {
             StopNormalSpawners();
-        }
 
         ClearTutorialObjects();
 
-        SetStage(
-            TutorialStage.Move
-        );
+        SetStage(TutorialStage.Move);
     }
 
     // =========================================================
-    // UPDATE
+    // ACTION CHECK
     // =========================================================
 
     private void CheckCurrentStage()
     {
         if (player == null)
-        {
             return;
-        }
 
         switch (CurrentStage)
         {
@@ -362,68 +262,163 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         }
     }
 
+    // ---------------------------------------------------------
+    // MOVE
+    // ---------------------------------------------------------
+
     private void CheckMove()
     {
-        if (
-            player.GetCurrentLane() !=
-            startLane
-        )
+        int currentLane =
+            player.GetCurrentLane();
+
+        if (!moveActionStarted &&
+            currentLane != startLane)
+        {
+            moveActionStarted = true;
+        }
+
+        if (moveActionStarted &&
+            currentLane == startLane)
+        {
+            return;
+        }
+
+        if (moveActionStarted &&
+            currentLane != startLane)
+        {
+            moveActionFinished = true;
+        }
+
+        if (moveActionFinished)
         {
             CompleteCurrentStage();
         }
     }
 
+    // ---------------------------------------------------------
+    // JUMP
+    // ---------------------------------------------------------
+
     private void CheckJump()
     {
-        if (player.IsJumping())
+        bool jumping =
+            player.IsJumping();
+
+        if (!jumpStarted && jumping)
+        {
+            jumpStarted = true;
+        }
+
+        // Прыжок считается выполненным только после
+        // фактического приземления.
+        if (jumpStarted && !jumping)
+        {
+            jumpFinished = true;
+        }
+
+        if (jumpFinished)
         {
             CompleteCurrentStage();
         }
     }
+
+    // ---------------------------------------------------------
+    // COINS
+    // ---------------------------------------------------------
 
     private void CheckCoins()
     {
         if (hud == null)
-        {
             return;
-        }
 
-        if (
-            hud.GetCoins() >
-            startCoins
-        )
+        int currentCoins =
+            hud.GetCoins();
+
+        tutorialCoinsCollected =
+            Mathf.Max(
+                0,
+                currentCoins - startCoins
+            );
+
+        // Нужно собрать абсолютно все монеты,
+        // которые были заспавнены для обучения.
+        if (tutorialCoinsCollected >= tutorialCoinsTarget)
         {
             CompleteCurrentStage();
         }
     }
+
+    // ---------------------------------------------------------
+    // SLIDE
+    // ---------------------------------------------------------
 
     private void CheckSlide()
     {
-        if (player.IsSliding())
+        bool sliding =
+            player.IsSliding();
+
+        if (!slideStarted && sliding)
+        {
+            slideStarted = true;
+        }
+
+        // Скользить нужно начать и полностью закончить.
+        if (slideStarted && !sliding)
+        {
+            slideFinished = true;
+        }
+
+        if (slideFinished)
         {
             CompleteCurrentStage();
         }
     }
 
+    // ---------------------------------------------------------
+    // DOUBLE JUMP
+    // ---------------------------------------------------------
+
     private void CheckDoubleJump()
     {
-        if (player.HasDoubleJumped())
+        if (!doubleJumpStarted)
+        {
+            if (player.HasDoubleJumped())
+            {
+                doubleJumpStarted = true;
+            }
+
+            return;
+        }
+
+        // После второго прыжка игрок должен
+        // полностью завершить прыжковый цикл
+        // и приземлиться.
+        if (!player.IsJumping())
+        {
+            doubleJumpFinished = true;
+        }
+
+        if (doubleJumpFinished)
         {
             CompleteCurrentStage();
         }
     }
+
+    // ---------------------------------------------------------
+    // RESCUE
+    // ---------------------------------------------------------
 
     private void CheckRescue()
     {
         if (hud == null)
-        {
             return;
+
+        if (hud.GetRescued() > startRescued)
+        {
+            rescueFinished = true;
         }
 
-        if (
-            hud.GetRescued() >
-            startRescued
-        )
+        if (rescueFinished)
         {
             CompleteCurrentStage();
         }
@@ -438,33 +433,23 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         switch (CurrentStage)
         {
             case TutorialStage.Move:
-                SetStage(
-                    TutorialStage.Jump
-                );
+                SetStage(TutorialStage.Jump);
                 break;
 
             case TutorialStage.Jump:
-                SetStage(
-                    TutorialStage.Coins
-                );
+                SetStage(TutorialStage.Coins);
                 break;
 
             case TutorialStage.Coins:
-                SetStage(
-                    TutorialStage.Slide
-                );
+                SetStage(TutorialStage.Slide);
                 break;
 
             case TutorialStage.Slide:
-                SetStage(
-                    TutorialStage.DoubleJump
-                );
+                SetStage(TutorialStage.DoubleJump);
                 break;
 
             case TutorialStage.DoubleJump:
-                SetStage(
-                    TutorialStage.Rescue
-                );
+                SetStage(TutorialStage.Rescue);
                 break;
 
             case TutorialStage.Rescue:
@@ -481,110 +466,100 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         hintConfirmed = false;
 
+        moveActionStarted = false;
+        moveActionFinished = false;
+
+        jumpStarted = false;
+        jumpFinished = false;
+
+        slideStarted = false;
+        slideFinished = false;
+
+        doubleJumpStarted = false;
+        doubleJumpFinished = false;
+
+        rescueFinished = false;
+
+        tutorialCoinsCollected = 0;
+        tutorialCoinsTarget = 0;
+
         Time.timeScale = 1f;
 
         ClearTutorialObjects();
 
-        UpdateStageBaseline();
+        if (player != null)
+            startLane = player.GetCurrentLane();
+
+        if (hud != null)
+        {
+            startCoins = hud.GetCoins();
+            startRescued = hud.GetRescued();
+        }
 
         switch (stage)
         {
             case TutorialStage.Move:
-
                 ShowHint(
                     moveTitle,
                     moveMessage,
                     1
                 );
-
                 break;
 
             case TutorialStage.Jump:
-
                 ShowHint(
                     jumpTitle,
                     jumpMessage,
                     2
                 );
-
                 break;
 
             case TutorialStage.Coins:
-
                 ShowHint(
                     coinsTitle,
                     coinsMessage,
                     3
                 );
-
                 break;
 
             case TutorialStage.Slide:
-
                 ShowHint(
                     slideTitle,
                     slideMessage,
                     4
                 );
-
                 break;
 
             case TutorialStage.DoubleJump:
-
                 ShowHint(
                     doubleJumpTitle,
                     doubleJumpMessage,
                     5
                 );
-
                 break;
 
             case TutorialStage.Rescue:
-
                 ShowHint(
                     rescueTitle,
                     rescueMessage,
                     6
                 );
-
                 break;
 
             case TutorialStage.Completed:
-
                 HideHint();
-
                 break;
 
-            case TutorialStage.None:
-
+            default:
                 HideHint();
-
                 break;
         }
 
         StageChanged?.Invoke(stage);
     }
 
-    private void UpdateStageBaseline()
-    {
-        if (player != null)
-        {
-            startLane =
-                player.GetCurrentLane();
-        }
-
-        if (hud != null)
-        {
-            startCoins =
-                hud.GetCoins();
-
-            startRescued =
-                hud.GetRescued();
-        }
-    }
-
     // =========================================================
-    // OK / PAUSE
+    // PAUSE / OK
     // =========================================================
 
     private void ShowHint(
@@ -598,25 +573,16 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         Time.timeScale = 0f;
 
         if (hintPanel != null)
-        {
             hintPanel.SetActive(true);
-        }
 
         if (titleText != null)
-        {
             titleText.text = title;
-        }
 
         if (messageText != null)
-        {
             messageText.text = message;
-        }
 
         if (progressText != null)
-        {
-            progressText.text =
-                $"{step} / 6";
-        }
+            progressText.text = $"{step} / 6";
 
         PrepareTextAppearance();
 
@@ -627,26 +593,20 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         }
 
         if (skipButton != null)
-        {
             skipButton.interactable = true;
-        }
     }
 
     public void ConfirmHint()
     {
         if (!IsRunning)
-        {
             return;
-        }
 
         hintConfirmed = true;
 
         Time.timeScale = 1f;
 
         if (hintPanel != null)
-        {
             hintPanel.SetActive(false);
-        }
 
         switch (CurrentStage)
         {
@@ -673,25 +633,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // UI TEXT
+    // TEXT
     // =========================================================
 
     private void PrepareTextAppearance()
     {
-        PrepareSingleText(
-            titleText,
-            46f
-        );
-
-        PrepareSingleText(
-            messageText,
-            32f
-        );
-
-        PrepareSingleText(
-            progressText,
-            24f
-        );
+        PrepareSingleText(titleText, 46f);
+        PrepareSingleText(messageText, 32f);
+        PrepareSingleText(progressText, 24f);
     }
 
     private void PrepareSingleText(
@@ -700,22 +649,16 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     )
     {
         if (text == null)
-        {
             return;
-        }
 
         text.fontSize = size;
         text.color = Color.white;
         text.alpha = 1f;
 
-        text.fontStyle =
-            FontStyles.Normal;
+        text.fontStyle = FontStyles.Normal;
+        text.fontWeight = FontWeight.Regular;
 
-        text.fontWeight =
-            FontWeight.Regular;
-
-        text.enableVertexGradient =
-            false;
+        text.enableVertexGradient = false;
 
         text.textWrappingMode =
             TextWrappingModes.Normal;
@@ -726,116 +669,53 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         text.alignment =
             TextAlignmentOptions.Center;
 
-        if (
-            text.fontSharedMaterial != null
-        )
-        {
-            Material material =
-                new Material(
-                    text.fontSharedMaterial
-                );
+        // Убираем наследуемый материал,
+        // который мог делать текст серым/полупрозрачным.
+        text.fontMaterial = null;
 
-            text.fontMaterial =
-                material;
+        text.outlineWidth = 0.2f;
+        text.outlineColor = Color.black;
 
-            if (
-                material.HasProperty(
-                    ShaderUtilities.ID_FaceColor
-                )
-            )
-            {
-                material.SetColor(
-                    ShaderUtilities.ID_FaceColor,
-                    Color.white
-                );
-            }
-
-            if (
-                material.HasProperty(
-                    ShaderUtilities.ID_OutlineColor
-                )
-            )
-            {
-                material.SetColor(
-                    ShaderUtilities.ID_OutlineColor,
-                    Color.black
-                );
-            }
-
-            if (
-                material.HasProperty(
-                    ShaderUtilities.ID_OutlineWidth
-                )
-            )
-            {
-                material.SetFloat(
-                    ShaderUtilities.ID_OutlineWidth,
-                    0.18f
-                );
-            }
-        }
-
-        text.outlineWidth =
-            0.18f;
-
-        text.outlineColor =
-            Color.black;
+        text.faceColor = Color.white;
     }
 
     private void HideHint()
     {
         Time.timeScale = 1f;
-
         hintConfirmed = true;
 
         if (hintPanel != null)
-        {
             hintPanel.SetActive(false);
-        }
     }
 
     private void HideHintImmediate()
     {
         Time.timeScale = 1f;
-
         hintConfirmed = true;
 
         if (hintPanel != null)
-        {
             hintPanel.SetActive(false);
-        }
     }
 
     // =========================================================
-    // REPEATING OBSTACLES
+    // REPEATING OBSTACLE
     // =========================================================
 
     private void UpdateRepeatingObstacle()
     {
+        if (!hintConfirmed || player == null)
+            return;
+
         if (
-            !hintConfirmed ||
-            player == null
+            CurrentStage != TutorialStage.Jump &&
+            CurrentStage != TutorialStage.Slide &&
+            CurrentStage != TutorialStage.DoubleJump
         )
         {
             return;
         }
 
-        if (
-            CurrentStage !=
-                TutorialStage.Jump &&
-            CurrentStage !=
-                TutorialStage.Slide &&
-            CurrentStage !=
-                TutorialStage.DoubleJump
-        )
-        {
-            return;
-        }
-
-        if (
-            currentTutorialObstacle !=
-            null
-        )
+        if (currentTutorialObstacle != null)
         {
             float playerZ =
                 player.transform.position.z;
@@ -844,11 +724,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 currentTutorialObstacle
                     .transform.position.z;
 
-            // Игрок движется в сторону отрицательного Z.
-            if (
-                obstacleZ <
-                playerZ - 7f
-            )
+            if (obstacleZ < playerZ - 7f)
             {
                 DestroyCurrentTutorialObstacle();
             }
@@ -882,16 +758,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void DestroyCurrentTutorialObstacle()
     {
-        if (
-            currentTutorialObstacle !=
-            null
-        )
+        if (currentTutorialObstacle != null)
         {
             GameObject old =
                 currentTutorialObstacle;
 
-            currentTutorialObstacle =
-                null;
+            currentTutorialObstacle = null;
 
             tutorialObjects.Remove(old);
 
@@ -915,17 +787,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             );
 
         if (prefab == null)
-        {
-            Debug.LogWarning(
-                "[Tutorial] Не найдено обычное препятствие."
-            );
-
             return;
-        }
 
-        SpawnTutorialObstacle(
-            prefab
-        );
+        SpawnTutorialObstacle(prefab);
     }
 
     private void SpawnSlideObstacle()
@@ -936,17 +800,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             );
 
         if (prefab == null)
-        {
-            Debug.LogWarning(
-                "[Tutorial] Не найдено препятствие Slide."
-            );
-
             return;
-        }
 
-        SpawnTutorialObstacle(
-            prefab
-        );
+        SpawnTutorialObstacle(prefab);
     }
 
     private void SpawnDoubleJumpObstacle()
@@ -957,17 +813,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             );
 
         if (prefab == null)
-        {
-            Debug.LogWarning(
-                "[Tutorial] Не найдено препятствие DoubleJump."
-            );
-
             return;
-        }
 
-        SpawnTutorialObstacle(
-            prefab
-        );
+        SpawnTutorialObstacle(prefab);
     }
 
     private GameObject FindObstaclePrefab(
@@ -988,9 +836,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         )
         {
             if (prefab == null)
-            {
                 continue;
-            }
 
             ObstacleType3D type =
                 prefab.GetComponentInChildren<
@@ -1031,15 +877,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             player.transform.position.z +
             tutorialSpawnDistance;
 
-        float spawnY =
-            prefab.transform.position.y;
-
         GameObject instance =
             Instantiate(
                 prefab,
                 new Vector3(
                     laneX,
-                    spawnY,
+                    prefab.transform.position.y,
                     spawnZ
                 ),
                 Quaternion.identity
@@ -1048,12 +891,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         instance.name =
             "TutorialObstacle";
 
-        tutorialObjects.Add(
-            instance
-        );
-
-        currentTutorialObstacle =
-            instance;
+        tutorialObjects.Add(instance);
+        currentTutorialObstacle = instance;
 
         RunnerDepthSorter3D sorter =
             instance.GetComponent<
@@ -1101,12 +940,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 >();
         }
 
-        mover.laneX =
-            laneX;
-
-        mover.spawnZ =
-            spawnZ;
-
+        mover.laneX = laneX;
+        mover.spawnZ = spawnZ;
         mover.speed =
             obstacleSpawner.CurrentObstacleSpeed;
 
@@ -1131,16 +966,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         );
 
         nextObstacleSpawnTime =
-            Time.unscaledTime +
-            0.5f;
+            Time.unscaledTime + 0.5f;
     }
 
     private void ClearTutorialObstacleOnly()
     {
-        if (
-            currentTutorialObstacle !=
-            null
-        )
+        if (currentTutorialObstacle != null)
         {
             tutorialObjects.Remove(
                 currentTutorialObstacle
@@ -1150,8 +981,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 currentTutorialObstacle
             );
 
-            currentTutorialObstacle =
-                null;
+            currentTutorialObstacle = null;
         }
     }
 
@@ -1167,10 +997,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             player == null
         )
         {
-            Debug.LogWarning(
-                "[Tutorial] Coin prefab не найден."
-            );
-
             return;
         }
 
@@ -1185,6 +1011,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             pickupSpawner.coinPrefab
                 .transform.position.y;
 
+        tutorialCoinsTarget =
+            tutorialCoinCount;
+
+        tutorialCoinsCollected = 0;
+
         for (
             int i = 0;
             i < tutorialCoinCount;
@@ -1195,8 +1026,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 laneX,
                 y,
                 startZ +
-                i *
-                tutorialCoinSpacing
+                i * tutorialCoinSpacing
             );
         }
     }
@@ -1221,9 +1051,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         instance.name =
             "TutorialCoin";
 
-        tutorialObjects.Add(
-            instance
-        );
+        tutorialObjects.Add(instance);
 
         RunnerDepthSorter3D sorter =
             instance.GetComponent<
@@ -1244,12 +1072,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         if (mover != null)
         {
-            mover.laneX =
-                laneX;
-
-            mover.spawnZ =
-                z;
-
+            mover.laneX = laneX;
+            mover.spawnZ = z;
             mover.ApplyInitialState();
         }
 
@@ -1295,10 +1119,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             player == null
         )
         {
-            Debug.LogWarning(
-                "[Tutorial] Prefab спасаемого человека не найден."
-            );
-
             return;
         }
 
@@ -1323,9 +1143,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         instance.name =
             "TutorialRescuedPerson";
 
-        tutorialObjects.Add(
-            instance
-        );
+        tutorialObjects.Add(instance);
 
         RunnerDepthSorter3D sorter =
             instance.GetComponent<
@@ -1352,8 +1170,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 >();
         }
 
-        reveal.fadeDuration =
-            0.35f;
+        reveal.fadeDuration = 0.35f;
 
         reveal.Initialize(
             player.transform.position.z +
@@ -1367,12 +1184,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         if (person != null)
         {
-            person.laneX =
-                laneX;
-
-            person.spawnZ =
-                spawnZ;
-
+            person.laneX = laneX;
+            person.spawnZ = spawnZ;
             person.ApplyInitialState();
         }
     }
@@ -1399,11 +1212,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return player.lanePositions[lane];
         }
 
-        return
-            player != null &&
-            player.GetCurrentLane() == 0
-                ? -0.8f
-                : 0.8f;
+        return player != null &&
+               player.GetCurrentLane() == 0
+            ? -0.8f
+            : 0.8f;
     }
 
     // =========================================================
@@ -1412,30 +1224,23 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void ClearTutorialObjects()
     {
-        currentTutorialObstacle =
-            null;
+        currentTutorialObstacle = null;
 
         for (
-            int i =
-                tutorialObjects.Count - 1;
+            int i = tutorialObjects.Count - 1;
             i >= 0;
             i--
         )
         {
-            GameObject obj =
-                tutorialObjects[i];
-
-            if (obj != null)
-            {
-                Destroy(obj);
-            }
+            if (tutorialObjects[i] != null)
+                Destroy(tutorialObjects[i]);
         }
 
         tutorialObjects.Clear();
     }
 
     // =========================================================
-    // NORMAL SPAWNERS
+    // SPAWNERS
     // =========================================================
 
     private void StopNormalSpawners()
@@ -1447,32 +1252,22 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         }
 
         if (pickupSpawner != null)
-        {
             pickupSpawner.SetRunning(false);
-        }
 
         if (rescuedSpawner != null)
-        {
             rescuedSpawner.SetRunning(false);
-        }
     }
 
     private void RestoreNormalSpawners()
     {
         if (obstacleSpawner != null)
-        {
             obstacleSpawner.SetRunning(true);
-        }
 
         if (pickupSpawner != null)
-        {
             pickupSpawner.SetRunning(true);
-        }
 
         if (rescuedSpawner != null)
-        {
             rescuedSpawner.SetRunning(true);
-        }
     }
 
     // =========================================================
@@ -1482,19 +1277,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     public void CompleteTutorial()
     {
         if (!IsRunning)
-        {
             return;
-        }
 
         Time.timeScale = 1f;
 
         IsRunning = false;
-
-        CurrentStage =
-            TutorialStage.Completed;
+        CurrentStage = TutorialStage.Completed;
 
         ClearTutorialObjects();
-
         RestoreNormalSpawners();
 
         PlayerPrefs.SetInt(
@@ -1518,9 +1308,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         ClearTutorialObjects();
 
         IsRunning = false;
-
-        CurrentStage =
-            TutorialStage.Completed;
+        CurrentStage = TutorialStage.Completed;
 
         RestoreNormalSpawners();
 
@@ -1568,9 +1356,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     )
     {
         if (pauseStatus)
-        {
             Time.timeScale = 1f;
-        }
     }
 
     private void OnDestroy()
@@ -1578,8 +1364,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         Time.timeScale = 1f;
 
         if (Instance == this)
-        {
             Instance = null;
-        }
     }
 }
