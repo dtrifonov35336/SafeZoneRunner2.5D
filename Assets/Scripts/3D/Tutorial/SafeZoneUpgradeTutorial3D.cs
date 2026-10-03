@@ -12,11 +12,17 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     private const string COMPLETED_KEY =
         "SafeZoneUpgradeTutorialCompleted";
 
+    private const string PENDING_KEY =
+        "SafeZoneUpgradeTutorialPending";
+
     private const string MAIN_MENU_SCENE =
         "MainMenu";
 
-    private const string MAIN_ROAD_SCENE =
-        "MainRoad";
+    private const string EQUIPMENT_SCENE =
+        "Equipment";
+
+    private const string HANGAR_SCENE =
+        "Hangar";
 
     [Header("Обучение")]
     public bool tutorialEnabled = true;
@@ -51,31 +57,36 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     public Color textOutlineColor =
         new Color(0f, 0f, 0f, 0.9f);
 
-    public float highlightPadding = 18f;
+    [Header("Размер подсветки")]
+    public float highlightPadding = 12f;
 
+    public float highlightBorderWidth = 4f;
+
+    [Header("Текст")]
     public float textWidth = 520f;
 
     public float textHeight = 150f;
 
     public float textDistance = 30f;
 
-    public float cornerRadius = 18f;
-
-    [Header("Размер подсветки")]
-    public float highlightBorderWidth = 4f;
-
     [Header("Ожидание UI")]
     public float sceneReadyDelay = 0.15f;
+
+    [Header("Проверка покупки")]
+    public float upgradeCheckDelay = 0.15f;
 
     private enum TutorialStep
     {
         None,
+
         EquipmentMenu,
         EquipmentUpgrade,
         EquipmentBack,
+
         HangarMenu,
         HangarUpgrade,
         HangarBack,
+
         Complete
     }
 
@@ -85,7 +96,9 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     private Canvas overlayCanvas;
 
     private RectTransform overlayRoot;
+
     private Image dimImage;
+
     private Image highlightImage;
 
     private TextMeshProUGUI instructionText;
@@ -95,16 +108,16 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     private readonly List<SelectableState> savedSelectables =
         new List<SelectableState>();
 
-    private bool waitingForUpgradeResult = false;
+    private bool waitingForUpgradeResult;
 
-    private int upgradeCoinsBefore = 0;
-    private int upgradeLevelBefore = 0;
+    private int upgradeLevelBefore;
 
     private Coroutine runningRoutine;
 
     private struct SelectableState
     {
         public Selectable selectable;
+
         public bool interactable;
     }
 
@@ -114,8 +127,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null &&
-            Instance != this)
+        if (
+            Instance != null &&
+            Instance != this
+        )
         {
             Destroy(gameObject);
             return;
@@ -141,30 +156,75 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
         }
 
-        // Важно:
-        // обучение стартует только после перехода
-        // из MainRoad обратно в MainMenu.
-        if (SceneManager.GetActiveScene().name ==
-            MAIN_MENU_SCENE)
+        /*
+         * Если Bootstrap уже успел выставить Pending
+         * до создания этого объекта, сразу проверяем MainMenu.
+         */
+        if (
+            SceneManager.GetActiveScene().name ==
+            MAIN_MENU_SCENE
+        )
         {
-            return;
+            StartPendingFromMainMenu();
         }
     }
 
     private void Update()
     {
-        if (!waitingForUpgradeResult)
+        /*
+         * Пока ждём результат покупки,
+         * постоянно контролируем уровень.
+         */
+        if (waitingForUpgradeResult)
         {
-            return;
+            CheckUpgradeResult();
         }
 
-        CheckUpgradeResult();
+        /*
+         * Самое важное исправление подсветки:
+         * каждый кадр заново привязываем рамку
+         * к реальному RectTransform кнопки.
+         *
+         * Это защищает от LayoutGroup / ContentSizeFitter /
+         * перестройки Canvas.
+         */
+        if (
+            overlayCanvas != null &&
+            highlightImage != null &&
+            currentTargetButton != null
+        )
+        {
+            if (
+                currentTargetButton.gameObject.activeInHierarchy
+            )
+            {
+                PositionHighlight(
+                    currentTargetButton
+                );
+
+                if (
+                    instructionText != null &&
+                    instructionText.gameObject.activeSelf
+                )
+                {
+                    PositionInstruction(
+                        currentTargetButton,
+                        instructionText.text
+                    );
+                }
+            }
+        }
     }
 
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -=
             OnSceneLoaded;
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     // =========================================================
@@ -186,33 +246,32 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
         }
 
-        if (scene.name == MAIN_MENU_SCENE)
+        if (
+            scene.name ==
+            MAIN_MENU_SCENE
+        )
         {
-            if (currentStep ==
-                TutorialStep.None)
+            /*
+             * Если Bootstrap уже вызвал
+             * StartPendingFromMainMenu(), здесь
+             * повторно ничего не делаем.
+             */
+            if (
+                PlayerPrefs.GetInt(
+                    PENDING_KEY,
+                    0
+                ) == 1
+            )
             {
-                if (PlayerPrefs.GetInt(
-                        "SafeZoneUpgradeTutorialPending",
-                        0
-                    ) == 1)
-                {
-                    PlayerPrefs.DeleteKey(
-                        "SafeZoneUpgradeTutorialPending"
-                    );
-
-                    PlayerPrefs.Save();
-
-                    currentStep =
-                        TutorialStep.EquipmentMenu;
-
-                    StartRoutine(
-                        BeginMainMenuStep()
-                    );
-                }
+                StartPendingFromMainMenu();
             }
+
+            /*
+             * Возврат после улучшения в Equipment.
+             */
             else if (
                 currentStep ==
-                    TutorialStep.EquipmentBack
+                TutorialStep.EquipmentBack
             )
             {
                 currentStep =
@@ -222,9 +281,13 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     BeginMainMenuStep()
                 );
             }
+
+            /*
+             * Возврат после улучшения в Hangar.
+             */
             else if (
                 currentStep ==
-                    TutorialStep.HangarBack
+                TutorialStep.HangarBack
             )
             {
                 CompleteTutorial();
@@ -233,10 +296,15 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
         }
 
-        if (scene.name == "Equipment")
+        if (
+            scene.name ==
+            EQUIPMENT_SCENE
+        )
         {
-            if (currentStep ==
-                TutorialStep.EquipmentMenu)
+            if (
+                currentStep ==
+                TutorialStep.EquipmentMenu
+            )
             {
                 currentStep =
                     TutorialStep.EquipmentUpgrade;
@@ -249,10 +317,15 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
         }
 
-        if (scene.name == "Hangar")
+        if (
+            scene.name ==
+            HANGAR_SCENE
+        )
         {
-            if (currentStep ==
-                TutorialStep.HangarMenu)
+            if (
+                currentStep ==
+                TutorialStep.HangarMenu
+            )
             {
                 currentStep =
                     TutorialStep.HangarUpgrade;
@@ -267,25 +340,123 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     }
 
     // =========================================================
-    // ПУБЛИЧНЫЙ ЗАПУСК ПОСЛЕ ЗАБЕГА
+    // START FROM BOOTSTRAP
     // =========================================================
 
     public static void MarkTutorialPending()
     {
-        if (PlayerPrefs.GetInt(
+        if (
+            PlayerPrefs.GetInt(
                 COMPLETED_KEY,
                 0
-            ) == 1)
+            ) == 1
+        )
         {
             return;
         }
 
         PlayerPrefs.SetInt(
-            "SafeZoneUpgradeTutorialPending",
+            PENDING_KEY,
             1
         );
 
         PlayerPrefs.Save();
+    }
+
+    public static void StartPendingFromMainMenu()
+    {
+        if (
+            PlayerPrefs.GetInt(
+                COMPLETED_KEY,
+                0
+            ) == 1
+        )
+        {
+            return;
+        }
+
+        if (
+            SceneManager.GetActiveScene().name !=
+            MAIN_MENU_SCENE
+        )
+        {
+            return;
+        }
+
+        SafeZoneUpgradeTutorial3D tutorial =
+            Instance;
+
+        if (tutorial == null)
+        {
+            tutorial =
+                Object.FindFirstObjectByType<
+                    SafeZoneUpgradeTutorial3D
+                >();
+        }
+
+        if (tutorial == null)
+        {
+            GameObject go =
+                new GameObject(
+                    "SafeZoneUpgradeTutorial3D"
+                );
+
+            tutorial =
+                go.AddComponent<
+                    SafeZoneUpgradeTutorial3D
+                >();
+        }
+
+        tutorial.StartPendingFromMainMenuInternal();
+    }
+
+    private void StartPendingFromMainMenuInternal()
+    {
+        if (!tutorialEnabled)
+        {
+            return;
+        }
+
+        if (IsCompleted())
+        {
+            return;
+        }
+
+        if (
+            currentStep !=
+            TutorialStep.None
+        )
+        {
+            return;
+        }
+
+        if (
+            PlayerPrefs.GetInt(
+                PENDING_KEY,
+                0
+            ) != 1
+        )
+        {
+            return;
+        }
+
+        /*
+         * Pending удаляем только сейчас,
+         * когда MainMenu уже реально загружен
+         * и обучение действительно запускается.
+         */
+        PlayerPrefs.DeleteKey(
+            PENDING_KEY
+        );
+
+        PlayerPrefs.Save();
+
+        currentStep =
+            TutorialStep.EquipmentMenu;
+
+        StartRoutine(
+            BeginMainMenuStep()
+        );
     }
 
     // =========================================================
@@ -305,7 +476,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         if (menu == null)
         {
             menu =
-                UnityEngine.Object.FindFirstObjectByType<
+                Object.FindFirstObjectByType<
                     MainMenuManager
                 >();
         }
@@ -323,8 +494,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
         string text = "";
 
-        if (currentStep ==
-            TutorialStep.EquipmentMenu)
+        if (
+            currentStep ==
+            TutorialStep.EquipmentMenu
+        )
         {
             target =
                 menu.equipmentButton;
@@ -334,7 +507,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         }
         else if (
             currentStep ==
-                TutorialStep.HangarMenu
+            TutorialStep.HangarMenu
         )
         {
             target =
@@ -347,7 +520,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         if (target == null)
         {
             Debug.LogWarning(
-                "[UpgradeTutorial] Кнопка главного меню не назначена."
+                "[UpgradeTutorial] Кнопка раздела не назначена."
             );
 
             yield break;
@@ -371,7 +544,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             );
 
         EquipmentManager manager =
-            UnityEngine.Object.FindFirstObjectByType<
+            Object.FindFirstObjectByType<
                 EquipmentManager
             >();
 
@@ -383,6 +556,15 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
             yield break;
         }
+
+        /*
+         * Даём EquipmentManager закончить Start(),
+         * BuildList() и Layout.
+         */
+        yield return
+            new WaitForSecondsRealtime(
+                0.1f
+            );
 
         Button upgradeButton =
             FindFirstEquipmentUpgradeButton(
@@ -398,13 +580,13 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             yield break;
         }
 
+        PrepareEquipmentUpgradeCheck(
+            manager
+        );
+
         ShowUpgradeOverlay(
             upgradeButton,
             equipmentUpgradeText
-        );
-
-        PrepareEquipmentUpgradeCheck(
-            manager
         );
     }
 
@@ -412,11 +594,18 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         EquipmentManager manager
     )
     {
-        if (manager.contentContainer == null)
+        if (
+            manager == null ||
+            manager.contentContainer == null
+        )
         {
             return null;
         }
 
+        /*
+         * Ищем именно первый EquipmentItem,
+         * созданный текущим EquipmentManager.
+         */
         for (
             int i = 0;
             i < manager.contentContainer.childCount;
@@ -424,8 +613,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         )
         {
             Transform child =
-                manager.contentContainer
-                    .GetChild(i);
+                manager.contentContainer.GetChild(i);
 
             if (child == null)
             {
@@ -445,8 +633,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     >(true);
             }
 
-            if (item != null &&
-                item.actionButton != null)
+            if (
+                item != null &&
+                item.actionButton != null
+            )
             {
                 return item.actionButton;
             }
@@ -459,20 +649,17 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         EquipmentManager manager
     )
     {
-        EquipmentItem item =
-            FindFirstEquipmentItem(
-                manager
-            );
-
-        if (item == null)
+        if (
+            manager == null ||
+            manager.items == null ||
+            manager.items.Count == 0
+        )
         {
             return;
         }
 
         EquipmentData data =
-            GetFirstEquipmentData(
-                manager
-            );
+            manager.items[0];
 
         if (data == null)
         {
@@ -489,58 +676,8 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 0
             );
 
-        upgradeCoinsBefore =
-            PlayerPrefs.GetInt(
-                "TotalCoins",
-                0
-            );
-
         waitingForUpgradeResult =
             true;
-    }
-
-    private EquipmentItem FindFirstEquipmentItem(
-        EquipmentManager manager
-    )
-    {
-        if (manager.contentContainer == null)
-        {
-            return null;
-        }
-
-        for (
-            int i = 0;
-            i < manager.contentContainer.childCount;
-            i++
-        )
-        {
-            EquipmentItem item =
-                manager.contentContainer
-                    .GetChild(i)
-                    .GetComponent<
-                        EquipmentItem
-                    >();
-
-            if (item != null)
-            {
-                return item;
-            }
-        }
-
-        return null;
-    }
-
-    private EquipmentData GetFirstEquipmentData(
-        EquipmentManager manager
-    )
-    {
-        if (manager.items == null ||
-            manager.items.Count == 0)
-        {
-            return null;
-        }
-
-        return manager.items[0];
     }
 
     // =========================================================
@@ -555,7 +692,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             );
 
         HangarManager manager =
-            UnityEngine.Object.FindFirstObjectByType<
+            Object.FindFirstObjectByType<
                 HangarManager
             >();
 
@@ -567,6 +704,11 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
             yield break;
         }
+
+        yield return
+            new WaitForSecondsRealtime(
+                0.1f
+            );
 
         Button upgradeButton =
             FindFirstHangarUpgradeButton(
@@ -582,13 +724,13 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             yield break;
         }
 
+        PrepareHangarUpgradeCheck(
+            manager
+        );
+
         ShowUpgradeOverlay(
             upgradeButton,
             hangarUpgradeText
-        );
-
-        PrepareHangarUpgradeCheck(
-            manager
         );
     }
 
@@ -596,7 +738,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         HangarManager manager
     )
     {
-        if (manager.contentContainer == null)
+        if (
+            manager == null ||
+            manager.contentContainer == null
+        )
         {
             return null;
         }
@@ -608,8 +753,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         )
         {
             Transform child =
-                manager.contentContainer
-                    .GetChild(i);
+                manager.contentContainer.GetChild(i);
 
             if (child == null)
             {
@@ -629,8 +773,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     >(true);
             }
 
-            if (row != null &&
-                row.upgradeButton != null)
+            if (
+                row != null &&
+                row.upgradeButton != null
+            )
             {
                 return row.upgradeButton;
             }
@@ -643,8 +789,11 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         HangarManager manager
     )
     {
-        if (manager.upgrades == null ||
-            manager.upgrades.Count == 0)
+        if (
+            manager == null ||
+            manager.upgrades == null ||
+            manager.upgrades.Count == 0
+        )
         {
             return;
         }
@@ -667,33 +816,31 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 0
             );
 
-        upgradeCoinsBefore =
-            PlayerPrefs.GetInt(
-                "TotalCoins",
-                0
-            );
-
         waitingForUpgradeResult =
             true;
     }
 
     // =========================================================
-    // ПРОВЕРКА РЕЗУЛЬТАТА УЛУЧШЕНИЯ
+    // UPGRADE RESULT
     // =========================================================
 
     private void CheckUpgradeResult()
     {
-        if (currentStep ==
-            TutorialStep.EquipmentUpgrade)
+        if (
+            currentStep ==
+            TutorialStep.EquipmentUpgrade
+        )
         {
             EquipmentManager manager =
-                UnityEngine.Object.FindFirstObjectByType<
+                Object.FindFirstObjectByType<
                     EquipmentManager
                 >();
 
-            if (manager == null ||
+            if (
+                manager == null ||
                 manager.items == null ||
-                manager.items.Count == 0)
+                manager.items.Count == 0
+            )
             {
                 return;
             }
@@ -716,8 +863,20 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     0
                 );
 
-            if (currentLevel >
-                upgradeLevelBefore)
+            /*
+             * Если монет хватило и менеджер реально
+             * выполнил покупку — уровень увеличился.
+             *
+             * Если монет не хватило:
+             * уровень не меняется,
+             * EquipmentManager сам показывает
+             * существующий Toast "Недостаточно монет",
+             * а обучение остаётся на этой кнопке.
+             */
+            if (
+                currentLevel >
+                upgradeLevelBefore
+            )
             {
                 waitingForUpgradeResult =
                     false;
@@ -733,17 +892,21 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
         }
 
-        if (currentStep ==
-            TutorialStep.HangarUpgrade)
+        if (
+            currentStep ==
+            TutorialStep.HangarUpgrade
+        )
         {
             HangarManager manager =
-                UnityEngine.Object.FindFirstObjectByType<
+                Object.FindFirstObjectByType<
                     HangarManager
                 >();
 
-            if (manager == null ||
+            if (
+                manager == null ||
                 manager.upgrades == null ||
-                manager.upgrades.Count == 0)
+                manager.upgrades.Count == 0
+            )
             {
                 return;
             }
@@ -766,8 +929,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     0
                 );
 
-            if (currentLevel >
-                upgradeLevelBefore)
+            if (
+                currentLevel >
+                upgradeLevelBefore
+            )
             {
                 waitingForUpgradeResult =
                     false;
@@ -787,9 +952,18 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         TutorialStep nextStep
     )
     {
+        /*
+         * Даём существующему Toast успеть появиться
+         * и UI — перестроиться.
+         */
         yield return
             new WaitForSecondsRealtime(
-                0.25f
+                upgradeCheckDelay
+            );
+
+        yield return
+            new WaitForSecondsRealtime(
+                0.15f
             );
 
         currentStep =
@@ -815,21 +989,12 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
     private void CreateOverlay()
     {
-        if (overlayCanvas != null)
-        {
-            Destroy(
-                overlayCanvas.gameObject
-            );
-        }
+        DestroyOverlay();
 
         GameObject canvasObject =
             new GameObject(
                 "SafeZoneUpgradeTutorialCanvas"
             );
-
-        canvasObject.transform.SetParent(
-            null
-        );
 
         overlayCanvas =
             canvasObject.AddComponent<
@@ -878,6 +1043,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             overlayRoot
         );
 
+        // -----------------------------------------------------
+        // DIM
+        // -----------------------------------------------------
+
         GameObject dimObject =
             new GameObject(
                 "Dim"
@@ -908,6 +1077,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             dimRect
         );
 
+        // -----------------------------------------------------
+        // HIGHLIGHT
+        // -----------------------------------------------------
+
         GameObject highlightObject =
             new GameObject(
                 "Highlight"
@@ -934,7 +1107,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 highlightColor.r,
                 highlightColor.g,
                 highlightColor.b,
-                0.18f
+                0.20f
             );
 
         highlightImage.raycastTarget =
@@ -962,6 +1135,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 0.5f,
                 0.5f
             );
+
+        // -----------------------------------------------------
+        // INSTRUCTION
+        // -----------------------------------------------------
 
         GameObject textObject =
             new GameObject(
@@ -1117,7 +1294,11 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         savedSelectables.Clear();
 
         Selectable[] all =
-            FindObjectsByType<Selectable>(FindObjectsSortMode.None);
+            FindObjectsByType<
+                Selectable
+            >(
+                FindObjectsSortMode.None
+            );
 
         foreach (
             Selectable selectable
@@ -1129,6 +1310,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 continue;
             }
 
+            /*
+             * Не блокируем сам Canvas туториала,
+             * поскольку его Image не Selectable.
+             */
             savedSelectables.Add(
                 new SelectableState
                 {
@@ -1169,15 +1354,18 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     }
 
     // =========================================================
-    // POSITION
+    // POSITION HIGHLIGHT
     // =========================================================
 
     private void PositionHighlight(
         Button target
     )
     {
-        if (highlightImage == null ||
-            target == null)
+        if (
+            highlightImage == null ||
+            overlayCanvas == null ||
+            target == null
+        )
         {
             return;
         }
@@ -1187,76 +1375,146 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 RectTransform
             >();
 
+        if (targetRect == null)
+        {
+            return;
+        }
+
+        RectTransform canvasRect =
+            overlayCanvas.GetComponent<
+                RectTransform
+            >();
+
         RectTransform highlightRect =
             highlightImage.rectTransform;
 
-        Vector3[] corners =
+        /*
+         * Получаем реальные углы КНОПКИ.
+         *
+         * Unity:
+         * 0 = bottom-left
+         * 1 = top-left
+         * 2 = top-right
+         * 3 = bottom-right
+         */
+        Vector3[] worldCorners =
             new Vector3[4];
 
         targetRect.GetWorldCorners(
-            corners
+            worldCorners
         );
 
-        Vector3 center =
+        Camera targetCamera =
+            GetTargetCanvasCamera(
+                targetRect
+            );
+
+        Vector2[] screenCorners =
+            new Vector2[4];
+
+        for (
+            int i = 0;
+            i < 4;
+            i++
+        )
+        {
+            screenCorners[i] =
+                RectTransformUtility
+                    .WorldToScreenPoint(
+                        targetCamera,
+                        worldCorners[i]
+                    );
+        }
+
+        Vector2 localBottomLeft;
+
+        Vector2 localTopRight;
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                screenCorners[0],
+                null,
+                out localBottomLeft
+            );
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                screenCorners[2],
+                null,
+                out localTopRight
+            );
+
+        Vector2 center =
             (
-                corners[0] +
-                corners[2]
-            ) * 0.5f;
+                localBottomLeft +
+                localTopRight
+            ) *
+            0.5f;
 
         Vector2 size =
             new Vector2(
-                Vector3.Distance(
-                    corners[0],
-                    corners[3]
+                Mathf.Abs(
+                    localTopRight.x -
+                    localBottomLeft.x
                 ),
-                Vector3.Distance(
-                    corners[0],
-                    corners[1]
+                Mathf.Abs(
+                    localTopRight.y -
+                    localBottomLeft.y
                 )
             );
 
-        RectTransform canvasRect =
-            overlayCanvas
-                .GetComponent<
-                    RectTransform
-                >();
-
-        Camera cam =
-            overlayCanvas.renderMode ==
-                RenderMode.ScreenSpaceOverlay
-                    ? null
-                    : overlayCanvas.worldCamera;
-
-        Vector2 localPoint;
-
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvasRect,
-            RectTransformUtility.WorldToScreenPoint(
-                cam,
-                center
-            ),
-            cam,
-            out localPoint
-        );
-
-        highlightRect.anchoredPosition =
-            localPoint;
-
-        highlightRect.sizeDelta =
-            size +
+        /*
+         * Небольшой запас вокруг кнопки.
+         * Рамка остаётся строго центрированной
+         * относительно самой кнопки.
+         */
+        size +=
             new Vector2(
                 highlightPadding * 2f,
                 highlightPadding * 2f
             );
+
+        highlightRect.anchorMin =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        highlightRect.anchorMax =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        highlightRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        highlightRect.anchoredPosition =
+            center;
+
+        highlightRect.sizeDelta =
+            size;
     }
+
+    // =========================================================
+    // POSITION TEXT
+    // =========================================================
 
     private void PositionInstruction(
         Button target,
         string text
     )
     {
-        if (instructionText == null ||
-            target == null)
+        if (
+            instructionText == null ||
+            overlayCanvas == null ||
+            target == null
+        )
         {
             return;
         }
@@ -1273,74 +1531,138 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             >();
 
         RectTransform canvasRect =
-            overlayCanvas
-                .GetComponent<
-                    RectTransform
-                >();
+            overlayCanvas.GetComponent<
+                RectTransform
+            >();
 
-        Vector3[] corners =
+        if (targetRect == null)
+        {
+            return;
+        }
+
+        Vector3[] worldCorners =
             new Vector3[4];
 
         targetRect.GetWorldCorners(
-            corners
+            worldCorners
         );
 
-        Vector3 center =
+        Camera targetCamera =
+            GetTargetCanvasCamera(
+                targetRect
+            );
+
+        Vector2[] screenCorners =
+            new Vector2[4];
+
+        for (
+            int i = 0;
+            i < 4;
+            i++
+        )
+        {
+            screenCorners[i] =
+                RectTransformUtility
+                    .WorldToScreenPoint(
+                        targetCamera,
+                        worldCorners[i]
+                    );
+        }
+
+        Vector2 localBottomLeft;
+
+        Vector2 localTopRight;
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                screenCorners[0],
+                null,
+                out localBottomLeft
+            );
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                screenCorners[2],
+                null,
+                out localTopRight
+            );
+
+        Vector2 center =
             (
-                corners[0] +
-                corners[2]
-            ) * 0.5f;
+                localBottomLeft +
+                localTopRight
+            ) *
+            0.5f;
 
-        Camera cam =
-            overlayCanvas.renderMode ==
-                RenderMode.ScreenSpaceOverlay
-                    ? null
-                    : overlayCanvas.worldCamera;
-
-        Vector2 localPoint;
-
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvasRect,
-            RectTransformUtility.WorldToScreenPoint(
-                cam,
-                center
-            ),
-            cam,
-            out localPoint
-        );
+        Vector2 targetSize =
+            localTopRight -
+            localBottomLeft;
 
         RectTransform textRect =
             instructionText.rectTransform;
 
-        float screenWidth =
+        float canvasWidth =
             canvasRect.rect.width;
 
-        bool placeRight =
-            localPoint.x <
-            screenWidth * 0.18f;
+        float leftEdge =
+            center.x -
+            targetSize.x * 0.5f;
 
-        if (placeRight)
+        float rightEdge =
+            center.x +
+            targetSize.x * 0.5f;
+
+        float textHalfWidth =
+            textWidth * 0.5f;
+
+        /*
+         * Сначала пытаемся поставить текст справа.
+         * Если места нет — слева.
+         * Если и слева нет — сверху.
+         */
+        bool canPlaceRight =
+            rightEdge +
+            textDistance +
+            textHalfWidth <=
+            canvasWidth * 0.5f;
+
+        bool canPlaceLeft =
+            leftEdge -
+            textDistance -
+            textHalfWidth >=
+            -canvasWidth * 0.5f;
+
+        if (canPlaceRight)
         {
             textRect.anchoredPosition =
-                localPoint +
                 new Vector2(
+                    rightEdge +
                     textDistance +
-                    highlightPadding +
-                    textWidth * 0.5f,
-                    0f
+                    textHalfWidth,
+                    center.y
+                );
+        }
+        else if (canPlaceLeft)
+        {
+            textRect.anchoredPosition =
+                new Vector2(
+                    leftEdge -
+                    textDistance -
+                    textHalfWidth,
+                    center.y
                 );
         }
         else
         {
             textRect.anchoredPosition =
-                localPoint +
                 new Vector2(
-                    -(
-                        textDistance +
-                        highlightPadding +
-                        textWidth * 0.5f
-                    ),
-                    0f
+                    center.x,
+                    center.y +
+                    targetSize.y * 0.5f +
+                    textDistance +
+                    textHeight * 0.5f
                 );
         }
 
@@ -1349,6 +1671,32 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 textWidth,
                 textHeight
             );
+    }
+
+    private Camera GetTargetCanvasCamera(
+        RectTransform target
+    )
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        Canvas targetCanvas =
+            target.GetComponentInParent<
+                Canvas
+            >();
+
+        if (
+            targetCanvas == null ||
+            targetCanvas.renderMode ==
+            RenderMode.ScreenSpaceOverlay
+        )
+        {
+            return null;
+        }
+
+        return targetCanvas.worldCamera;
     }
 
     // =========================================================
@@ -1482,7 +1830,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         );
 
         PlayerPrefs.DeleteKey(
-            "SafeZoneUpgradeTutorialPending"
+            PENDING_KEY
         );
 
         PlayerPrefs.Save();
@@ -1511,9 +1859,13 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         }
 
         overlayRoot = null;
+
         dimImage = null;
+
         highlightImage = null;
+
         instructionText = null;
+
         currentTargetButton = null;
     }
 

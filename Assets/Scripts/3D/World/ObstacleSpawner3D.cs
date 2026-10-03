@@ -66,7 +66,9 @@ public class ObstacleSpawner3D : MonoBehaviour
     public bool drawLaneGizmos = true;
 
     private float spawnTimer;
+
     private float runTime;
+
     private int obstacleCounter;
 
     private RunManager runManager;
@@ -80,6 +82,10 @@ public class ObstacleSpawner3D : MonoBehaviour
             return currentObstacleSpeed;
         }
     }
+
+    // =========================================================
+    // UNITY
+    // =========================================================
 
     private void Awake()
     {
@@ -108,7 +114,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         SyncLanePositions();
 
         runManager =
-            FindFirstObjectByType<RunManager>();
+            FindFirstObjectByType<
+                RunManager
+            >();
 
         spawnTimer =
             startInterval;
@@ -216,7 +224,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         if (runManager == null)
         {
             runManager =
-                FindFirstObjectByType<RunManager>();
+                FindFirstObjectByType<
+                    RunManager
+                >();
         }
 
         if (
@@ -378,14 +388,12 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
-        // Только первое получает монеты.
         SpawnOne(
             firstPrefab,
             firstX,
             true
         );
 
-        // Второе без монет.
         SpawnOne(
             secondPrefab,
             secondX,
@@ -420,11 +428,21 @@ public class ObstacleSpawner3D : MonoBehaviour
             );
 
         // =====================================================
-        // BUS / SLIDE / DOUBLE JUMP / PIPE
+        // WIDE
+        // BUS / OBSTACLE4 / SLIDE / DOUBLE JUMP / PIPE
         // =====================================================
 
         if (wide)
         {
+            /*
+             * Все широкие препятствия идут строго по центру.
+             *
+             * Это означает:
+             * - автобус — обе полосы;
+             * - Obstacle4 — обе полосы;
+             * - Slide — обе полосы;
+             * - DoubleJump — обе полосы.
+             */
             if (
                 !CanSpawnAnotherObstacle(
                     prefab,
@@ -528,7 +546,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         {
             if (
                 prefab == null ||
-                IsWideObstacle(prefab)
+                IsWideObstacle(
+                    prefab
+                )
             )
             {
                 continue;
@@ -555,7 +575,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         {
             if (
                 prefab == null ||
-                IsWideObstacle(prefab)
+                IsWideObstacle(
+                    prefab
+                )
             )
             {
                 continue;
@@ -601,7 +623,9 @@ public class ObstacleSpawner3D : MonoBehaviour
             );
 
         ObstacleMover3D[] obstacles =
-            FindObjectsByType<ObstacleMover3D>(
+            FindObjectsByType<
+                ObstacleMover3D
+            >(
                 FindObjectsSortMode.None
             );
 
@@ -627,6 +651,10 @@ public class ObstacleSpawner3D : MonoBehaviour
                 existingWide
             )
             {
+                /*
+                 * Любое широкое препятствие
+                 * конфликтует со всей дорогой.
+                 */
                 laneConflict = true;
             }
             else
@@ -678,21 +706,94 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
+        /*
+         * Сначала проверяем ObstacleType3D.
+         */
         ObstacleType3D type =
             obj.GetComponentInChildren<
                 ObstacleType3D
             >(true);
 
-        if (type == null)
+        if (type != null)
         {
-            return false;
+            if (
+                type.type ==
+                ObstacleType.Slide ||
+                type.type ==
+                ObstacleType.DoubleJump
+            )
+            {
+                return true;
+            }
         }
 
-        return
-            type.type ==
-            ObstacleType.Slide ||
-            type.type ==
-            ObstacleType.DoubleJump;
+        /*
+         * BUS и Obstacle4 в текущем проекте имеют
+         * тип Normal, поэтому одного ObstacleType3D
+         * недостаточно.
+         *
+         * Проверяем имя самого prefab и его дочерних
+         * объектов.
+         */
+        string objectName =
+            obj.name
+                .Replace(
+                    "(Clone)",
+                    ""
+                )
+                .Trim()
+                .ToLowerInvariant();
+
+        if (
+            objectName.Contains(
+                "obstacle_bus"
+            ) ||
+            objectName.Contains(
+                "obstacle4"
+            )
+        )
+        {
+            return true;
+        }
+
+        Transform[] children =
+            obj.GetComponentsInChildren<
+                Transform
+            >(true);
+
+        foreach (
+            Transform child
+            in children
+        )
+        {
+            if (child == null)
+            {
+                continue;
+            }
+
+            string childName =
+                child.name
+                    .Replace(
+                        "(Clone)",
+                        ""
+                    )
+                    .Trim()
+                    .ToLowerInvariant();
+
+            if (
+                childName.Contains(
+                    "obstacle_bus"
+                ) ||
+                childName.Contains(
+                    "obstacle4"
+                )
+            )
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // =========================================================
@@ -709,7 +810,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         }
 
         PickupMover3D[] pickups =
-            FindObjectsByType<PickupMover3D>(
+            FindObjectsByType<
+                PickupMover3D
+            >(
                 FindObjectsSortMode.None
             );
 
@@ -763,7 +866,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         }
 
         RescuedPerson[] rescued =
-            FindObjectsByType<RescuedPerson>(
+            FindObjectsByType<
+                RescuedPerson
+            >(
                 FindObjectsSortMode.None
             );
 

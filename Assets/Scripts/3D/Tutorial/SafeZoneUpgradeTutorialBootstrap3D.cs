@@ -11,13 +11,14 @@ public class SafeZoneUpgradeTutorialBootstrap3D : MonoBehaviour
     private const string MAIN_MENU =
         "MainMenu";
 
-    private string previousScene =
-        "";
+    private string previousScene = "";
 
     private void Awake()
     {
-        if (instance != null &&
-            instance != this)
+        if (
+            instance != null &&
+            instance != this
+        )
         {
             Destroy(gameObject);
             return;
@@ -27,14 +28,23 @@ public class SafeZoneUpgradeTutorialBootstrap3D : MonoBehaviour
 
         DontDestroyOnLoad(gameObject);
 
+        /*
+         * ВАЖНО:
+         * создаём Tutorial ДО подписки Bootstrap
+         * на sceneLoaded.
+         *
+         * Благодаря этому сам Tutorial уже слушает
+         * sceneLoaded к моменту перехода MainRoad → MainMenu.
+         */
+        EnsureTutorialExists();
+
+        previousScene =
+            SceneManager
+                .GetActiveScene()
+                .name;
+
         SceneManager.sceneLoaded +=
             OnSceneLoaded;
-    }
-
-    private void Start()
-    {
-        previousScene =
-            SceneManager.GetActiveScene().name;
     }
 
     private void OnDestroy()
@@ -43,6 +53,8 @@ public class SafeZoneUpgradeTutorialBootstrap3D : MonoBehaviour
         {
             SceneManager.sceneLoaded -=
                 OnSceneLoaded;
+
+            instance = null;
         }
     }
 
@@ -54,11 +66,20 @@ public class SafeZoneUpgradeTutorialBootstrap3D : MonoBehaviour
         string loadedScene =
             scene.name;
 
+        /*
+         * Главное исправление:
+         *
+         * MainRoad → MainMenu
+         *
+         * Pending ставится непосредственно
+         * в момент загрузки MainMenu, после чего
+         * Tutorial запускается напрямую.
+         */
         if (
             loadedScene ==
-                MAIN_MENU &&
+            MAIN_MENU &&
             previousScene ==
-                MAIN_ROAD
+            MAIN_ROAD
         )
         {
             if (
@@ -71,27 +92,40 @@ public class SafeZoneUpgradeTutorialBootstrap3D : MonoBehaviour
                 SafeZoneUpgradeTutorial3D
                     .MarkTutorialPending();
 
-                SafeZoneUpgradeTutorial3D tutorial =
-                    Object.FindAnyObjectByType<
-                        SafeZoneUpgradeTutorial3D
-                    >();
-
-                if (tutorial == null)
-                {   
-                    GameObject go =
-                        new GameObject(
-                            "SafeZoneUpgradeTutorial3D"
-                        );
-
-                    tutorial =
-                        go.AddComponent<
-                            SafeZoneUpgradeTutorial3D
-                        >();
-                }
+                /*
+                 * Не надеемся на порядок
+                 * sceneLoaded-событий.
+                 *
+                 * Запускаем Tutorial напрямую.
+                 */
+                SafeZoneUpgradeTutorial3D
+                    .StartPendingFromMainMenu();
             }
         }
 
         previousScene =
             loadedScene;
+    }
+
+    private void EnsureTutorialExists()
+    {
+        SafeZoneUpgradeTutorial3D tutorial =
+            Object.FindFirstObjectByType<
+                SafeZoneUpgradeTutorial3D
+            >();
+
+        if (tutorial != null)
+        {
+            return;
+        }
+
+        GameObject go =
+            new GameObject(
+                "SafeZoneUpgradeTutorial3D"
+            );
+
+        go.AddComponent<
+            SafeZoneUpgradeTutorial3D
+        >();
     }
 }
