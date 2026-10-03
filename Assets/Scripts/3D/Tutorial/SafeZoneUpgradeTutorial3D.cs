@@ -59,14 +59,11 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
     [Header("Размер подсветки")]
     public float highlightPadding = 12f;
-
     public float highlightBorderWidth = 4f;
 
     [Header("Текст")]
     public float textWidth = 520f;
-
     public float textHeight = 150f;
-
     public float textDistance = 30f;
 
     [Header("Ожидание UI")]
@@ -94,11 +91,9 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         TutorialStep.None;
 
     private Canvas overlayCanvas;
-
     private RectTransform overlayRoot;
 
     private Image dimImage;
-
     private Image highlightImage;
 
     private TextMeshProUGUI instructionText;
@@ -109,7 +104,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         new List<SelectableState>();
 
     private bool waitingForUpgradeResult;
-
     private int upgradeLevelBefore;
 
     private Coroutine runningRoutine;
@@ -117,7 +111,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     private struct SelectableState
     {
         public Selectable selectable;
-
         public bool interactable;
     }
 
@@ -147,19 +140,11 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     private void Start()
     {
         if (!tutorialEnabled)
-        {
             return;
-        }
 
         if (IsCompleted())
-        {
             return;
-        }
 
-        /*
-         * Если Bootstrap уже успел выставить Pending
-         * до создания этого объекта, сразу проверяем MainMenu.
-         */
         if (
             SceneManager.GetActiveScene().name ==
             MAIN_MENU_SCENE
@@ -171,23 +156,11 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
     private void Update()
     {
-        /*
-         * Пока ждём результат покупки,
-         * постоянно контролируем уровень.
-         */
         if (waitingForUpgradeResult)
         {
             CheckUpgradeResult();
         }
 
-        /*
-         * Самое важное исправление подсветки:
-         * каждый кадр заново привязываем рамку
-         * к реальному RectTransform кнопки.
-         *
-         * Это защищает от LayoutGroup / ContentSizeFitter /
-         * перестройки Canvas.
-         */
         if (
             overlayCanvas != null &&
             highlightImage != null &&
@@ -237,25 +210,16 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     )
     {
         if (!tutorialEnabled)
-        {
             return;
-        }
 
         if (IsCompleted())
-        {
             return;
-        }
 
         if (
             scene.name ==
             MAIN_MENU_SCENE
         )
         {
-            /*
-             * Если Bootstrap уже вызвал
-             * StartPendingFromMainMenu(), здесь
-             * повторно ничего не делаем.
-             */
             if (
                 PlayerPrefs.GetInt(
                     PENDING_KEY,
@@ -265,10 +229,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             {
                 StartPendingFromMainMenu();
             }
-
-            /*
-             * Возврат после улучшения в Equipment.
-             */
             else if (
                 currentStep ==
                 TutorialStep.EquipmentBack
@@ -281,10 +241,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     BeginMainMenuStep()
                 );
             }
-
-            /*
-             * Возврат после улучшения в Hangar.
-             */
             else if (
                 currentStep ==
                 TutorialStep.HangarBack
@@ -413,14 +369,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     private void StartPendingFromMainMenuInternal()
     {
         if (!tutorialEnabled)
-        {
             return;
-        }
 
         if (IsCompleted())
-        {
             return;
-        }
 
         if (
             currentStep !=
@@ -440,11 +392,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
         }
 
-        /*
-         * Pending удаляем только сейчас,
-         * когда MainMenu уже реально загружен
-         * и обучение действительно запускается.
-         */
         PlayerPrefs.DeleteKey(
             PENDING_KEY
         );
@@ -491,7 +438,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         }
 
         Button target = null;
-
         string text = "";
 
         if (
@@ -557,10 +503,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             yield break;
         }
 
-        /*
-         * Даём EquipmentManager закончить Start(),
-         * BuildList() и Layout.
-         */
         yield return
             new WaitForSecondsRealtime(
                 0.1f
@@ -602,10 +544,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return null;
         }
 
-        /*
-         * Ищем именно первый EquipmentItem,
-         * созданный текущим EquipmentManager.
-         */
         for (
             int i = 0;
             i < manager.contentContainer.childCount;
@@ -616,9 +554,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 manager.contentContainer.GetChild(i);
 
             if (child == null)
-            {
                 continue;
-            }
 
             EquipmentItem item =
                 child.GetComponent<
@@ -662,13 +598,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             manager.items[0];
 
         if (data == null)
-        {
             return;
-        }
 
         string charId =
-            ProfileManager
-                .GetSelectedCharacterId();
+            ProfileManager.GetSelectedCharacterId();
 
         upgradeLevelBefore =
             PlayerPrefs.GetInt(
@@ -676,8 +609,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 0
             );
 
-        waitingForUpgradeResult =
-            true;
+        waitingForUpgradeResult = true;
     }
 
     // =========================================================
@@ -756,9 +688,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 manager.contentContainer.GetChild(i);
 
             if (child == null)
-            {
                 continue;
-            }
 
             UpgradeRow row =
                 child.GetComponent<
@@ -802,13 +732,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             manager.upgrades[0];
 
         if (data == null)
-        {
             return;
-        }
 
         string charId =
-            ProfileManager
-                .GetSelectedCharacterId();
+            ProfileManager.GetSelectedCharacterId();
 
         upgradeLevelBefore =
             PlayerPrefs.GetInt(
@@ -816,8 +743,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 0
             );
 
-        waitingForUpgradeResult =
-            true;
+        waitingForUpgradeResult = true;
     }
 
     // =========================================================
@@ -849,13 +775,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 manager.items[0];
 
             if (data == null)
-            {
                 return;
-            }
 
             string charId =
-                ProfileManager
-                    .GetSelectedCharacterId();
+                ProfileManager.GetSelectedCharacterId();
 
             int currentLevel =
                 PlayerPrefs.GetInt(
@@ -863,23 +786,12 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     0
                 );
 
-            /*
-             * Если монет хватило и менеджер реально
-             * выполнил покупку — уровень увеличился.
-             *
-             * Если монет не хватило:
-             * уровень не меняется,
-             * EquipmentManager сам показывает
-             * существующий Toast "Недостаточно монет",
-             * а обучение остаётся на этой кнопке.
-             */
             if (
                 currentLevel >
                 upgradeLevelBefore
             )
             {
-                waitingForUpgradeResult =
-                    false;
+                waitingForUpgradeResult = false;
 
                 StartRoutine(
                     FinishUpgradeAndShowBack(
@@ -915,13 +827,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 manager.upgrades[0];
 
             if (data == null)
-            {
                 return;
-            }
 
             string charId =
-                ProfileManager
-                    .GetSelectedCharacterId();
+                ProfileManager.GetSelectedCharacterId();
 
             int currentLevel =
                 PlayerPrefs.GetInt(
@@ -934,8 +843,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 upgradeLevelBefore
             )
             {
-                waitingForUpgradeResult =
-                    false;
+                waitingForUpgradeResult = false;
 
                 StartRoutine(
                     FinishUpgradeAndShowBack(
@@ -952,10 +860,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         TutorialStep nextStep
     )
     {
-        /*
-         * Даём существующему Toast успеть появиться
-         * и UI — перестроиться.
-         */
         yield return
             new WaitForSecondsRealtime(
                 upgradeCheckDelay
@@ -997,9 +901,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             );
 
         overlayCanvas =
-            canvasObject.AddComponent<
-                Canvas
-            >();
+            canvasObject.AddComponent<Canvas>();
 
         overlayCanvas.renderMode =
             RenderMode.ScreenSpaceOverlay;
@@ -1008,13 +910,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             5000;
 
         CanvasScaler scaler =
-            canvasObject.AddComponent<
-                CanvasScaler
-            >();
+            canvasObject.AddComponent<CanvasScaler>();
 
         scaler.uiScaleMode =
-            CanvasScaler.ScaleMode
-                .ScaleWithScreenSize;
+            CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
         scaler.referenceResolution =
             new Vector2(
@@ -1023,8 +922,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             );
 
         scaler.screenMatchMode =
-            CanvasScaler.ScreenMatchMode
-                .MatchWidthOrHeight;
+            CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
 
         scaler.matchWidthOrHeight =
             0.5f;
@@ -1043,14 +941,8 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             overlayRoot
         );
 
-        // -----------------------------------------------------
-        // DIM
-        // -----------------------------------------------------
-
         GameObject dimObject =
-            new GameObject(
-                "Dim"
-            );
+            new GameObject("Dim");
 
         dimObject.transform.SetParent(
             overlayRoot,
@@ -1058,9 +950,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         );
 
         dimImage =
-            dimObject.AddComponent<
-                Image
-            >();
+            dimObject.AddComponent<Image>();
 
         dimImage.color =
             dimColor;
@@ -1069,22 +959,14 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             false;
 
         RectTransform dimRect =
-            dimObject.GetComponent<
-                RectTransform
-            >();
+            dimObject.GetComponent<RectTransform>();
 
         StretchFull(
             dimRect
         );
 
-        // -----------------------------------------------------
-        // HIGHLIGHT
-        // -----------------------------------------------------
-
         GameObject highlightObject =
-            new GameObject(
-                "Highlight"
-            );
+            new GameObject("Highlight");
 
         highlightObject.transform.SetParent(
             overlayRoot,
@@ -1092,9 +974,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         );
 
         highlightImage =
-            highlightObject.AddComponent<
-                Image
-            >();
+            highlightObject.AddComponent<Image>();
 
         highlightImage.sprite =
             CreateRoundedSprite();
@@ -1136,14 +1016,8 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 0.5f
             );
 
-        // -----------------------------------------------------
-        // INSTRUCTION
-        // -----------------------------------------------------
-
         GameObject textObject =
-            new GameObject(
-                "Instruction"
-            );
+            new GameObject("Instruction");
 
         textObject.transform.SetParent(
             overlayRoot,
@@ -1169,6 +1043,9 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 
         instructionText.textWrappingMode =
             TextWrappingModes.Normal;
+
+        instructionText.overflowMode =
+            TextOverflowModes.Truncate;
 
         instructionText.outlineWidth =
             0.18f;
@@ -1199,9 +1076,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     )
     {
         if (target == null)
-        {
             return;
-        }
 
         CreateOverlay();
 
@@ -1228,9 +1103,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     )
     {
         if (target == null)
-        {
             return;
-        }
 
         CreateOverlay();
 
@@ -1256,9 +1129,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     )
     {
         if (target == null)
-        {
             return;
-        }
 
         CreateOverlay();
 
@@ -1278,8 +1149,9 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             instructionText.text =
                 "";
 
-            instructionText.gameObject
-                .SetActive(false);
+            instructionText.gameObject.SetActive(
+                false
+            );
         }
     }
 
@@ -1294,9 +1166,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         savedSelectables.Clear();
 
         Selectable[] all =
-            FindObjectsByType<
-                Selectable
-            >(
+            FindObjectsByType<Selectable>(
                 FindObjectsSortMode.None
             );
 
@@ -1306,14 +1176,8 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         )
         {
             if (selectable == null)
-            {
                 continue;
-            }
 
-            /*
-             * Не блокируем сам Canvas туториала,
-             * поскольку его Image не Selectable.
-             */
             savedSelectables.Add(
                 new SelectableState
                 {
@@ -1371,32 +1235,17 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         }
 
         RectTransform targetRect =
-            target.GetComponent<
-                RectTransform
-            >();
+            target.GetComponent<RectTransform>();
 
         if (targetRect == null)
-        {
             return;
-        }
 
         RectTransform canvasRect =
-            overlayCanvas.GetComponent<
-                RectTransform
-            >();
+            overlayCanvas.GetComponent<RectTransform>();
 
         RectTransform highlightRect =
             highlightImage.rectTransform;
 
-        /*
-         * Получаем реальные углы КНОПКИ.
-         *
-         * Unity:
-         * 0 = bottom-left
-         * 1 = top-left
-         * 2 = top-right
-         * 3 = bottom-right
-         */
         Vector3[] worldCorners =
             new Vector3[4];
 
@@ -1419,39 +1268,34 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         )
         {
             screenCorners[i] =
-                RectTransformUtility
-                    .WorldToScreenPoint(
-                        targetCamera,
-                        worldCorners[i]
-                    );
+                RectTransformUtility.WorldToScreenPoint(
+                    targetCamera,
+                    worldCorners[i]
+                );
         }
 
         Vector2 localBottomLeft;
-
         Vector2 localTopRight;
 
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                screenCorners[0],
-                null,
-                out localBottomLeft
-            );
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            screenCorners[0],
+            null,
+            out localBottomLeft
+        );
 
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                screenCorners[2],
-                null,
-                out localTopRight
-            );
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            screenCorners[2],
+            null,
+            out localTopRight
+        );
 
         Vector2 center =
             (
                 localBottomLeft +
                 localTopRight
-            ) *
-            0.5f;
+            ) * 0.5f;
 
         Vector2 size =
             new Vector2(
@@ -1465,11 +1309,6 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 )
             );
 
-        /*
-         * Небольшой запас вокруг кнопки.
-         * Рамка остаётся строго центрированной
-         * относительно самой кнопки.
-         */
         size +=
             new Vector2(
                 highlightPadding * 2f,
@@ -1519,26 +1358,21 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
         }
 
-        instructionText.gameObject
-            .SetActive(true);
+        instructionText.gameObject.SetActive(
+            true
+        );
 
         instructionText.text =
             text;
 
         RectTransform targetRect =
-            target.GetComponent<
-                RectTransform
-            >();
+            target.GetComponent<RectTransform>();
 
         RectTransform canvasRect =
-            overlayCanvas.GetComponent<
-                RectTransform
-            >();
+            overlayCanvas.GetComponent<RectTransform>();
 
         if (targetRect == null)
-        {
             return;
-        }
 
         Vector3[] worldCorners =
             new Vector3[4];
@@ -1562,39 +1396,34 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         )
         {
             screenCorners[i] =
-                RectTransformUtility
-                    .WorldToScreenPoint(
-                        targetCamera,
-                        worldCorners[i]
-                    );
+                RectTransformUtility.WorldToScreenPoint(
+                    targetCamera,
+                    worldCorners[i]
+                );
         }
 
         Vector2 localBottomLeft;
-
         Vector2 localTopRight;
 
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                screenCorners[0],
-                null,
-                out localBottomLeft
-            );
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            screenCorners[0],
+            null,
+            out localBottomLeft
+        );
 
-        RectTransformUtility
-            .ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                screenCorners[2],
-                null,
-                out localTopRight
-            );
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            screenCorners[2],
+            null,
+            out localTopRight
+        );
 
         Vector2 center =
             (
                 localBottomLeft +
                 localTopRight
-            ) *
-            0.5f;
+            ) * 0.5f;
 
         Vector2 targetSize =
             localTopRight -
@@ -1606,6 +1435,9 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         float canvasWidth =
             canvasRect.rect.width;
 
+        float canvasHeight =
+            canvasRect.rect.height;
+
         float leftEdge =
             center.x -
             targetSize.x * 0.5f;
@@ -1614,14 +1446,20 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             center.x +
             targetSize.x * 0.5f;
 
+        float topEdge =
+            center.y +
+            targetSize.y * 0.5f;
+
+        float bottomEdge =
+            center.y -
+            targetSize.y * 0.5f;
+
         float textHalfWidth =
             textWidth * 0.5f;
 
-        /*
-         * Сначала пытаемся поставить текст справа.
-         * Если места нет — слева.
-         * Если и слева нет — сверху.
-         */
+        float textHalfHeight =
+            textHeight * 0.5f;
+
         bool canPlaceRight =
             rightEdge +
             textDistance +
@@ -1634,9 +1472,23 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             textHalfWidth >=
             -canvasWidth * 0.5f;
 
+        bool canPlaceTop =
+            topEdge +
+            textDistance +
+            textHalfHeight <=
+            canvasHeight * 0.5f;
+
+        bool canPlaceBottom =
+            bottomEdge -
+            textDistance -
+            textHalfHeight >=
+            -canvasHeight * 0.5f;
+
+        Vector2 desiredPosition;
+
         if (canPlaceRight)
         {
-            textRect.anchoredPosition =
+            desiredPosition =
                 new Vector2(
                     rightEdge +
                     textDistance +
@@ -1646,7 +1498,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         }
         else if (canPlaceLeft)
         {
-            textRect.anchoredPosition =
+            desiredPosition =
                 new Vector2(
                     leftEdge -
                     textDistance -
@@ -1654,23 +1506,95 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                     center.y
                 );
         }
-        else
+        else if (canPlaceTop)
         {
-            textRect.anchoredPosition =
+            desiredPosition =
                 new Vector2(
                     center.x,
-                    center.y +
-                    targetSize.y * 0.5f +
+                    topEdge +
                     textDistance +
-                    textHeight * 0.5f
+                    textHalfHeight
                 );
         }
+        else if (canPlaceBottom)
+        {
+            desiredPosition =
+                new Vector2(
+                    center.x,
+                    bottomEdge -
+                    textDistance -
+                    textHalfHeight
+                );
+        }
+        else
+        {
+            desiredPosition =
+                center;
+        }
+
+        /*
+         * Финальная страховка.
+         *
+         * Даже если ни один из вариантов целиком
+         * не помещается, текст физически не сможет
+         * выйти за границу Canvas.
+         */
+        float minX =
+            -canvasWidth * 0.5f +
+            textHalfWidth;
+
+        float maxX =
+            canvasWidth * 0.5f -
+            textHalfWidth;
+
+        float minY =
+            -canvasHeight * 0.5f +
+            textHalfHeight;
+
+        float maxY =
+            canvasHeight * 0.5f -
+            textHalfHeight;
+
+        desiredPosition.x =
+            Mathf.Clamp(
+                desiredPosition.x,
+                minX,
+                maxX
+            );
+
+        desiredPosition.y =
+            Mathf.Clamp(
+                desiredPosition.y,
+                minY,
+                maxY
+            );
+
+        textRect.anchorMin =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        textRect.anchorMax =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        textRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
 
         textRect.sizeDelta =
             new Vector2(
                 textWidth,
                 textHeight
             );
+
+        textRect.anchoredPosition =
+            desiredPosition;
     }
 
     private Camera GetTargetCanvasCamera(
@@ -1678,14 +1602,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
     )
     {
         if (target == null)
-        {
             return null;
-        }
 
         Canvas targetCanvas =
-            target.GetComponentInParent<
-                Canvas
-            >();
+            target.GetComponentInParent<Canvas>();
 
         if (
             targetCanvas == null ||
@@ -1854,18 +1774,13 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 overlayCanvas.gameObject
             );
 
-            overlayCanvas =
-                null;
+            overlayCanvas = null;
         }
 
         overlayRoot = null;
-
         dimImage = null;
-
         highlightImage = null;
-
         instructionText = null;
-
         currentTargetButton = null;
     }
 

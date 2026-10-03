@@ -85,6 +85,12 @@ public class MainMenuManager : MonoBehaviour
         UpdateProfileUI();
         RefreshPlayerImg();
 
+        /*
+         * Исправляем текст кнопки "Снаряжение",
+         * чтобы он всегда оставался внутри самой кнопки.
+         */
+        ConfigureEquipmentButtonText();
+
         if (playButton != null)
         {
             playButton.onClick.AddListener(
@@ -151,6 +157,99 @@ public class MainMenuManager : MonoBehaviour
                 );
             }
         }
+    }
+
+    // =========================================================
+    // EQUIPMENT BUTTON TEXT
+    // =========================================================
+
+    private void ConfigureEquipmentButtonText()
+    {
+        if (equipmentButton == null)
+            return;
+
+        TextMeshProUGUI text =
+            equipmentButton.GetComponentInChildren<
+                TextMeshProUGUI
+            >(true);
+
+        if (text == null)
+            return;
+
+        RectTransform buttonRect =
+            equipmentButton.GetComponent<
+                RectTransform
+            >();
+
+        RectTransform textRect =
+            text.GetComponent<
+                RectTransform
+            >();
+
+        if (
+            buttonRect == null ||
+            textRect == null
+        )
+        {
+            return;
+        }
+
+        /*
+         * Текст растягивается внутри кнопки
+         * с небольшими внутренними отступами.
+         *
+         * Поэтому даже если сама кнопка стоит
+         * близко к краю экрана, текст не вылезет.
+         */
+        textRect.anchorMin =
+            new Vector2(
+                0f,
+                0f
+            );
+
+        textRect.anchorMax =
+            new Vector2(
+                1f,
+                1f
+            );
+
+        textRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        textRect.offsetMin =
+            new Vector2(
+                12f,
+                4f
+            );
+
+        textRect.offsetMax =
+            new Vector2(
+                -12f,
+                -4f
+            );
+
+        text.alignment =
+            TextAlignmentOptions.Center;
+
+        text.textWrappingMode =
+            TextWrappingModes.NoWrap;
+
+        text.overflowMode =
+            TextOverflowModes.Ellipsis;
+
+        /*
+         * Если надпись всё равно слишком длинная,
+         * TMP уменьшит её, а не выпустит за пределы.
+         */
+        text.enableAutoSizing = true;
+
+        text.fontSizeMin = 18f;
+        text.fontSizeMax = 42f;
+
+        text.raycastTarget = false;
     }
 
     // =========================================================
