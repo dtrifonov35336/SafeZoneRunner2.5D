@@ -45,8 +45,6 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
 
     [SerializeField] private float mainRoadWaitDelay = 0.35f;
 
-    [SerializeField] private float returnToMenuDelay = 0.45f;
-
     private Canvas overlayCanvas;
     private RectTransform overlayRoot;
 
@@ -62,8 +60,6 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
         new List<SelectableState>();
 
     private bool playHintShown;
-
-    private bool returningToMenu;
 
     private bool startingMenuTutorial;
 
@@ -213,23 +209,6 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
                 0
             ) == 1;
 
-        bool menuPending =
-            PlayerPrefs.GetInt(
-                MENU_PENDING_KEY,
-                0
-            ) == 1;
-
-        if (
-            runCompleted &&
-            menuPending
-        )
-        {
-            yield return
-                StartMenuTutorialAfterRun();
-
-            yield break;
-        }
-
         if (!runCompleted)
         {
             yield return
@@ -330,6 +309,16 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
 
     private IEnumerator StartRunTutorialStep()
     {
+        if (
+            PlayerPrefs.GetInt(
+                RUN_COMPLETED_KEY,
+                0
+            ) == 1
+        )
+        {
+            yield break;
+        }
+
         SafeZoneTutorialManager3D manager =
             null;
 
@@ -410,9 +399,6 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
 
     private IEnumerator WaitForRunTutorialCompletion()
     {
-        if (returningToMenu)
-            yield break;
-
         while (
             PlayerPrefs.GetInt(
                 RUN_COMPLETED_KEY,
@@ -421,13 +407,15 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
         )
         {
             /*
-             * Защита от удаления координатора
-             * и случайных переходов.
+             * Если игрок каким-либо образом
+             * уже покинул MainRoad —
+             * ничего не делаем.
              */
             if (
                 SceneManager
                     .GetActiveScene()
-                    .name != MAIN_ROAD_SCENE
+                    .name !=
+                MAIN_ROAD_SCENE
             )
             {
                 yield break;
@@ -436,34 +424,19 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
             yield return null;
         }
 
-        if (returningToMenu)
-            yield break;
-
-        returningToMenu = true;
-
-        PlayerPrefs.SetInt(
-            MENU_PENDING_KEY,
-            1
-        );
-
-        PlayerPrefs.Save();
-
-        yield return
-            new WaitForSecondsRealtime(
-                returnToMenuDelay
-            );
-
-        if (
-            SceneManager
-                .GetActiveScene()
-                .name ==
-            MAIN_ROAD_SCENE
-        )
-        {
-            SceneManager.LoadScene(
-                MAIN_MENU_SCENE
-            );
-        }
+        /*
+         * ВАЖНО:
+         *
+         * Здесь НЕТ LoadScene("MainMenu").
+         *
+         * После получения награды обучение закончено,
+         * но сам забег продолжается.
+         *
+         * В меню игрок попадёт штатно:
+         * смерть → ResultsManager / ReviveManager
+         * победа → ResultsManager
+         */
+        DestroyOverlay();
     }
 
     // =========================================================
