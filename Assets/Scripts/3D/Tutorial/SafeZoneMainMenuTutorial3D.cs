@@ -4,104 +4,171 @@ using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 {
-    private const string COMPLETED_KEY = "SafeZoneMainMenuTutorialCompleted";
-    private const string STARTED_KEY = "SafeZoneMainMenuTutorialStarted";
-    private const string UPGRADE_COMPLETED_KEY = "SafeZoneUpgradeTutorialCompleted";
+    private const string COMPLETED_KEY =
+        "SafeZoneMainMenuTutorialCompleted";
 
-    private const string MAIN_MENU_SCENE = "MainMenu";
-    private const string EQUIPMENT_SCENE = "Equipment";
-    private const string HANGAR_SCENE = "Hangar";
-    private const string SHOP_SCENE = "Shop";
-    private const string CHARACTER_SCENE = "CharacterSelect";
+    private const string STARTED_KEY =
+        "SafeZoneMainMenuTutorialStarted";
 
-    private const string TUTORIAL_ACHIEVEMENT_ID = "tutorial_completed";
+    private const string UPGRADE_COMPLETED_KEY =
+        "SafeZoneUpgradeTutorialCompleted";
+
+    private const string TUTORIAL_ACHIEVEMENT_ID =
+        "tutorial_completed";
+
+    private const string MAIN_MENU_SCENE =
+        "MainMenu";
+
+    private const string EQUIPMENT_SCENE =
+        "Equipment";
+
+    private const string HANGAR_SCENE =
+        "Hangar";
+
+    private const string SHOP_SCENE =
+        "Shop";
+
+    private const string CHARACTER_SCENE =
+        "CharacterSelect";
 
     private static SafeZoneMainMenuTutorial3D instance;
 
     private Coroutine tutorialRoutine;
 
-    private GameObject overlayRoot;
     private Canvas overlayCanvas;
+    private RectTransform overlayRoot;
+
     private Image dimImage;
     private Image highlightImage;
+    private Image instructionBackground;
 
-    private GameObject infoPanel;
-    private TMP_Text infoText;
-    private Button okButton;
+    private TMP_Text instructionText;
 
-    private readonly List<Selectable> disabledSelectables =
-        new List<Selectable>();
+    private Button currentTargetButton;
 
-    private bool clickedTarget;
+    private readonly List<SelectableState>
+        savedSelectables =
+            new List<SelectableState>();
+
+    private class SelectableState
+    {
+        public Selectable selectable;
+        public bool interactable;
+    }
+
+    // =========================================================
+    // UNITY
+    // =========================================================
 
     private void Awake()
     {
-        if (instance != null && instance != this)
+        if (instance != null &&
+            instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
         instance = this;
+
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void Start()
+    {
+        StartCoroutine(
+            DelayedStart()
+        );
+    }
+
+    private IEnumerator DelayedStart()
+    {
+        yield return null;
+
+        yield return new WaitForSecondsRealtime(
+            0.5f
+        );
+
+        TryStart();
     }
 
     private void OnDestroy()
     {
         if (instance == this)
+        {
             instance = null;
+        }
 
         DestroyOverlay();
     }
 
-    private void Start()
-    {
-        StartCoroutine(DelayedTryStart());
-    }
-
-    private IEnumerator DelayedTryStart()
-    {
-        yield return null;
-        yield return new WaitForSecondsRealtime(0.5f);
-
-        TryStart();
-    }
+    // =========================================================
+    // START
+    // =========================================================
 
     public void TryStart()
     {
         if (tutorialRoutine != null)
+        {
             return;
+        }
 
-        if (PlayerPrefs.GetInt(COMPLETED_KEY, 0) == 1)
+        if (IsCompleted())
+        {
             return;
+        }
 
-        if (PlayerPrefs.GetInt(UPGRADE_COMPLETED_KEY, 0) != 1)
+        if (!IsUpgradeTutorialCompleted())
+        {
             return;
+        }
 
-        if (SceneManager.GetActiveScene().name != MAIN_MENU_SCENE)
+        if (SceneManager.GetActiveScene().name !=
+            MAIN_MENU_SCENE)
+        {
             return;
+        }
 
-        tutorialRoutine = StartCoroutine(StartTutorialRoutine());
+        tutorialRoutine =
+            StartCoroutine(
+                TutorialRoutine()
+            );
     }
 
-    private IEnumerator StartTutorialRoutine()
+    private IEnumerator TutorialRoutine()
     {
-        PlayerPrefs.SetInt(STARTED_KEY, 1);
+        PlayerPrefs.SetInt(
+            STARTED_KEY,
+            1
+        );
+
         PlayerPrefs.Save();
 
+        // -----------------------------------------------------
+        // ПОСЛЕДОВАТЕЛЬНОСТЬ
+        // -----------------------------------------------------
+
         yield return RunEquipmentTutorial();
+
         yield return RunHangarTutorial();
+
         yield return RunShopTutorial();
+
         yield return RunCharactersTutorial();
-        yield return RunDailyLoginTutorial();
+
+        yield return RunDailyTutorial();
+
         yield return RunProfileTutorial();
+
         yield return RunSettingsTutorial();
+
         yield return RunAchievementsTutorial();
+
         yield return RunFinalTutorial();
 
         CompleteTutorial();
@@ -110,49 +177,67 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     }
 
     // =========================================================
-    // SCENE / OBJECT WAIT
+    // SCENE WAIT
     // =========================================================
 
     private IEnumerator WaitForScene(
         string sceneName,
-        float timeout = 20f)
+        float timeout = 30f
+    )
     {
         float timer = 0f;
 
-        while (SceneManager.GetActiveScene().name != sceneName)
+        while (
+            SceneManager.GetActiveScene().name !=
+            sceneName
+        )
         {
             timer += Time.unscaledDeltaTime;
 
             if (timer >= timeout)
+            {
                 yield break;
+            }
 
             yield return null;
         }
 
         yield return null;
         yield return new WaitForEndOfFrame();
-        yield return new WaitForSecondsRealtime(0.15f);
+
+        yield return new WaitForSecondsRealtime(
+            0.2f
+        );
     }
 
     private IEnumerator WaitForMainMenu()
     {
-        if (SceneManager.GetActiveScene().name != MAIN_MENU_SCENE)
-            yield return WaitForScene(MAIN_MENU_SCENE);
+        yield return WaitForScene(
+            MAIN_MENU_SCENE
+        );
 
-        yield return new WaitForSecondsRealtime(0.15f);
+        yield return new WaitForSecondsRealtime(
+            0.2f
+        );
     }
 
-    private IEnumerator WaitForObject<T>(
-        float timeout = 10f) where T : UnityEngine.Object
+    private IEnumerator WaitForSceneObject<T>(
+        float timeout = 15f
+    )
+        where T : UnityEngine.Object
     {
         float timer = 0f;
 
-        while (FindObjectIncludingInactive<T>() == null)
+        while (
+            FindObjectIncludingInactive<T>() == null
+        )
         {
             timer += Time.unscaledDeltaTime;
 
             if (timer >= timeout)
+            {
                 yield break;
+            }
 
             yield return null;
         }
@@ -166,20 +251,25 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         T[] objects =
             Resources.FindObjectsOfTypeAll<T>();
 
-        for (int i = 0; i < objects.Length; i++)
+        foreach (T obj in objects)
         {
-            T obj = objects[i];
-
             if (obj == null)
+            {
                 continue;
+            }
 
-            GameObject go = GetGameObject(obj);
+            GameObject go =
+                GetGameObject(obj);
 
             if (go == null)
+            {
                 continue;
+            }
 
             if (!go.scene.IsValid())
+            {
                 continue;
+            }
 
             return obj;
         }
@@ -187,19 +277,19 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         return null;
     }
 
-    private GameObject GetGameObject(UnityEngine.Object obj)
+    private GameObject GetGameObject(
+        UnityEngine.Object obj
+    )
     {
-        Component component = obj as Component;
+        Component component =
+            obj as Component;
 
         if (component != null)
+        {
             return component.gameObject;
+        }
 
-        GameObject go = obj as GameObject;
-
-        if (go != null)
-            return go;
-
-        return null;
+        return obj as GameObject;
     }
 
     // =========================================================
@@ -211,67 +301,107 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            FindObjectIncludingInactive<MainMenuManager>();
+            FindObjectIncludingInactive<
+                MainMenuManager
+            >();
 
         if (menu == null)
+        {
             yield break;
+        }
 
-        Button equipmentButton =
-            FindButtonFromMember(menu, "equipmentButton");
+        Button button =
+            FindButtonFromMember(
+                menu,
+                "equipmentButton"
+            );
 
-        if (equipmentButton == null)
-            equipmentButton = FindButtonByText("Снаряжение");
+        if (button == null)
+        {
+            button =
+                FindButtonByText(
+                    "СНАРЯЖЕНИЕ"
+                );
+        }
 
-        if (equipmentButton == null)
+        if (button == null)
+        {
             yield break;
+        }
 
         ShowTargetOverlay(
-            equipmentButton,
-            "СНАРЯЖЕНИЕ\n\nЗдесь ты улучшаешь экипировку, которая помогает выживать во время забега."
+            button,
+            "СНАРЯЖЕНИЕ\n\n" +
+            "Здесь ты можешь улучшать экипировку.\n\n" +
+            "Нажми на кнопку «Снаряжение»."
         );
 
-        yield return WaitForTargetClick(equipmentButton);
+        yield return WaitForTargetClick(
+            button
+        );
 
-        yield return WaitForScene(EQUIPMENT_SCENE);
+        yield return WaitForScene(
+            EQUIPMENT_SCENE
+        );
 
-        yield return WaitForObject<EquipmentManager>();
+        yield return WaitForSceneObject<
+            EquipmentManager
+        >();
 
         EquipmentManager equipment =
-            FindObjectIncludingInactive<EquipmentManager>();
+            FindObjectIncludingInactive<
+                EquipmentManager
+            >();
 
         if (equipment != null)
         {
             ShowInfoOverlay(
-                "СНАРЯЖЕНИЕ\n\nУлучшения экипировки дают постоянные преимущества и помогают собирать больше ресурсов во время забега."
+                "СНАРЯЖЕНИЕ\n\n" +
+                "Здесь находятся улучшения экипировки. " +
+                "Они дают постоянные преимущества во время забегов."
             );
 
             yield return WaitForOk();
 
-            Button upgradeButton =
-                FindUpgradeButton(equipment.gameObject);
+            Button upgrade =
+                FindUpgradeButton(
+                    equipment.gameObject
+                );
 
-            if (upgradeButton != null)
+            if (upgrade != null)
             {
                 ShowTargetOverlay(
-                    upgradeButton,
-                    "УЛУЧШЕНИЕ\n\nЗдесь можно улучшить экипировку. Первое улучшение уже доступно."
+                    upgrade,
+                    "УЛУЧШЕНИЕ\n\n" +
+                    "Здесь можно улучшать экипировку.\n\n" +
+                    "Покупать улучшение во время обучения не нужно."
                 );
 
                 yield return WaitForOk();
             }
 
-            Button backButton =
-                FindButtonFromMember(equipment, "backButton");
+            Button back =
+                FindButtonFromMember(
+                    equipment,
+                    "backButton"
+                );
 
-            if (backButton != null)
+            if (back != null)
             {
-                ShowButtonOnlyHighlight(backButton);
+                ShowButtonOnlyHighlight(
+                    back
+                );
 
-                yield return WaitForTargetClick(backButton);
+                yield return WaitForTargetClick(
+                    back
+                );
             }
         }
 
-        yield return WaitForScene(MAIN_MENU_SCENE);
+        // КРИТИЧЕСКОЕ:
+        // не считаем выход завершённым,
+        // пока реально не вернулись в MainMenu.
+        yield return WaitForMainMenu();
     }
 
     // =========================================================
@@ -283,67 +413,117 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            FindObjectIncludingInactive<MainMenuManager>();
+            FindObjectIncludingInactive<
+                MainMenuManager
+            >();
 
         if (menu == null)
+        {
             yield break;
+        }
 
-        Button hangarButton =
-            FindButtonFromMember(menu, "hangarButton");
+        Button button =
+            FindButtonFromMember(
+                menu,
+                "hangarButton"
+            );
 
-        if (hangarButton == null)
-            hangarButton = FindButtonByText("Ангар");
+        if (button == null)
+        {
+            button =
+                FindButtonByText(
+                    "АНГАР"
+                );
+        }
 
-        if (hangarButton == null)
+        if (button == null)
+        {
             yield break;
+        }
 
         ShowTargetOverlay(
-            hangarButton,
-            "АНГАР\n\nЗдесь находится основное улучшение транспорта и его характеристики."
+            button,
+            "АНГАР\n\n" +
+            "Здесь находится развитие убежища " +
+            "и его улучшения.\n\n" +
+            "Нажми на кнопку «Ангар»."
         );
 
-        yield return WaitForTargetClick(hangarButton);
+        yield return WaitForTargetClick(
+            button
+        );
 
-        yield return WaitForScene(HANGAR_SCENE);
+        yield return WaitForScene(
+            HANGAR_SCENE
+        );
 
-        yield return WaitForObject<HangarManager>();
+        yield return WaitForSceneObject<
+            HangarManager
+        >();
 
         HangarManager hangar =
-            FindObjectIncludingInactive<HangarManager>();
+            FindObjectIncludingInactive<
+                HangarManager
+            >();
 
         if (hangar != null)
         {
             ShowInfoOverlay(
-                "АНГАР\n\nУлучшения ангара повышают возможности твоего убежища и помогают развивать его по мере прохождения."
+                "АНГАР\n\n" +
+                "Здесь можно развивать убежище " +
+                "и улучшать его возможности."
             );
 
             yield return WaitForOk();
 
-            Button upgradeButton =
-                FindUpgradeButton(hangar.gameObject);
+            Button upgrade =
+                FindUpgradeButton(
+                    hangar.gameObject
+                );
 
-            if (upgradeButton != null)
+            if (upgrade != null)
             {
                 ShowTargetOverlay(
-                    upgradeButton,
-                    "УЛУЧШЕНИЕ\n\nЗдесь находится улучшение ангара."
+                    upgrade,
+                    "УЛУЧШЕНИЕ\n\n" +
+                    "Здесь находится улучшение ангара.\n\n" +
+                    "Покупать его сейчас не требуется."
                 );
 
                 yield return WaitForOk();
             }
 
-            Button backButton =
-                FindButtonFromMember(hangar, "backButton");
+            Button back =
+                FindButtonFromMember(
+                    hangar,
+                    "backButton"
+                );
 
-            if (backButton != null)
+            if (back == null)
             {
-                ShowButtonOnlyHighlight(backButton);
+                back =
+                    FindButtonByText(
+                        "НАЗАД"
+                    );
+            }
 
-                yield return WaitForTargetClick(backButton);
+            if (back != null)
+            {
+                ShowButtonOnlyHighlight(
+                    back
+                );
+
+                yield return WaitForTargetClick(
+                    back
+                );
             }
         }
 
-        yield return WaitForScene(MAIN_MENU_SCENE);
+        // ВАЖНО:
+        // ждём фактический возврат.
+        // После этого TutorialRoutine продолжит
+        // выполнение RunShopTutorial().
+        yield return WaitForMainMenu();
     }
 
     // =========================================================
@@ -355,67 +535,115 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            FindObjectIncludingInactive<MainMenuManager>();
+            FindObjectIncludingInactive<
+                MainMenuManager
+            >();
 
         if (menu == null)
+        {
             yield break;
+        }
 
-        Button shopButton =
-            FindButtonFromMember(menu, "shopButton");
+        Button shop =
+            FindButtonFromMember(
+                menu,
+                "shopButton"
+            );
 
-        if (shopButton == null)
-            shopButton = FindButtonByText("Магазин");
+        if (shop == null)
+        {
+            shop =
+                FindButtonByText(
+                    "МАГАЗИН"
+                );
+        }
 
-        if (shopButton == null)
+        if (shop == null)
+        {
             yield break;
+        }
 
         ShowTargetOverlay(
-            shopButton,
-            "МАГАЗИН\n\nЗдесь можно приобретать полезные предметы и улучшения за заработанные ресурсы."
+            shop,
+            "МАГАЗИН\n\n" +
+            "Здесь можно покупать доступные товары " +
+            "за игровые ресурсы.\n\n" +
+            "Нажми на кнопку «Магазин»."
         );
 
-        yield return WaitForTargetClick(shopButton);
+        yield return WaitForTargetClick(
+            shop
+        );
 
-        yield return WaitForScene(SHOP_SCENE);
+        yield return WaitForScene(
+            SHOP_SCENE
+        );
 
-        yield return WaitForObject<ShopManager>();
+        yield return WaitForSceneObject<
+            ShopManager
+        >();
 
-        ShopManager shop =
-            FindObjectIncludingInactive<ShopManager>();
+        ShopManager shopManager =
+            FindObjectIncludingInactive<
+                ShopManager
+            >();
 
-        if (shop != null)
+        if (shopManager != null)
         {
             ShowInfoOverlay(
-                "МАГАЗИН\n\nСледи за доступными покупками и используй монеты и кристаллы с пользой."
+                "МАГАЗИН\n\n" +
+                "Здесь отображаются доступные покупки, " +
+                "их стоимость и содержимое.\n\n" +
+                "Покупать ничего не нужно."
             );
 
             yield return WaitForOk();
 
-            Button itemButton =
-                FindFirstMeaningfulButton(shop.gameObject);
+            Button item =
+                FindFirstMeaningfulButton(
+                    shopManager.gameObject
+                );
 
-            if (itemButton != null)
+            if (item != null)
             {
                 ShowTargetOverlay(
-                    itemButton,
-                    "ТОВАРЫ\n\nВыбирай нужные предметы и покупай их, когда накопишь достаточно ресурсов."
+                    item,
+                    "ТОВАР\n\n" +
+                    "Здесь можно посмотреть содержимое " +
+                    "и стоимость товара.\n\n" +
+                    "Покупать его во время обучения не требуется."
                 );
 
                 yield return WaitForOk();
             }
 
-            Button backButton =
-                FindButtonFromMember(shop, "backButton");
+            Button back =
+                FindButtonFromMember(
+                    shopManager,
+                    "backButton"
+                );
 
-            if (backButton != null)
+            if (back == null)
             {
-                ShowButtonOnlyHighlight(backButton);
+                back =
+                    FindButtonByText(
+                        "НАЗАД"
+                    );
+            }
 
-                yield return WaitForTargetClick(backButton);
+            if (back != null)
+            {
+                ShowButtonOnlyHighlight(
+                    back
+                );
+
+                yield return WaitForTargetClick(
+                    back
+                );
             }
         }
 
-        yield return WaitForScene(MAIN_MENU_SCENE);
+        yield return WaitForMainMenu();
     }
 
     // =========================================================
@@ -427,159 +655,247 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            FindObjectIncludingInactive<MainMenuManager>();
+            FindObjectIncludingInactive<
+                MainMenuManager
+            >();
 
         if (menu == null)
+        {
             yield break;
+        }
 
-        Button charactersButton =
-            FindButtonFromMember(menu, "charactersButton");
+        Button characters =
+            FindButtonFromMember(
+                menu,
+                "charactersButton"
+            );
 
-        if (charactersButton == null)
-            charactersButton = FindButtonByText("Персонажи");
+        if (characters == null)
+        {
+            characters =
+                FindButtonByText(
+                    "ПЕРСОНАЖИ"
+                );
+        }
 
-        if (charactersButton == null)
+        if (characters == null)
+        {
             yield break;
+        }
 
         ShowTargetOverlay(
-            charactersButton,
-            "ПЕРСОНАЖИ\n\nЗдесь можно выбирать персонажа и открывать новые способности."
+            characters,
+            "ПЕРСОНАЖИ\n\n" +
+            "Здесь можно выбирать персонажей, " +
+            "открывать новых героев и смотреть их бонусы.\n\n" +
+            "Нажми на кнопку «Персонажи»."
         );
 
-        yield return WaitForTargetClick(charactersButton);
+        yield return WaitForTargetClick(
+            characters
+        );
 
-        yield return WaitForScene(CHARACTER_SCENE);
+        yield return WaitForScene(
+            CHARACTER_SCENE
+        );
 
-        yield return new WaitForSecondsRealtime(0.3f);
+        yield return new WaitForSecondsRealtime(
+            0.3f
+        );
 
-        CharacterSelectManager characterManager =
-            FindObjectIncludingInactive<CharacterSelectManager>();
+        CharacterSelectManager manager =
+            FindObjectIncludingInactive<
+                CharacterSelectManager
+            >();
 
-        if (characterManager != null)
+        if (manager != null)
         {
             ShowInfoOverlay(
-                "ПЕРСОНАЖИ\n\nУ каждого персонажа есть собственный бонус. Покупка персонажа активирует его способность."
+                "ПЕРСОНАЖИ\n\n" +
+                "У каждого персонажа есть собственный бонус.\n\n" +
+                "Выбери подходящего персонажа для забегов."
             );
 
             yield return WaitForOk();
 
-            Button characterButton =
-                FindFirstCharacterButton(
-                    characterManager.gameObject);
+            Button action =
+                FindButtonFromMember(
+                    manager,
+                    "actionButton"
+                );
 
-            if (characterButton != null)
+            if (action != null)
             {
                 ShowTargetOverlay(
-                    characterButton,
-                    "ВЫБОР ПЕРСОНАЖА\n\nЗдесь можно выбрать доступного персонажа и посмотреть его бонус."
+                    action,
+                    "ДЕЙСТВИЕ ПЕРСОНАЖА\n\n" +
+                    "Здесь отображается действие " +
+                    "для выбранного персонажа.\n\n" +
+                    "Покупать персонажа сейчас не нужно."
                 );
 
                 yield return WaitForOk();
             }
         }
 
-        Button backButtonCharacter =
-            FindButtonByText("НАЗАД");
+        Button back =
+            FindButtonByText(
+                "НАЗАД"
+            );
 
-        if (backButtonCharacter == null)
-            backButtonCharacter = FindButtonByText("Назад");
-
-        if (backButtonCharacter != null)
+        if (back == null)
         {
-            ShowButtonOnlyHighlight(backButtonCharacter);
-
-            yield return WaitForTargetClick(
-                backButtonCharacter);
+            back =
+                FindButtonByText(
+                    "ЗАКРЫТЬ"
+                );
         }
 
-        yield return WaitForScene(MAIN_MENU_SCENE);
+        if (back != null)
+        {
+            ShowButtonOnlyHighlight(
+                back
+            );
+
+            yield return WaitForTargetClick(
+                back
+            );
+        }
+
+        yield return WaitForMainMenu();
     }
 
     // =========================================================
     // ЕЖЕДНЕВНЫЙ ВХОД
     // =========================================================
 
-    private IEnumerator RunDailyLoginTutorial()
+    private IEnumerator RunDailyTutorial()
     {
         yield return WaitForMainMenu();
 
-        Button dailyButton =
-            FindUtilityButton("DailyLogin");
+        Button daily =
+            FindUtilityButton(
+                "DailyLogin"
+            );
 
-        if (dailyButton == null)
-            dailyButton = FindButtonByText("Ежедневный");
+        if (daily == null)
+        {
+            daily =
+                FindButtonByText(
+                    "ЕЖЕДНЕВНЫЙ"
+                );
+        }
 
-        if (dailyButton == null)
-            dailyButton = FindButtonByText("Вход");
+        if (daily == null)
+        {
+            daily =
+                FindButtonByText(
+                    "ВХОД"
+                );
+        }
 
-        if (dailyButton == null)
+        if (daily == null)
+        {
             yield break;
+        }
 
         ShowTargetOverlay(
-            dailyButton,
-            "ЕЖЕДНЕВНЫЙ ВХОД\n\nЗа ежедневный вход можно получать награды и поддерживать серию посещений."
+            daily,
+            "ЕЖЕДНЕВНЫЙ ВХОД\n\n" +
+            "Здесь каждый день доступна награда.\n\n" +
+            "Нажми на кнопку ежедневного входа."
         );
 
-        yield return WaitForTargetClick(dailyButton);
+        yield return WaitForTargetClick(
+            daily
+        );
 
-        yield return WaitForObject<DailyLoginUI3D>();
+        yield return new WaitForSecondsRealtime(
+            0.3f
+        );
 
-        DailyLoginUI3D daily =
-            FindObjectIncludingInactive<DailyLoginUI3D>();
+        DailyLoginUI3D ui =
+            FindObjectIncludingInactive<
+                DailyLoginUI3D
+            >();
 
-        if (daily != null)
+        if (ui != null)
         {
             ShowInfoOverlay(
-                "ЕЖЕДНЕВНЫЕ НАГРАДЫ\n\nЗа каждый день серии доступна отдельная награда."
+                "ЕЖЕДНЕВНЫЙ ВХОД\n\n" +
+                "Каждый день ты можешь получать награду.\n\n" +
+                "Регулярные входы продолжают серию."
             );
 
             yield return WaitForOk();
 
-            Button claimButton =
-                FindButtonByText("ЗАБРАТЬ");
+            Button claim =
+                FindButtonByText(
+                    "ЗАБРАТЬ"
+                );
 
-            if (claimButton == null)
-                claimButton = FindButtonByText("Забрать");
-
-            if (claimButton != null &&
-                claimButton.interactable)
+            if (claim != null &&
+                claim.interactable)
             {
                 ShowTargetOverlay(
-                    claimButton,
-                    "НАГРАДА\n\nНажми кнопку, чтобы забрать доступную награду."
+                    claim,
+                    "ЗАБРАТЬ НАГРАДУ\n\n" +
+                    "Нажми «Забрать», чтобы получить " +
+                    "доступную награду."
                 );
 
                 yield return WaitForTargetClick(
-                    claimButton);
+                    claim
+                );
             }
             else
             {
                 ShowInfoOverlay(
-                    "НАГРАДА\n\nКогда награда станет доступна, её можно будет забрать здесь."
+                    "НАГРАДА\n\n" +
+                    "Когда награда будет доступна, " +
+                    "её можно будет забрать этой кнопкой."
                 );
 
                 yield return WaitForOk();
             }
 
-            Button closeButton =
+            Button close =
                 FindButtonFromMember(
-                    daily,
-                    "closeButton");
+                    ui,
+                    "closeButton"
+                );
 
-            if (closeButton == null)
-                closeButton = FindButtonByText("ЗАКРЫТЬ");
-
-            if (closeButton == null)
-                closeButton = FindButtonByText("Закрыть");
-
-            if (closeButton != null)
+            if (close == null)
             {
-                ShowButtonOnlyHighlight(closeButton);
+                close =
+                    FindButtonByText(
+                        "ЗАКРЫТЬ"
+                    );
+            }
+
+            if (close == null)
+            {
+                close =
+                    FindButtonByText(
+                        "НАЗАД"
+                    );
+            }
+
+            if (close != null)
+            {
+                ShowButtonOnlyHighlight(
+                    close
+                );
 
                 yield return WaitForTargetClick(
-                    closeButton);
+                    close
+                );
             }
         }
+
+        yield return new WaitForSecondsRealtime(
+            0.2f
+        );
     }
 
     // =========================================================
@@ -591,98 +907,190 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         MainMenuManager menu =
-            FindObjectIncludingInactive<MainMenuManager>();
+            FindObjectIncludingInactive<
+                MainMenuManager
+            >();
 
         if (menu == null)
+        {
             yield break;
+        }
 
-        Button profileButton =
+        Button profile =
             FindButtonFromMember(
                 menu,
-                "profileAvatarButton");
+                "profileAvatarButton"
+            );
 
-        if (profileButton == null)
+        if (profile == null)
+        {
+            profile =
+                FindButtonByText(
+                    "ПРОФИЛЬ"
+                );
+        }
+
+        if (profile == null)
+        {
             yield break;
+        }
 
         ShowTargetOverlay(
-            profileButton,
-            "ПРОФИЛЬ\n\nЗдесь находятся данные игрока, имя, аватар и дополнительные настройки профиля."
+            profile,
+            "ПРОФИЛЬ\n\n" +
+            "Здесь можно настроить внешний вид и данные профиля.\n\n" +
+            "Нажми на кнопку профиля."
         );
 
-        yield return WaitForTargetClick(profileButton);
+        yield return WaitForTargetClick(
+            profile
+        );
 
-        yield return new WaitForSecondsRealtime(0.3f);
+        yield return new WaitForSecondsRealtime(
+            0.3f
+        );
 
-        ProfileSettingsPanel profile =
-            FindObjectIncludingInactive<ProfileSettingsPanel>();
+        ProfileSettingsPanel panel =
+            FindObjectIncludingInactive<
+                ProfileSettingsPanel
+            >();
 
-        if (profile != null)
+        if (panel != null)
         {
-            ShowInfoOverlay(
-                "ПРОФИЛЬ\n\nЗдесь можно изменить внешний вид профиля и основные данные игрока."
-            );
-
-            yield return WaitForOk();
-
-            Button avatarButton =
+            // АВАТАР
+            Button avatar =
                 FindButtonFromMember(
-                    profile,
-                    "avatarButton");
+                    panel,
+                    "avatarButton"
+                );
 
-            if (avatarButton != null)
+            if (avatar != null)
             {
                 ShowTargetOverlay(
-                    avatarButton,
-                    "АВАТАР\n\nЗдесь можно выбрать изображение для своего профиля."
+                    avatar,
+                    "АВАТАР\n\n" +
+                    "Здесь можно изменить аватар профиля."
+                );
+
+                yield return WaitForOk();
+            }
+            else
+            {
+                ShowInfoOverlay(
+                    "АВАТАР\n\n" +
+                    "Здесь можно изменить изображение профиля."
                 );
 
                 yield return WaitForOk();
             }
 
+            // ИМЯ
             ShowInfoOverlay(
-                "ИМЯ И ПРОФИЛЬ\n\nВ профиле отображается твоя игровая информация."
+                "ИМЯ ПРОФИЛЯ\n\n" +
+                "Здесь можно изменить имя, " +
+                "которое отображается в профиле."
             );
 
             yield return WaitForOk();
 
-            Button uploadButton =
-                FindButtonFromMember(
-                    profile,
-                    "uploadButton");
+            // АВТОПОДСТАНОВКА
+            Toggle autoToggle =
+                FindToggleFromMember(
+                    panel,
+                    "autoToggle"
+                );
 
-            if (uploadButton != null)
+            if (autoToggle != null)
             {
-                ShowTargetOverlay(
-                    uploadButton,
-                    "ИЗОБРАЖЕНИЕ\n\nЭта кнопка позволяет выбрать изображение профиля."
+                ShowTargetOverlayGeneric(
+                    autoToggle,
+                    "АВТОМАТИЧЕСКАЯ ПОДСТАНОВКА\n\n" +
+                    "Эта галка автоматически подставляет " +
+                    "аватар выбранного персонажа."
+                );
+
+                yield return WaitForOk();
+            }
+            else
+            {
+                ShowInfoOverlay(
+                    "АВТОМАТИЧЕСКАЯ ПОДСТАНОВКА\n\n" +
+                    "Эта функция позволяет автоматически " +
+                    "использовать аватар выбранного персонажа."
                 );
 
                 yield return WaitForOk();
             }
 
-            Button closeButton =
+            // ЗАГРУЗКА
+            Button upload =
                 FindButtonFromMember(
-                    profile,
-                    "closeButton");
+                    panel,
+                    "uploadButton"
+                );
 
-            if (closeButton == null)
-                closeButton = FindButtonByText("ЗАКРЫТЬ");
-
-            if (closeButton == null)
-                closeButton = FindButtonByText("Закрыть");
-
-            if (closeButton != null)
+            if (upload != null)
             {
-                ShowButtonOnlyHighlight(closeButton);
+                ShowTargetOverlay(
+                    upload,
+                    "ЗАГРУЗКА ФОТО\n\n" +
+                    "Здесь можно загрузить собственную " +
+                    "фотографию с телефона.\n\n" +
+                    "Нажимать сейчас не нужно."
+                );
+
+                yield return WaitForOk();
+            }
+            else
+            {
+                ShowInfoOverlay(
+                    "ФОТО С ТЕЛЕФОНА\n\n" +
+                    "В профиле можно загрузить собственную " +
+                    "фотографию с устройства."
+                );
+
+                yield return WaitForOk();
+            }
+
+            Button close =
+                FindButtonFromMember(
+                    panel,
+                    "closeButton"
+                );
+
+            if (close == null)
+            {
+                close =
+                    FindButtonByText(
+                        "ЗАКРЫТЬ"
+                    );
+            }
+
+            if (close == null)
+            {
+                close =
+                    FindButtonByText(
+                        "НАЗАД"
+                    );
+            }
+
+            if (close != null)
+            {
+                ShowButtonOnlyHighlight(
+                    close
+                );
 
                 yield return WaitForTargetClick(
-                    closeButton);
+                    close
+                );
             }
         }
 
-        UnlockTutorialAchievement();
+        yield return WaitForMainMenu();
 
-        yield return new WaitForSecondsRealtime(0.2f);
+        // ДОСТИЖЕНИЕ АКТИВИРУЕТСЯ ИМЕННО
+        // ПОСЛЕ ВЫХОДА ИЗ ПРОФИЛЯ.
+        UnlockTutorialAchievement();
     }
 
     // =========================================================
@@ -693,80 +1101,117 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     {
         yield return WaitForMainMenu();
 
-        Button settingsButton =
-            FindUtilityButton("Settings");
+        Button settings =
+            FindButtonByText(
+                "НАСТРОЙКИ"
+            );
 
-        if (settingsButton == null)
-            settingsButton = FindButtonByText("Настройки");
-
-        if (settingsButton == null)
-            yield break;
-
-        ShowTargetOverlay(
-            settingsButton,
-            "НАСТРОЙКИ\n\nЗдесь можно настроить звук и вибрацию игры."
-        );
-
-        yield return WaitForTargetClick(settingsButton);
-
-        yield return WaitForObject<GameSettingsUI3D>();
-
-        GameSettingsUI3D settings =
-            FindObjectIncludingInactive<GameSettingsUI3D>();
-
-        if (settings != null)
+        if (settings == null)
         {
-            Slider volumeSlider =
-                FindComponentFromMember<Slider>(
-                    settings,
-                    "volumeSlider");
-
-            if (volumeSlider != null)
-            {
-                ShowComponentOverlay(
-                    volumeSlider,
-                    "ГРОМКОСТЬ\n\nЗдесь можно изменить уровень звука игры."
+            settings =
+                FindButtonByText(
+                    "НАСТРОЙКА"
                 );
-
-                yield return WaitForOk();
-            }
-
-            Toggle vibrationToggle =
-                FindComponentFromMember<Toggle>(
-                    settings,
-                    "vibrationToggle");
-
-            if (vibrationToggle != null)
-            {
-                ShowComponentOverlay(
-                    vibrationToggle,
-                    "ВИБРАЦИЯ\n\nЭта настройка включает или отключает вибрацию во время игры."
-                );
-
-                yield return WaitForOk();
-            }
-
-            Button closeButton =
-                FindButtonFromMember(
-                    settings,
-                    "closeButton");
-
-            if (closeButton == null)
-                closeButton = FindButtonByText("ЗАКРЫТЬ");
-
-            if (closeButton == null)
-                closeButton = FindButtonByText("Закрыть");
-
-            if (closeButton != null)
-            {
-                ShowButtonOnlyHighlight(closeButton);
-
-                yield return WaitForTargetClick(
-                    closeButton);
-            }
         }
 
-        yield return new WaitForSecondsRealtime(0.2f);
+        if (settings == null)
+        {
+            yield break;
+        }
+
+        ShowTargetOverlay(
+            settings,
+            "НАСТРОЙКИ\n\n" +
+            "Здесь можно настроить звук и вибрацию игры.\n\n" +
+            "Нажми на кнопку «Настройки»."
+        );
+
+        yield return WaitForTargetClick(
+            settings
+        );
+
+        yield return new WaitForSecondsRealtime(
+            0.3f
+        );
+
+        // ГРОМКОСТЬ
+        Slider volume =
+            FindSliderByText(
+                "ГРОМКОСТЬ",
+                "ЗВУК"
+            );
+
+        if (volume != null)
+        {
+            ShowTargetOverlayGeneric(
+                volume,
+                "ГРОМКОСТЬ\n\n" +
+                "Ползунок позволяет изменить громкость игры."
+            );
+
+            yield return WaitForOk();
+        }
+        else
+        {
+            ShowInfoOverlay(
+                "ГРОМКОСТЬ\n\n" +
+                "С помощью ползунка можно изменить громкость игры."
+            );
+
+            yield return WaitForOk();
+        }
+
+        // ВИБРАЦИЯ
+        Toggle vibration =
+            FindToggleByText(
+                "ВИБРАЦИЯ"
+            );
+
+        if (vibration != null)
+        {
+            ShowTargetOverlayGeneric(
+                vibration,
+                "ВИБРАЦИЯ\n\n" +
+                "Эта настройка включает или отключает вибрацию."
+            );
+
+            yield return WaitForOk();
+        }
+        else
+        {
+            ShowInfoOverlay(
+                "ВИБРАЦИЯ\n\n" +
+                "Здесь можно включить или отключить вибрацию."
+            );
+
+            yield return WaitForOk();
+        }
+
+        Button close =
+            FindButtonByText(
+                "ЗАКРЫТЬ"
+            );
+
+        if (close == null)
+        {
+            close =
+                FindButtonByText(
+                    "НАЗАД"
+                );
+        }
+
+        if (close != null)
+        {
+            ShowButtonOnlyHighlight(
+                close
+            );
+
+            yield return WaitForTargetClick(
+                close
+            );
+        }
+
+        yield return WaitForMainMenu();
     }
 
     // =========================================================
@@ -778,149 +1223,184 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         yield return WaitForMainMenu();
 
         Button achievementsButton =
-            FindUtilityButton("Achievements");
+            FindButtonByText(
+                "ДОСТИЖЕНИЯ"
+            );
 
         if (achievementsButton == null)
+        {
             achievementsButton =
-                FindButtonByText("Достижения");
+                FindButtonByText(
+                    "ДОСТИЖЕНИЕ"
+                );
+        }
 
         if (achievementsButton == null)
+        {
             yield break;
+        }
 
         ShowTargetOverlay(
             achievementsButton,
-            "ДОСТИЖЕНИЯ\n\nЗдесь отображаются выполненные задания и награды за них."
+            "ДОСТИЖЕНИЯ\n\n" +
+            "Здесь находятся выполненные цели и награды.\n\n" +
+            "Нажми на кнопку «Достижения»."
         );
 
         yield return WaitForTargetClick(
-            achievementsButton);
+            achievementsButton
+        );
 
-        yield return WaitForObject<AchievementsUI3D>();
+        yield return new WaitForSecondsRealtime(
+            0.3f
+        );
 
         AchievementsUI3D achievements =
-            FindObjectIncludingInactive<AchievementsUI3D>();
+            FindObjectIncludingInactive<
+                AchievementsUI3D
+            >();
 
         if (achievements != null)
         {
             ShowInfoOverlay(
-                "ДОСТИЖЕНИЯ\n\nДостижения можно выполнять во время игры. За некоторые из них доступны награды."
+                "ДОСТИЖЕНИЯ\n\n" +
+                "После выполнения достижения его награду " +
+                "нужно забрать вручную."
             );
 
             yield return WaitForOk();
 
-            Button safeZoneTab =
-                FindButtonByText("ДО УБЕЖИЩА");
+            Button shelter =
+                FindButtonByText(
+                    "ДО УБЕЖИЩА"
+                );
 
-            if (safeZoneTab == null)
-                safeZoneTab =
-                    FindButtonByText("До убежища");
+            if (shelter == null)
+            {
+                shelter =
+                    FindButtonByText(
+                        "УБЕЖИЩЕ"
+                    );
+            }
 
-            if (safeZoneTab != null)
+            if (shelter != null)
             {
                 ShowTargetOverlay(
-                    safeZoneTab,
-                    "ДО УБЕЖИЩА\n\nЗдесь находятся достижения режима «До убежища»."
+                    shelter,
+                    "ДО УБЕЖИЩА\n\n" +
+                    "Здесь находятся достижения режима «До убежища»."
                 );
 
                 yield return WaitForTargetClick(
-                    safeZoneTab);
+                    shelter
+                );
             }
 
-            Button endlessTab =
-                FindButtonByText("БЕСКОНЕЧНЫЙ");
+            Button endless =
+                FindButtonByText(
+                    "БЕСКОНЕЧНЫЙ"
+                );
 
-            if (endlessTab == null)
-                endlessTab =
-                    FindButtonByText("Бесконечный");
+            if (endless == null)
+            {
+                endless =
+                    FindButtonByText(
+                        "БЕСКОНЕЧНОСТЬ"
+                    );
+            }
 
-            if (endlessTab != null)
+            if (endless != null)
             {
                 ShowTargetOverlay(
-                    endlessTab,
-                    "БЕСКОНЕЧНЫЙ\n\nЗдесь находятся достижения бесконечного режима."
+                    endless,
+                    "БЕСКОНЕЧНЫЙ\n\n" +
+                    "Здесь находятся достижения бесконечного режима."
                 );
 
                 yield return WaitForTargetClick(
-                    endlessTab);
+                    endless
+                );
             }
 
-            // AchievementSystem3D является static class.
+            // Достижение уже активно после Профиля.
             UnlockTutorialAchievement();
 
-            yield return new WaitForSecondsRealtime(0.3f);
+            yield return new WaitForSecondsRealtime(
+                0.3f
+            );
 
-            Button claimButton =
-                FindAchievementClaimButton();
+            Button claim =
+                FindButtonByText(
+                    "ЗАБРАТЬ"
+                );
 
-            if (claimButton != null &&
-                claimButton.interactable)
+            if (claim != null &&
+                claim.interactable)
             {
                 ShowTargetOverlay(
-                    claimButton,
-                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\nТы прошёл обучение. Нажми кнопку, чтобы забрать награду."
+                    claim,
+                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\n" +
+                    "Ты прошёл обучение.\n\n" +
+                    "Нажми «Забрать», чтобы получить +50 монет."
                 );
 
                 yield return WaitForTargetClick(
-                    claimButton);
+                    claim
+                );
             }
             else
             {
                 ShowInfoOverlay(
-                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\nЗа прохождение обучения доступна награда. Её можно забрать в списке достижений."
+                    "НАГРАДА ЗА ОБУЧЕНИЕ\n\n" +
+                    "За прохождение обучения доступна награда +50 монет."
                 );
 
                 yield return WaitForOk();
             }
 
-            Button closeButton =
-                FindButtonByText("ЗАКРЫТЬ");
+            Button close =
+                FindButtonByText(
+                    "ЗАКРЫТЬ"
+                );
 
-            if (closeButton == null)
-                closeButton =
-                    FindButtonByText("Закрыть");
-
-            if (closeButton == null)
-                closeButton =
-                    FindButtonByText("НАЗАД");
-
-            if (closeButton == null)
-                closeButton =
-                    FindButtonByText("Назад");
-
-            if (closeButton != null)
+            if (close == null)
             {
-                ShowButtonOnlyHighlight(closeButton);
+                close =
+                    FindButtonByText(
+                        "НАЗАД"
+                    );
+            }
+
+            if (close != null)
+            {
+                ShowButtonOnlyHighlight(
+                    close
+                );
 
                 yield return WaitForTargetClick(
-                    closeButton);
+                    close
+                );
             }
         }
 
-        yield return new WaitForSecondsRealtime(0.2f);
+        yield return WaitForMainMenu();
     }
 
     // =========================================================
-    // ФИНАЛ
+    // FINAL
     // =========================================================
 
     private IEnumerator RunFinalTutorial()
     {
         ShowInfoOverlay(
             "ОБУЧЕНИЕ ЗАВЕРШЕНО!\n\n" +
-            "Теперь ты знаешь основные разделы игры.\n\n" +
-            "Исследуй мир, улучшай экипировку, открывай персонажей и собирай ресурсы."
+            "Поздравляем! Ты прошёл обучение.\n\n" +
+            "Теперь ты знаешь, как пользоваться " +
+            "основными разделами игры, получать награды " +
+            "и развивать персонажей, экипировку и убежище."
         );
 
         yield return WaitForOk();
-    }
-
-    private void CompleteTutorial()
-    {
-        PlayerPrefs.SetInt(COMPLETED_KEY, 1);
-        PlayerPrefs.DeleteKey(STARTED_KEY);
-        PlayerPrefs.Save();
-
-        DestroyOverlay();
     }
 
     // =========================================================
@@ -932,529 +1412,17 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         try
         {
             AchievementSystem3D.Unlock(
-                TUTORIAL_ACHIEVEMENT_ID);
+                TUTORIAL_ACHIEVEMENT_ID
+            );
         }
         catch (Exception e)
         {
             Debug.LogWarning(
-                "[SafeZoneMainMenuTutorial3D] " +
-                "Не удалось активировать достижение обучения: " +
+                "[MainMenuTutorial] " +
+                "Не удалось активировать достижение: " +
                 e.Message
             );
         }
-    }
-
-    // =========================================================
-    // UTILITY BUTTONS
-    // =========================================================
-
-    private Button FindUtilityButton(
-        string requiredAction)
-    {
-        MainMenuUtilityButton3D[] utilities =
-            FindObjectsByType<MainMenuUtilityButton3D>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None
-            );
-
-        for (int i = 0; i < utilities.Length; i++)
-        {
-            MainMenuUtilityButton3D utility =
-                utilities[i];
-
-            if (utility == null)
-                continue;
-
-            string actionValue =
-                GetActionValue(utility);
-
-            if (string.IsNullOrEmpty(actionValue))
-                continue;
-
-            if (!string.Equals(
-                    actionValue,
-                    requiredAction,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            Button button =
-                utility.GetComponent<Button>();
-
-            if (button == null)
-                button =
-                    utility.GetComponentInChildren<Button>(
-                        true);
-
-            if (button != null)
-                return button;
-        }
-
-        return null;
-    }
-
-    private string GetActionValue(object target)
-    {
-        Type type = target.GetType();
-
-        FieldInfo[] fields =
-            type.GetFields(
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic
-            );
-
-        for (int i = 0; i < fields.Length; i++)
-        {
-            FieldInfo field = fields[i];
-
-            if (!field.Name.ToLowerInvariant()
-                .Contains("action"))
-            {
-                continue;
-            }
-
-            object value =
-                field.GetValue(target);
-
-            if (value != null)
-                return value.ToString();
-        }
-
-        PropertyInfo[] properties =
-            type.GetProperties(
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic
-            );
-
-        for (int i = 0; i < properties.Length; i++)
-        {
-            PropertyInfo property =
-                properties[i];
-
-            if (!property.Name.ToLowerInvariant()
-                .Contains("action"))
-            {
-                continue;
-            }
-
-            if (!property.CanRead)
-                continue;
-
-            object value =
-                property.GetValue(
-                    target,
-                    null);
-
-            if (value != null)
-                return value.ToString();
-        }
-
-        return string.Empty;
-    }
-
-    // =========================================================
-    // MEMBER SEARCH
-    // =========================================================
-
-    private Button FindButtonFromMember(
-        object owner,
-        string memberName)
-    {
-        if (owner == null)
-            return null;
-
-        Type type = owner.GetType();
-
-        FieldInfo field =
-            type.GetField(
-                memberName,
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic
-            );
-
-        if (field != null)
-        {
-            object value =
-                field.GetValue(owner);
-
-            Button result =
-                ConvertToButton(value);
-
-            if (result != null)
-                return result;
-        }
-
-        PropertyInfo property =
-            type.GetProperty(
-                memberName,
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic
-            );
-
-        if (property != null &&
-            property.CanRead)
-        {
-            object value =
-                property.GetValue(
-                    owner,
-                    null);
-
-            Button result =
-                ConvertToButton(value);
-
-            if (result != null)
-                return result;
-        }
-
-        return null;
-    }
-
-    private T FindComponentFromMember<T>(
-        object owner,
-        string memberName)
-        where T : Component
-    {
-        if (owner == null)
-            return null;
-
-        Type type = owner.GetType();
-
-        FieldInfo field =
-            type.GetField(
-                memberName,
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic
-            );
-
-        if (field != null)
-        {
-            object value =
-                field.GetValue(owner);
-
-            T component =
-                value as T;
-
-            if (component != null)
-                return component;
-
-            GameObject go =
-                value as GameObject;
-
-            if (go != null)
-                return go.GetComponent<T>();
-        }
-
-        PropertyInfo property =
-            type.GetProperty(
-                memberName,
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic
-            );
-
-        if (property != null &&
-            property.CanRead)
-        {
-            object value =
-                property.GetValue(
-                    owner,
-                    null);
-
-            T component =
-                value as T;
-
-            if (component != null)
-                return component;
-
-            GameObject go =
-                value as GameObject;
-
-            if (go != null)
-                return go.GetComponent<T>();
-        }
-
-        return null;
-    }
-
-    private Button ConvertToButton(object value)
-    {
-        if (value == null)
-            return null;
-
-        Button button =
-            value as Button;
-
-        if (button != null)
-            return button;
-
-        GameObject go =
-            value as GameObject;
-
-        if (go != null)
-            return go.GetComponent<Button>();
-
-        Component component =
-            value as Component;
-
-        if (component != null)
-        {
-            button =
-                component.GetComponent<Button>();
-
-            if (button != null)
-                return button;
-
-            button =
-                component.GetComponentInChildren<Button>(
-                    true);
-        }
-
-        return button;
-    }
-
-    // =========================================================
-    // BUTTON SEARCH
-    // =========================================================
-
-    private Button FindButtonByText(
-        string searchText)
-    {
-        if (string.IsNullOrWhiteSpace(searchText))
-            return null;
-
-        TMP_Text[] texts =
-            FindObjectsByType<TMP_Text>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None
-            );
-
-        for (int i = 0; i < texts.Length; i++)
-        {
-            TMP_Text text = texts[i];
-
-            if (text == null)
-                continue;
-
-            string value = text.text;
-
-            if (string.IsNullOrWhiteSpace(value))
-                continue;
-
-            if (!value.Trim().Contains(
-                    searchText,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            Button button =
-                text.GetComponentInParent<Button>();
-
-            if (button != null)
-                return button;
-        }
-
-        return null;
-    }
-
-    private Button FindFirstMeaningfulButton(
-        GameObject root)
-    {
-        if (root == null)
-            return null;
-
-        Button[] buttons =
-            root.GetComponentsInChildren<Button>(
-                true);
-
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            Button button = buttons[i];
-
-            if (button == null ||
-                !button.interactable)
-            {
-                continue;
-            }
-
-            string text =
-                GetButtonText(button);
-
-            if (string.IsNullOrWhiteSpace(text))
-                continue;
-
-            if (text.Contains(
-                    "НАЗАД",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (text.Contains(
-                    "ЗАКРЫТЬ",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            return button;
-        }
-
-        return null;
-    }
-
-    private Button FindFirstCharacterButton(
-        GameObject root)
-    {
-        if (root == null)
-            return null;
-
-        Button[] buttons =
-            root.GetComponentsInChildren<Button>(
-                true);
-
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            Button button = buttons[i];
-
-            if (button == null ||
-                !button.interactable)
-            {
-                continue;
-            }
-
-            string text =
-                GetButtonText(button);
-
-            if (text.Contains(
-                    "НАЗАД",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (text.Contains(
-                    "ЗАКРЫТЬ",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (text.Contains(
-                    "КУПИТЬ",
-                    StringComparison.OrdinalIgnoreCase) ||
-                text.Contains(
-                    "ВЫБРАТЬ",
-                    StringComparison.OrdinalIgnoreCase) ||
-                text.Contains(
-                    "ИГРАТЬ",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return button;
-            }
-        }
-
-        return null;
-    }
-
-    private Button FindUpgradeButton(
-        GameObject root)
-    {
-        if (root == null)
-            return null;
-
-        Button[] buttons =
-            root.GetComponentsInChildren<Button>(
-                true);
-
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            Button button = buttons[i];
-
-            if (button == null ||
-                !button.interactable)
-            {
-                continue;
-            }
-
-            string text =
-                GetButtonText(button);
-
-            if (text.Contains(
-                    "УЛУЧШ",
-                    StringComparison.OrdinalIgnoreCase) ||
-                text.Contains(
-                    "ПОВЫС",
-                    StringComparison.OrdinalIgnoreCase) ||
-                text.Contains(
-                    "КУПИТЬ",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return button;
-            }
-        }
-
-        return null;
-    }
-
-    private Button FindAchievementClaimButton()
-    {
-        Button[] buttons =
-            FindObjectsByType<Button>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None
-            );
-
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            Button button = buttons[i];
-
-            if (button == null)
-                continue;
-
-            string text =
-                GetButtonText(button);
-
-            if (text.Contains(
-                    "ЗАБРАТЬ",
-                    StringComparison.OrdinalIgnoreCase) ||
-                text.Contains(
-                    "ЗАБРАТЬ НАГРАДУ",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return button;
-            }
-        }
-
-        return null;
-    }
-
-    private string GetButtonText(Button button)
-    {
-        if (button == null)
-            return string.Empty;
-
-        TMP_Text text =
-            button.GetComponentInChildren<TMP_Text>(
-                true);
-
-        if (text != null)
-            return text.text.Trim();
-
-        Text legacyText =
-            button.GetComponentInChildren<Text>(
-                true);
-
-        if (legacyText != null)
-            return legacyText.text.Trim();
-
-        return button.name;
     }
 
     // =========================================================
@@ -1467,16 +1435,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         GameObject canvasObject =
             new GameObject(
-                "SafeZoneMainMenuTutorialOverlay",
-                typeof(RectTransform),
+                "SafeZoneTutorialOverlay",
                 typeof(Canvas),
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster)
             );
-
-        overlayRoot = canvasObject;
-
-        DontDestroyOnLoad(canvasObject);
 
         overlayCanvas =
             canvasObject.GetComponent<Canvas>();
@@ -1484,7 +1447,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         overlayCanvas.renderMode =
             RenderMode.ScreenSpaceOverlay;
 
-        overlayCanvas.sortingOrder = 30000;
+        overlayCanvas.sortingOrder =
+            5000;
 
         CanvasScaler scaler =
             canvasObject.GetComponent<CanvasScaler>();
@@ -1493,14 +1457,23 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
         scaler.referenceResolution =
-            new Vector2(1080f, 1920f);
+            new Vector2(
+                1080f,
+                1920f
+            );
 
-        scaler.screenMatchMode =
-            CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight =
+            0.5f;
 
-        scaler.matchWidthOrHeight = 0.5f;
+        overlayRoot =
+            canvasObject.GetComponent<
+                RectTransform
+            >();
 
+        // -----------------------------------------------------
         // DIM
+        // -----------------------------------------------------
+
         GameObject dimObject =
             new GameObject(
                 "Dim",
@@ -1509,23 +1482,35 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             );
 
         dimObject.transform.SetParent(
-            canvasObject.transform,
-            false);
+            overlayRoot,
+            false
+        );
 
         RectTransform dimRect =
-            dimObject.GetComponent<RectTransform>();
+            dimObject.GetComponent<
+                RectTransform
+            >();
 
-        StretchFullScreen(dimRect);
+        StretchFull(dimRect);
 
         dimImage =
             dimObject.GetComponent<Image>();
 
         dimImage.color =
-            new Color(0f, 0f, 0f, 0.72f);
+            new Color(
+                0f,
+                0f,
+                0f,
+                0.72f
+            );
 
-        dimImage.raycastTarget = false;
+        dimImage.raycastTarget =
+            true;
 
+        // -----------------------------------------------------
         // HIGHLIGHT
+        // -----------------------------------------------------
+
         GameObject highlightObject =
             new GameObject(
                 "Highlight",
@@ -1534,302 +1519,375 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             );
 
         highlightObject.transform.SetParent(
-            canvasObject.transform,
-            false);
+            overlayRoot,
+            false
+        );
 
         highlightImage =
             highlightObject.GetComponent<Image>();
 
+        highlightImage.sprite =
+            RuntimeUISprite3D.GetRoundedSprite();
+
+        highlightImage.type =
+            Image.Type.Sliced;
+
         highlightImage.color =
-            new Color(1f, 1f, 1f, 0.10f);
+            new Color(
+                1f,
+                0.82f,
+                0.25f,
+                0.28f
+            );
 
-        highlightImage.raycastTarget = false;
+        highlightImage.raycastTarget =
+            false;
 
+        // -----------------------------------------------------
         // PANEL
-        infoPanel =
+        // -----------------------------------------------------
+
+        GameObject panelObject =
             new GameObject(
-                "InfoPanel",
+                "InstructionBackground",
                 typeof(RectTransform),
                 typeof(Image)
             );
 
-        infoPanel.transform.SetParent(
-            canvasObject.transform,
-            false);
+        panelObject.transform.SetParent(
+            overlayRoot,
+            false
+        );
+
+        instructionBackground =
+            panelObject.GetComponent<Image>();
+
+        instructionBackground.sprite =
+            RuntimeUISprite3D.GetRoundedSprite();
+
+        instructionBackground.type =
+            Image.Type.Sliced;
+
+        instructionBackground.color =
+            new Color(
+                0f,
+                0f,
+                0f,
+                0.78f
+            );
+
+        instructionBackground.raycastTarget =
+            false;
 
         RectTransform panelRect =
-            infoPanel.GetComponent<RectTransform>();
+            instructionBackground.rectTransform;
 
         panelRect.anchorMin =
-            new Vector2(0.08f, 0.18f);
+            new Vector2(
+                0.5f,
+                0.5f
+            );
 
         panelRect.anchorMax =
-            new Vector2(0.92f, 0.45f);
+            new Vector2(
+                0.5f,
+                0.5f
+            );
 
-        panelRect.offsetMin = Vector2.zero;
-        panelRect.offsetMax = Vector2.zero;
+        panelRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
 
-        Image panelImage =
-            infoPanel.GetComponent<Image>();
+        panelRect.sizeDelta =
+            new Vector2(
+                760f,
+                330f
+            );
 
-        panelImage.color =
-            new Color(
-                0.04f,
-                0.07f,
-                0.09f,
-                0.96f);
+        panelRect.anchoredPosition =
+            new Vector2(
+                0f,
+                120f
+            );
 
+        // -----------------------------------------------------
         // TEXT
+        // -----------------------------------------------------
+
         GameObject textObject =
             new GameObject(
-                "Text",
+                "InstructionText",
                 typeof(RectTransform),
                 typeof(TextMeshProUGUI)
             );
 
         textObject.transform.SetParent(
-            infoPanel.transform,
-            false);
+            panelObject.transform,
+            false
+        );
+
+        instructionText =
+            textObject.GetComponent<
+                TextMeshProUGUI
+            >();
 
         RectTransform textRect =
-            textObject.GetComponent<RectTransform>();
+            instructionText.rectTransform;
 
         textRect.anchorMin =
-            new Vector2(0.08f, 0.25f);
+            Vector2.zero;
 
         textRect.anchorMax =
-            new Vector2(0.92f, 0.88f);
+            Vector2.one;
 
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        textRect.offsetMin =
+            new Vector2(
+                35f,
+                25f
+            );
 
-        infoText =
-            textObject.GetComponent<TextMeshProUGUI>();
+        textRect.offsetMax =
+            new Vector2(
+                -35f,
+                -25f
+            );
 
-        infoText.alignment =
+        instructionText.color =
+            Color.white;
+
+        instructionText.fontSize =
+            28f;
+
+        instructionText.fontSizeMin =
+            18f;
+
+        instructionText.fontSizeMax =
+            28f;
+
+        instructionText.enableAutoSizing =
+            true;
+
+        instructionText.alignment =
             TextAlignmentOptions.Center;
 
-        infoText.fontSizeMin = 26f;
-        infoText.fontSizeMax = 52f;
-        infoText.enableAutoSizing = true;
-        infoText.textWrappingMode =
+        instructionText.textWrappingMode =
             TextWrappingModes.Normal;
 
-        // OK
-        GameObject okObject =
-            new GameObject(
-                "OK",
-                typeof(RectTransform),
-                typeof(Image),
-                typeof(Button)
-            );
+        instructionText.overflowMode =
+            TextOverflowModes.Truncate;
 
-        okObject.transform.SetParent(
-            infoPanel.transform,
-            false);
+        instructionText.outlineWidth =
+            0.18f;
 
-        RectTransform okRect =
-            okObject.GetComponent<RectTransform>();
+        instructionText.outlineColor =
+            Color.black;
 
-        okRect.anchorMin =
-            new Vector2(0.30f, 0.05f);
-
-        okRect.anchorMax =
-            new Vector2(0.70f, 0.22f);
-
-        okRect.offsetMin = Vector2.zero;
-        okRect.offsetMax = Vector2.zero;
-
-        Image okImage =
-            okObject.GetComponent<Image>();
-
-        okImage.color =
-            new Color(
-                0.12f,
-                0.55f,
-                0.30f,
-                1f);
-
-        okButton =
-            okObject.GetComponent<Button>();
-
-        GameObject okTextObject =
-            new GameObject(
-                "Text",
-                typeof(RectTransform),
-                typeof(TextMeshProUGUI)
-            );
-
-        okTextObject.transform.SetParent(
-            okObject.transform,
-            false);
-
-        RectTransform okTextRect =
-            okTextObject.GetComponent<RectTransform>();
-
-        StretchFullScreen(okTextRect);
-
-        TMP_Text okText =
-            okTextObject.GetComponent<TMP_Text>();
-
-        okText.text = "ПОНЯТНО";
-        okText.alignment =
-            TextAlignmentOptions.Center;
-
-        okText.fontSize = 30f;
-        okText.fontStyle =
-            FontStyles.Bold;
+        instructionText.raycastTarget =
+            false;
     }
 
-    private void ShowInfoOverlay(string text)
+    private void DestroyOverlay()
+    {
+        RestoreSelectables();
+
+        if (overlayCanvas != null)
+        {
+            Destroy(
+                overlayCanvas.gameObject
+            );
+        }
+
+        overlayCanvas = null;
+        overlayRoot = null;
+        dimImage = null;
+        highlightImage = null;
+        instructionBackground = null;
+        instructionText = null;
+        currentTargetButton = null;
+    }
+
+    // =========================================================
+    // INFO
+    // =========================================================
+
+    private void ShowInfoOverlay(
+        string text
+    )
     {
         CreateOverlay();
 
-        infoPanel.SetActive(true);
-        infoText.text = text;
+        DisableAllSelectablesExcept(
+            null
+        );
 
-        highlightImage.gameObject.SetActive(false);
+        dimImage.raycastTarget =
+            true;
 
-        DisableOtherSelectables();
+        highlightImage.gameObject.SetActive(
+            false
+        );
 
-        okButton.onClick.RemoveAllListeners();
+        instructionBackground.gameObject.SetActive(
+            true
+        );
 
-        clickedTarget = false;
+        ShowInstructionText(
+            text
+        );
 
-        okButton.onClick.AddListener(() =>
-        {
-            clickedTarget = true;
-        });
+        PositionInstructionPanel(
+            new Vector2(
+                0f,
+                120f
+            )
+        );
     }
+
+    private void ShowInstructionText(
+        string text
+    )
+    {
+        if (instructionText == null)
+        {
+            return;
+        }
+
+        instructionText.gameObject.SetActive(
+            true
+        );
+
+        instructionText.text =
+            text;
+
+        Canvas.ForceUpdateCanvases();
+    }
+
+    // =========================================================
+    // TARGET BUTTON
+    // =========================================================
 
     private void ShowTargetOverlay(
         Button target,
-        string text)
+        string text
+    )
     {
+        if (target == null)
+        {
+            ShowInfoOverlay(text);
+            return;
+        }
+
         CreateOverlay();
 
-        if (target == null)
-            return;
+        currentTargetButton =
+            target;
 
-        infoPanel.SetActive(true);
-        infoText.text = text;
+        DisableAllSelectablesExcept(
+            target
+        );
 
-        PositionHighlight(target);
+        dimImage.raycastTarget =
+            false;
 
-        DisableOtherSelectablesExcept(target);
+        highlightImage.gameObject.SetActive(
+            true
+        );
 
-        highlightImage.gameObject.SetActive(true);
+        PositionHighlight(
+            target.transform as RectTransform
+        );
 
-        clickedTarget = false;
+        PositionInstructionNearTarget(
+            target.transform as RectTransform
+        );
+
+        ShowInstructionText(
+            text
+        );
     }
 
-    private void ShowComponentOverlay(
-        Component target,
-        string text)
+    // =========================================================
+    // GENERIC UI TARGET
+    // =========================================================
+
+    private void ShowTargetOverlayGeneric(
+        Selectable target,
+        string text
+    )
     {
+        if (target == null)
+        {
+            ShowInfoOverlay(text);
+            return;
+        }
+
         CreateOverlay();
 
-        if (target == null)
-            return;
+        DisableAllSelectablesExcept(
+            target
+        );
 
-        infoPanel.SetActive(true);
-        infoText.text = text;
+        dimImage.raycastTarget =
+            true;
 
-        PositionHighlight(target);
+        highlightImage.gameObject.SetActive(
+            true
+        );
 
-        DisableOtherSelectables();
+        RectTransform targetRect =
+            target.transform as RectTransform;
 
-        highlightImage.gameObject.SetActive(true);
+        PositionHighlight(
+            targetRect
+        );
 
-        clickedTarget = false;
+        PositionInstructionNearTarget(
+            targetRect
+        );
 
-        if (target is Selectable selectable)
-            selectable.interactable = false;
+        ShowInstructionText(
+            text
+        );
     }
 
     private void ShowButtonOnlyHighlight(
-        Button target)
+        Button target
+    )
     {
+        if (target == null)
+        {
+            return;
+        }
+
         CreateOverlay();
 
-        if (target == null)
-            return;
+        currentTargetButton =
+            target;
 
-        infoPanel.SetActive(false);
+        DisableAllSelectablesExcept(
+            target
+        );
 
-        PositionHighlight(target);
+        dimImage.raycastTarget =
+            false;
 
-        DisableOtherSelectablesExcept(target);
+        instructionBackground.gameObject.SetActive(
+            false
+        );
 
-        highlightImage.gameObject.SetActive(true);
+        instructionText.gameObject.SetActive(
+            false
+        );
 
-        clickedTarget = false;
-    }
+        highlightImage.gameObject.SetActive(
+            true
+        );
 
-    private IEnumerator WaitForTargetClick(
-        Button target)
-    {
-        if (target == null)
-            yield break;
-
-        clickedTarget = false;
-
-        UnityEngine.Events.UnityAction callback =
-            () =>
-            {
-                clickedTarget = true;
-            };
-
-        target.onClick.AddListener(callback);
-
-        float timer = 0f;
-
-        while (!clickedTarget)
-        {
-            if (target == null)
-                break;
-
-            timer += Time.unscaledDeltaTime;
-
-            if (timer > 120f)
-                break;
-
-            PositionHighlight(target);
-
-            yield return null;
-        }
-
-        if (target != null)
-            target.onClick.RemoveListener(callback);
-
-        RestoreSelectables();
-
-        DestroyOverlay();
-
-        yield return null;
-    }
-
-    private IEnumerator WaitForOk()
-    {
-        clickedTarget = false;
-
-        float timer = 0f;
-
-        while (!clickedTarget)
-        {
-            timer += Time.unscaledDeltaTime;
-
-            if (timer > 120f)
-                break;
-
-            yield return null;
-        }
-
-        RestoreSelectables();
-
-        DestroyOverlay();
-
-        yield return null;
+        PositionHighlight(
+            target.transform as RectTransform
+        );
     }
 
     // =========================================================
@@ -1837,202 +1895,1200 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     // =========================================================
 
     private void PositionHighlight(
-        Component target)
+        RectTransform target
+    )
     {
-        if (target == null ||
+        if (
+            target == null ||
             highlightImage == null ||
-            overlayCanvas == null)
+            overlayCanvas == null
+        )
         {
             return;
         }
 
-        RectTransform targetRect =
-            target.transform as RectTransform;
-
-        if (targetRect == null)
-            return;
-
-        Camera camera = null;
-
-        Canvas targetCanvas =
-            targetRect.GetComponentInParent<Canvas>();
-
-        if (targetCanvas != null &&
-            targetCanvas.renderMode !=
-            RenderMode.ScreenSpaceOverlay)
-        {
-            camera = targetCanvas.worldCamera;
-        }
+        RectTransform canvasRect =
+            overlayCanvas.GetComponent<
+                RectTransform
+            >();
 
         Vector3[] corners =
             new Vector3[4];
 
-        targetRect.GetWorldCorners(corners);
+        target.GetWorldCorners(
+            corners
+        );
 
-        Vector2 min =
-            RectTransformUtility.WorldToScreenPoint(
-                camera,
-                corners[0]);
-
-        Vector2 max =
-            RectTransformUtility.WorldToScreenPoint(
-                camera,
-                corners[2]);
-
-        RectTransform canvasRect =
-            overlayCanvas.transform as RectTransform;
-
-        Vector2 localMin;
-        Vector2 localMax;
+        Vector2 bl;
+        Vector2 tr;
 
         RectTransformUtility
             .ScreenPointToLocalPointInRectangle(
                 canvasRect,
-                min,
+                RectTransformUtility.WorldToScreenPoint(
+                    null,
+                    corners[0]
+                ),
                 null,
-                out localMin);
+                out bl
+            );
 
         RectTransformUtility
             .ScreenPointToLocalPointInRectangle(
                 canvasRect,
-                max,
+                RectTransformUtility.WorldToScreenPoint(
+                    null,
+                    corners[2]
+                ),
                 null,
-                out localMax);
+                out tr
+            );
+
+        Vector2 center =
+            (bl + tr) * 0.5f;
+
+        Vector2 size =
+            new Vector2(
+                Mathf.Abs(
+                    tr.x - bl.x
+                ),
+                Mathf.Abs(
+                    tr.y - bl.y
+                )
+            );
 
         RectTransform highlightRect =
             highlightImage.rectTransform;
 
-        highlightRect.position =
-            (Vector3)((localMin + localMax) * 0.5f);
+        highlightRect.anchorMin =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        highlightRect.anchorMax =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        highlightRect.anchoredPosition =
+            center;
 
         highlightRect.sizeDelta =
+            size +
             new Vector2(
-                Mathf.Abs(
-                    localMax.x - localMin.x) + 24f,
-                Mathf.Abs(
-                    localMax.y - localMin.y) + 24f);
+                16f,
+                16f
+            );
+    }
+
+    // =========================================================
+    // TEXT POSITION
+    // =========================================================
+
+    private void PositionInstructionNearTarget(
+        RectTransform target
+    )
+    {
+        if (
+            target == null ||
+            instructionBackground == null ||
+            overlayCanvas == null
+        )
+        {
+            return;
+        }
+
+        RectTransform canvasRect =
+            overlayCanvas.GetComponent<
+                RectTransform
+            >();
+
+        Vector3[] corners =
+            new Vector3[4];
+
+        target.GetWorldCorners(
+            corners
+        );
+
+        Vector2 bl;
+        Vector2 tr;
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                RectTransformUtility.WorldToScreenPoint(
+                    null,
+                    corners[0]
+                ),
+                null,
+                out bl
+            );
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                canvasRect,
+                RectTransformUtility.WorldToScreenPoint(
+                    null,
+                    corners[2]
+                ),
+                null,
+                out tr
+            );
+
+        Vector2 center =
+            (bl + tr) * 0.5f;
+
+        float width =
+            canvasRect.rect.width;
+
+        float height =
+            canvasRect.rect.height;
+
+        float halfW =
+            instructionBackground.rectTransform
+                .rect.width *
+            0.5f;
+
+        float halfH =
+            instructionBackground.rectTransform
+                .rect.height *
+            0.5f;
+
+        float gap = 35f;
+
+        Vector2 position;
+
+        if (
+            tr.x +
+            gap +
+            halfW <
+            width * 0.5f
+        )
+        {
+            position =
+                new Vector2(
+                    tr.x +
+                    gap +
+                    halfW,
+                    center.y
+                );
+        }
+        else if (
+            bl.x -
+            gap -
+            halfW >
+            -width * 0.5f
+        )
+        {
+            position =
+                new Vector2(
+                    bl.x -
+                    gap -
+                    halfW,
+                    center.y
+                );
+        }
+        else if (
+            tr.y +
+            gap +
+            halfH <
+            height * 0.5f
+        )
+        {
+            position =
+                new Vector2(
+                    center.x,
+                    tr.y +
+                    gap +
+                    halfH
+                );
+        }
+        else
+        {
+            position =
+                new Vector2(
+                    center.x,
+                    bl.y -
+                    gap -
+                    halfH
+                );
+        }
+
+        position.x =
+            Mathf.Clamp(
+                position.x,
+                -width * 0.5f +
+                halfW,
+                width * 0.5f -
+                halfW
+            );
+
+        position.y =
+            Mathf.Clamp(
+                position.y,
+                -height * 0.5f +
+                halfH,
+                height * 0.5f -
+                halfH
+            );
+
+        PositionInstructionPanel(
+            position
+        );
+    }
+
+    private void PositionInstructionPanel(
+        Vector2 position
+    )
+    {
+        RectTransform rect =
+            instructionBackground.rectTransform;
+
+        rect.anchoredPosition =
+            position;
+    }
+
+    // =========================================================
+    // OK
+    // =========================================================
+
+    private IEnumerator WaitForOk()
+    {
+        Button ok =
+            CreateOkButton();
+
+        if (ok == null)
+        {
+            yield return new WaitForSecondsRealtime(
+                1f
+            );
+
+            DestroyOverlay();
+
+            yield break;
+        }
+
+        bool clicked =
+            false;
+
+        UnityEngine.Events.UnityAction action =
+            () =>
+            {
+                clicked = true;
+            };
+
+        ok.onClick.AddListener(
+            action
+        );
+
+        while (
+            !clicked
+        )
+        {
+            yield return null;
+        }
+
+        ok.onClick.RemoveListener(
+            action
+        );
+
+        DestroyOverlay();
+
+        yield return null;
+    }
+
+    private Button CreateOkButton()
+    {
+        if (overlayRoot == null)
+        {
+            return null;
+        }
+
+        GameObject obj =
+            new GameObject(
+                "TutorialOK",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
+
+        obj.transform.SetParent(
+            overlayRoot,
+            false
+        );
+
+        RectTransform rect =
+            obj.GetComponent<
+                RectTransform
+            >();
+
+        rect.anchorMin =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        rect.anchorMax =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
+
+        rect.sizeDelta =
+            new Vector2(
+                250f,
+                70f
+            );
+
+        rect.anchoredPosition =
+            new Vector2(
+                0f,
+                -175f
+            );
+
+        Image image =
+            obj.GetComponent<Image>();
+
+        image.sprite =
+            RuntimeUISprite3D.GetRoundedSprite();
+
+        image.type =
+            Image.Type.Sliced;
+
+        image.color =
+            new Color32(
+                55,
+                120,
+                78,
+                255
+            );
+
+        Button button =
+            obj.GetComponent<Button>();
+
+        button.targetGraphic =
+            image;
+
+        GameObject textObj =
+            new GameObject(
+                "Text",
+                typeof(RectTransform),
+                typeof(TextMeshProUGUI)
+            );
+
+        textObj.transform.SetParent(
+            obj.transform,
+            false
+        );
+
+        RectTransform textRect =
+            textObj.GetComponent<
+                RectTransform
+            >();
+
+        StretchFull(
+            textRect
+        );
+
+        TMP_Text text =
+            textObj.GetComponent<
+                TMP_Text
+            >();
+
+        text.text =
+            "OK";
+
+        text.fontSize =
+            26f;
+
+        text.alignment =
+            TextAlignmentOptions.Center;
+
+        text.color =
+            Color.white;
+
+        text.raycastTarget =
+            false;
+
+        return button;
+    }
+
+    // =========================================================
+    // TARGET CLICK
+    // =========================================================
+
+    private IEnumerator WaitForTargetClick(
+        Button target
+    )
+    {
+        if (target == null)
+        {
+            yield break;
+        }
+
+        bool clicked =
+            false;
+
+        UnityEngine.Events.UnityAction action =
+            () =>
+            {
+                clicked = true;
+            };
+
+        target.onClick.AddListener(
+            action
+        );
+
+        while (
+            !clicked &&
+            target != null
+        )
+        {
+            yield return null;
+        }
+
+        if (target != null)
+        {
+            target.onClick.RemoveListener(
+                action
+            );
+        }
+
+        DestroyOverlay();
+
+        yield return null;
     }
 
     // =========================================================
     // SELECTABLES
     // =========================================================
 
-    private void DisableOtherSelectables()
+    private void DisableAllSelectablesExcept(
+        Selectable target
+    )
     {
-        RestoreSelectables();
+        savedSelectables.Clear();
 
-        Selectable[] selectables =
+        Selectable[] all =
             FindObjectsByType<Selectable>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsSortMode.None
+            );
 
-        for (int i = 0;
-             i < selectables.Length;
-             i++)
+        foreach (
+            Selectable selectable
+            in all
+        )
         {
-            Selectable selectable =
-                selectables[i];
-
             if (selectable == null)
+            {
                 continue;
+            }
 
-            if (!selectable.gameObject.scene.IsValid())
-                continue;
+            savedSelectables.Add(
+                new SelectableState
+                {
+                    selectable =
+                        selectable,
 
-            if (!selectable.interactable)
-                continue;
+                    interactable =
+                        selectable.interactable
+                }
+            );
 
-            disabledSelectables.Add(
-                selectable);
-
-            selectable.interactable = false;
-        }
-    }
-
-    private void DisableOtherSelectablesExcept(
-        Button target)
-    {
-        RestoreSelectables();
-
-        Selectable[] selectables =
-            FindObjectsByType<Selectable>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-        for (int i = 0;
-             i < selectables.Length;
-             i++)
-        {
-            Selectable selectable =
-                selectables[i];
-
-            if (selectable == null)
-                continue;
-
-            if (selectable == target)
-                continue;
-
-            if (!selectable.gameObject.scene.IsValid())
-                continue;
-
-            if (!selectable.interactable)
-                continue;
-
-            disabledSelectables.Add(
-                selectable);
-
-            selectable.interactable = false;
+            selectable.interactable =
+                selectable == target;
         }
 
         if (target != null)
-            target.interactable = true;
+        {
+            target.interactable =
+                true;
+        }
     }
 
     private void RestoreSelectables()
     {
-        for (int i = 0;
-             i < disabledSelectables.Count;
-             i++)
+        foreach (
+            SelectableState state
+            in savedSelectables
+        )
         {
-            Selectable selectable =
-                disabledSelectables[i];
-
-            if (selectable != null)
-                selectable.interactable = true;
+            if (
+                state.selectable != null
+            )
+            {
+                state.selectable.interactable =
+                    state.interactable;
+            }
         }
 
-        disabledSelectables.Clear();
+        savedSelectables.Clear();
     }
 
     // =========================================================
-    // CLEANUP
+    // BUTTON SEARCH
     // =========================================================
 
-    private void DestroyOverlay()
+    private Button FindButtonByText(
+        params string[] values
+    )
+    {
+        Button[] buttons =
+            FindObjectsByType<Button>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        foreach (
+            Button button
+            in buttons
+        )
+        {
+            if (button == null)
+            {
+                continue;
+            }
+
+            if (!button.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            TMP_Text text =
+                button.GetComponentInChildren<
+                    TMP_Text
+                >(true);
+
+            if (text == null)
+            {
+                continue;
+            }
+
+            string current =
+                text.text
+                    .Trim()
+                    .ToUpperInvariant();
+
+            foreach (
+                string value
+                in values
+            )
+            {
+                if (
+                    current.Contains(
+                        value.ToUpperInvariant()
+                    )
+                )
+                {
+                    return button;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Button FindButtonFromMember(
+        object owner,
+        string memberName
+    )
+    {
+        if (owner == null)
+        {
+            return null;
+        }
+
+        Type type =
+            owner.GetType();
+
+        FieldInfo field =
+            type.GetField(
+                memberName,
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        if (field != null)
+        {
+            Button button =
+                ConvertToButton(
+                    field.GetValue(owner)
+                );
+
+            if (button != null)
+            {
+                return button;
+            }
+        }
+
+        PropertyInfo property =
+            type.GetProperty(
+                memberName,
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        if (
+            property != null &&
+            property.CanRead
+        )
+        {
+            return ConvertToButton(
+                property.GetValue(
+                    owner,
+                    null
+                )
+            );
+        }
+
+        return null;
+    }
+
+    private Button ConvertToButton(
+        object value
+    )
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        Button button =
+            value as Button;
+
+        if (button != null)
+        {
+            return button;
+        }
+
+        GameObject go =
+            value as GameObject;
+
+        if (go != null)
+        {
+            return go.GetComponent<Button>();
+        }
+
+        Component component =
+            value as Component;
+
+        if (component != null)
+        {
+            return component.GetComponent<Button>();
+        }
+
+        return null;
+    }
+
+    // =========================================================
+    // GENERIC UI SEARCH
+    // =========================================================
+
+    private Toggle FindToggleFromMember(
+        object owner,
+        string memberName
+    )
+    {
+        if (owner == null)
+        {
+            return null;
+        }
+
+        Type type =
+            owner.GetType();
+
+        FieldInfo field =
+            type.GetField(
+                memberName,
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        if (field != null)
+        {
+            return ConvertToToggle(
+                field.GetValue(owner)
+            );
+        }
+
+        return null;
+    }
+
+    private Toggle ConvertToToggle(
+        object value
+    )
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        Toggle toggle =
+            value as Toggle;
+
+        if (toggle != null)
+        {
+            return toggle;
+        }
+
+        GameObject go =
+            value as GameObject;
+
+        if (go != null)
+        {
+            return go.GetComponent<Toggle>();
+        }
+
+        Component component =
+            value as Component;
+
+        if (component != null)
+        {
+            return component.GetComponent<Toggle>();
+        }
+
+        return null;
+    }
+
+    private Slider FindSliderByText(
+        params string[] values
+    )
+    {
+        Slider[] sliders =
+            FindObjectsByType<Slider>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        foreach (
+            Slider slider
+            in sliders
+        )
+        {
+            if (slider == null ||
+                !slider.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            TMP_Text[] texts =
+                slider.GetComponentsInParent<
+                    TMP_Text
+                >(true);
+
+            foreach (
+                TMP_Text text
+                in texts
+            )
+            {
+                string value =
+                    text.text
+                        .Trim()
+                        .ToUpperInvariant();
+
+                foreach (
+                    string search
+                    in values
+                )
+                {
+                    if (
+                        value.Contains(
+                            search.ToUpperInvariant()
+                        )
+                    )
+                    {
+                        return slider;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Toggle FindToggleByText(
+        params string[] values
+    )
+    {
+        Toggle[] toggles =
+            FindObjectsByType<Toggle>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        foreach (
+            Toggle toggle
+            in toggles
+        )
+        {
+            if (toggle == null ||
+                !toggle.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            TMP_Text[] texts =
+                toggle.GetComponentsInChildren<
+                    TMP_Text
+                >(true);
+
+            foreach (
+                TMP_Text text
+                in texts
+            )
+            {
+                string value =
+                    text.text
+                        .Trim()
+                        .ToUpperInvariant();
+
+                foreach (
+                    string search
+                    in values
+                )
+                {
+                    if (
+                        value.Contains(
+                            search.ToUpperInvariant()
+                        )
+                    )
+                    {
+                        return toggle;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // =========================================================
+    // UPGRADE SEARCH
+    // =========================================================
+
+    private Button FindUpgradeButton(
+        GameObject root
+    )
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        Button[] buttons =
+            root.GetComponentsInChildren<
+                Button
+            >(true);
+
+        foreach (
+            Button button
+            in buttons
+        )
+        {
+            if (button == null ||
+                !button.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            TMP_Text text =
+                button.GetComponentInChildren<
+                    TMP_Text
+                >(true);
+
+            if (text == null)
+            {
+                continue;
+            }
+
+            string value =
+                text.text
+                    .Trim()
+                    .ToUpperInvariant();
+
+            if (
+                value.Contains("УЛУЧШ") ||
+                value.Contains("ПРОКАЧ") ||
+                value.Contains("UPGRADE")
+            )
+            {
+                return button;
+            }
+        }
+
+        return null;
+    }
+
+    private Button FindFirstMeaningfulButton(
+        GameObject root
+    )
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        Button[] buttons =
+            root.GetComponentsInChildren<
+                Button
+            >(true);
+
+        foreach (
+            Button button
+            in buttons
+        )
+        {
+            if (
+                button != null &&
+                button.gameObject.activeInHierarchy
+            )
+            {
+                TMP_Text text =
+                    button.GetComponentInChildren<
+                        TMP_Text
+                    >(true);
+
+                if (text != null &&
+                    !string.IsNullOrWhiteSpace(
+                        text.text
+                    ))
+                {
+                    return button;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Button FindFirstCharacterButton(
+        GameObject root
+    )
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        Button[] buttons =
+            root.GetComponentsInChildren<
+                Button
+            >(true);
+
+        foreach (
+            Button button
+            in buttons
+        )
+        {
+            if (
+                button == null ||
+                !button.gameObject.activeInHierarchy
+            )
+            {
+                continue;
+            }
+
+            TMP_Text text =
+                button.GetComponentInChildren<
+                    TMP_Text
+                >(true);
+
+            if (text == null)
+            {
+                continue;
+            }
+
+            string value =
+                text.text
+                    .Trim()
+                    .ToUpperInvariant();
+
+            if (
+                value.Contains("ВЫБРАТЬ") ||
+                value.Contains("КУПИТЬ")
+            )
+            {
+                return button;
+            }
+        }
+
+        return null;
+    }
+
+    // =========================================================
+    // UTILITY BUTTON
+    // =========================================================
+
+    private Button FindUtilityButton(
+        string requiredAction
+    )
+    {
+        MainMenuUtilityButton3D[] utilities =
+            FindObjectsByType<
+                MainMenuUtilityButton3D
+            >(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+
+        foreach (
+            MainMenuUtilityButton3D utility
+            in utilities
+        )
+        {
+            if (utility == null)
+            {
+                continue;
+            }
+
+            string action =
+                GetActionValue(
+                    utility
+                );
+
+            if (
+                !string.Equals(
+                    action,
+                    requiredAction,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                continue;
+            }
+
+            Button button =
+                utility.GetComponent<Button>();
+
+            if (button == null)
+            {
+                button =
+                    utility.GetComponentInChildren<
+                        Button
+                    >(true);
+            }
+
+            if (button != null)
+            {
+                return button;
+            }
+        }
+
+        return null;
+    }
+
+    private string GetActionValue(
+        object target
+    )
+    {
+        Type type =
+            target.GetType();
+
+        FieldInfo[] fields =
+            type.GetFields(
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic
+            );
+
+        foreach (
+            FieldInfo field
+            in fields
+        )
+        {
+            if (
+                !field.Name
+                    .ToLowerInvariant()
+                    .Contains("action")
+            )
+            {
+                continue;
+            }
+
+            object value =
+                field.GetValue(target);
+
+            if (value != null)
+            {
+                return value.ToString();
+            }
+        }
+
+        return string.Empty;
+    }
+
+    // =========================================================
+    // PREFS
+    // =========================================================
+
+    private bool IsCompleted()
+    {
+        return PlayerPrefs.GetInt(
+            COMPLETED_KEY,
+            0
+        ) == 1;
+    }
+
+    private bool IsUpgradeTutorialCompleted()
+    {
+        return PlayerPrefs.GetInt(
+            UPGRADE_COMPLETED_KEY,
+            0
+        ) == 1;
+    }
+
+    private void CompleteTutorial()
     {
         RestoreSelectables();
 
-        if (overlayRoot != null)
-        {
-            Destroy(overlayRoot);
-            overlayRoot = null;
-        }
+        PlayerPrefs.SetInt(
+            COMPLETED_KEY,
+            1
+        );
 
-        overlayCanvas = null;
-        dimImage = null;
-        highlightImage = null;
-        infoPanel = null;
-        infoText = null;
-        okButton = null;
+        PlayerPrefs.DeleteKey(
+            STARTED_KEY
+        );
+
+        PlayerPrefs.Save();
+
+        DestroyOverlay();
+
+        Debug.Log(
+            "[MainMenuTutorial] " +
+            "Полное обучение меню завершено."
+        );
     }
 
-    private void StretchFullScreen(
-        RectTransform rect)
+    // =========================================================
+    // RECT
+    // =========================================================
+
+    private void StretchFull(
+        RectTransform rect
+    )
     {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-        rect.localScale = Vector3.one;
+        rect.anchorMin =
+            Vector2.zero;
+
+        rect.anchorMax =
+            Vector2.one;
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
+
+        rect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f
+            );
     }
 }
