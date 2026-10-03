@@ -243,6 +243,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             "за игровые ресурсы.\n\n" +
             "Нажми на кнопку «Магазин».");
 
+        MoveHighlight(
+            new Vector2(
+                0f,
+                20f));
+
         yield return WaitForTargetClick(shop);
 
         /*
@@ -681,15 +686,16 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             "Здесь можно изменить имя и аватар профиля.\n\n" +
             "Нажми на аватар профиля.");
 
-        /*
-         * Критически важно:
-         * НЕ вызываем Open().
-         * НЕ SetActive().
-         * Открытие выполняет реальная кнопка MainMenuManager.
-         */
+        // Ждём реального клика по кнопке.
         yield return WaitForTargetClick(profile);
 
-        yield return WaitForObject<ProfileSettingsPanel>();
+        /*
+         * MainMenuManager должен сам открыть профиль.
+         * Но после клика дополнительно проверяем фактическое состояние
+         * визуальной панели и при необходимости открываем её напрямую
+         * через публичный метод менеджера.
+         */
+        yield return new WaitForSecondsRealtime(0.05f);
 
         ProfileSettingsPanel panel =
             FindObjectIncludingInactive<ProfileSettingsPanel>();
@@ -697,7 +703,47 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (panel == null)
             yield break;
 
-        yield return WaitUntilManagerActive(panel);
+        if (panel.panel == null)
+        {
+            Debug.LogWarning(
+                "[MainMenuTutorial] " +
+                "ProfileSettingsPanel.panel не назначен.");
+
+            yield break;
+        }
+
+        /*
+         * Сам ProfileSettingsPanel может оставаться активным,
+         * пока его дочерняя визуальная panel выключена.
+         *
+         * Поэтому проверяем именно panel.
+         */
+        if (!panel.panel.activeInHierarchy)
+        {
+            menu.OpenProfileSettings();
+        }
+
+        float timer = 0f;
+
+        while (
+            timer < 5f &&
+            !panel.panel.activeInHierarchy
+        )
+        {
+            timer +=
+                Time.unscaledDeltaTime;
+
+            yield return null;
+        }
+
+        if (!panel.panel.activeInHierarchy)
+        {
+            Debug.LogWarning(
+                "[MainMenuTutorial] " +
+                "Панель профиля не открылась.");
+
+            yield break;
+        }
 
         Button avatar =
             FindButtonFromMember(
@@ -747,9 +793,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             ShowTargetOverlay(
                 upload,
                 "ЗАГРУЗКА ФОТО\n\n" +
-                "Здесь можно загрузить собственную фотографию " +
-                "с телефона.\n\n" +
-                "Нажимать сейчас не нужно.");
+                "Эта кнопка позволяет выбрать изображение " +
+                "с устройства.");
 
             yield return WaitForOk();
         }
@@ -758,24 +803,6 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             FindButtonFromMember(
                 panel,
                 "closeButton");
-
-        if (close == null)
-        {
-            close =
-                FindButtonFromMember(
-                    panel,
-                    "backButton");
-        }
-
-        if (close == null)
-        {
-            close =
-                FindButtonInObject(
-                    panel.gameObject,
-                    "ЗАКРЫТЬ",
-                    "НАЗАД",
-                    "ВЫЙТИ");
-        }
 
         if (close != null)
         {
@@ -786,10 +813,16 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
             yield return WaitForTargetClick(close);
         }
+        else
+        {
+            ShowInfoOverlay(
+                "ПРОФИЛЬ\n\n" +
+                "Закрой профиль кнопкой «Назад».");
+
+            yield return WaitForOk();
+        }
 
         yield return WaitForMainMenuWindow();
-
-        UnlockTutorialAchievement();
     }
 
     // =========================================================
@@ -1165,7 +1198,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         overlayCanvas.renderMode =
             RenderMode.ScreenSpaceOverlay;
 
-        overlayCanvas.sortingOrder = 5000;
+        overlayCanvas.sortingOrder =
+            5000;
 
         CanvasScaler scaler =
             canvasObject.GetComponent<CanvasScaler>();
@@ -1174,14 +1208,20 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
         scaler.referenceResolution =
-            new Vector2(1920f, 1080f);
+            new Vector2(
+                1920f,
+                1080f);
 
-        scaler.matchWidthOrHeight = 0.5f;
+        scaler.matchWidthOrHeight =
+            0.5f;
 
         overlayRoot =
             canvasObject.GetComponent<RectTransform>();
 
+        // =========================================================
         // DIM
+        // =========================================================
+
         GameObject dimObject =
             new GameObject(
                 "Dim",
@@ -1205,9 +1245,13 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 0f,
                 0.72f);
 
-        dimImage.raycastTarget = true;
+        dimImage.raycastTarget =
+            true;
 
+        // =========================================================
         // HIGHLIGHT
+        // =========================================================
+
         GameObject highlightObject =
             new GameObject(
                 "Highlight",
@@ -1234,9 +1278,13 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 0.25f,
                 0.32f);
 
-        highlightImage.raycastTarget = false;
+        highlightImage.raycastTarget =
+            false;
 
+        // =========================================================
         // PANEL
+        // =========================================================
+
         GameObject panelObject =
             new GameObject(
                 "InstructionBackground",
@@ -1263,38 +1311,39 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 0f,
                 0.90f);
 
-        instructionBackground.raycastTarget = false;
+        instructionBackground.raycastTarget =
+            false;
 
         RectTransform panelRect =
             instructionBackground.rectTransform;
 
         panelRect.anchorMin =
-            new Vector2(0.5f, 0.5f);
+            new Vector2(
+                0.5f,
+                0.5f);
 
         panelRect.anchorMax =
-            new Vector2(0.5f, 0.5f);
+            new Vector2(
+                0.5f,
+                0.5f);
 
         panelRect.pivot =
-            new Vector2(0.5f, 0.5f);
+            new Vector2(
+                0.5f,
+                0.5f);
 
-        /*
-         * Было 760x330.
-         *
-         * OK находился за пределами панели.
-         *
-         * Теперь панель выше и OK находится ВНУТРИ.
-         */
         panelRect.sizeDelta =
             new Vector2(
                 700f,
                 380f);
 
         panelRect.anchoredPosition =
-            new Vector2(
-                0f,
-                0f);
+            Vector2.zero;
 
+        // =========================================================
         // TEXT
+        // =========================================================
+
         GameObject textObject =
             new GameObject(
                 "InstructionText",
@@ -1308,28 +1357,28 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         instructionText =
             textObject.GetComponent<TextMeshProUGUI>();
 
-        // Назначаем тот же рабочий TMP-шрифт,
-        // который используется остальным 3D UI проекта.
-        RuntimeUIText3D.Apply(
-            instructionText
-        );
-
         RectTransform textRect =
             instructionText.rectTransform;
 
-        textRect.offsetMin =
-            new Vector2(
-                35f,
-                82f);
-
-        textRect.offsetMax =
-            new Vector2(
-                -35f,
-                -25f);
-
         /*
-         * Нижние 90 px оставляем под кнопку OK.
+         * КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
+         *
+         * Текст должен растягиваться по панели.
+         * В старой версии anchors оставались (0,0),
+         * из-за чего offsetMin/offsetMax формировали
+         * неправильный RectTransform.
          */
+        textRect.anchorMin =
+            Vector2.zero;
+
+        textRect.anchorMax =
+            Vector2.one;
+
+        textRect.pivot =
+            new Vector2(
+                0.5f,
+                0.5f);
+
         textRect.offsetMin =
             new Vector2(
                 40f,
@@ -1340,13 +1389,65 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 -40f,
                 -35f);
 
+        // =========================================================
+        // FONT
+        // =========================================================
+
+        TMP_FontAsset tutorialFont =
+            Resources.Load<TMP_FontAsset>(
+                "Fonts/UI/Generated/GolosText-Medium");
+
+        if (tutorialFont == null)
+        {
+            tutorialFont =
+                Resources.Load<TMP_FontAsset>(
+                    "Fonts/UI/Generated/GolosText-SemiBold");
+        }
+
+        if (tutorialFont == null)
+        {
+            tutorialFont =
+                TMP_Settings.defaultFontAsset;
+        }
+
+        if (tutorialFont != null)
+        {
+            instructionText.font =
+                tutorialFont;
+
+            if (tutorialFont.material != null)
+            {
+                instructionText.fontSharedMaterial =
+                    tutorialFont.material;
+            }
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[MainMenuTutorial] " +
+                "TMP-шрифт для текста обучения не найден.");
+        }
+
+        instructionText.gameObject.SetActive(
+            true);
+
         instructionText.color =
             Color.white;
 
-        instructionText.fontSize = 28f;
-        instructionText.fontSizeMin = 18f;
-        instructionText.fontSizeMax = 28f;
-        instructionText.enableAutoSizing = true;
+        instructionText.alpha =
+            1f;
+
+        instructionText.fontSize =
+            28f;
+
+        instructionText.fontSizeMin =
+            18f;
+
+        instructionText.fontSizeMax =
+            28f;
+
+        instructionText.enableAutoSizing =
+            true;
 
         instructionText.alignment =
             TextAlignmentOptions.Center;
@@ -1365,6 +1466,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         instructionText.raycastTarget =
             false;
+
+        instructionText.ForceMeshUpdate();
     }
 
     private void DestroyOverlay()
@@ -1415,7 +1518,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     }
 
     private void ShowInstructionText(
-        string text)
+    string text)
     {
         if (instructionText == null)
             return;
@@ -1424,7 +1527,15 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             true);
 
         instructionText.text =
-            text;
+            text ?? string.Empty;
+
+        instructionText.color =
+            Color.white;
+
+        instructionText.alpha =
+            1f;
+
+        instructionText.ForceMeshUpdate();
 
         Canvas.ForceUpdateCanvases();
     }
@@ -1434,8 +1545,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     // =========================================================
 
     private void ShowTargetOverlay(
-        Button target,
-        string text)
+    Button target,
+    string text)
     {
         if (target == null)
         {
@@ -1451,20 +1562,26 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         DisableAllSelectablesExcept(
             target);
 
-        dimImage.raycastTarget = false;
+        dimImage.raycastTarget =
+            false;
 
         highlightImage.gameObject.SetActive(
             true);
 
-        PositionHighlight(
-            target.transform as RectTransform);
+        instructionBackground.gameObject.SetActive(
+            true);
 
-        PositionInstructionNearTarget(
-            target.transform as RectTransform);
-
-        ShowInstructionText(text);
+        ShowInstructionText(
+            text);
 
         Canvas.ForceUpdateCanvases();
+
+        /*
+         * Сначала обновляем текст и layout,
+         * затем рассчитываем положение подсветки
+         * и текста.
+         */
+        instructionText.ForceMeshUpdate();
 
         PositionHighlight(
             target.transform as RectTransform);
@@ -1474,8 +1591,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     }
 
     private void ShowTargetOverlayGeneric(
-        Selectable target,
-        string text)
+    Selectable target,
+    string text)
     {
         if (target == null)
         {
@@ -1488,26 +1605,30 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         DisableAllSelectablesExcept(
             target);
 
-        dimImage.raycastTarget = false;
+        dimImage.raycastTarget =
+            false;
 
         highlightImage.gameObject.SetActive(
             true);
 
-        PositionHighlight(
-            target.transform as RectTransform);
+        instructionBackground.gameObject.SetActive(
+            true);
 
-        PositionInstructionNearTarget(
-            target.transform as RectTransform);
-
-        ShowInstructionText(text);
+        ShowInstructionText(
+            text);
 
         Canvas.ForceUpdateCanvases();
 
+        instructionText.ForceMeshUpdate();
+
+        RectTransform targetRect =
+            target.transform as RectTransform;
+
         PositionHighlight(
-            target.transform as RectTransform);
+            targetRect);
 
         PositionInstructionNearTarget(
-            target.transform as RectTransform);
+            targetRect);
     }
 
     // =========================================================
@@ -1598,15 +1719,21 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         if (target == null ||
             instructionBackground == null ||
             overlayCanvas == null)
+        {
             return;
+        }
 
         RectTransform canvasRect =
             overlayCanvas.GetComponent<RectTransform>();
 
-        Vector3[] corners = new Vector3[4];
-        target.GetWorldCorners(corners);
+        Vector3[] corners =
+            new Vector3[4];
 
-        Camera targetCamera = GetTargetCamera(target);
+        target.GetWorldCorners(
+            corners);
+
+        Camera targetCamera =
+            GetTargetCamera(target);
 
         Vector2 bl;
         Vector2 tr;
@@ -1645,51 +1772,174 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         Vector2 targetCenter =
             (bl + tr) * 0.5f;
 
-        const float gap = 24f;
+        const float gap = 28f;
 
-        Vector2 position;
+        float minX =
+            -canvasWidth * 0.5f +
+            halfW +
+            12f;
 
-        // Сначала справа
-        if (tr.x + gap + halfW <= canvasWidth * 0.5f)
-        {
-            position = new Vector2(
+        float maxX =
+            canvasWidth * 0.5f -
+            halfW -
+            12f;
+
+        float minY =
+            -canvasHeight * 0.5f +
+            halfH +
+            12f;
+
+        float maxY =
+            canvasHeight * 0.5f -
+            halfH -
+            12f;
+
+        /*
+         * Четыре варианта расположения.
+         *
+         * В отличие от старой версии мы сначала
+         * проверяем все варианты и только потом
+         * выбираем положение.
+         *
+         * Поэтому Clamp больше не должен заталкивать
+         * окно прямо на подсвечиваемую кнопку.
+         */
+
+        Vector2 right =
+            new Vector2(
                 tr.x + gap + halfW,
                 targetCenter.y);
-        }
-        // Потом слева
-        else if (bl.x - gap - halfW >= -canvasWidth * 0.5f)
-        {
-            position = new Vector2(
+
+        Vector2 left =
+            new Vector2(
                 bl.x - gap - halfW,
                 targetCenter.y);
-        }
-        // Потом сверху
-        else if (tr.y + gap + halfH <= canvasHeight * 0.5f)
-        {
-            position = new Vector2(
+
+        Vector2 top =
+            new Vector2(
                 targetCenter.x,
                 tr.y + gap + halfH);
-        }
-        // И только потом снизу
-        else
-        {
-            position = new Vector2(
+
+        Vector2 bottom =
+            new Vector2(
                 targetCenter.x,
                 bl.y - gap - halfH);
+
+        Vector2[] candidates =
+            new Vector2[]
+            {
+            right,
+            left,
+            top,
+            bottom
+            };
+
+        Rect candidateTargetRect =
+            new Rect(
+                bl.x - gap,
+                bl.y - gap,
+                Mathf.Abs(tr.x - bl.x) + gap * 2f,
+                Mathf.Abs(tr.y - bl.y) + gap * 2f);
+
+        Vector2 bestPosition =
+            Vector2.zero;
+
+        float bestScore =
+            float.MaxValue;
+
+        for (int i = 0;
+             i < candidates.Length;
+             i++)
+        {
+            Vector2 candidate =
+                candidates[i];
+
+            candidate.x =
+                Mathf.Clamp(
+                    candidate.x,
+                    minX,
+                    maxX);
+
+            candidate.y =
+                Mathf.Clamp(
+                    candidate.y,
+                    minY,
+                    maxY);
+
+            Rect panelRect =
+                new Rect(
+                    candidate.x - halfW,
+                    candidate.y - halfH,
+                    halfW * 2f,
+                    halfH * 2f);
+
+            float overlap =
+                CalculateRectOverlap(
+                    panelRect,
+                    candidateTargetRect);
+
+            float distance =
+                Vector2.Distance(
+                    candidate,
+                    targetCenter);
+
+            /*
+             * Сначала выбираем положение без пересечения.
+             * Если абсолютно безопасного места нет,
+             * выбираем вариант с минимальным пересечением.
+             */
+            float score =
+                overlap * 100000f +
+                distance +
+                i * 0.01f;
+
+            if (score < bestScore)
+            {
+                bestScore =
+                    score;
+
+                bestPosition =
+                    candidate;
+            }
         }
 
-        // Жёстко удерживаем всю панель внутри экрана.
-        position.x = Mathf.Clamp(
-            position.x,
-            -canvasWidth * 0.5f + halfW + 12f,
-            canvasWidth * 0.5f - halfW - 12f);
+        PositionInstructionPanel(
+            bestPosition);
+    }
 
-        position.y = Mathf.Clamp(
-            position.y,
-            -canvasHeight * 0.5f + halfH + 12f,
-            canvasHeight * 0.5f - halfH - 12f);
+    private float CalculateRectOverlap(
+    Rect a,
+    Rect b)
+    {
+        float minX =
+            Mathf.Max(
+                a.xMin,
+                b.xMin);
 
-        PositionInstructionPanel(position);
+        float maxX =
+            Mathf.Min(
+                a.xMax,
+                b.xMax);
+
+        float minY =
+            Mathf.Max(
+                a.yMin,
+                b.yMin);
+
+        float maxY =
+            Mathf.Min(
+                a.yMax,
+                b.yMax);
+
+        if (maxX <= minX ||
+            maxY <= minY)
+        {
+            return 0f;
+        }
+
+        return
+            (maxX - minX) *
+            (maxY - minY);
     }
 
     private void PositionInstructionPanel(
@@ -2515,5 +2765,18 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         }
 
         tutorial.StartMainMenuTutorialImmediately();
+    }
+
+    private void MoveHighlight(
+    Vector2 offset)
+    {
+        if (highlightImage == null)
+            return;
+
+        RectTransform rect =
+            highlightImage.rectTransform;
+
+        rect.anchoredPosition +=
+            offset;
     }
 }
