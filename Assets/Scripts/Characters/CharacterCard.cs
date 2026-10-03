@@ -8,39 +8,158 @@ public class CharacterCard : MonoBehaviour
     public Image portraitImage;
     public Image backgroundImage;
     public TextMeshProUGUI nameText;
-    public GameObject lockOverlay;      // затемнение для закрытых
-    public GameObject priceBadge;       // контейнер с ценой
+
+    [Header("Состояние")]
+    public GameObject lockOverlay;
+
+    [Header("Цена")]
+    public GameObject priceBadge;
     public TextMeshProUGUI priceText;
-    public GameObject selectedBorder;   // рамка выделения
+
+    [Header("Выбор")]
+    public GameObject selectedBorder;
+
+    [Header("Кнопка")]
     public Button button;
 
     private CharacterEntry data;
 
-    public void Setup(CharacterEntry entry, bool unlocked, System.Action onClick)
+    // =========================================================
+    // SETUP
+    // =========================================================
+
+    public void Setup(
+        CharacterEntry entry,
+        bool unlocked,
+        System.Action onClick
+    )
     {
-        data = entry;
+        data =
+            entry;
+
+        if (entry == null)
+        {
+            return;
+        }
+
+        // =====================================================
+        // PORTRAIT
+        // =====================================================
 
         if (portraitImage != null)
         {
-            portraitImage.sprite = entry.portrait != null ? entry.portrait : entry.fullBody;
-            portraitImage.enabled = portraitImage.sprite != null;
+            Sprite sprite =
+                entry.portrait != null
+                    ? entry.portrait
+                    : entry.fullBody;
+
+            portraitImage.sprite =
+                sprite;
+
+            portraitImage.enabled =
+                sprite != null;
         }
 
-        if (nameText != null) nameText.text = entry.displayName;
+        // =====================================================
+        // NAME
+        // =====================================================
 
-        if (lockOverlay != null) lockOverlay.SetActive(!unlocked);
-        if (priceBadge != null) priceBadge.SetActive(!unlocked);
-        if (priceText != null) priceText.text = entry.price.ToString();
+        if (nameText != null)
+        {
+            nameText.text =
+                entry.displayName;
+        }
+
+        // =====================================================
+        // AVAILABLE
+        // =====================================================
+
+        bool available =
+            entry.availableForPurchase;
+
+        if (
+            entry.id != null &&
+            entry.id.ToLowerInvariant() ==
+                "survivor"
+        )
+        {
+            available = true;
+        }
+
+        // =====================================================
+        // LOCK
+        // =====================================================
+
+        if (lockOverlay != null)
+        {
+            lockOverlay.SetActive(
+                !unlocked
+            );
+        }
+
+        // =====================================================
+        // PRICE
+        // =====================================================
+
+        bool showPrice =
+            !unlocked &&
+            available &&
+            entry.price > 0;
+
+        if (priceBadge != null)
+        {
+            priceBadge.SetActive(
+                showPrice
+            );
+        }
+
+        if (priceText != null)
+        {
+            priceText.text =
+                showPrice
+                    ? entry.price.ToString()
+                    : "";
+        }
+
+        // =====================================================
+        // BUTTON
+        // =====================================================
 
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => onClick?.Invoke());
+
+            // Даже закрытый для предрелиза
+            // персонаж остаётся кликабельным,
+            // чтобы его можно было посмотреть.
+            button.interactable =
+                true;
+
+            if (onClick != null)
+            {
+                button.onClick.AddListener(
+                    () =>
+                    {
+                        onClick.Invoke();
+                    }
+                );
+            }
         }
     }
 
-    public void SetSelected(bool selected)
+    // =========================================================
+    // SELECTED
+    // =========================================================
+
+    public void SetSelected(
+        bool selected
+    )
     {
-        if (selectedBorder != null) selectedBorder.SetActive(selected);
+        if (selectedBorder != null)
+        {
+            selectedBorder.SetActive(
+                selected
+            );
+        }
     }
 }
