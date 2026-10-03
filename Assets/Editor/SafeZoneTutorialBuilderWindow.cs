@@ -18,9 +18,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )]
     public static void ShowWindow()
     {
-        GetWindow<
-            SafeZoneTutorialBuilderWindow
-        >(
+        GetWindow<SafeZoneTutorialBuilderWindow>(
             "Tutorial Builder"
         );
     }
@@ -37,8 +35,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         GUILayout.Space(5);
 
         EditorGUILayout.HelpBox(
-            "Создаёт или полностью пересобирает структуру "
-            + "обучения в текущей сцене.",
+            "Создаёт или полностью пересобирает структуру обучения в текущей сцене.",
             MessageType.Info
         );
 
@@ -70,21 +67,15 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     private void BuildTutorial()
     {
         GameObject oldRoot =
-            GameObject.Find(
-                RootName
-            );
+            GameObject.Find(RootName);
 
         if (oldRoot != null)
         {
-            Undo.DestroyObjectImmediate(
-                oldRoot
-            );
+            Undo.DestroyObjectImmediate(oldRoot);
         }
 
         GameObject root =
-            new GameObject(
-                RootName
-            );
+            new GameObject(RootName);
 
         Undo.RegisterCreatedObjectUndo(
             root,
@@ -99,11 +90,10 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         Selection.activeGameObject =
             root;
 
-        EditorUtility.SetDirty(
-            root
-        );
+        EditorUtility.SetDirty(root);
 
         AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
 
         Debug.Log(
             "[Tutorial Builder] Tutorial создан."
@@ -119,9 +109,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )
     {
         GameObject managerObject =
-            new GameObject(
-                ManagerName
-            );
+            new GameObject(ManagerName);
 
         Undo.RegisterCreatedObjectUndo(
             managerObject,
@@ -165,7 +153,13 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         SetSerializedBool(
             manager,
             "slowTimeDuringHint",
-            false
+            true
+        );
+
+        SetSerializedFloat(
+            manager,
+            "hintTimeScale",
+            0.15f
         );
     }
 
@@ -185,48 +179,42 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
 
         CreateTrigger(
             "Move",
-            SafeZoneTutorialManager3D
-                .TutorialStage.Move,
+            SafeZoneTutorialManager3D.TutorialStage.Move,
             container.transform,
             0f
         );
 
         CreateTrigger(
             "Jump",
-            SafeZoneTutorialManager3D
-                .TutorialStage.Jump,
+            SafeZoneTutorialManager3D.TutorialStage.Jump,
             container.transform,
             20f
         );
 
         CreateTrigger(
             "Coins",
-            SafeZoneTutorialManager3D
-                .TutorialStage.Coins,
+            SafeZoneTutorialManager3D.TutorialStage.Coins,
             container.transform,
             40f
         );
 
         CreateTrigger(
             "Slide",
-            SafeZoneTutorialManager3D
-                .TutorialStage.Slide,
+            SafeZoneTutorialManager3D.TutorialStage.Slide,
             container.transform,
             60f
         );
 
         CreateTrigger(
             "DoubleJump",
-            SafeZoneTutorialManager3D
-                .TutorialStage.DoubleJump,
+            SafeZoneTutorialManager3D.TutorialStage.DoubleJump,
             container.transform,
             80f
         );
 
         CreateTrigger(
             "Rescue",
-            SafeZoneTutorialManager3D
-                .TutorialStage.Rescue,
+            SafeZoneTutorialManager3D.TutorialStage.Rescue,
             container.transform,
             100f
         );
@@ -240,9 +228,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )
     {
         GameObject trigger =
-            new GameObject(
-                name
-            );
+            new GameObject(name);
 
         Undo.RegisterCreatedObjectUndo(
             trigger,
@@ -262,9 +248,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
             );
 
         BoxCollider collider =
-            trigger.AddComponent<
-                BoxCollider
-            >();
+            trigger.AddComponent<BoxCollider>();
 
         collider.isTrigger = true;
 
@@ -339,9 +323,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )
     {
         GameObject point =
-            new GameObject(
-                name
-            );
+            new GameObject(name);
 
         Undo.RegisterCreatedObjectUndo(
             point,
@@ -372,9 +354,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
             );
 
         Canvas canvas =
-            uiRoot.AddComponent<
-                Canvas
-            >();
+            uiRoot.AddComponent<Canvas>();
 
         canvas.renderMode =
             RenderMode.ScreenSpaceOverlay;
@@ -382,9 +362,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         canvas.sortingOrder = 500;
 
         CanvasScaler scaler =
-            uiRoot.AddComponent<
-                CanvasScaler
-            >();
+            uiRoot.AddComponent<CanvasScaler>();
 
         scaler.uiScaleMode =
             CanvasScaler.ScaleMode
@@ -448,11 +426,15 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
                 250f
             );
 
+        TMP_FontAsset gameFont =
+            FindGameFont();
+
         TextMeshProUGUI title =
             CreateText(
                 "HintTitle",
                 panel.transform,
-                42f
+                44f,
+                gameFont
             );
 
         RectTransform titleRect =
@@ -491,11 +473,18 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         title.alignment =
             TextAlignmentOptions.Center;
 
+        title.fontStyle =
+            FontStyles.Bold;
+
+        title.color =
+            Color.white;
+
         TextMeshProUGUI message =
             CreateText(
                 "HintText",
                 panel.transform,
-                30f
+                32f,
+                gameFont
             );
 
         RectTransform messageRect =
@@ -528,11 +517,18 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         message.alignment =
             TextAlignmentOptions.Center;
 
+        message.color =
+            Color.white;
+
+        message.textWrappingMode =
+            TextWrappingModes.Normal;
+
         TextMeshProUGUI progress =
             CreateText(
                 "Progress",
                 panel.transform,
-                24f
+                25f,
+                gameFont
             );
 
         RectTransform progressRect =
@@ -565,10 +561,19 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         progress.alignment =
             TextAlignmentOptions.Left;
 
+        progress.color =
+            new Color(
+                1f,
+                1f,
+                1f,
+                0.8f
+            );
+
         Button skipButton =
             CreateButton(
                 "SkipButton",
-                panel.transform
+                panel.transform,
+                gameFont
             );
 
         RectTransform skipRect =
@@ -611,7 +616,16 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
                 "Пропустить";
 
             skipText.fontSize =
-                24f;
+                25f;
+
+            skipText.color =
+                Color.white;
+
+            skipText.font =
+                gameFont;
+
+            skipText.textWrappingMode =
+                TextWrappingModes.NoWrap;
         }
 
         SafeZoneTutorialManager3D manager =
@@ -658,7 +672,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     }
 
     // =========================================================
-    // UI HELPERS
+    // PANEL
     // =========================================================
 
     private GameObject CreatePanel(
@@ -667,9 +681,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )
     {
         GameObject obj =
-            new GameObject(
-                name
-            );
+            new GameObject(name);
 
         Undo.RegisterCreatedObjectUndo(
             obj,
@@ -682,35 +694,36 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         );
 
         Image image =
-            obj.AddComponent<
-                Image
-            >();
+            obj.AddComponent<Image>();
 
         image.raycastTarget =
             true;
 
-        Color color =
-            image.color;
-
-        color.a =
-            0.92f;
-
+        // Тёмный полупрозрачный фон.
         image.color =
-            color;
+            new Color(
+                0.035f,
+                0.045f,
+                0.055f,
+                0.84f
+            );
 
         return obj;
     }
 
+    // =========================================================
+    // TEXT
+    // =========================================================
+
     private TextMeshProUGUI CreateText(
-    string name,
-    Transform parent,
-    float fontSize
-)
+        string name,
+        Transform parent,
+        float fontSize,
+        TMP_FontAsset font
+    )
     {
         GameObject obj =
-            new GameObject(
-                name
-            );
+            new GameObject(name);
 
         Undo.RegisterCreatedObjectUndo(
             obj,
@@ -727,27 +740,42 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
                 TextMeshProUGUI
             >();
 
+        if (font != null)
+        {
+            text.font =
+                font;
+        }
+
         text.fontSize =
             fontSize;
 
-        text.textWrappingMode =
-            TextWrappingModes.Normal;
+        text.color =
+            Color.white;
 
         text.text =
             "";
 
+        text.textWrappingMode =
+            TextWrappingModes.Normal;
+
+        text.overflowMode =
+            TextOverflowModes.Ellipsis;
+
         return text;
     }
 
+    // =========================================================
+    // BUTTON
+    // =========================================================
+
     private Button CreateButton(
         string name,
-        Transform parent
+        Transform parent,
+        TMP_FontAsset font
     )
     {
         GameObject obj =
-            new GameObject(
-                name
-            );
+            new GameObject(name);
 
         Undo.RegisterCreatedObjectUndo(
             obj,
@@ -760,22 +788,57 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         );
 
         Image image =
-            obj.AddComponent<
-                Image
-            >();
+            obj.AddComponent<Image>();
+
+        image.color =
+            new Color(
+                0.12f,
+                0.14f,
+                0.17f,
+                0.9f
+            );
 
         Button button =
-            obj.AddComponent<
-                Button
-            >();
+            obj.AddComponent<Button>();
 
         button.targetGraphic =
             image;
 
-        GameObject textObject =
-            new GameObject(
-                "Text"
+        ColorBlock colors =
+            button.colors;
+
+        colors.normalColor =
+            new Color(
+                0.12f,
+                0.14f,
+                0.17f,
+                0.9f
             );
+
+        colors.highlightedColor =
+            new Color(
+                0.20f,
+                0.22f,
+                0.25f,
+                0.95f
+            );
+
+        colors.pressedColor =
+            new Color(
+                0.08f,
+                0.09f,
+                0.11f,
+                1f
+            );
+
+        colors.selectedColor =
+            colors.highlightedColor;
+
+        button.colors =
+            colors;
+
+        GameObject textObject =
+            new GameObject("Text");
 
         textObject.transform.SetParent(
             obj.transform,
@@ -786,6 +849,12 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
             textObject.AddComponent<
                 TextMeshProUGUI
             >();
+
+        if (font != null)
+        {
+            text.font =
+                font;
+        }
 
         RectTransform textRect =
             text.rectTransform;
@@ -806,13 +875,83 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
             TextAlignmentOptions.Center;
 
         text.fontSize =
-            24f;
+            25f;
+
+        text.color =
+            Color.white;
 
         text.text =
             "Пропустить";
 
+        text.textWrappingMode =
+            TextWrappingModes.NoWrap;
+
         return button;
     }
+
+    // =========================================================
+    // GAME FONT
+    // =========================================================
+
+    private TMP_FontAsset FindGameFont()
+    {
+        string[] guids =
+            AssetDatabase.FindAssets(
+                "Montserrat SDF t:TMP_FontAsset"
+            );
+
+        if (guids != null &&
+            guids.Length > 0)
+        {
+            TMP_FontAsset font =
+                AssetDatabase.LoadAssetAtPath<
+                    TMP_FontAsset
+                >(
+                    AssetDatabase.GUIDToAssetPath(
+                        guids[0]
+                    )
+                );
+
+            if (font != null)
+            {
+                return font;
+            }
+        }
+
+        guids =
+            AssetDatabase.FindAssets(
+                "Roboto SDF t:TMP_FontAsset"
+            );
+
+        if (guids != null &&
+            guids.Length > 0)
+        {
+            TMP_FontAsset font =
+                AssetDatabase.LoadAssetAtPath<
+                    TMP_FontAsset
+                >(
+                    AssetDatabase.GUIDToAssetPath(
+                        guids[0]
+                    )
+                );
+
+            if (font != null)
+            {
+                return font;
+            }
+        }
+
+        return
+            Resources.GetBuiltinResource<
+                TMP_FontAsset
+            >(
+                "LiberationSans SDF"
+            );
+    }
+
+    // =========================================================
+    // EMPTY
+    // =========================================================
 
     private GameObject CreateEmpty(
         string name,
@@ -820,9 +959,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )
     {
         GameObject obj =
-            new GameObject(
-                name
-            );
+            new GameObject(name);
 
         Undo.RegisterCreatedObjectUndo(
             obj,
@@ -848,9 +985,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )
     {
         SerializedObject serialized =
-            new SerializedObject(
-                target
-            );
+            new SerializedObject(target);
 
         SerializedProperty property =
             serialized.FindProperty(
@@ -866,6 +1001,29 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
         serialized.ApplyModifiedProperties();
     }
 
+    private void SetSerializedFloat(
+        Object target,
+        string propertyName,
+        float value
+    )
+    {
+        SerializedObject serialized =
+            new SerializedObject(target);
+
+        SerializedProperty property =
+            serialized.FindProperty(
+                propertyName
+            );
+
+        if (property != null)
+        {
+            property.floatValue =
+                value;
+        }
+
+        serialized.ApplyModifiedProperties();
+    }
+
     private void SetSerializedObject(
         Object target,
         string propertyName,
@@ -873,9 +1031,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     )
     {
         SerializedObject serialized =
-            new SerializedObject(
-                target
-            );
+            new SerializedObject(target);
 
         SerializedProperty property =
             serialized.FindProperty(
@@ -898,9 +1054,7 @@ public class SafeZoneTutorialBuilderWindow : EditorWindow
     private void DeleteTutorial()
     {
         GameObject root =
-            GameObject.Find(
-                RootName
-            );
+            GameObject.Find(RootName);
 
         if (root == null)
         {

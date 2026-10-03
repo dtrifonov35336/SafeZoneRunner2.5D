@@ -36,13 +36,13 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     [SerializeField]
     private bool stopNormalSpawners = true;
 
-    [Header("Замедление")]
+    [Header("Замедление обучения")]
     [SerializeField]
-    private bool slowTimeDuringHint = false;
+    private bool slowTimeDuringHint = true;
 
     [SerializeField]
     [Range(0.05f, 1f)]
-    private float hintTimeScale = 0.35f;
+    private float hintTimeScale = 0.15f;
 
     [Header("UI")]
     [SerializeField]
@@ -378,6 +378,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void CompleteCurrentStage()
     {
+        RestoreTimeScale();
+
         switch (CurrentStage)
         {
             case TutorialStage.Move:
@@ -538,18 +540,37 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         {
             titleText.text =
                 title;
+
+            titleText.color =
+                Color.white;
         }
 
         if (messageText != null)
         {
             messageText.text =
                 message;
+
+            messageText.color =
+                Color.white;
         }
 
         if (progressText != null)
         {
             progressText.text =
                 $"{step} / 6";
+
+            progressText.color =
+                new Color(
+                    1f,
+                    1f,
+                    1f,
+                    0.8f
+                );
+        }
+
+        if (skipButton != null)
+        {
+            skipButton.interactable = true;
         }
 
         ApplyHintTimeScale();
@@ -584,16 +605,15 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
-        if (timeScaleChanged)
-        {
-            return;
-        }
-
         previousTimeScale =
             Time.timeScale;
 
         Time.timeScale =
-            hintTimeScale;
+            Mathf.Clamp(
+                hintTimeScale,
+                0.05f,
+                1f
+            );
 
         timeScaleChanged = true;
     }
@@ -663,6 +683,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
+        RestoreTimeScale();
+
         IsRunning = false;
 
         CurrentStage =
@@ -690,6 +712,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     public void SkipTutorial()
     {
+        RestoreTimeScale();
+
         if (!IsRunning)
         {
             PlayerPrefs.SetInt(
@@ -758,6 +782,20 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 TutorialCompletedKey,
                 0
             ) == 1;
+    }
+
+    private void OnApplicationPause(
+        bool pauseStatus
+    )
+    {
+        if (pauseStatus)
+        {
+            RestoreTimeScale();
+        }
+        else if (IsRunning)
+        {
+            ApplyHintTimeScale();
+        }
     }
 
     private void OnDestroy()
