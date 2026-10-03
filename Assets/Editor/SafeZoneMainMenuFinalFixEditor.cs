@@ -2479,6 +2479,86 @@ public static class SafeZoneMainMenuFinalFixEditor
             distance
         );
     }
+
+    private static GameObject FindChild(
+    Transform parent,
+    string childName
+)
+    {
+        if (parent == null)
+        {
+            return null;
+        }
+
+        Transform directChild =
+            parent.Find(childName);
+
+        if (directChild != null)
+        {
+            return directChild.gameObject;
+        }
+
+        foreach (
+            Transform child
+            in parent.GetComponentsInChildren<Transform>(
+                true
+            )
+        )
+        {
+            if (
+                child != parent &&
+                child.name == childName
+            )
+            {
+                return child.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    private static void AssignManagerReferences(
+        MainMenuModalManager3D manager,
+        GameObject background,
+        GameObject safeArea
+    )
+    {
+        if (manager == null)
+        {
+            return;
+        }
+
+        SerializedObject serialized =
+            new SerializedObject(manager);
+
+        SerializedProperty backgroundProperty =
+            serialized.FindProperty(
+                "background"
+            );
+
+        if (
+            backgroundProperty != null
+        )
+        {
+            backgroundProperty.objectReferenceValue =
+                background;
+        }
+
+        SerializedProperty safeAreaProperty =
+            serialized.FindProperty(
+                "safeArea"
+            );
+
+        if (
+            safeAreaProperty != null
+        )
+        {
+            safeAreaProperty.objectReferenceValue =
+                safeArea;
+        }
+
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
 }
 
 #endif
