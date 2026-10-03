@@ -29,7 +29,7 @@ public class PlayerCollision : MonoBehaviour
     }
 
     // =========================================================
-    // ОБУЧЕНИЕ — ПОЛНОЕ БЕССМЕРТИЕ
+    // ОБУЧЕНИЕ
     // =========================================================
 
     public void SetTutorialInvulnerable(
@@ -78,11 +78,6 @@ public class PlayerCollision : MonoBehaviour
             return;
         }
 
-        // Во время обучения полностью игнорируем
-        // любые препятствия и ямы.
-        if (isInvulnerable)
-            return;
-
         ObstacleMover3D mover =
             other.GetComponentInParent<
                 ObstacleMover3D
@@ -93,6 +88,21 @@ public class PlayerCollision : MonoBehaviour
             mover.hasHitPlayer
         )
         {
+            return;
+        }
+
+        /*
+         * Во время обучения столкновение всё равно
+         * обрабатываем визуально/физически.
+         *
+         * Но здоровье не уменьшаем.
+         */
+        if (isInvulnerable)
+        {
+            HandleTutorialHit(
+                mover
+            );
+
             return;
         }
 
@@ -144,6 +154,55 @@ public class PlayerCollision : MonoBehaviour
                 );
 
                 break;
+        }
+    }
+
+    // =========================================================
+    // УДАР В ОБУЧЕНИИ
+    // =========================================================
+
+    private void HandleTutorialHit(
+        ObstacleMover3D mover
+    )
+    {
+        if (mover != null)
+        {
+            mover.hasHitPlayer = true;
+        }
+
+        /*
+         * Отдача персонажа.
+         * Жизнь НЕ трогаем.
+         */
+        if (playerMovement != null)
+        {
+            playerMovement.Knockback(
+                pushBackAmount
+            );
+        }
+
+        if (chase != null)
+        {
+            chase.PushBack(1f);
+        }
+
+        /*
+         * Обычный звук столкновения.
+         */
+        if (AudioManager3D.Instance != null)
+        {
+            AudioManager3D.Instance.PlayHit();
+        }
+
+        /*
+         * Обычная тряска камеры.
+         */
+        if (CameraShake.Instance != null)
+        {
+            CameraShake.Instance.Shake(
+                0.2f,
+                0.25f
+            );
         }
     }
 
@@ -297,7 +356,7 @@ public class PlayerCollision : MonoBehaviour
     }
 
     // =========================================================
-    // HIT
+    // ОБЫЧНЫЙ УДАР
     // =========================================================
 
     private void HitPlayer(
@@ -341,20 +400,14 @@ public class PlayerCollision : MonoBehaviour
             }
         }
 
-        if (
-            AudioManager3D.Instance !=
-            null
-        )
+        if (AudioManager3D.Instance != null)
         {
-            AudioManager3D.Instance
-                .PlayHit();
+            AudioManager3D.Instance.PlayHit();
         }
 
         if (chase != null)
         {
-            chase.PushBack(
-                1f
-            );
+            chase.PushBack(1f);
         }
 
         if (playerMovement != null)
@@ -390,13 +443,12 @@ public class PlayerCollision : MonoBehaviour
     {
         if (mover != null)
         {
-            mover.hasHitPlayer =
-                true;
+            mover.hasHitPlayer = true;
         }
     }
 
     // =========================================================
-    // НЕУЯЗВИМОСТЬ ПОСЛЕ УДАРА
+    // ПОСЛЕ ОБЫЧНОГО УДАРА
     // =========================================================
 
     private IEnumerator Invulnerability()
@@ -424,10 +476,7 @@ public class PlayerCollision : MonoBehaviour
         while (elapsed < duration)
         {
             if (sr != null)
-            {
-                sr.enabled =
-                    !sr.enabled;
-            }
+                sr.enabled = !sr.enabled;
 
             yield return null;
 
@@ -436,9 +485,7 @@ public class PlayerCollision : MonoBehaviour
         }
 
         if (sr != null)
-        {
             sr.enabled = true;
-        }
 
         isInvulnerable = false;
     }
@@ -494,9 +541,7 @@ public class PlayerCollision : MonoBehaviour
         }
 
         if (sr != null)
-        {
             sr.enabled = true;
-        }
 
         isInvulnerable = false;
 
