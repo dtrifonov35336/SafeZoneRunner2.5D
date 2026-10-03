@@ -409,7 +409,7 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
             /*
              * Если игрок каким-либо образом
              * уже покинул MainRoad —
-             * ничего не делаем.
+             * прекращаем ожидание.
              */
             if (
                 SceneManager
@@ -425,16 +425,12 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
         }
 
         /*
-         * ВАЖНО:
-         *
-         * Здесь НЕТ LoadScene("MainMenu").
-         *
-         * После получения награды обучение закончено,
+         * Обучение забега завершено,
          * но сам забег продолжается.
          *
-         * В меню игрок попадёт штатно:
-         * смерть → ResultsManager / ReviveManager
-         * победа → ResultsManager
+         * В меню игрок попадёт только
+         * через штатный ResultsManager /
+         * ReviveManager после победы или смерти.
          */
         DestroyOverlay();
     }
@@ -649,7 +645,6 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
         DestroyOverlay();
 
         playHintShown = false;
-        returningToMenu = false;
         startingMenuTutorial = false;
 
         Debug.Log(
