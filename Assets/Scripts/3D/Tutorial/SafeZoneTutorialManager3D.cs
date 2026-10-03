@@ -37,10 +37,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     [SerializeField]
     private bool stopNormalSpawners = true;
 
-    [Header("Замедление")]
-    [SerializeField]
-    private bool slowTimeDuringHint = false;
-
     [Header("UI")]
     [SerializeField]
     private GameObject hintPanel;
@@ -55,6 +51,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     private TextMeshProUGUI progressText;
 
     [SerializeField]
+    private Button okButton;
+
+    [SerializeField]
     private Button skipButton;
 
     [Header("Сообщения")]
@@ -63,52 +62,55 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     [SerializeField]
     private string moveMessage =
-        "Перейди на соседнюю полосу.";
+        "Свайпни вправо, чтобы перейти на соседнюю полосу.";
 
     [SerializeField]
     private string jumpTitle = "Прыжок";
 
     [SerializeField]
     private string jumpMessage =
-        "Прыгни через препятствие.";
+        "Нажми ОК, затем прыгни через препятствие.";
 
     [SerializeField]
     private string coinsTitle = "Монеты";
 
     [SerializeField]
     private string coinsMessage =
-        "Собери монеты на дороге.";
+        "Нажми ОК и собери монеты на дороге.";
 
     [SerializeField]
     private string slideTitle = "Скольжение";
 
     [SerializeField]
     private string slideMessage =
-        "Проскользни под препятствием.";
+        "Нажми ОК и проскользни под препятствием.";
 
     [SerializeField]
     private string doubleJumpTitle = "Двойной прыжок";
 
     [SerializeField]
     private string doubleJumpMessage =
-        "Сделай второй прыжок в воздухе.";
+        "Нажми ОК, прыгни, затем сделай второй прыжок в воздухе.";
 
     [SerializeField]
     private string rescueTitle = "Спасение";
 
     [SerializeField]
     private string rescueMessage =
-        "Подбеги к выжившему и спаси его.";
+        "Нажми ОК и подбеги к выжившему.";
 
     [Header("Учебные объекты")]
     [SerializeField]
-    private float tutorialSpawnDistance = 42f;
+    private float tutorialSpawnDistance = 38f;
 
     [SerializeField]
-    private float tutorialCoinSpacing = 2.0f;
+    private float tutorialCoinSpacing = 2f;
 
     [SerializeField]
     private int tutorialCoinCount = 6;
+
+    [SerializeField]
+    private float repeatObstacleDelay = 0.35f;
 
     private PlayerMovement3D player;
     private ObstacleSpawner3D obstacleSpawner;
@@ -122,6 +124,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private readonly List<GameObject> tutorialObjects =
         new List<GameObject>();
+
+    private GameObject currentTutorialObstacle;
+
+    private bool hintConfirmed;
+    private float nextObstacleSpawnTime;
 
     public TutorialStage CurrentStage
     {
@@ -147,8 +154,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null &&
-            Instance != this)
+        if (
+            Instance != null &&
+            Instance != this
+        )
         {
             Destroy(gameObject);
             return;
@@ -157,6 +166,17 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         Instance = this;
 
         CacheReferences();
+
+        if (okButton != null)
+        {
+            okButton.onClick.RemoveListener(
+                ConfirmHint
+            );
+
+            okButton.onClick.AddListener(
+                ConfirmHint
+            );
+        }
 
         if (skipButton != null)
         {
@@ -176,6 +196,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void Start()
     {
+        Time.timeScale = 1f;
+
         if (!startAutomatically)
         {
             return;
@@ -192,8 +214,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 0
             ) == 1;
 
-        if (completed &&
-            !forceTutorialForTesting)
+        if (
+            completed &&
+            !forceTutorialForTesting
+        )
         {
             return;
         }
@@ -220,7 +244,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 FindFirstObjectByType<HUDManager>();
         }
 
+        if (!hintConfirmed)
+        {
+            return;
+        }
+
         CheckCurrentStage();
+
+        UpdateRepeatingObstacle();
     }
 
     private void CacheReferences()
@@ -263,6 +294,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
+        Time.timeScale = 1f;
+
         IsRunning = true;
 
         startLane =
@@ -291,7 +324,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // CHECK
+    // UPDATE
     // =========================================================
 
     private void CheckCurrentStage()
@@ -331,7 +364,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void CheckMove()
     {
-        if (player.GetCurrentLane() != startLane)
+        if (
+            player.GetCurrentLane() !=
+            startLane
+        )
         {
             CompleteCurrentStage();
         }
@@ -352,7 +388,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
-        if (hud.GetCoins() > startCoins)
+        if (
+            hud.GetCoins() >
+            startCoins
+        )
         {
             CompleteCurrentStage();
         }
@@ -381,14 +420,17 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
-        if (hud.GetRescued() > startRescued)
+        if (
+            hud.GetRescued() >
+            startRescued
+        )
         {
             CompleteCurrentStage();
         }
     }
 
     // =========================================================
-    // STAGE
+    // STAGES
     // =========================================================
 
     private void CompleteCurrentStage()
@@ -396,49 +438,37 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         switch (CurrentStage)
         {
             case TutorialStage.Move:
-
                 SetStage(
                     TutorialStage.Jump
                 );
-
                 break;
 
             case TutorialStage.Jump:
-
                 SetStage(
                     TutorialStage.Coins
                 );
-
                 break;
 
             case TutorialStage.Coins:
-
                 SetStage(
                     TutorialStage.Slide
                 );
-
                 break;
 
             case TutorialStage.Slide:
-
                 SetStage(
                     TutorialStage.DoubleJump
                 );
-
                 break;
 
             case TutorialStage.DoubleJump:
-
                 SetStage(
                     TutorialStage.Rescue
                 );
-
                 break;
 
             case TutorialStage.Rescue:
-
                 CompleteTutorial();
-
                 break;
         }
     }
@@ -449,9 +479,13 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     {
         CurrentStage = stage;
 
-        UpdateStageBaseline();
+        hintConfirmed = false;
+
+        Time.timeScale = 1f;
 
         ClearTutorialObjects();
+
+        UpdateStageBaseline();
 
         switch (stage)
         {
@@ -473,8 +507,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     2
                 );
 
-                SpawnJumpObstacle();
-
                 break;
 
             case TutorialStage.Coins:
@@ -484,8 +516,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     coinsMessage,
                     3
                 );
-
-                SpawnTutorialCoins();
 
                 break;
 
@@ -497,8 +527,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     4
                 );
 
-                SpawnSlideObstacle();
-
                 break;
 
             case TutorialStage.DoubleJump:
@@ -509,8 +537,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     5
                 );
 
-                SpawnDoubleJumpObstacle();
-
                 break;
 
             case TutorialStage.Rescue:
@@ -520,8 +546,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     rescueMessage,
                     6
                 );
-
-                SpawnRescuedPerson();
 
                 break;
 
@@ -560,7 +584,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // UI
+    // OK / PAUSE
     // =========================================================
 
     private void ShowHint(
@@ -569,6 +593,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         int step
     )
     {
+        hintConfirmed = false;
+
+        Time.timeScale = 0f;
+
         if (hintPanel != null)
         {
             hintPanel.SetActive(true);
@@ -576,151 +604,189 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text =
-                title;
-
-            titleText.color =
-                Color.white;
-
-            titleText.fontStyle =
-                FontStyles.Normal;
-
-            titleText.fontWeight =
-                FontWeight.Regular;
+            titleText.text = title;
         }
 
         if (messageText != null)
         {
-            messageText.text =
-                message;
-
-            messageText.color =
-                Color.white;
-
-            messageText.fontStyle =
-                FontStyles.Normal;
-
-            messageText.fontWeight =
-                FontWeight.Regular;
+            messageText.text = message;
         }
 
         if (progressText != null)
         {
             progressText.text =
                 $"{step} / 6";
+        }
 
-            progressText.color =
-                new Color(
-                    1f,
-                    1f,
-                    1f,
-                    0.85f
-                );
+        PrepareTextAppearance();
 
-            progressText.fontStyle =
-                FontStyles.Normal;
-
-            progressText.fontWeight =
-                FontWeight.Regular;
+        if (okButton != null)
+        {
+            okButton.gameObject.SetActive(true);
+            okButton.interactable = true;
         }
 
         if (skipButton != null)
         {
             skipButton.interactable = true;
         }
-
-        ApplyTextOutline();
-
-        // Замедление полностью отключено.
-        Time.timeScale = 1f;
     }
+
+    public void ConfirmHint()
+    {
+        if (!IsRunning)
+        {
+            return;
+        }
+
+        hintConfirmed = true;
+
+        Time.timeScale = 1f;
+
+        if (hintPanel != null)
+        {
+            hintPanel.SetActive(false);
+        }
+
+        switch (CurrentStage)
+        {
+            case TutorialStage.Jump:
+                SpawnJumpObstacle();
+                break;
+
+            case TutorialStage.Coins:
+                SpawnTutorialCoins();
+                break;
+
+            case TutorialStage.Slide:
+                SpawnSlideObstacle();
+                break;
+
+            case TutorialStage.DoubleJump:
+                SpawnDoubleJumpObstacle();
+                break;
+
+            case TutorialStage.Rescue:
+                SpawnRescuedPerson();
+                break;
+        }
+    }
+
+    // =========================================================
+    // UI TEXT
+    // =========================================================
 
     private void PrepareTextAppearance()
     {
-        if (titleText != null)
-        {
-            titleText.color =
-                Color.white;
+        PrepareSingleText(
+            titleText,
+            46f
+        );
 
-            titleText.fontStyle =
-                FontStyles.Normal;
+        PrepareSingleText(
+            messageText,
+            32f
+        );
 
-            titleText.fontWeight =
-                FontWeight.Regular;
-
-            titleText.textWrappingMode =
-                TextWrappingModes.Normal;
-
-            titleText.outlineWidth =
-                0.18f;
-
-            titleText.outlineColor =
-                new Color(
-                    0f,
-                    0f,
-                    0f,
-                    0.95f
-                );
-        }
-
-        if (messageText != null)
-        {
-            messageText.color =
-                Color.white;
-
-            messageText.fontStyle =
-                FontStyles.Normal;
-
-            messageText.fontWeight =
-                FontWeight.Regular;
-
-            messageText.textWrappingMode =
-                TextWrappingModes.Normal;
-
-            messageText.outlineWidth =
-                0.18f;
-
-            messageText.outlineColor =
-                new Color(
-                    0f,
-                    0f,
-                    0f,
-                    0.95f
-                );
-        }
-
-        if (progressText != null)
-        {
-            progressText.color =
-                Color.white;
-
-            progressText.fontStyle =
-                FontStyles.Normal;
-
-            progressText.fontWeight =
-                FontWeight.Regular;
-
-            progressText.outlineWidth =
-                0.15f;
-
-            progressText.outlineColor =
-                new Color(
-                    0f,
-                    0f,
-                    0f,
-                    0.95f
-                );
-        }
+        PrepareSingleText(
+            progressText,
+            24f
+        );
     }
 
-    private void ApplyTextOutline()
+    private void PrepareSingleText(
+        TextMeshProUGUI text,
+        float size
+    )
     {
-        PrepareTextAppearance();
+        if (text == null)
+        {
+            return;
+        }
+
+        text.fontSize = size;
+        text.color = Color.white;
+        text.alpha = 1f;
+
+        text.fontStyle =
+            FontStyles.Normal;
+
+        text.fontWeight =
+            FontWeight.Regular;
+
+        text.enableVertexGradient =
+            false;
+
+        text.textWrappingMode =
+            TextWrappingModes.Normal;
+
+        text.overflowMode =
+            TextOverflowModes.Overflow;
+
+        text.alignment =
+            TextAlignmentOptions.Center;
+
+        if (
+            text.fontSharedMaterial != null
+        )
+        {
+            Material material =
+                new Material(
+                    text.fontSharedMaterial
+                );
+
+            text.fontMaterial =
+                material;
+
+            if (
+                material.HasProperty(
+                    ShaderUtilities.ID_FaceColor
+                )
+            )
+            {
+                material.SetColor(
+                    ShaderUtilities.ID_FaceColor,
+                    Color.white
+                );
+            }
+
+            if (
+                material.HasProperty(
+                    ShaderUtilities.ID_OutlineColor
+                )
+            )
+            {
+                material.SetColor(
+                    ShaderUtilities.ID_OutlineColor,
+                    Color.black
+                );
+            }
+
+            if (
+                material.HasProperty(
+                    ShaderUtilities.ID_OutlineWidth
+                )
+            )
+            {
+                material.SetFloat(
+                    ShaderUtilities.ID_OutlineWidth,
+                    0.18f
+                );
+            }
+        }
+
+        text.outlineWidth =
+            0.18f;
+
+        text.outlineColor =
+            Color.black;
     }
 
     private void HideHint()
     {
         Time.timeScale = 1f;
+
+        hintConfirmed = true;
 
         if (hintPanel != null)
         {
@@ -732,6 +798,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     {
         Time.timeScale = 1f;
 
+        hintConfirmed = true;
+
         if (hintPanel != null)
         {
             hintPanel.SetActive(false);
@@ -739,7 +807,104 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     // =========================================================
-    // TUTORIAL OBSTACLES
+    // REPEATING OBSTACLES
+    // =========================================================
+
+    private void UpdateRepeatingObstacle()
+    {
+        if (
+            !hintConfirmed ||
+            player == null
+        )
+        {
+            return;
+        }
+
+        if (
+            CurrentStage !=
+                TutorialStage.Jump &&
+            CurrentStage !=
+                TutorialStage.Slide &&
+            CurrentStage !=
+                TutorialStage.DoubleJump
+        )
+        {
+            return;
+        }
+
+        if (
+            currentTutorialObstacle !=
+            null
+        )
+        {
+            float playerZ =
+                player.transform.position.z;
+
+            float obstacleZ =
+                currentTutorialObstacle
+                    .transform.position.z;
+
+            // Игрок движется в сторону отрицательного Z.
+            if (
+                obstacleZ <
+                playerZ - 7f
+            )
+            {
+                DestroyCurrentTutorialObstacle();
+            }
+
+            return;
+        }
+
+        if (
+            Time.unscaledTime <
+            nextObstacleSpawnTime
+        )
+        {
+            return;
+        }
+
+        switch (CurrentStage)
+        {
+            case TutorialStage.Jump:
+                SpawnJumpObstacle();
+                break;
+
+            case TutorialStage.Slide:
+                SpawnSlideObstacle();
+                break;
+
+            case TutorialStage.DoubleJump:
+                SpawnDoubleJumpObstacle();
+                break;
+        }
+    }
+
+    private void DestroyCurrentTutorialObstacle()
+    {
+        if (
+            currentTutorialObstacle !=
+            null
+        )
+        {
+            GameObject old =
+                currentTutorialObstacle;
+
+            currentTutorialObstacle =
+                null;
+
+            tutorialObjects.Remove(old);
+
+            Destroy(old);
+        }
+
+        nextObstacleSpawnTime =
+            Time.unscaledTime +
+            repeatObstacleDelay;
+    }
+
+    // =========================================================
+    // OBSTACLES
     // =========================================================
 
     private void SpawnJumpObstacle()
@@ -752,15 +917,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         if (prefab == null)
         {
             Debug.LogWarning(
-                "[Tutorial] Не найдено обычное препятствие для обучения прыжку."
+                "[Tutorial] Не найдено обычное препятствие."
             );
 
             return;
         }
 
         SpawnTutorialObstacle(
-            prefab,
-            false
+            prefab
         );
     }
 
@@ -774,15 +938,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         if (prefab == null)
         {
             Debug.LogWarning(
-                "[Tutorial] Не найдено препятствие Slide для обучения."
+                "[Tutorial] Не найдено препятствие Slide."
             );
 
             return;
         }
 
         SpawnTutorialObstacle(
-            prefab,
-            false
+            prefab
         );
     }
 
@@ -796,15 +959,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         if (prefab == null)
         {
             Debug.LogWarning(
-                "[Tutorial] Не найдено препятствие DoubleJump для обучения."
+                "[Tutorial] Не найдено препятствие DoubleJump."
             );
 
             return;
         }
 
         SpawnTutorialObstacle(
-            prefab,
-            false
+            prefab
         );
     }
 
@@ -812,14 +974,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         ObstacleType requiredType
     )
     {
-        if (obstacleSpawner == null)
-        {
-            return null;
-        }
-
         if (
-            obstacleSpawner.obstaclePrefabs == null ||
-            obstacleSpawner.obstaclePrefabs.Length == 0
+            obstacleSpawner == null ||
+            obstacleSpawner.obstaclePrefabs == null
         )
         {
             return null;
@@ -840,12 +997,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     ObstacleType3D
                 >(true);
 
-            if (type == null)
-            {
-                continue;
-            }
-
-            if (type.type == requiredType)
+            if (
+                type != null &&
+                type.type == requiredType
+            )
             {
                 return prefab;
             }
@@ -855,8 +1010,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     }
 
     private void SpawnTutorialObstacle(
-        GameObject prefab,
-        bool generateCoins
+        GameObject prefab
     )
     {
         if (
@@ -868,6 +1022,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
         }
 
+        ClearTutorialObstacleOnly();
+
         float laneX =
             GetCurrentLaneX();
 
@@ -877,17 +1033,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         float spawnY =
             prefab.transform.position.y;
-
-        SpawnHeightOffset3D heightOverride =
-            prefab.GetComponent<
-                SpawnHeightOffset3D
-            >();
-
-        if (heightOverride != null)
-        {
-            spawnY =
-                heightOverride.spawnY;
-        }
 
         GameObject instance =
             Instantiate(
@@ -907,12 +1052,15 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             instance
         );
 
-        RunnerDepthSorter3D depthSorter =
+        currentTutorialObstacle =
+            instance;
+
+        RunnerDepthSorter3D sorter =
             instance.GetComponent<
                 RunnerDepthSorter3D
             >();
 
-        if (depthSorter == null)
+        if (sorter == null)
         {
             instance.AddComponent<
                 RunnerDepthSorter3D
@@ -982,20 +1130,33 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             obstacleSpawner.revealZ
         );
 
+        nextObstacleSpawnTime =
+            Time.unscaledTime +
+            0.5f;
+    }
+
+    private void ClearTutorialObstacleOnly()
+    {
         if (
-            pickupSpawner != null &&
-            generateCoins
+            currentTutorialObstacle !=
+            null
         )
         {
-            pickupSpawner.RegisterObstacleSpawned(
-                instance,
-                true
+            tutorialObjects.Remove(
+                currentTutorialObstacle
             );
+
+            Destroy(
+                currentTutorialObstacle
+            );
+
+            currentTutorialObstacle =
+                null;
         }
     }
 
     // =========================================================
-    // TUTORIAL COINS
+    // COINS
     // =========================================================
 
     private void SpawnTutorialCoins()
@@ -1020,7 +1181,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             player.transform.position.z +
             tutorialSpawnDistance;
 
-        float groundY =
+        float y =
             pickupSpawner.coinPrefab
                 .transform.position.y;
 
@@ -1030,15 +1191,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             i++
         )
         {
-            float z =
-                startZ +
-                i *
-                tutorialCoinSpacing;
-
             SpawnTutorialCoin(
                 laneX,
-                groundY,
-                z
+                y,
+                startZ +
+                i *
+                tutorialCoinSpacing
             );
         }
     }
@@ -1067,12 +1225,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             instance
         );
 
-        RunnerDepthSorter3D depthSorter =
+        RunnerDepthSorter3D sorter =
             instance.GetComponent<
                 RunnerDepthSorter3D
             >();
 
-        if (depthSorter == null)
+        if (sorter == null)
         {
             instance.AddComponent<
                 RunnerDepthSorter3D
@@ -1169,12 +1327,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             instance
         );
 
-        RunnerDepthSorter3D depthSorter =
+        RunnerDepthSorter3D sorter =
             instance.GetComponent<
                 RunnerDepthSorter3D
             >();
 
-        if (depthSorter == null)
+        if (sorter == null)
         {
             instance.AddComponent<
                 RunnerDepthSorter3D
@@ -1228,7 +1386,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         if (
             player != null &&
             player.lanePositions != null &&
-            player.lanePositions.Length >= 2
+            player.lanePositions.Length > 0
         )
         {
             int lane =
@@ -1254,6 +1412,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void ClearTutorialObjects()
     {
+        currentTutorialObstacle =
+            null;
+
         for (
             int i =
                 tutorialObjects.Count - 1;
@@ -1348,10 +1509,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         StageChanged?.Invoke(
             TutorialStage.Completed
         );
-
-        Debug.Log(
-            "[Tutorial] Обучение завершено."
-        );
     }
 
     public void SkipTutorial()
@@ -1359,18 +1516,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         Time.timeScale = 1f;
 
         ClearTutorialObjects();
-
-        if (!IsRunning)
-        {
-            PlayerPrefs.SetInt(
-                TutorialCompletedKey,
-                1
-            );
-
-            PlayerPrefs.Save();
-
-            return;
-        }
 
         IsRunning = false;
 
@@ -1391,10 +1536,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         StageChanged?.Invoke(
             TutorialStage.Completed
         );
-
-        Debug.Log(
-            "[Tutorial] Обучение пропущено."
-        );
     }
 
     public void ResetTutorialProgress()
@@ -1404,15 +1545,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         );
 
         PlayerPrefs.Save();
-
-        Debug.Log(
-            "[Tutorial] Прогресс обучения сброшен."
-        );
     }
-
-    // =========================================================
-    // PUBLIC
-    // =========================================================
 
     public bool IsStage(
         TutorialStage stage
