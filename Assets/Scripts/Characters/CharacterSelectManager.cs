@@ -13,7 +13,7 @@ public class CharacterEntry
     public string displayName = "Выживший";
 
     [TextArea(2, 4)]
-    public string perk = "Обычный выживший. Без бонусов.";
+    public string perk = "";
 
     [Header("Изображения")]
     public Sprite portrait;
@@ -66,16 +66,12 @@ public class CharacterSelectManager : MonoBehaviour
 
     private int selectedIndex = 0;
 
-    private List<CharacterCard> spawnedCards =
+    private readonly List<CharacterCard> spawnedCards =
         new List<CharacterCard>();
 
     private const string UnlockedKeyPrefix =
         "CharUnlocked_";
 
-    private const string SelectedCharKey =
-        "SelectedCharacter";
-
-    // Фиксированный порядок персонажей в разделе.
     private static readonly string[] CharacterOrder =
     {
         "survivor",
@@ -105,8 +101,6 @@ public class CharacterSelectManager : MonoBehaviour
 
         LoadAvailabilityConfig();
 
-        // Всегда приводим список к нужному порядку
-        // до создания карточек и определения selectedIndex.
         SortCharactersByReleaseOrder();
     }
 
@@ -114,13 +108,8 @@ public class CharacterSelectManager : MonoBehaviour
     {
         if (backButton != null)
         {
-            backButton.onClick.RemoveListener(
-                GoBack
-            );
-
-            backButton.onClick.AddListener(
-                GoBack
-            );
+            backButton.onClick.RemoveListener(GoBack);
+            backButton.onClick.AddListener(GoBack);
         }
 
         if (actionButton != null)
@@ -136,22 +125,40 @@ public class CharacterSelectManager : MonoBehaviour
 
         UpdateTopCurrencies();
 
-        selectedIndex =
-            PlayerPrefs.GetInt(
-                SelectedCharKey,
-                0
-            );
+        // =====================================================
+        // ВАЖНО:
+        // Получаем персонажа ПО ID, а не по индексу.
+        // =====================================================
 
-        if (
-            selectedIndex < 0 ||
-            selectedIndex >= characters.Count
-        )
+        string selectedId =
+            ProfileManager.GetSelectedCharacterId();
+
+        selectedIndex =
+            FindCharacterIndex(selectedId);
+
+        if (selectedIndex < 0)
         {
-            selectedIndex = 0;
+            selectedIndex =
+                FindCharacterIndex("survivor");
+
+            if (selectedIndex < 0)
+            {
+                selectedIndex = 0;
+            }
+
+            if (
+                characters.Count > 0 &&
+                characters[selectedIndex] != null
+            )
+            {
+                ProfileManager.SetSelectedCharacterId(
+                    characters[selectedIndex].id
+                );
+            }
         }
 
-        // Если сохранённый персонаж закрыт,
-        // возвращаемся к Выжившему.
+        // Если персонаж оказался закрыт,
+        // выбираем Выжившего.
         if (
             characters.Count > 0 &&
             !IsUnlocked(
@@ -159,22 +166,23 @@ public class CharacterSelectManager : MonoBehaviour
             )
         )
         {
-            int survivorIndex =
-                FindCharacterIndex(
-                    "survivor"
-                );
-
             selectedIndex =
-                survivorIndex >= 0
-                    ? survivorIndex
-                    : 0;
+                FindCharacterIndex("survivor");
 
-            PlayerPrefs.SetInt(
-                SelectedCharKey,
-                selectedIndex
-            );
+            if (selectedIndex < 0)
+            {
+                selectedIndex = 0;
+            }
 
-            PlayerPrefs.Save();
+            if (
+                characters.Count > 0 &&
+                characters[selectedIndex] != null
+            )
+            {
+                ProfileManager.SetSelectedCharacterId(
+                    characters[selectedIndex].id
+                );
+            }
         }
 
         BuildCards();
@@ -226,17 +234,12 @@ public class CharacterSelectManager : MonoBehaviour
             i++
         )
         {
-            if (
-                CharacterOrder[i] == id
-            )
+            if (CharacterOrder[i] == id)
             {
                 return i;
             }
         }
 
-        // Любой новый персонаж,
-        // которого ещё нет в списке,
-        // попадёт после основных шести.
         return CharacterOrder.Length;
     }
 
@@ -275,8 +278,9 @@ public class CharacterSelectManager : MonoBehaviour
             return false;
         }
 
+        // Выживший всегда доступен.
         if (
-            character.id != null &&
+            !string.IsNullOrEmpty(character.id) &&
             character.id.ToLowerInvariant() ==
             "survivor"
         )
@@ -380,9 +384,7 @@ public class CharacterSelectManager : MonoBehaviour
                 }
             );
 
-            spawnedCards.Add(
-                card
-            );
+            spawnedCards.Add(card);
         }
     }
 
@@ -402,8 +404,7 @@ public class CharacterSelectManager : MonoBehaviour
             return;
         }
 
-        selectedIndex =
-            index;
+        selectedIndex = index;
 
         CharacterEntry character =
             characters[index];
@@ -527,9 +528,7 @@ public class CharacterSelectManager : MonoBehaviour
         {
             if (card != null)
             {
-                card.SetSelected(
-                    false
-                );
+                card.SetSelected(false);
             }
         }
 
@@ -570,21 +569,30 @@ public class CharacterSelectManager : MonoBehaviour
                 character
             );
 
+        // -----------------------------------------------------
+        // ВЫБОР УЖЕ КУПЛЕННОГО
+        // -----------------------------------------------------
+
         if (unlocked)
         {
-            PlayerPrefs.SetInt(
-                SelectedCharKey,
-                selectedIndex
+            ProfileManager.SetSelectedCharacterId(
+                character.id
             );
-
-            PlayerPrefs.Save();
 
             ShowCharacter(
                 selectedIndex
             );
 
+            Debug.Log(
+                $"[Characters] Выбран: {character.id}"
+            );
+
             return;
         }
+
+        // -----------------------------------------------------
+        // ЗАКРЫТЫЙ ПЕРСОНАЖ
+        // -----------------------------------------------------
 
         if (!available)
         {
@@ -600,6 +608,10 @@ public class CharacterSelectManager : MonoBehaviour
             return;
         }
 
+        // -----------------------------------------------------
+        // БЕСПЛАТНАЯ ПОКУПКА
+        // -----------------------------------------------------
+
         if (character.price <= 0)
         {
             UnlockCharacter(
@@ -608,6 +620,10 @@ public class CharacterSelectManager : MonoBehaviour
 
             return;
         }
+
+        // -----------------------------------------------------
+        // ПОКУПКА
+        // -----------------------------------------------------
 
         int balance =
             PlayerPrefs.GetInt(
@@ -627,17 +643,17 @@ public class CharacterSelectManager : MonoBehaviour
             );
 
             PlayerPrefs.SetInt(
-                UnlockedKeyPrefix +
+                "CharUnlocked_" +
                 character.id,
                 1
             );
 
-            PlayerPrefs.SetInt(
-                SelectedCharKey,
-                selectedIndex
-            );
-
             PlayerPrefs.Save();
+
+            // СРАЗУ сохраняем ID.
+            ProfileManager.SetSelectedCharacterId(
+                character.id
+            );
 
             UpdateTopCurrencies();
 
@@ -655,7 +671,7 @@ public class CharacterSelectManager : MonoBehaviour
             }
 
             Debug.Log(
-                $"[Characters] Куплен: {character.displayName}"
+                $"[Characters] Куплен и выбран: {character.id}"
             );
         }
         else
@@ -689,17 +705,16 @@ public class CharacterSelectManager : MonoBehaviour
         }
 
         PlayerPrefs.SetInt(
-            UnlockedKeyPrefix +
+            "CharUnlocked_" +
             character.id,
             1
         );
 
-        PlayerPrefs.SetInt(
-            SelectedCharKey,
-            selectedIndex
-        );
-
         PlayerPrefs.Save();
+
+        ProfileManager.SetSelectedCharacterId(
+            character.id
+        );
 
         UpdateTopCurrencies();
 
@@ -716,9 +731,7 @@ public class CharacterSelectManager : MonoBehaviour
         string id
     )
     {
-        if (
-            string.IsNullOrEmpty(id)
-        )
+        if (string.IsNullOrEmpty(id))
         {
             return false;
         }
@@ -732,8 +745,7 @@ public class CharacterSelectManager : MonoBehaviour
         }
 
         return PlayerPrefs.GetInt(
-            UnlockedKeyPrefix +
-            id,
+            "CharUnlocked_" + id,
             0
         ) == 1;
     }
@@ -746,28 +758,9 @@ public class CharacterSelectManager : MonoBehaviour
         string id
     )
     {
-        int selected =
-            PlayerPrefs.GetInt(
-                SelectedCharKey,
-                0
-            );
-
-        if (
-            selected < 0 ||
-            selected >= characters.Count
-        )
-        {
-            return false;
-        }
-
-        if (
-            characters[selected] == null
-        )
-        {
-            return false;
-        }
-
-        return characters[selected].id ==
+        return
+            ProfileManager
+                .GetSelectedCharacterId() ==
             id;
     }
 
@@ -779,9 +772,7 @@ public class CharacterSelectManager : MonoBehaviour
         string id
     )
     {
-        if (
-            string.IsNullOrEmpty(id)
-        )
+        if (string.IsNullOrEmpty(id))
         {
             return -1;
         }
@@ -805,44 +796,12 @@ public class CharacterSelectManager : MonoBehaviour
     }
 
     // =========================================================
-    // CURRENCY
+    // ОПИСАНИЯ БОНУСОВ
     // =========================================================
-
-    private void UpdateTopCurrencies()
-    {
-        if (coinsTopText != null)
-        {
-            coinsTopText.text =
-                PlayerPrefs.GetInt(
-                    "TotalCoins",
-                    0
-                ).ToString();
-        }
-
-        if (diamondsTopText != null)
-        {
-            diamondsTopText.text =
-                PlayerPrefs.GetInt(
-                    "TotalDiamonds",
-                    0
-                ).ToString();
-        }
-    }
-
-    // =========================================================
-    // BACK
-    // =========================================================
-
-    private void GoBack()
-    {
-        SceneManager.LoadScene(
-            mainMenuScene
-        );
-    }
 
     private string GetCharacterPerk(
-    string id
-)
+        string id
+    )
     {
         switch (
             id.ToLowerInvariant()
@@ -883,5 +842,41 @@ public class CharacterSelectManager : MonoBehaviour
                     "Особый персонаж.\n" +
                     "Бонус пока не задан.";
         }
+    }
+
+    // =========================================================
+    // CURRENCY
+    // =========================================================
+
+    private void UpdateTopCurrencies()
+    {
+        if (coinsTopText != null)
+        {
+            coinsTopText.text =
+                PlayerPrefs.GetInt(
+                    "TotalCoins",
+                    0
+                ).ToString();
+        }
+
+        if (diamondsTopText != null)
+        {
+            diamondsTopText.text =
+                PlayerPrefs.GetInt(
+                    "TotalDiamonds",
+                    0
+                ).ToString();
+        }
+    }
+
+    // =========================================================
+    // BACK
+    // =========================================================
+
+    private void GoBack()
+    {
+        SceneManager.LoadScene(
+            mainMenuScene
+        );
     }
 }
