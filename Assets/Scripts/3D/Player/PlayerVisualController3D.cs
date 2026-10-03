@@ -22,6 +22,18 @@ public class PlayerVisualController : MonoBehaviour
     public string mechanicSlideState = "Mechanic_Slide";
     public string scoutSlideState = "Scout_Slide";
 
+    [Header("Состояния смерти")]
+    public string survivorDeathState = "Survivor_Death";
+    public string militaryDeathState = "Military_Death";
+    public string medicDeathState = "Medic_Death";
+    public string firefighterDeathState = "Firefighter_Death";
+    public string mechanicDeathState = "Mechanic_Death";
+    public string scoutDeathState = "Scout_Death";
+
+    [Header("Animator Parameters")]
+    public string deathTriggerParameter = "Die";
+    public string deathTypeParameter = "DeathType";
+
     private Animator animator;
 
     private static readonly string[] CharacterIds =
@@ -56,10 +68,20 @@ public class PlayerVisualController : MonoBehaviour
             scoutSlideState
         };
 
+    private string[] DeathStateNames =>
+        new string[]
+        {
+            survivorDeathState,
+            militaryDeathState,
+            medicDeathState,
+            firefighterDeathState,
+            mechanicDeathState,
+            scoutDeathState
+        };
+
     private void Awake()
     {
-        animator =
-            GetComponent<Animator>();
+        animator = GetComponent<Animator>();
 
         ApplySelectedCharacter();
     }
@@ -74,13 +96,10 @@ public class PlayerVisualController : MonoBehaviour
             return;
 
         string charId =
-            ProfileManager
-                .GetSelectedCharacterId();
+            ProfileManager.GetSelectedCharacterId();
 
         int index =
-            GetCharacterIndex(
-                charId
-            );
+            GetCharacterIndex(charId);
 
         string stateName =
             RunStateNames[index];
@@ -90,8 +109,7 @@ public class PlayerVisualController : MonoBehaviour
             true
         );
 
-        animator.speed =
-            1f;
+        animator.speed = 1f;
 
         if (debugLog)
         {
@@ -111,13 +129,10 @@ public class PlayerVisualController : MonoBehaviour
             return;
 
         string charId =
-            ProfileManager
-                .GetSelectedCharacterId();
+            ProfileManager.GetSelectedCharacterId();
 
         int index =
-            GetCharacterIndex(
-                charId
-            );
+            GetCharacterIndex(charId);
 
         string stateName =
             SlideStateNames[index];
@@ -130,16 +145,14 @@ public class PlayerVisualController : MonoBehaviour
             if (debugLog)
             {
                 Debug.LogWarning(
-                    $"[PlayerVisual] " +
-                    $"Не найдено состояние Animator: {stateName}"
+                    $"[PlayerVisual] Не найдено состояние Animator: {stateName}"
                 );
             }
 
             return;
         }
 
-        animator.speed =
-            1f;
+        animator.speed = 1f;
 
         if (debugLog)
         {
@@ -154,8 +167,7 @@ public class PlayerVisualController : MonoBehaviour
         if (animator == null)
             return;
 
-        animator.speed =
-            1f;
+        animator.speed = 1f;
 
         ApplySelectedCharacter();
 
@@ -176,21 +188,76 @@ public class PlayerVisualController : MonoBehaviour
         if (animator == null)
             return;
 
-        animator.speed =
-            1f;
+        StopAllCoroutines();
 
-        animator.SetTrigger(
-            "Die"
-        );
+        animator.speed = 1f;
+
+        string charId =
+            ProfileManager.GetSelectedCharacterId();
+
+        int index =
+            GetCharacterIndex(charId);
+
+        string deathState =
+            DeathStateNames[index];
+
+        // Указываем Animator, какой именно персонаж умер.
+        if (
+            HasParameter(
+                deathTypeParameter,
+                AnimatorControllerParameterType.Int
+            )
+        )
+        {
+            animator.SetInteger(
+                deathTypeParameter,
+                index
+            );
+        }
+
+        // На всякий случай сбрасываем старый trigger.
+        if (
+            HasParameter(
+                deathTriggerParameter,
+                AnimatorControllerParameterType.Trigger
+            )
+        )
+        {
+            animator.ResetTrigger(
+                deathTriggerParameter
+            );
+
+            animator.SetTrigger(
+                deathTriggerParameter
+            );
+        }
+
+        // Если состояние смерти существует,
+        // сразу запускаем именно его.
+        //
+        // Это дополнительно защищает от ситуации,
+        // когда переходы Animator настроены неправильно.
+        if (
+            !PlayState(
+                deathState,
+                true
+            )
+        )
+        {
+            if (debugLog)
+            {
+                Debug.LogWarning(
+                    $"[PlayerVisual] Не найдено состояние смерти: {deathState}"
+                );
+            }
+        }
 
         if (debugLog)
         {
             Debug.Log(
-                "[PlayerVisual] Trigger Die"
+                $"[PlayerVisual] Смерть → {charId} → {deathState} → DeathType {index}"
             );
         }
-
-        StopAllCoroutines();
 
         StartCoroutine(
             FreezeAfterDeath()
@@ -200,15 +267,16 @@ public class PlayerVisualController : MonoBehaviour
     private System.Collections.IEnumerator
         FreezeAfterDeath()
     {
-        yield return
-            new WaitForSeconds(
-                1.0f
-            );
+        // Ждём окончания death-клипа.
+        // Значение можно изменить после проверки
+        // реальной длительности твоих клипов.
+        yield return new WaitForSeconds(
+            1.0f
+        );
 
         if (animator != null)
         {
-            animator.speed =
-                0f;
+            animator.speed = 0f;
         }
 
         if (debugLog)
@@ -230,12 +298,19 @@ public class PlayerVisualController : MonoBehaviour
 
         StopAllCoroutines();
 
-        animator.speed =
-            1f;
+        animator.speed = 1f;
 
-        animator.ResetTrigger(
-            "Die"
-        );
+        if (
+            HasParameter(
+                deathTriggerParameter,
+                AnimatorControllerParameterType.Trigger
+            )
+        )
+        {
+            animator.ResetTrigger(
+                deathTriggerParameter
+            );
+        }
 
         ApplySelectedCharacter();
 
@@ -302,6 +377,48 @@ public class PlayerVisualController : MonoBehaviour
     }
 
     // =========================================================
+    // ANIMATOR PARAMETER CHECK
+    // =========================================================
+
+    private bool HasParameter(
+        string parameterName,
+        AnimatorControllerParameterType type
+    )
+    {
+        if (
+            animator == null ||
+            string.IsNullOrEmpty(
+                parameterName
+            )
+        )
+        {
+            return false;
+        }
+
+        AnimatorControllerParameter[] parameters =
+            animator.parameters;
+
+        for (
+            int i = 0;
+            i < parameters.Length;
+            i++
+        )
+        {
+            if (
+                parameters[i].name ==
+                    parameterName &&
+                parameters[i].type ==
+                    type
+            )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // =========================================================
     // INDEX
     // =========================================================
 
@@ -316,8 +433,7 @@ public class PlayerVisualController : MonoBehaviour
         )
         {
             if (
-                CharacterIds[i] ==
-                id
+                CharacterIds[i] == id
             )
             {
                 return i;
