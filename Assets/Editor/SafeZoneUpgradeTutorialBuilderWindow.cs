@@ -7,8 +7,6 @@ using UnityEngine.SceneManagement;
 
 public class SafeZoneUpgradeTutorialBuilderWindow : EditorWindow
 {
-    private const string MAIN_MENU_SCENE = "MainMenu";
-
     private const string MAIN_ROAD_SCENE =
         "Assets/Scenes/MainRoad.unity";
 
@@ -23,9 +21,7 @@ public class SafeZoneUpgradeTutorialBuilderWindow : EditorWindow
     public static void Open()
     {
         SafeZoneUpgradeTutorialBuilderWindow window =
-            GetWindow<
-                SafeZoneUpgradeTutorialBuilderWindow
-            >(
+            GetWindow<SafeZoneUpgradeTutorialBuilderWindow>(
                 "Обучение улучшениям"
             );
 
@@ -119,7 +115,7 @@ public class SafeZoneUpgradeTutorialBuilderWindow : EditorWindow
         }
 
         SafeZoneUpgradeTutorialBootstrap3D bootstrap =
-            FindObjectOfType<
+            Object.FindFirstObjectByType<
                 SafeZoneUpgradeTutorialBootstrap3D
             >();
 
@@ -167,7 +163,7 @@ public class SafeZoneUpgradeTutorialBuilderWindow : EditorWindow
         }
 
         MainMenuManager manager =
-            FindObjectOfType<
+            Object.FindFirstObjectByType<
                 MainMenuManager
             >();
 
@@ -220,14 +216,14 @@ public class SafeZoneUpgradeTutorialBuilderWindow : EditorWindow
         SetupMainRoad();
 
         if (!OpenScene(
-                MAIN_MENU_SCENE
+                MENU_SCENE
             ))
         {
             return;
         }
 
         MainMenuManager manager =
-            FindObjectOfType<
+            Object.FindFirstObjectByType<
                 MainMenuManager
             >();
 
@@ -295,9 +291,7 @@ public class SafeZoneUpgradeTutorialBuilderWindow : EditorWindow
             return false;
         }
 
-        if (
-            !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()
-        )
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
         {
             return false;
         }

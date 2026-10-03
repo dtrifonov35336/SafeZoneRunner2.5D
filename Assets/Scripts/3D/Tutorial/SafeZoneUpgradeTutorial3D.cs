@@ -305,7 +305,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         if (menu == null)
         {
             menu =
-                FindObjectOfType<
+                UnityEngine.Object.FindFirstObjectByType<
                     MainMenuManager
                 >();
         }
@@ -371,7 +371,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             );
 
         EquipmentManager manager =
-            FindObjectOfType<
+            UnityEngine.Object.FindFirstObjectByType<
                 EquipmentManager
             >();
 
@@ -555,7 +555,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             );
 
         HangarManager manager =
-            FindObjectOfType<
+            UnityEngine.Object.FindFirstObjectByType<
                 HangarManager
             >();
 
@@ -687,7 +687,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             TutorialStep.EquipmentUpgrade)
         {
             EquipmentManager manager =
-                FindObjectOfType<
+                UnityEngine.Object.FindFirstObjectByType<
                     EquipmentManager
                 >();
 
@@ -737,7 +737,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             TutorialStep.HangarUpgrade)
         {
             HangarManager manager =
-                FindObjectOfType<
+                UnityEngine.Object.FindFirstObjectByType<
                     HangarManager
                 >();
 
@@ -1117,9 +1117,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         savedSelectables.Clear();
 
         Selectable[] all =
-            FindObjectsOfType<
-                Selectable
-            >();
+            FindObjectsByType<Selectable>(FindObjectsSortMode.None);
 
         foreach (
             Selectable selectable

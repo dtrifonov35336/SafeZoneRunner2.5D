@@ -72,12 +72,12 @@ public class SafeZoneUpgradeTutorialBootstrap3D : MonoBehaviour
                     .MarkTutorialPending();
 
                 SafeZoneUpgradeTutorial3D tutorial =
-                    FindObjectOfType<
+                    Object.FindAnyObjectByType<
                         SafeZoneUpgradeTutorial3D
                     >();
 
                 if (tutorial == null)
-                {
+                {   
                     GameObject go =
                         new GameObject(
                             "SafeZoneUpgradeTutorial3D"
