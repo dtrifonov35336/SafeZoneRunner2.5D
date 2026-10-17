@@ -122,6 +122,52 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     [SerializeField] private float repeatObstacleDelay = 0.35f;
     [SerializeField] private float repeatPickupDelay = 0.5f;
 
+    [Header("Область подтверждения")]
+    [Tooltip(
+        "Делает весь контейнер подсказки кликабельным: нажатие рядом " +
+        "с кнопкой ОК тоже подтверждает действие."
+    )]
+    [SerializeField] private bool enlargeConfirmArea = true;
+
+    [Header("Подсказки двойного прыжка")]
+    [Tooltip(
+        "Через сколько секунд без успешного двойного прыжка " +
+        "показать повторную подсказку."
+    )]
+    [SerializeField] private float doubleJumpRetryHintDelay = 10f;
+
+    [Tooltip(
+        "Через сколько секунд без успешного двойного прыжка " +
+        "предложить альтернативное управление."
+    )]
+    [SerializeField] private float doubleJumpAltHintDelay = 25f;
+
+    [SerializeField]
+    private string doubleJumpRetryHint =
+        "Прыгни, затем нажми ещё раз в воздухе " +
+        "— это двойной прыжок.";
+
+    [Header("Альтернативное управление")]
+    [SerializeField]
+    private bool offerAlternativeDoubleJump = true;
+
+    [SerializeField]
+    private string altControlTitle =
+        "Не получается?";
+
+    [SerializeField]
+    private string altControlMessage =
+        "Включить управление, где двойной прыжок " +
+        "делается двумя свайпами вверх подряд?";
+
+    [SerializeField]
+    private string altControlTryLabel =
+        "Попробовать";
+
+    [SerializeField]
+    private string altControlKeepLabel =
+        "Оставить как есть";
+
     private PlayerMovement3D player;
     private PlayerCollision playerCollision;
 
@@ -129,6 +175,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     private PickupSpawner3D pickupSpawner;
     private RescuedPersonSpawner rescuedSpawner;
     private HUDManager hud;
+    private RunManager runManager;
+    private Button confirmAreaButton;
+
+    private float currentStageStartTime;
+    private bool doubleJumpRetryHintShown;
+    private bool doubleJumpAltHintShown;
+    private GameObject altControlPromptRoot;
+    private bool alternativeSchemeActive;
 
     private readonly List<GameObject> tutorialObjects =
         new List<GameObject>();
@@ -219,6 +273,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         PrepareTextAppearance();
 
+        SetupConfirmArea();
+
         HideHintImmediate();
     }
 
@@ -282,6 +338,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         UpdateRepeatingObstacle();
 
         UpdateRepeatingPickups();
+
+        UpdateTutorialTimedHelp();
     }
 
     private void CacheReferences()
@@ -338,6 +396,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             hud =
                 FindFirstObjectByType<HUDManager>();
         }
+
+        if (runManager == null)
+        {
+            runManager =
+                FindFirstObjectByType<RunManager>();
+        }
     }
 
     // =========================================================
@@ -365,6 +429,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         IsRunning = true;
 
         waitingForReward = false;
+
+        HoldRunManager(true);
 
         if (stopNormalSpawners)
             StopNormalSpawners();
@@ -637,6 +703,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         rescueFinished = false;
 
+        currentStageStartTime = Time.unscaledTime;
+        doubleJumpRetryHintShown = false;
+        doubleJumpAltHintShown = false;
+
+        HideAlternativeControlPrompt();
+
         tutorialCoinsCollected = 0;
         tutorialCoinsTarget = 0;
 
@@ -750,6 +822,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         Time.timeScale = 0f;
 
+        HideAlternativeControlPrompt();
+
         if (hintPanel != null)
         {
             hintPanel.SetActive(true);
@@ -817,6 +891,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         hintConfirmed = false;
 
         Time.timeScale = 0f;
+
+        HideAlternativeControlPrompt();
 
         if (hintPanel != null)
         {
@@ -889,6 +965,15 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             return;
 
         /*
+         * Защита от повторного срабатывания в одном кадре:
+         * контейнер подсказки и кнопка ОК ведут на этот
+         * же метод, поэтому награда не должна начисляться
+         * дважды.
+         */
+        if (!waitingForReward && hintConfirmed)
+            return;
+
+        /*
          * Если это финальное окно —
          * сначала выдаём награду,
          * затем только завершаем обучение.
@@ -903,6 +988,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         hintConfirmed = true;
 
         Time.timeScale = 1f;
+
+        currentStageStartTime = Time.unscaledTime;
+
+        doubleJumpRetryHintShown = false;
+        doubleJumpAltHintShown = false;
 
         if (hintPanel != null)
             hintPanel.SetActive(false);
@@ -939,6 +1029,475 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
                 break;
         }
+    }
+
+    // =========================================================
+    // ОБЛАСТЬ ПОДТВЕРЖДЕНИЯ
+    // =========================================================
+
+    /*
+     * Весь контейнер подсказки становится кликабельным.
+     * Нажатие рядом с кнопкой ОК тоже подтверждает действие,
+     * но используется тот же метод ConfirmHint, поэтому
+     * награда не может начислиться дважды.
+     */
+    private void SetupConfirmArea()
+    {
+        if (!enlargeConfirmArea)
+            return;
+
+        if (hintPanel == null)
+            return;
+
+        confirmAreaButton =
+            hintPanel.GetComponent<Button>();
+
+        if (confirmAreaButton == null)
+        {
+            confirmAreaButton =
+                hintPanel.AddComponent<Button>();
+        }
+
+        Graphic graphic =
+            hintPanel.GetComponent<Graphic>();
+
+        if (graphic != null)
+        {
+            graphic.raycastTarget = true;
+            confirmAreaButton.targetGraphic = graphic;
+        }
+
+        confirmAreaButton.transition =
+            Selectable.Transition.None;
+
+        confirmAreaButton.navigation =
+            new Navigation
+            {
+                mode = Navigation.Mode.None
+            };
+
+        confirmAreaButton.onClick
+            .RemoveListener(ConfirmHint);
+
+        confirmAreaButton.onClick
+            .AddListener(ConfirmHint);
+    }
+
+    // =========================================================
+    // ТАЙМЕРНЫЕ ПОДСКАЗКИ (ДВОЙНОЙ ПРЫЖОК)
+    // =========================================================
+
+    private void UpdateTutorialTimedHelp()
+    {
+        if (
+            CurrentStage !=
+            TutorialStage.DoubleJump
+        )
+        {
+            return;
+        }
+
+        if (
+            doubleJumpStarted ||
+            doubleJumpFinished
+        )
+        {
+            return;
+        }
+
+        float elapsed =
+            Time.unscaledTime -
+            currentStageStartTime;
+
+        if (
+            !doubleJumpRetryHintShown &&
+            elapsed >= doubleJumpRetryHintDelay
+        )
+        {
+            doubleJumpRetryHintShown = true;
+
+            ShowToast(doubleJumpRetryHint);
+        }
+
+        if (
+            offerAlternativeDoubleJump &&
+            !doubleJumpAltHintShown &&
+            elapsed >= doubleJumpAltHintDelay
+        )
+        {
+            doubleJumpAltHintShown = true;
+
+            if (altControlPromptRoot == null)
+            {
+                ShowToast(
+                    "Можно включить альтернативное " +
+                    "управление двойным прыжком."
+                );
+
+                BuildAlternativeControlPrompt();
+            }
+        }
+    }
+
+    private void ShowToast(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+            return;
+
+        if (ToastNotification.Instance != null)
+        {
+            ToastNotification.Instance.Show(message);
+        }
+        else
+        {
+            Debug.Log($"[Tutorial] {message}");
+        }
+    }
+
+    // =========================================================
+    // АЛЬТЕРНАТИВНОЕ УПРАВЛЕНИЕ
+    // =========================================================
+
+    private void OnAltControlTry()
+    {
+        alternativeSchemeActive = true;
+
+        if (TouchControls.Instance != null)
+        {
+            TouchControls.Instance
+                .alternativeDoubleJumpSwipe = true;
+        }
+
+        HideAlternativeControlPrompt();
+
+        ShowToast(
+            "Включено: двойной прыжок — " +
+            "двумя свайпами вверх подряд."
+        );
+    }
+
+    private void OnAltControlKeep()
+    {
+        HideAlternativeControlPrompt();
+
+        ShowToast(
+            "Оставлено прежнее управление."
+        );
+    }
+
+    private void RestoreAlternativeScheme()
+    {
+        if (!alternativeSchemeActive)
+            return;
+
+        alternativeSchemeActive = false;
+
+        if (TouchControls.Instance != null)
+        {
+            TouchControls.Instance
+                .alternativeDoubleJumpSwipe = false;
+        }
+    }
+
+    private void HideAlternativeControlPrompt()
+    {
+        if (altControlPromptRoot == null)
+            return;
+
+        Destroy(altControlPromptRoot);
+
+        altControlPromptRoot = null;
+    }
+
+    private void BuildAlternativeControlPrompt()
+    {
+        if (altControlPromptRoot != null)
+            return;
+
+        GameObject canvasObject =
+            new GameObject(
+                "TutorialAltControlPrompt",
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster)
+            );
+
+        altControlPromptRoot = canvasObject;
+
+        Canvas canvas =
+            canvasObject.GetComponent<Canvas>();
+
+        canvas.renderMode =
+            RenderMode.ScreenSpaceOverlay;
+
+        canvas.sortingOrder = 6000;
+
+        CanvasScaler scaler =
+            canvasObject.GetComponent<CanvasScaler>();
+
+        scaler.uiScaleMode =
+            CanvasScaler.ScaleMode.ScaleWithScreenSize;
+
+        scaler.referenceResolution =
+            new Vector2(1080f, 1920f);
+
+        scaler.matchWidthOrHeight = 0.5f;
+
+        RectTransform root =
+            canvasObject.GetComponent<RectTransform>();
+
+        RectTransform panel =
+            CreatePromptRect("Panel", root);
+
+        panel.anchorMin =
+            new Vector2(0.5f, 1f);
+        panel.anchorMax =
+            new Vector2(0.5f, 1f);
+        panel.pivot =
+            new Vector2(0.5f, 1f);
+        panel.anchoredPosition =
+            new Vector2(0f, -80f);
+        panel.sizeDelta =
+            new Vector2(880f, 440f);
+
+        Image panelImage =
+            panel.gameObject.AddComponent<Image>();
+
+        panelImage.sprite =
+            RuntimeUISprite3D.GetRoundedSprite();
+
+        panelImage.type = Image.Type.Sliced;
+
+        panelImage.color =
+            new Color(
+                0.02f,
+                0.03f,
+                0.05f,
+                0.96f
+            );
+
+        panelImage.raycastTarget = true;
+
+        TextMeshProUGUI title =
+            CreatePromptText(
+                "Title",
+                panel,
+                altControlTitle,
+                36f
+            );
+
+        SetPromptRect(
+            title.rectTransform,
+            new Vector2(0.5f, 1f),
+            new Vector2(0f, -45f),
+            new Vector2(800f, 70f)
+        );
+
+        TextMeshProUGUI message =
+            CreatePromptText(
+                "Message",
+                panel,
+                altControlMessage,
+                28f
+            );
+
+        SetPromptRect(
+            message.rectTransform,
+            new Vector2(0.5f, 1f),
+            new Vector2(0f, -160f),
+            new Vector2(800f, 150f)
+        );
+
+        CreatePromptButton(
+            altControlTryLabel,
+            panel,
+            new Vector2(-220f, -110f),
+            OnAltControlTry
+        );
+
+        CreatePromptButton(
+            altControlKeepLabel,
+            panel,
+            new Vector2(220f, -110f),
+            OnAltControlKeep
+        );
+    }
+
+    private RectTransform CreatePromptRect(
+        string name,
+        Transform parent
+    )
+    {
+        GameObject go =
+            new GameObject(name, typeof(RectTransform));
+
+        go.transform.SetParent(parent, false);
+
+        return go.GetComponent<RectTransform>();
+    }
+
+    private void SetPromptRect(
+        RectTransform rect,
+        Vector2 anchor,
+        Vector2 anchoredPosition,
+        Vector2 size
+    )
+    {
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = anchoredPosition;
+        rect.sizeDelta = size;
+    }
+
+    private TextMeshProUGUI CreatePromptText(
+        string name,
+        RectTransform parent,
+        string value,
+        float size
+    )
+    {
+        RectTransform rect =
+            CreatePromptRect(name, parent);
+
+        TextMeshProUGUI text =
+            rect.gameObject.AddComponent<
+                TextMeshProUGUI>();
+
+        TMP_FontAsset font = GetPromptFont();
+
+        if (font != null)
+        {
+            text.font = font;
+
+            if (font.material != null)
+            {
+                text.fontSharedMaterial =
+                    font.material;
+            }
+        }
+
+        text.text = value ?? string.Empty;
+
+        text.color = Color.white;
+        text.faceColor = Color.white;
+        text.alpha = 1f;
+
+        text.fontSize = size;
+
+        text.alignment =
+            TextAlignmentOptions.Center;
+
+        text.textWrappingMode =
+            TextWrappingModes.Normal;
+
+        text.overflowMode =
+            TextOverflowModes.Overflow;
+
+        text.outlineWidth = 0.2f;
+        text.outlineColor = Color.black;
+
+        text.raycastTarget = false;
+
+        return text;
+    }
+
+    private void CreatePromptButton(
+        string label,
+        RectTransform parent,
+        Vector2 anchoredPosition,
+        UnityEngine.Events.UnityAction action
+    )
+    {
+        RectTransform rect =
+            CreatePromptRect(label, parent);
+
+        SetPromptRect(
+            rect,
+            new Vector2(0.5f, 0.5f),
+            anchoredPosition,
+            new Vector2(340f, 110f)
+        );
+
+        Image image =
+            rect.gameObject.AddComponent<Image>();
+
+        image.sprite =
+            RuntimeUISprite3D.GetRoundedSprite();
+
+        image.type = Image.Type.Sliced;
+
+        image.color =
+            new Color(
+                0.16f,
+                0.52f,
+                0.35f,
+                1f
+            );
+
+        image.raycastTarget = true;
+
+        Button button =
+            rect.gameObject.AddComponent<Button>();
+
+        button.targetGraphic = image;
+
+        button.onClick.AddListener(action);
+
+        TextMeshProUGUI text =
+            CreatePromptText(
+                "Label",
+                rect,
+                label,
+                30f
+            );
+
+        RectTransform textRect =
+            text.rectTransform;
+
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.pivot = new Vector2(0.5f, 0.5f);
+        textRect.offsetMin =
+            new Vector2(8f, 8f);
+        textRect.offsetMax =
+            new Vector2(-8f, -8f);
+    }
+
+    private TMP_FontAsset GetPromptFont()
+    {
+        if (
+            titleText != null &&
+            titleText.font != null
+        )
+        {
+            return titleText.font;
+        }
+
+        TMP_FontAsset font =
+            Resources.Load<TMP_FontAsset>(
+                "Fonts/UI/Generated/GolosText-Medium"
+            );
+
+        if (font == null)
+        {
+            font =
+                TMP_Settings.defaultFontAsset;
+        }
+
+        return font;
+    }
+
+    // =========================================================
+    // RUN MANAGER HOLD
+    // =========================================================
+
+    private void HoldRunManager(bool value)
+    {
+        if (runManager == null)
+            return;
+
+        runManager.SetTutorialHold(value);
     }
 
     // =========================================================
@@ -997,6 +1556,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         CurrentStage =
             TutorialStage.Completed;
+
+        HideAlternativeControlPrompt();
+
+        RestoreAlternativeScheme();
+
+        HoldRunManager(false);
 
         ClearTutorialObjects();
 
@@ -1988,6 +2553,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     private void OnDestroy()
     {
         Time.timeScale = 1f;
+
+        RestoreAlternativeScheme();
+
+        HoldRunManager(false);
 
         if (playerCollision != null)
         {

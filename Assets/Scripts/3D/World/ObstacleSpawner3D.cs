@@ -46,6 +46,50 @@ public class ObstacleSpawner3D : MonoBehaviour
     )]
     public float infiniteDifficultyDistance = 2500f;
 
+    [Header("Кривая сложности (бесконечный режим)")]
+    [Tooltip(
+        "Во сколько раз быстрее достигается максимум сложности " +
+        "относительно infiniteDifficultyDistance."
+    )]
+    public float infiniteRampSpeedup = 1.6f;
+
+    [Tooltip(
+        "Нелинейность кривой: >1 — мягкий старт и ускоренный рост."
+    )]
+    public float infiniteCurveExponent = 1.25f;
+
+    [Tooltip(
+        "Минимальный интервал спавна в бесконечном режиме. " +
+        "Жёстче, чем minInterval, но не нарушает проверку безопасного зазора."
+    )]
+    public float infiniteMinInterval = 2.1f;
+
+    [Tooltip(
+        "Дополнительный рост скорости сверх maxObstacleSpeed " +
+        "на больших дистанциях (доля: 0.25 = +25%)."
+    )]
+    public float infiniteSpeedOvertime = 0.25f;
+
+    [Tooltip(
+        "Дистанция, на которой заканчивается дополнительный рост скорости."
+    )]
+    public float infiniteSpeedOvertimeDistance = 8000f;
+
+    [Tooltip(
+        "Максимальный шанс двойной волны препятствий " +
+        "на пике сложности бесконечного режима."
+    )]
+    [Range(0f, 1f)]
+    public float infiniteDoubleWaveMaxChance = 0.55f;
+
+    [Tooltip(
+        "Разрешать двойные волны в бесконечном режиме даже при " +
+        "maxObstaclesPerWave = 1. Оба препятствия волны — обычные " +
+        "(перепрыгиваемые), поэтому полоса всегда проходима. " +
+        "Режим \"До убежища\" этим флагом не затрагивается."
+    )]
+    public bool infiniteAllowDoubleWaves = true;
+
     [Header("Reveal")]
     public float revealZ = 70f;
 
@@ -170,10 +214,18 @@ public class ObstacleSpawner3D : MonoBehaviour
         float difficulty =
             GetDifficulty01();
 
+        float minIntervalForMode =
+            IsInfiniteMode()
+                ? Mathf.Min(
+                    minInterval,
+                    infiniteMinInterval
+                )
+                : minInterval;
+
         float interval =
             Mathf.Lerp(
                 startInterval,
-                minInterval,
+                minIntervalForMode,
                 difficulty
             );
 
@@ -206,12 +258,35 @@ public class ObstacleSpawner3D : MonoBehaviour
         float t =
             GetDifficulty01();
 
-        currentObstacleSpeed =
+        float speed =
             Mathf.Lerp(
                 baseObstacleSpeed,
                 maxObstacleSpeed,
                 t
             );
+
+        if (IsInfiniteMode())
+        {
+            /*
+             * Мягкий дополнительный рост скорости на длинных
+             * дистанциях. Потолок ограничен, чтобы камера,
+             * физика и проверка безопасного зазора оставались
+             * корректными.
+             */
+            float overtime =
+                Mathf.Max(
+                    0f,
+                    infiniteSpeedOvertime
+                );
+
+            speed *=
+                1f +
+                overtime *
+                GetDistanceOvertime01();
+        }
+
+        currentObstacleSpeed =
+            speed;
     }
 
     public float GetCurrentObstacleSpeed()
@@ -219,7 +294,7 @@ public class ObstacleSpawner3D : MonoBehaviour
         return currentObstacleSpeed;
     }
 
-    private float GetDifficulty01()
+    private bool IsInfiniteMode()
     {
         if (runManager == null)
         {
@@ -229,10 +304,39 @@ public class ObstacleSpawner3D : MonoBehaviour
                 >();
         }
 
-        if (
+        return
             runManager != null &&
-            runManager.infiniteRun
+            runManager.infiniteRun;
+    }
+
+    private float GetDistanceOvertime01()
+    {
+        if (!IsInfiniteMode())
+            return 0f;
+
+        float distance =
+            HUDManager.Instance != null
+                ? HUDManager.Instance
+                    .GetDistance()
+                : 0f;
+
+        if (
+            infiniteSpeedOvertimeDistance <=
+            0.01f
         )
+        {
+            return 1f;
+        }
+
+        return Mathf.Clamp01(
+            distance /
+            infiniteSpeedOvertimeDistance
+        );
+    }
+
+    private float GetLinearDifficulty01()
+    {
+        if (IsInfiniteMode())
         {
             float distance = 0f;
 
@@ -271,6 +375,44 @@ public class ObstacleSpawner3D : MonoBehaviour
         );
     }
 
+    private float GetDifficulty01()
+    {
+        float linear =
+            GetLinearDifficulty01();
+
+        if (!IsInfiniteMode())
+        {
+            /*
+             * Режим "До убежища" сохраняет прежние правила.
+             */
+            return linear;
+        }
+
+        /*
+         * Бесконечный режим: заметнее и нелинейнее.
+         * Мягкое начало (до 500 м), затем ускоренный рост.
+         */
+        float boosted =
+            Mathf.Clamp01(
+                linear *
+                Mathf.Max(
+                    1f,
+                    infiniteRampSpeedup
+                )
+            );
+
+        float exponent =
+            Mathf.Max(
+                0.1f,
+                infiniteCurveExponent
+            );
+
+        return Mathf.Pow(
+            boosted,
+            exponent
+        );
+    }
+
     // =========================================================
     // WAVE
     // =========================================================
@@ -287,11 +429,46 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
-        if (
+        float waveChance =
+            doubleObstacleWaveChance;
+
+        if (IsInfiniteMode())
+        {
+            /*
+             * Чем дальше — тем чаще комбинации из двух
+             * препятствий. Проходимость проверяется
+             * в CanSpawnAnotherObstacle, поэтому
+             * невозможных комбинаций не возникает.
+             */
+            waveChance =
+                Mathf.Lerp(
+                    doubleObstacleWaveChance,
+                    Mathf.Max(
+                        doubleObstacleWaveChance,
+                        infiniteDoubleWaveMaxChance
+                    ),
+                    GetDifficulty01()
+                );
+        }
+
+        /*
+         * В бесконечном режиме двойные волны включаются отдельным
+         * флагом (даже если maxObstaclesPerWave = 1), чтобы растущая
+         * плотность испытаний работала. В режиме "До убежища" условие
+         * прежнее и поведение не меняется.
+         */
+        bool allowWaveForMode =
             allowDoubleObstacleWaves &&
-            maxObstaclesPerWave >= 2 &&
+            (
+                IsInfiniteMode()
+                    ? infiniteAllowDoubleWaves
+                    : maxObstaclesPerWave >= 2
+            );
+
+        if (
+            allowWaveForMode &&
             Random.value <
-            doubleObstacleWaveChance
+            waveChance
         )
         {
             if (

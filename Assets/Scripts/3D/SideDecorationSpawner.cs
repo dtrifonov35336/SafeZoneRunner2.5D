@@ -206,6 +206,9 @@ public class SideDecorationSpawner : MonoBehaviour
             "Decor_" +
             prefab.name;
 
+        // Сезонное оформление для только что созданной декорации.
+        SeasonManager3D.ApplyTo(inst);
+
         // -----------------------------------------------------
         // X
         // -----------------------------------------------------

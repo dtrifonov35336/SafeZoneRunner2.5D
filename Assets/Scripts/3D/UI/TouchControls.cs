@@ -19,6 +19,20 @@ public class TouchControls : MonoBehaviour
     [Tooltip("Максимальное расстояние между двумя нажатиями.")]
     public float doubleTapMaxDistance = 100f;
 
+    [Header("Альтернативная схема (двойной прыжок)")]
+    [Tooltip(
+        "Если включено: двойной прыжок выполняется двумя " +
+        "последовательными свайпами вверх. По умолчанию выключено, " +
+        "чтобы не менять управление в обычных забегах."
+    )]
+    public bool alternativeDoubleJumpSwipe = false;
+
+    [Tooltip(
+        "Максимальное время между двумя свайпами вверх " +
+        "для альтернативного двойного прыжка."
+    )]
+    public float doubleSwipeWindow = 0.6f;
+
     public bool LeftRequested { get; private set; }
     public bool RightRequested { get; private set; }
     public bool JumpRequested { get; private set; }
@@ -32,6 +46,8 @@ public class TouchControls : MonoBehaviour
     private bool waitingForSecondTap;
     private float firstTapTime;
     private Vector2 firstTapPosition;
+
+    private float lastUpSwipeTime = -100f;
 
     private void Awake()
     {
@@ -136,9 +152,24 @@ public class TouchControls : MonoBehaviour
         {
             // Вертикальный свайп.
             if (delta.y > 0f)
-                JumpRequested = true;
+            {
+                if (alternativeDoubleJumpSwipe &&
+                    Time.unscaledTime - lastUpSwipeTime
+                        <= doubleSwipeWindow)
+                {
+                    lastUpSwipeTime = -100f;
+                    DoubleJumpRequested = true;
+                }
+                else
+                {
+                    lastUpSwipeTime = Time.unscaledTime;
+                    JumpRequested = true;
+                }
+            }
             else
+            {
                 SlideRequested = true;
+            }
         }
     }
 

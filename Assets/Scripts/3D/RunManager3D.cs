@@ -25,6 +25,14 @@ public class RunManager : MonoBehaviour
     public RescuedPersonSpawner rescuedPersonSpawner;
     public SideDecorationSpawner sideDecorationSpawner;
 
+    [Header("Обучение")]
+    [Tooltip(
+        "Пока обучение запущено, таймер забега и появление " +
+        "убежища приостанавливаются, чтобы маршрут не завершился " +
+        "раньше выполнения учебных заданий."
+    )]
+    public bool holdDuringTutorial = true;
+
     [Header("Убежище")]
     public GameObject safeZonePrefab;
 
@@ -47,6 +55,8 @@ public class RunManager : MonoBehaviour
 
     private bool spawnStopped = false;
     private bool safeZoneSpawned = false;
+
+    private bool tutorialHold = false;
 
     private SafeZone activeSafeZone;
 
@@ -72,8 +82,19 @@ public class RunManager : MonoBehaviour
         );
     }
 
+    private void Start()
+    {
+        // Применяем сезонное оформление окружения (обычный/зима/весна).
+        SeasonManager3D.ApplyScene();
+    }
+
     private void Update()
     {
+        if (tutorialHold && holdDuringTutorial)
+        {
+            return;
+        }
+
         if (ChaseManager.Instance != null &&
             ChaseManager.Instance.IsGameOver())
         {
@@ -221,6 +242,11 @@ public class RunManager : MonoBehaviour
     public bool IsShelterRun()
     {
         return !infiniteRun;
+    }
+
+    public void SetTutorialHold(bool value)
+    {
+        tutorialHold = value;
     }
 
     public bool ShouldRewindOnRevive()

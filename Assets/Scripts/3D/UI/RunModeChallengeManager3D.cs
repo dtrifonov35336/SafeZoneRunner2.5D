@@ -136,6 +136,18 @@ public class RunModeChallengeManager3D : MonoBehaviour
         if (finished)
             return;
 
+        // Накопительная статистика для долгосрочных «Экспедиций».
+        if (HUDManager.Instance != null)
+        {
+            ExpeditionSystem3D.RecordRun(
+                Mathf.RoundToInt(
+                    HUDManager.Instance.GetDistance()
+                ),
+                collectedCoins,
+                rescued
+            );
+        }
+
         if (victory && !infiniteRun)
         {
             AchievementSystem3D.Unlock(
@@ -294,6 +306,12 @@ public class RunModeChallengeManager3D : MonoBehaviour
             Mathf.RoundToInt(
                 HUDManager.Instance.GetDistance()
             );
+
+        // Бесплатные алмазы за каждые 1000 м (защищено от повторов).
+        FreeDiamondReward3D.CheckDistanceRewards(
+            distance,
+            true
+        );
 
         if (distance >= 1000)
         {

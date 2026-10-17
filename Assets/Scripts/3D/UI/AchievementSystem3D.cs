@@ -345,6 +345,8 @@ public static class AchievementSystem3D
 
         PlayerPrefs.Save();
 
+        GrantMasteryDiamonds(id);
+
         if (
             ToastNotification.Instance !=
             null
@@ -435,6 +437,38 @@ public static class AchievementSystem3D
         }
 
         return true;
+    }
+
+    // Дополнительные алмазы за редкие и сложные достижения.
+    // Выдаются один раз при первом разблокировании.
+    private static void GrantMasteryDiamonds(string id)
+    {
+        switch (id)
+        {
+            case "infinite_5000":
+                FreeDiamondReward3D.TryClaimBonus(id, 10);
+                break;
+
+            case "infinite_10000":
+                FreeDiamondReward3D.TryClaimBonus(id, 10);
+                break;
+
+            case "infinite_task_master":
+                FreeDiamondReward3D.TryClaimBonus(id, 10);
+                break;
+
+            case "shelter_task_master":
+                FreeDiamondReward3D.TryClaimBonus(id, 10);
+                break;
+
+            case "infinite_1000_no_hits":
+                FreeDiamondReward3D.TryClaimBonus(id, 5);
+                break;
+
+            case "shelter_no_hits":
+                FreeDiamondReward3D.TryClaimBonus(id, 5);
+                break;
+        }
     }
 
     public static AchievementDefinition3D Find(

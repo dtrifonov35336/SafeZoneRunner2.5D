@@ -58,7 +58,11 @@
     "com.ivanmurzak.unity.mcp.tilemap": "2.0.1",
     "com.ivanmurzak.unity.mcp.navigation": "2.0.1",
     "com.ivanmurzak.unity.mcp.cinemachine": "2.0.1",
-    "com.ivanmurzak.unity.mcp.inputsystem": "2.0.1"
+    "com.ivanmurzak.unity.mcp.inputsystem": "2.0.1",
+    "com.ivanmurzak.unity.mcp.particlesystem": "2.0.1",
+    "com.ivanmurzak.unity.mcp.probuilder": "2.0.1",
+    "com.ivanmurzak.unity.mcp.splines": "2.0.1",
+    "com.ivanmurzak.unity.mcp.terrain": "2.0.1"
   },
   "scopedRegistries": [
     {

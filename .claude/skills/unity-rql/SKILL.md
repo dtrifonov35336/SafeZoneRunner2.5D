@@ -83,15 +83,25 @@ Scenes, prefabs, assets, Editor state:
 | `navigation` | AI Navigation project settings and operations: agentTypes (bake settings, writable), areas (name, cost), BakeAll(), ClearAll() |
 | `objects` | every GameObject in the loaded scenes, depth-first, inactive ones included |
 | `prefab` | root GameObject of the prefab open in prefab editing mode (none otherwise) |
+| `probuilder` | ProBuilder: meshes (every ProBuilderMesh in the loaded scenes), CreateShape(type, name, size, position, rotation, parent), CreatePolyShape(points, height, name, position, flipNormals, parent), Merge(meshes, deleteSources) |
 | `profiler` | Unity profiler: enabled supported memory rendering script frame modules (live snapshots, MB / ms); calls Start, Stop, ClearFrames, EnableModule, Save, Load (rql-schema "profiler" for signatures) |
 | `roots` | root GameObjects of the loaded scenes |
 | `scenes` | loaded scenes |
 | `selection` | objects selected in the Editor |
 | `shaders` | every shader the Editor knows (built-in and project): name supported hasErrors |
+| `splines` | spline containers of the loaded scenes (containers) and CreateContainer(name, position, eulerAngles, closed, parent) |
+| `terrain` | terrain operations without an owner: Create (Terrain GameObject + TerrainData asset), CreateLayer (TerrainLayer asset) |
 | `testResults` | results of the last tests-run: name status durationMs message stackTrace |
 | `tests` | test methods (fullName name fixture namespace assembly mode categories parameterized explicit ignored); run a selection with tests-run query, e.g. tests \| where fixture == "PlayerTests" |
 | `tilemap` | tilemap operations without an owner: CreateTilemap (Grid + Tilemap GameObject), CreateTile, CreateRuleTile (tile assets) |
 | `timeline` | timeline operations without an owner: Create (TimelineAsset .playable), CreateSignal (SignalAsset .signal) |
+| `probuilder.edges(…)` | probuilder.edges(mesh, faces?): distinct edges [[a, b], …] of the faces (index list; default every face), for Bevel / SubdivideEdges / ConnectEdges |
+| `probuilder.facing(…)` | probuilder.facing(mesh, direction): indices of the faces pointing Up, Down, Left, Right, Forward, Back or Other (local space, within 45°) |
+| `probuilder.openEdges(…)` | probuilder.openEdges(mesh): border edges [[a, b], …] (a face on one side only: around holes, plane borders), for Bridge |
+| `probuilder.vertices(…)` | probuilder.vertices(mesh, start?, count?): [{index, position}] local vertex positions (at most 20 per call; default 0, 20) |
+| `terrain.heightAt(…)` | terrain.heightAt(terrain, worldX, worldZ): world-space surface height (Y) at a world X / Z position |
+| `terrain.heightStats(…)` | terrain.heightStats(terrain, x?, y?, w?, h?): {min, max, average, cells} of a heightmap region (default: the whole heightmap) |
+| `terrain.heights(…)` | terrain.heights(terrain, x, y, w?, h?): normalized heights 0 … 1 of a heightmap region as rows (at most 20 × 20 cells) |
 | `tilemap.cell(…)` | tilemap.cell(tilemap, cell): {cell, tile, path, sprite, color, colliderType, flags, transform} of one cell (tile null when empty) |
 | `tilemap.cellToWorld(…)` | tilemap.cellToWorld(tilemap, cell): the world position of a cell's center |
 | `tilemap.cells(…)` | tilemap.cells(tilemap, tile?): the first 20 occupied cells (optionally of one tile asset, path or name), bottom-left first |
@@ -313,6 +323,159 @@ navigation | get areas | where index == 3 | set name = "Water", cost = 4
 defaultArea, areaMask and the agent-type list; the numeric members stay writable. A LayerMask reads as its int mask and takes an
 int (-1 = Everything), a layer name or a list of layer names.
 
+## Particle systems
+
+Particle systems are components: `objects | get components | where $ is ParticleSystem`. Module structs (`main`,
+`emission`, `shape` …) are written through, even though they are get-only properties:
+
+```
+objects | get components | where $ is ParticleSystem | set main.startLifetime = 3, main.loop = false
+objects | get components | where $ is ParticleSystem | set emission.rateOverTime = [5, 25]          random between two
+objects | get components | where $ is ParticleSystem | set main.startColor = "#ff8800"
+objects | get components | where $ is ParticleSystem | set main.startColor = [["#ff0000", 0], ["#0000ff", 1]]   gradient
+```
+
+`MinMaxCurve` takes a number or `[min, max]`; `MinMaxGradient` a color, `[color, color]` or gradient keys.
+Playback in the Editor: `objects | get components | where $ is ParticleSystem | call Play()` (also Pause, Stop, Clear,
+Simulate(seconds)).
+
+## ProBuilder
+
+ProBuilder meshes are components: `probuilder | get meshes` (= `objects | get components | where $ is ProBuilderMesh`). A mesh
+reads as faceCount vertexCount edgeCount triangleCount, `bounds` (local) / `worldBounds`, `directions` (face indices per local
+direction), `materials` (slots: index material faceCount) and `faces` (read-only views: index direction center normal
+submeshIndex material vertices edges); the raw vertex arrays are not members. Edit with `call` (rql-mutate): faces are index lists
+`[0, 1]`, edges vertex index pairs `[[0, 1], [1, 2]]`. `probuilder.facing($, "Up")`, `probuilder.edges($, faces?)`,
+`probuilder.openEdges($)` and `probuilder.vertices($, start?, count?)` compute selections (also as call arguments). The receipt's
+result column holds the created mesh's $ref: `ref("ProBuilderMesh#…") | call Extrude([0], 1)`.
+
+Create and inspect:
+
+```
+probuilder | call CreateShape("Cube", "Crate", "(2, 1, 2)", "(0, 0.5, 0)")   type, name?, size?, position?, rotation?, parent?
+probuilder | call CreateShape("Cube", "Box", null, "(3, 0.5, 0)")   types: Cube Stair CurvedStair Prism Cylinder Plane Door Pipe Cone Sprite Arch Sphere Torus
+probuilder | call CreateShape("Cylinder", "Block", "(1, 2, 1)", "(6, 1, 0)")
+probuilder | call CreatePolyShape(["(0, 0)", "(4, 0)", "(4, 3)", "(0, 3)"], 0.5, "Floor", "(-6, 0, 0)")   points (x, z), height, name?, position?, flipNormals?, parent?
+probuilder | get meshes | select $ref gameObject.name faceCount vertexCount edgeCount triangleCount bounds.size
+probuilder | get meshes | where gameObject.name == "Crate" | select directions materials worldBounds.center
+probuilder | get meshes | where gameObject.name == "Crate" | get faces | select index direction center normal vertexCount submeshIndex material.name
+probuilder | get meshes | where gameObject.name == "Crate" | get faces | where direction == "Up" | select index center edges
+probuilder | get meshes | where gameObject.name == "Crate" | select up=(probuilder.facing($, "Up")) edges=(probuilder.edges($, [0])) v=(probuilder.vertices($, 0, 4))
+```
+
+Faces (indices shift after DeleteFaces; Extrude appends the new side faces and returns their indices):
+
+```
+editor | call CreateMaterial("Assets/Materials/Grass.mat")
+probuilder | get meshes | where gameObject.name == "Crate" | call SetFaceMaterial(probuilder.facing($, "Up"), "Assets/Materials/Grass.mat")   faces, material (path, unity.asset(…) or ref); returns the submesh index
+probuilder | get meshes | where gameObject.name == "Crate" | get materials | select index material.name faceCount
+probuilder | get meshes | where gameObject.name == "Crate" | call Extrude(probuilder.facing($, "Up"), 0.5)   faces, distance (negative = inward), method? FaceNormal | IndividualFaces | VertexNormal
+probuilder | get meshes | where gameObject.name == "Crate" | call Extrude(probuilder.facing($, "Forward"), 0.25, "IndividualFaces")
+probuilder | get meshes | where gameObject.name == "Crate" | call FlipNormals([0])   faces? (every face when omitted)
+probuilder | get meshes | where gameObject.name == "Box" | call DeleteFaces(probuilder.facing($, "Up"))   at least one face must remain
+probuilder | get meshes | where gameObject.name == "Box" | select open=(probuilder.openEdges($))
+probuilder | get meshes | where gameObject.name == "Box" | call Bridge(probuilder.openEdges($)[0], probuilder.openEdges($)[2])   two open edges [a, b], allowNonManifold?; returns the new face index
+```
+
+Edges, pivot, merge:
+
+```
+probuilder | get meshes | where gameObject.name == "Block" | call Bevel(probuilder.edges($, probuilder.facing($, "Down")), 0.1)   edges, amount 0 … 1 (exclusive); returns the new face indices
+probuilder | get meshes | where gameObject.name == "Block" | call SubdivideEdges(probuilder.edges($, [0]), 1)   edges, subdivisions (1 = split in half); returns the vertices added
+probuilder | get meshes | where gameObject.name == "Block" | call ConnectEdges(probuilder.edges($, [1]))   at least 2 edges sharing faces; returns the new face indices
+probuilder | get meshes | where gameObject.name == "Floor" | call SetPivot("Center")   "Center" (bounds) or "FirstVertex"; the geometry stays in place
+probuilder | get meshes | where gameObject.name == "Floor" | call SetPivotAt("(-6, 0, 0)")   a world position
+probuilder | call Merge([meshes.first(gameObject.name == "Crate"), meshes.first(gameObject.name == "Box")])   refs to meshes or GameObjects (first = target), deleteSources? (default true)
+```
+
+Directions are in the mesh's local space (normal within 45° of the axis; the rest is Other). Invalid indices, edges that are not
+edges of the mesh, amounts outside the range and deleting every face fail without changing anything. Every call is undoable
+(the mesh is rebuilt after Undo / Redo); a created material asset stays.
+
+## Splines
+
+A `SplineContainer` component holds splines; `splines[i]` has `closed`, `knotCount`, `length` (world units) and
+`knots[j]` with writable `position` (container-local), `worldPosition`, `tangentIn`, `tangentOut`, `eulerAngles`,
+`tangentMode` (AutoSmooth, Linear, Mirrored, Continuous, Broken) and `tension`. The `splines` source lists every
+container (`splines | get containers`) and creates new ones. Writes and calls are undoable. `rql-schema "SplineContainer"`
+lists the methods; `… | get splines | get knots | first 1 | describe` lists the knot members.
+
+```
+splines | call CreateContainer("Road")   new GameObject + SplineContainer (one empty spline)
+splines | call CreateContainer("Loop", "(0, 0, 5)", "(0, 90, 0)", true)   name, position, eulerAngles, closed
+splines | get containers | select gameObject.name n=(splines.count()) splines.knotCount
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call AddKnots(["(0, 0, 0)", "(5, 0, 2)", "(10, 0, 0)"])   append several knots to spline 0
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call AddKnot("(15, 0, 3)")   append one knot to spline 0
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call AddSpline()   returns the new spline index
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call AddKnot(1, "(0, 2, 0)")   append to spline 1
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call InsertKnot(1, "(2, 0, 1)")   insert at knot index 1 (InsertKnot(spline, knot, position) for others)
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call RemoveKnot(0)   RemoveKnot(spline, knot) for other splines
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call Evaluate(0.5)   point at t: position (world) localPosition tangent up
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | get splines | get knots | select index position tangentMode
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | set splines[0].knots[2].position = "(10, 1, 0)"   move a knot (container-local)
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | set splines[0].knots[0].tangentMode = "Linear"
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | get splines | get knots | set tangentMode = "AutoSmooth"   every knot of every spline
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | set splines[0].closed = true
+objects | get components | where $ is SplineContainer | where gameObject.name == "Road" | call RemoveSpline(1)
+```
+
+Knot methods take an optional leading spline index (`AddKnot(position)` = spline 0, `AddKnot(1, position)` = spline 1);
+new knots are AutoSmooth. Writing a tangent of an AutoSmooth / Linear knot switches it to Broken so the value sticks.
+Evaluate needs rql-mutate (it is a call); its result column holds the sample. Unity.Mathematics `float2` / `float3` /
+`float4` / `quaternion` values print and are written like vectors: `"(1, 2, 3)"`; a quaternion also accepts euler
+degrees `"(0, 90, 0)"`.
+
+## Terrain
+
+Terrains are components: `objects | get components | where $ is Terrain`. Settings are members of the Terrain, the data
+(size, resolutions, layers, prototypes) lives in its `terrainData`. Heights are normalized 0 … 1 (fraction of
+`terrainData.size.y`); heightmap / alphamap cells are `x` along world X and `y` along world Z.
+
+```
+objects | get components | where $ is Terrain | select $ref gameObject.name terrainData.size terrainData.heightmapResolution terrainData.terrainLayers.name
+terrain | call Create("Island", "Assets/Terrain/Island.asset", 257, "(500, 120, 500)", "(0, 0, 0)")   name, dataPath, heightmapResolution, size, position
+objects | get components | where $ is Terrain | set terrainData.size = "(800, 200, 800)"
+objects | get components | where $ is Terrain | set terrainData.heightmapResolution = 513, terrainData.alphamapResolution = 512
+objects | get components | where $ is Terrain | set heightmapPixelError = 2, drawTreesAndFoliage = false, materialTemplate = unity.asset("Assets/Mats/Terrain.mat")
+```
+
+Heights (`call` needs rql-mutate; sampling functions work in rql-query):
+
+```
+objects | get components | where $ is Terrain | call SetHeights(0.25)                                  flatten everything to 25 %
+objects | get components | where $ is Terrain | call SetHeights(0.6, 100, 100, 32, 32)                 height, x, y, w, h (w / h 0 = to the edge)
+objects | get components | where $ is Terrain | call SetHeightGrid([[0.1, 0.2], [0.3, 0.4]], 10, 20)    explicit rows (row = y) starting at cell (10, 20)
+objects | get components | where $ is Terrain | select h=(terrain.heights($, 10, 20, 2, 2))            normalized rows, at most 20 × 20
+objects | get components | where $ is Terrain | select s=(terrain.heightStats($))                       {min, max, average, cells}; region: ($, x, y, w, h)
+objects | get components | where $ is Terrain | select y=(terrain.heightAt($, 250, 250))                world surface Y at world X / Z
+```
+
+Layers (textures), trees and details:
+
+```
+terrain | call CreateLayer("Assets/Terrain/Grass.terrainlayer", unity.asset("Assets/Textures/grass.png"), "(10, 10)")
+objects | get components | where $ is Terrain | call AddLayer(unity.asset("Assets/Terrain/Grass.terrainlayer"))   returns the layer index
+objects | get components | where $ is Terrain | call PaintLayer(1, 1.0, 0, 0, 64, 64)                  layer, strength, x, y, w, h on the alphamap
+objects | get components | where $ is Terrain | call RemoveLayer(0)
+objects | get components | where $ is Terrain | set terrainData.terrainLayers[0].tileSize = "(20, 20)"
+objects | get components | where $ is Terrain | call AddTreePrototype(unity.asset("Assets/Trees/Oak.prefab"))    returns the prototype index
+objects | get components | where $ is Terrain | call PlaceTrees(0, 200, 0.1, 0.1, 0.5, 0.5)            prototype, count, minX, minZ, maxX, maxZ (normalized), heightScale?, widthScale?
+objects | get components | where $ is Terrain | call PlaceTreesAt(["(0.5, 0.5)", "(0.25, 0.75)"], 0)     normalized (x, z) positions, prototype
+objects | get components | where $ is Terrain | call ClearTrees()
+objects | get components | where $ is Terrain | select terrainData.treeInstanceCount terrainData.treePrototypes.prefab
+objects | get components | where $ is Terrain | set terrainData.treePrototypes[0] = {prefab: unity.asset("Assets/Trees/Oak.prefab"), bendFactor: 0.3}   prototypes are replaced whole
+objects | get components | where $ is Terrain | set terrainData.treeInstances[0].heightScale = 2
+objects | get components | where $ is Terrain | call AddDetailPrototype(unity.asset("Assets/Textures/grass_blade.png"))   texture = grass billboard, prefab = detail mesh
+objects | get components | where $ is Terrain | get terrainData | call SetDetailResolution(1024, 32)
+objects | get components | where $ is Terrain | where gameObject.name == "Center" | call SetNeighbors(ref("Terrain#…"), null, ref("Terrain#…"), null)   left, top, right, bottom
+```
+
+`terrainData.treeInstances` is read only when named (`select terrainData.treeInstances[0]`). Tree / detail prototype
+members are read-only (TerrainData returns copies): replace the element with an object literal. Invalid resolutions, regions
+outside the map and out-of-range indices fail without changing anything. Heights, paint, layers and trees are undoable;
+created assets (TerrainData, TerrainLayer) are not removed by Undo. Neighbors are not saved with the scene (Unity
+reconnects terrains with `allowAutoConnect` and the same `groupingID`).
+
 ## Tilemap
 
 Tilemaps are components on children of a `Grid`: `objects | get components | where $ is Tilemap`. Cells are `"(x, y, z)"` (z = 0 for 2D);
@@ -440,6 +603,10 @@ Clips have no $ref: address them through their timeline (`… | get tracks | get
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Cinemachine.CinemachineModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.InputSystem.InputSystemModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Navigation.NavigationModule`
+- `com.IvanMurzak.Unity.MCP.Editor.Rql.Particles.ParticleSystemModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Physics3D.PhysicsModule`
+- `com.IvanMurzak.Unity.MCP.Editor.Rql.ProBuilder.ProBuilderModule`
+- `com.IvanMurzak.Unity.MCP.Editor.Rql.Splines.SplinesModule`
+- `com.IvanMurzak.Unity.MCP.Editor.Rql.Terrains.TerrainModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Tilemaps.TilemapModule`
 - `com.IvanMurzak.Unity.MCP.Editor.Rql.Timelines.TimelineModule`

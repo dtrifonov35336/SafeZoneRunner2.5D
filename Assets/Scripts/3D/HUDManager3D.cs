@@ -36,6 +36,7 @@ public class HUDManager : MonoBehaviour
     private int missedRescued = 0;
 
     private int committedCoins = 0;
+    private int committedDiamonds = 0;
 
     private void Awake()
     {
@@ -67,6 +68,7 @@ public class HUDManager : MonoBehaviour
         rescued = 0;
         missedRescued = 0;
         committedCoins = 0;
+        committedDiamonds = 0;
 
         if (resetBarOnStart)
             UpdateBarVisual();
@@ -247,6 +249,39 @@ public class HUDManager : MonoBehaviour
     {
         UpdateDiamonds(
             diamonds + amount
+        );
+    }
+
+    // Переносит собранные за забег алмазы в постоянный баланс.
+    // Защищено от повторного начисления через committedDiamonds.
+    public void CommitDiamondsToTotal()
+    {
+        int newDiamonds =
+            diamonds - committedDiamonds;
+
+        if (newDiamonds <= 0)
+            return;
+
+        int total =
+            PlayerPrefs.GetInt(
+                "TotalDiamonds",
+                0
+            );
+
+        total += newDiamonds;
+
+        PlayerPrefs.SetInt(
+            "TotalDiamonds",
+            total
+        );
+
+        PlayerPrefs.Save();
+
+        committedDiamonds =
+            diamonds;
+
+        Debug.Log(
+            $"[HUD] Diamonds committed. New = {newDiamonds}, Total = {total}"
         );
     }
 

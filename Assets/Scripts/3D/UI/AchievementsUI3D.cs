@@ -27,6 +27,13 @@ public class AchievementsUI3D : MonoBehaviour
     [SerializeField]
     private Button closeButton;
 
+    [SerializeField]
+    private Button expeditionTab;
+
+    private bool expeditionTabCreated;
+
+    private bool expeditionView;
+
     private AchievementMode3D currentMode =
         AchievementMode3D.Shelter;
 
@@ -319,6 +326,8 @@ public class AchievementsUI3D : MonoBehaviour
             }
         }
 
+        EnsureExpeditionTab();
+
         ConfigureButton(
             shelterTab
         );
@@ -328,10 +337,108 @@ public class AchievementsUI3D : MonoBehaviour
         );
 
         ConfigureButton(
+            expeditionTab
+        );
+
+        ConfigureButton(
             closeButton
         );
 
         ConfigureListeners();
+    }
+
+    // =========================================================
+    // EXPEDITION TAB (runtime, без правки сцены)
+    // =========================================================
+
+    private void EnsureExpeditionTab()
+    {
+        if (expeditionTabCreated)
+            return;
+
+        if (expeditionTab != null)
+        {
+            expeditionTabCreated = true;
+            return;
+        }
+
+        if (infiniteTab == null)
+            return;
+
+        Transform tabs =
+            transform.Find(
+                "Window/Panel/Tabs"
+            );
+
+        if (tabs == null)
+            return;
+
+        GameObject clone =
+            Instantiate(
+                infiniteTab.gameObject,
+                tabs,
+                false
+            );
+
+        clone.name = "Expedition";
+
+        clone.transform.SetSiblingIndex(
+            tabs.childCount - 1
+        );
+
+        expeditionTab =
+            clone.GetComponent<Button>();
+
+        Transform label =
+            clone.transform.Find("Label");
+
+        if (label != null)
+        {
+            TMP_Text text =
+                label.GetComponent<TMP_Text>();
+
+            if (text != null)
+            {
+                text.text = "ЭКСПЕДИЦИИ";
+            }
+        }
+
+        // Три вкладки вместо двух.
+        SetTabAnchors(shelterTab, 0f, 0.32f);
+        SetTabAnchors(infiniteTab, 0.34f, 0.66f);
+        SetTabAnchors(expeditionTab, 0.68f, 1f);
+
+        expeditionTabCreated = true;
+    }
+
+    private static void SetTabAnchors(
+        Button button,
+        float min,
+        float max
+    )
+    {
+        if (button == null)
+            return;
+
+        RectTransform rect =
+            button.GetComponent<
+                RectTransform
+            >();
+
+        if (rect == null)
+            return;
+
+        rect.anchorMin =
+            new Vector2(min, 0f);
+
+        rect.anchorMax =
+            new Vector2(max, 1f);
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
     }
 
     // =========================================================
@@ -418,10 +525,23 @@ public class AchievementsUI3D : MonoBehaviour
                 SelectInfinite
             );
         }
+
+        if (expeditionTab != null)
+        {
+            expeditionTab.onClick.RemoveListener(
+                SelectExpedition
+            );
+
+            expeditionTab.onClick.AddListener(
+                SelectExpedition
+            );
+        }
     }
 
     private void SelectShelter()
     {
+        expeditionView = false;
+
         currentMode =
             AchievementMode3D.Shelter;
 
@@ -430,8 +550,17 @@ public class AchievementsUI3D : MonoBehaviour
 
     private void SelectInfinite()
     {
+        expeditionView = false;
+
         currentMode =
             AchievementMode3D.Infinite;
+
+        Refresh();
+    }
+
+    private void SelectExpedition()
+    {
+        expeditionView = true;
 
         Refresh();
     }
@@ -444,6 +573,12 @@ public class AchievementsUI3D : MonoBehaviour
     {
         if (contentRoot == null)
         {
+            return;
+        }
+
+        if (expeditionView)
+        {
+            RefreshExpeditions();
             return;
         }
 
@@ -827,6 +962,274 @@ public class AchievementsUI3D : MonoBehaviour
     }
 
     // =========================================================
+    // EXPEDITIONS
+    // =========================================================
+
+    private void RefreshExpeditions()
+    {
+        ClearContent();
+
+        List<ExpeditionTask3D> list =
+            ExpeditionSystem3D.GetUnlockedTasks();
+
+        const float cardHeight = 120f;
+        const float gap = 10f;
+
+        contentRoot.anchorMin =
+            new Vector2(0f, 1f);
+
+        contentRoot.anchorMax =
+            new Vector2(1f, 1f);
+
+        contentRoot.pivot =
+            new Vector2(0.5f, 1f);
+
+        contentRoot.anchoredPosition =
+            Vector2.zero;
+
+        contentRoot.sizeDelta =
+            new Vector2(
+                0f,
+                list.Count *
+                (cardHeight + gap) +
+                10f
+            );
+
+        for (
+            int i = 0;
+            i < list.Count;
+            i++
+        )
+        {
+            CreateExpeditionCard(
+                list[i],
+                i,
+                cardHeight,
+                gap
+            );
+        }
+
+        if (countText != null)
+        {
+            countText.text =
+                "ЭКСПЕДИЦИИ: " +
+                ExpeditionSystem3D
+                    .GetCompletedTaskCount() +
+                " / " +
+                ExpeditionSystem3D
+                    .GetAll().Count;
+        }
+
+        RefreshTabs();
+
+        if (scroll != null)
+        {
+            scroll.verticalNormalizedPosition =
+                1f;
+        }
+    }
+
+    private void CreateExpeditionCard(
+        ExpeditionTask3D task,
+        int index,
+        float height,
+        float gap
+    )
+    {
+        bool completed =
+            ExpeditionSystem3D.IsTaskComplete(
+                task.id
+            );
+
+        bool claimed =
+            ExpeditionSystem3D.IsTaskClaimed(
+                task.id
+            );
+
+        Color cardColor =
+            claimed
+                ? new Color32(31, 62, 48, 255)
+                : completed
+                    ? new Color32(41, 58, 44, 255)
+                    : new Color32(27, 43, 51, 255);
+
+        GameObject card =
+            CreateRoundedImage(
+                "Expedition_" + task.id,
+                contentRoot,
+                cardColor
+            );
+
+        RectTransform rect =
+            card.GetComponent<
+                RectTransform
+            >();
+
+        rect.anchorMin =
+            new Vector2(0f, 1f);
+
+        rect.anchorMax =
+            new Vector2(1f, 1f);
+
+        rect.pivot =
+            new Vector2(0.5f, 1f);
+
+        rect.offsetMin =
+            Vector2.zero;
+
+        rect.offsetMax =
+            Vector2.zero;
+
+        rect.sizeDelta =
+            new Vector2(-16f, height);
+
+        rect.anchoredPosition =
+            new Vector2(
+                0f,
+                -5f -
+                index *
+                (height + gap)
+            );
+
+        CreateText(
+            "Title",
+            card.transform,
+            task.title,
+            17f,
+            new Color32(235, 236, 230, 255),
+            TextAlignmentOptions.Left,
+            new Vector2(0.035f, 0.64f),
+            new Vector2(0.63f, 0.92f)
+        );
+
+        CreateText(
+            "Description",
+            card.transform,
+            task.description,
+            12f,
+            new Color32(169, 180, 177, 255),
+            TextAlignmentOptions.Left,
+            new Vector2(0.035f, 0.32f),
+            new Vector2(0.63f, 0.62f)
+        );
+
+        int progress =
+            ExpeditionSystem3D.GetProgress(task);
+
+        CreateText(
+            "Target",
+            card.transform,
+            ExpeditionSystem3D
+                .GetChapterTitle(task.chapter) +
+            "  •  " +
+            progress +
+            " / " +
+            task.target,
+            10f,
+            new Color32(124, 138, 136, 255),
+            TextAlignmentOptions.Left,
+            new Vector2(0.035f, 0.055f),
+            new Vector2(0.63f, 0.27f)
+        );
+
+        string rewardText =
+            "+" +
+            task.rewardCoins +
+            " МОНЕТ";
+
+        if (task.rewardDiamonds > 0)
+        {
+            rewardText +=
+                "\n+" +
+                task.rewardDiamonds +
+                " АЛМАЗОВ";
+        }
+
+        CreateText(
+            "Reward",
+            card.transform,
+            rewardText,
+            12f,
+            new Color32(241, 198, 72, 255),
+            TextAlignmentOptions.Center,
+            new Vector2(0.69f, 0.62f),
+            new Vector2(0.97f, 0.93f)
+        );
+
+        string status;
+
+        Color statusColor;
+
+        if (claimed)
+        {
+            status =
+                "ПОЛУЧЕНО";
+
+            statusColor =
+                new Color32(105, 171, 121, 255);
+        }
+        else if (completed)
+        {
+            status =
+                "ЗАБРАТЬ";
+
+            statusColor =
+                new Color32(244, 201, 71, 255);
+        }
+        else
+        {
+            status =
+                "В ПРОЦЕССЕ";
+
+            statusColor =
+                new Color32(125, 137, 139, 255);
+        }
+
+        GameObject statusObject =
+            CreateRoundedButton(
+                "Status",
+                card.transform,
+                status,
+                11f,
+                new Color32(31, 50, 58, 255),
+                statusColor
+            );
+
+        SetAnchored(
+            statusObject.GetComponent<
+                RectTransform
+            >(),
+            new Vector2(0.69f, 0.10f),
+            new Vector2(0.97f, 0.43f)
+        );
+
+        Button statusButton =
+            statusObject.GetComponent<
+                Button
+            >();
+
+        statusButton.interactable =
+            completed &&
+            !claimed;
+
+        string taskId =
+            task.id;
+
+        statusButton.onClick.AddListener(
+            () =>
+            {
+                if (
+                    ExpeditionSystem3D
+                        .Claim(taskId)
+                )
+                {
+                    Refresh();
+                }
+            }
+        );
+    }
+
+    // =========================================================
     // TABS
     // =========================================================
 
@@ -834,14 +1237,21 @@ public class AchievementsUI3D : MonoBehaviour
     {
         SetTabColor(
             shelterTab,
+            !expeditionView &&
             currentMode ==
             AchievementMode3D.Shelter
         );
 
         SetTabColor(
             infiniteTab,
+            !expeditionView &&
             currentMode ==
             AchievementMode3D.Infinite
+        );
+
+        SetTabColor(
+            expeditionTab,
+            expeditionView
         );
     }
 

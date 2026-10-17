@@ -52,6 +52,27 @@ public class PickupSpawner3D : MonoBehaviour
     [Header("Безопасность сердечек")]
     public float heartSpawnGap = 5f;
 
+    [Header("Сердечки реже с дистанцией (бесконечный режим)")]
+    [Tooltip(
+        "Во сколько раз увеличивается интервал сердечек " +
+        "на максимальной сложности."
+    )]
+    public float heartIntervalDistanceScale = 2.2f;
+
+    [Tooltip(
+        "Во сколько раз уменьшается шанс сердечка " +
+        "на максимальной сложности."
+    )]
+    public float heartChanceDistanceScale = 0.5f;
+
+    [Tooltip(
+        "Дистанция, на которой достигается максимальное " +
+        "сокращение появления сердечек."
+    )]
+    public float heartDistanceRamp = 3000f;
+
+    private RunManager runManager;
+
     private float coinTimer;
     private float heartTimer;
 
@@ -929,6 +950,39 @@ public class PickupSpawner3D : MonoBehaviour
     // HEART
     // =========================================================
 
+    private float GetHeartDistanceDifficulty01()
+    {
+        if (runManager == null)
+        {
+            runManager =
+                FindFirstObjectByType<
+                    RunManager
+                >();
+        }
+
+        if (
+            runManager == null ||
+            !runManager.infiniteRun
+        )
+        {
+            return 0f;
+        }
+
+        if (
+            HUDManager.Instance == null ||
+            heartDistanceRamp <= 0.01f
+        )
+        {
+            return 0f;
+        }
+
+        return Mathf.Clamp01(
+            HUDManager.Instance
+                .GetDistance() /
+            heartDistanceRamp
+        );
+    }
+
     private void UpdateHeart()
     {
         heartTimer -=
@@ -939,12 +993,44 @@ public class PickupSpawner3D : MonoBehaviour
             return;
         }
 
+        /*
+         * Чем дальше в бесконечном режиме — тем реже
+         * появляются сердечки. В режиме "До убежища"
+         * правила не меняются.
+         */
+        float distanceDifficulty =
+            GetHeartDistanceDifficulty01();
+
+        float interval =
+            heartSpawnInterval *
+            Mathf.Lerp(
+                1f,
+                Mathf.Max(
+                    1f,
+                    heartIntervalDistanceScale
+                ),
+                distanceDifficulty
+            );
+
+        float chance =
+            heartSpawnChance *
+            Mathf.Lerp(
+                1f,
+                Mathf.Clamp01(
+                    heartChanceDistanceScale
+                ),
+                distanceDifficulty
+            );
+
         heartTimer =
-            heartSpawnInterval;
+            Mathf.Max(
+                1f,
+                interval
+            );
 
         if (
             Random.value >
-            heartSpawnChance
+            chance
         )
         {
             return;

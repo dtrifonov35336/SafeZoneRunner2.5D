@@ -383,6 +383,9 @@ public class ChaseManager : MonoBehaviour
 
             HUDManager.Instance
                 .CommitCoinsToTotal();
+
+            HUDManager.Instance
+                .CommitDiamondsToTotal();
         }
 
         if (gameOverPanel != null)
@@ -445,6 +448,9 @@ public class ChaseManager : MonoBehaviour
 
             HUDManager.Instance
                 .CommitCoinsToTotal();
+
+            HUDManager.Instance
+                .CommitDiamondsToTotal();
         }
 
         if (gameWinPanel != null)
