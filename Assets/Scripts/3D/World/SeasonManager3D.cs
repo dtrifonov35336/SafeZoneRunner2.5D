@@ -34,6 +34,13 @@ public static class SeasonManager3D
         block =
             new MaterialPropertyBlock();
 
+    // Исходное глобальное освещение сцены. Нужно, чтобы
+    // «Обычный» сезон возвращал ровно то, что было до сезона,
+    // а не «примерно похожее» значение.
+    private static bool hasOriginalLighting;
+    private static Color originalAmbient;
+    private static Color originalFogColor;
+
     // =========================================================
     // СОСТОЯНИЕ
     // =========================================================
@@ -143,6 +150,8 @@ public static class SeasonManager3D
 
         if (current == GameSeason.Winter)
         {
+            CaptureOriginalLighting();
+
             RenderSettings.ambientLight =
                 new Color(
                     0.66f,
@@ -161,6 +170,8 @@ public static class SeasonManager3D
         }
         else if (current == GameSeason.Spring)
         {
+            CaptureOriginalLighting();
+
             RenderSettings.ambientLight =
                 new Color(
                     0.74f,
@@ -177,6 +188,36 @@ public static class SeasonManager3D
                     1f
                 );
         }
+        else if (hasOriginalLighting)
+        {
+            // «Обычный» сезон — вернуть ровно то освещение,
+            // которое было в сцене до применения сезона.
+            RenderSettings.ambientLight =
+                originalAmbient;
+
+            RenderSettings.fogColor =
+                originalFogColor;
+        }
+    }
+
+    /// <summary>
+    /// Запоминает исходное глобальное освещение сцены один раз
+    /// за сессию, до первой сезонной перекраски. Благодаря этому
+    /// возврат в «Обычный» сезон восстанавливает точные значения,
+    /// а не «похожие» из констант.
+    /// </summary>
+    private static void CaptureOriginalLighting()
+    {
+        if (hasOriginalLighting)
+            return;
+
+        originalAmbient =
+            RenderSettings.ambientLight;
+
+        originalFogColor =
+            RenderSettings.fogColor;
+
+        hasOriginalLighting = true;
     }
 
     public static void ApplyTo(

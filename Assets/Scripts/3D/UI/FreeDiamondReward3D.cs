@@ -40,7 +40,9 @@ public static class FreeDiamondReward3D
 
     /// <summary>
     /// Вызывать во время забега с фактически пройденной дистанцией.
-    /// Награда выдаётся только при пересечении порога 1000 м.
+    /// Награда выдаётся только при пересечении порога 1000 м, но сам
+    /// одометр хранит всю пройденную дистанцию (в том числе меньше
+    /// 1000 м), поэтому остаток переносится в следующий забег.
     /// </summary>
     public static void CheckDistanceRewards(
         int runDistanceMeters,
@@ -64,13 +66,28 @@ public static class FreeDiamondReward3D
                 lastRunDistance - 1f
         )
         {
-            lastRunDistance = runDistanceMeters;
+            // Фиксируем дистанцию завершившегося забега в одометре,
+            // чтобы пройденные < 1000 м не потерялись между забегами.
+            if (lastRunDistance >= 0f)
+            {
+                PlayerPrefs.SetInt(
+                    ODOMETER_KEY,
+                    runStartOdometer +
+                        Mathf.RoundToInt(
+                            lastRunDistance
+                        )
+                );
+
+                PlayerPrefs.Save();
+            }
 
             runStartOdometer =
                 PlayerPrefs.GetInt(
                     ODOMETER_KEY,
                     0
                 );
+
+            lastRunDistance = runDistanceMeters;
         }
 
         lastRunDistance = runDistanceMeters;
@@ -96,19 +113,28 @@ public static class FreeDiamondReward3D
             granted += DiamondsPerStep;
         }
 
+        // Одоометр всегда отражает фактически пройденную суммарную
+        // дистанцию, даже если порог 1000 м ещё не достигнут.
+        if (
+            lifetime >
+            PlayerPrefs.GetInt(
+                ODOMETER_KEY,
+                0
+            )
+        )
+        {
+            PlayerPrefs.SetInt(
+                ODOMETER_KEY,
+                lifetime
+            );
+        }
+
         if (granted <= 0)
             return;
 
         PlayerPrefs.SetInt(
             PAID_KEY,
             paid
-        );
-
-        // Одоометр сохраняем сразу, чтобы обрыв забега не привёл
-        // ни к потере прогресса, ни к повторной выдаче.
-        PlayerPrefs.SetInt(
-            ODOMETER_KEY,
-            lifetime
         );
 
         PlayerPrefs.Save();
