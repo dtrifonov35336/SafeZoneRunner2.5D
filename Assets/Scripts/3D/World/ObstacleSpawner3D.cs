@@ -37,12 +37,22 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float obstacleHeightOffset = 0f;
 
     [Header("Скорость препятствий")]
+    [Tooltip(
+        "Базовая скорость. Используется режимом «До убежища»."
+    )]
     public float baseObstacleSpeed = 15f;
+
+    [Tooltip(
+        "Максимальная скорость разгона по времени. Используется " +
+        "только режимом «До убежища» (в бесконечном режиме " +
+        "скорость растёт по отдельной кривой без верхнего потолка)."
+    )]
     public float maxObstacleSpeed = 20f;
 
     [Tooltip(
-        "На каком расстоянии бесконечного режима " +
-        "достигается максимальная скорость."
+        "Дистанция бесконечного режима, на которой сложность " +
+        "интервалов спавна и шанс двойных волн достигают максимума. " +
+        "На скорость препятствий не влияет (у неё отдельная кривая)."
     )]
     public float infiniteDifficultyDistance = 2500f;
 
@@ -65,15 +75,23 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float infiniteMinInterval = 2.1f;
 
     [Tooltip(
-        "Дополнительный рост скорости сверх maxObstacleSpeed " +
-        "на больших дистанциях (доля: 0.25 = +25%)."
+        "Стартовая скорость бесконечного забега. Заметно выше " +
+        "базовой, чтобы начальный темп был быстрее."
     )]
-    public float infiniteSpeedOvertime = 0.25f;
+    public float infiniteStartSpeed = 20f;
 
     [Tooltip(
-        "Дистанция, на которой заканчивается дополнительный рост скорости."
+        "Коэффициент логарифмического роста скорости в бесконечном " +
+        "режиме. Скорость продолжает расти на больших дистанциях " +
+        "без конечного порога, после которого рост прекращается."
     )]
-    public float infiniteSpeedOvertimeDistance = 8000f;
+    public float infiniteSpeedGrowth = 7f;
+
+    [Tooltip(
+        "Масштабная дистанция кривой скорости (м). Чем меньше, " +
+        "тем быстрее набирается скорость на первых километрах."
+    )]
+    public float infiniteSpeedRampDistance = 1200f;
 
     [Tooltip(
         "Максимальный шанс двойной волны препятствий " +
@@ -255,38 +273,39 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private void UpdateCurrentObstacleSpeed()
     {
+        if (IsInfiniteMode())
+        {
+            /*
+             * Бесконечный режим: логарифмический рост скорости без
+             * конечного порога. Рост продолжается и на больших
+             * дистанциях, но так медленно, что сложность остаётся
+             * управляемой, а интервалы спавна и безопасные зазоры
+             * (они пропорциональны скорости) — корректными.
+             */
+            currentObstacleSpeed =
+                InfiniteRunSpeedLogic.Evaluate(
+                    GetRunDistance(),
+                    infiniteStartSpeed,
+                    infiniteSpeedGrowth,
+                    infiniteSpeedRampDistance
+                );
+
+            return;
+        }
+
+        /*
+         * Режим «До убежища» сохраняет прежние правила:
+         * линейный разгон по времени забега до maxObstacleSpeed.
+         */
         float t =
             GetDifficulty01();
 
-        float speed =
+        currentObstacleSpeed =
             Mathf.Lerp(
                 baseObstacleSpeed,
                 maxObstacleSpeed,
                 t
             );
-
-        if (IsInfiniteMode())
-        {
-            /*
-             * Мягкий дополнительный рост скорости на длинных
-             * дистанциях. Потолок ограничен, чтобы камера,
-             * физика и проверка безопасного зазора оставались
-             * корректными.
-             */
-            float overtime =
-                Mathf.Max(
-                    0f,
-                    infiniteSpeedOvertime
-                );
-
-            speed *=
-                1f +
-                overtime *
-                GetDistanceOvertime01();
-        }
-
-        currentObstacleSpeed =
-            speed;
     }
 
     public float GetCurrentObstacleSpeed()
@@ -309,28 +328,14 @@ public class ObstacleSpawner3D : MonoBehaviour
             runManager.infiniteRun;
     }
 
-    private float GetDistanceOvertime01()
+    private float GetRunDistance()
     {
-        if (!IsInfiniteMode())
+        if (HUDManager.Instance == null)
             return 0f;
 
-        float distance =
-            HUDManager.Instance != null
-                ? HUDManager.Instance
-                    .GetDistance()
-                : 0f;
-
-        if (
-            infiniteSpeedOvertimeDistance <=
-            0.01f
-        )
-        {
-            return 1f;
-        }
-
-        return Mathf.Clamp01(
-            distance /
-            infiniteSpeedOvertimeDistance
+        return Mathf.Max(
+            0f,
+            HUDManager.Instance.GetDistance()
         );
     }
 
