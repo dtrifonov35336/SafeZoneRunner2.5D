@@ -92,6 +92,21 @@ public class DistanceRewardLogicTests
     }
 
     [Test]
+    public void Recheck_PassedMilestone_AfterHigherDistance_NoRepeat()
+    {
+        DistanceRewardLogic logic = Create();
+
+        Assert.AreEqual(5, logic.Evaluate(1000, true));
+        Assert.AreEqual(5, logic.Evaluate(2000, true));
+
+        // Повторная проверка уже пройденного рубежа (2000 → 1000)
+        // не является новым забегом и не должна выдавать награду
+        // за 1000 м второй раз.
+        Assert.AreEqual(0, logic.Evaluate(1000, true));
+        Assert.AreEqual(2, logic.PaidMilestones);
+    }
+
+    [Test]
     public void EveryMilestone_GivesFiveInTotal()
     {
         DistanceRewardLogic logic = Create();

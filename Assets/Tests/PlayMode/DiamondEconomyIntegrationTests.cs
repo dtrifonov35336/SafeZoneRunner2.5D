@@ -435,7 +435,7 @@ public class DiamondEconomyIntegrationTests
     {
         yield return CreateHud();
 
-        hud.StopRun();
+        Call(hud, "StopRun");
         SetHudDistance(1200);
 
         yield return CreateChallenge();
@@ -487,7 +487,7 @@ public class DiamondEconomyIntegrationTests
     {
         yield return CreateHud();
 
-        hud.StopRun();
+        Call(hud, "StopRun");
         SetHudDistance(800);
 
         yield return CreateChallenge();
@@ -616,7 +616,7 @@ public class DiamondEconomyIntegrationTests
 
     private void SetHudDistance(float meters)
     {
-        hud.StopRun();
+        Call(hud, "StopRun");
         SetPrivate(hud, "distance", meters);
     }
 
@@ -742,6 +742,7 @@ public class DiamondEconomyIntegrationTests
         FieldInfo info =
             target.GetType().GetField(
                 field,
+                BindingFlags.Public |
                 BindingFlags.NonPublic |
                 BindingFlags.Instance
             );
@@ -763,6 +764,7 @@ public class DiamondEconomyIntegrationTests
         FieldInfo info =
             target.GetType().GetField(
                 field,
+                BindingFlags.Public |
                 BindingFlags.NonPublic |
                 BindingFlags.Instance
             );
