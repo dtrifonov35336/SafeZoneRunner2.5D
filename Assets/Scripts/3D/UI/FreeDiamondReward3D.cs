@@ -64,7 +64,7 @@ public static class FreeDiamondReward3D
         if (granted <= 0)
             return;
 
-        GrantDiamonds(
+        GrantRunDiamonds(
             granted,
             $"+{granted} алмазов за " +
             $"{logic.PaidMilestones * StepMeters} м"
@@ -107,7 +107,7 @@ public static class FreeDiamondReward3D
 
         PlayerPrefs.Save();
 
-        GrantDiamonds(
+        GrantPermanentDiamonds(
             amount,
             $"+{amount} алмазов за достижение"
         );
@@ -119,9 +119,54 @@ public static class FreeDiamondReward3D
     // ВЫДАЧА
     // =========================================================
 
-    private static void GrantDiamonds(
+    /// <summary>
+    /// Алмазы во время забега. Начисляются в счётчик текущего
+    /// забега (HUDManager), поэтому награда видна игроку сразу.
+    /// В постоянный баланс они попадут ровно один раз — при
+    /// завершении забега через HUDManager.CommitDiamondsToTotal(),
+    /// защищённый полем committedDiamonds.
+    /// </summary>
+    private static void GrantRunDiamonds(
         int amount,
         string message
+    )
+    {
+        if (amount <= 0)
+            return;
+
+        if (HUDManager.Instance != null)
+        {
+            HUDManager.Instance.AddDiamonds(
+                amount
+            );
+
+            Debug.Log(
+                $"[Diamonds] +{amount} ({message}). " +
+                $"HUD = {HUDManager.Instance.GetDiamonds()}"
+            );
+        }
+        else
+        {
+            // Забега нет (награда вне сцены) — пишем в баланс.
+            GrantPermanentDiamonds(
+                amount,
+                message,
+                false
+            );
+        }
+
+        PlayFeedback(message);
+    }
+
+    /// <summary>
+    /// Разовая награда за достижение. Пишется сразу в постоянный
+    /// баланс: достижение одноразовое, и его нельзя потерять,
+    /// если забег прервётся до переноса HUD-счётчика.
+    /// </summary>
+    private static void GrantPermanentDiamonds(
+        int amount,
+        string message,
+        bool feedback = true
     )
     {
         if (amount <= 0)
@@ -142,6 +187,20 @@ public static class FreeDiamondReward3D
 
         PlayerPrefs.Save();
 
+        Debug.Log(
+            $"[Diamonds] +{amount} ({message}). Total = {total}"
+        );
+
+        if (feedback)
+        {
+            PlayFeedback(message);
+        }
+    }
+
+    private static void PlayFeedback(
+        string message
+    )
+    {
         if (
             ToastNotification.Instance !=
             null
@@ -160,9 +219,5 @@ public static class FreeDiamondReward3D
             AudioManager3D.Instance
                 .PlayRewardClaim();
         }
-
-        Debug.Log(
-            $"[Diamonds] +{amount} ({message}). Total = {total}"
-        );
     }
 }

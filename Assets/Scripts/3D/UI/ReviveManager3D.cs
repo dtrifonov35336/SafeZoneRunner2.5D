@@ -141,14 +141,14 @@ public class ReviveManager : MonoBehaviour
             return;
         }
 
-        int balance =
-            PlayerPrefs.GetInt(
-                "TotalDiamonds",
-                0
-            );
+        // Защита от повторного нажатия: ставим флаг до оплаты,
+        // чтобы повторный клик не списал алмазы дважды.
+        revived = true;
 
-        if (balance < revivePriceGems)
+        if (!SpendDiamonds(revivePriceGems))
         {
+            revived = false;
+
             if (ToastNotification.Instance != null)
             {
                 ToastNotification.Instance.Show(
@@ -159,18 +159,45 @@ public class ReviveManager : MonoBehaviour
             return;
         }
 
-        PlayerPrefs.SetInt(
-            "TotalDiamonds",
-            balance -
-            revivePriceGems
-        );
-
-        PlayerPrefs.Save();
-
         DoRevive(
             reviveHealthGems,
             "Возрождение (полное HP)"
         );
+    }
+
+    // Возрождение оплачивается из постоянного баланса. Списание
+    // идёт через HUDManager — единственную точку работы с валютой,
+    // чтобы счётчик забега и постоянный баланс не расходились.
+    private static bool SpendDiamonds(int amount)
+    {
+        if (amount <= 0)
+            return true;
+
+        if (HUDManager.Instance != null)
+        {
+            return HUDManager.Instance
+                .TrySpendDiamonds(amount);
+        }
+
+        // Страховка: HUD ещё не создан (не должно случаться в
+        // забеге, где ReviveManager и HUDManager — один объект).
+        int balance =
+            PlayerPrefs.GetInt(
+                "TotalDiamonds",
+                0
+            );
+
+        if (balance < amount)
+            return false;
+
+        PlayerPrefs.SetInt(
+            "TotalDiamonds",
+            balance - amount
+        );
+
+        PlayerPrefs.Save();
+
+        return true;
     }
 
     private void DoRevive(

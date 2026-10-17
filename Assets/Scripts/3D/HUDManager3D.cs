@@ -252,6 +252,62 @@ public class HUDManager : MonoBehaviour
         );
     }
 
+    // Единая точка списания постоянных алмазов (возрождение,
+    // покупки внутри забега). Возвращает false, если денег не
+    // хватает — тогда баланс не меняется.
+    //
+    // Если списываемые алмазы ещё не перенесены в постоянный
+    // баланс (лежат в счётчике забега), уменьшаем и его, двигая
+    // committedDiamonds на столько же. Иначе на следующем
+    // CommitDiamondsToTotal() уже потраченные алмазы попали бы
+    // в баланс повторно.
+    public bool TrySpendDiamonds(int amount)
+    {
+        if (amount <= 0)
+            return false;
+
+        int total =
+            PlayerPrefs.GetInt(
+                "TotalDiamonds",
+                0
+            );
+
+        if (total < amount)
+            return false;
+
+        PlayerPrefs.SetInt(
+            "TotalDiamonds",
+            total - amount
+        );
+
+        PlayerPrefs.Save();
+
+        int fromRun =
+            Mathf.Min(
+                amount,
+                diamonds
+            );
+
+        if (fromRun > 0)
+        {
+            UpdateDiamonds(
+                diamonds - fromRun
+            );
+
+            committedDiamonds =
+                Mathf.Min(
+                    committedDiamonds,
+                    diamonds
+                );
+        }
+
+        Debug.Log(
+            $"[HUD] Diamonds spent. -{amount}, Total = {total - amount}"
+        );
+
+        return true;
+    }
+
     // Переносит собранные за забег алмазы в постоянный баланс.
     // Защищено от повторного начисления через committedDiamonds.
     public void CommitDiamondsToTotal()

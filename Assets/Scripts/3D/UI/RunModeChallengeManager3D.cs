@@ -21,7 +21,15 @@ public class RunModeChallengeManager3D : MonoBehaviour
     private bool finished;
     private bool mainGoalCompleted;
 
+    // Статистика «Экспедиции» за фактический забег. Пишется один
+    // раз — когда забег действительно завершён. Снимок прогресса
+    // обновляется во время забега, поэтому после возрождения в
+    // итог попадает и прогресс, набранный после него.
+    private bool runFinishedOnce;
     private bool expeditionRecorded;
+    private int pendingDistance;
+    private int pendingCoins;
+    private int pendingRescued;
 
     private void Awake()
     {
@@ -56,6 +64,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
     {
         if (finished)
             return;
+
+        CaptureExpeditionSnapshot();
 
         CheckAdditionalAchievements();
         UpdateDistanceAchievements();
@@ -139,22 +149,20 @@ public class RunModeChallengeManager3D : MonoBehaviour
             return;
 
         // Накопительная статистика для долгосрочных «Экспедиций».
-        // Пишется один раз за забег: если игрок возродился и погиб
-        // повторно, повторной записи не будет.
-        if (
-            !expeditionRecorded &&
-            HUDManager.Instance != null
-        )
-        {
-            ExpeditionSystem3D.RecordRun(
-                Mathf.RoundToInt(
-                    HUDManager.Instance.GetDistance()
-                ),
-                collectedCoins,
-                rescued
-            );
+        //
+        // Записывать её прямо сейчас нельзя: игрок может возродиться
+        // и продолжить этот же забег, а тогда первый (неполный)
+        // результат зафиксировался бы навсегда. Поэтому только
+        // запоминаем снимок прогресса и отмечаем, что забег дошёл до
+        // финиша. Запись произойдёт один раз — при выгрузке сцены
+        // (OnDestroy), когда забег действительно закончился, либо
+        // сразу при победе, где возрождение невозможно.
+        runFinishedOnce = true;
+        CaptureExpeditionSnapshot();
 
-            expeditionRecorded = true;
+        if (victory)
+        {
+            FlushExpeditionRecord();
         }
 
         if (victory && !infiniteRun)
@@ -201,6 +209,67 @@ public class RunModeChallengeManager3D : MonoBehaviour
     }
 
     // =========================================================
+    // ЭКСПЕДИЦИИ
+    // =========================================================
+
+    /// <summary>
+    /// Снимок текущего прогресса забега. Обновляется во время
+    /// забега, поэтому после возрождения содержит дистанцию,
+    /// монеты и спасённых уже с учётом продолжения.
+    /// </summary>
+    private void CaptureExpeditionSnapshot()
+    {
+        if (HUDManager.Instance == null)
+            return;
+
+        pendingDistance =
+            Mathf.RoundToInt(
+                HUDManager.Instance.GetDistance()
+            );
+
+        pendingCoins = collectedCoins;
+        pendingRescued = rescued;
+    }
+
+    /// <summary>
+    /// Записывает статистику забега в «Экспедиции» ровно один раз.
+    /// Повторные вызовы (несколько смертей, выгрузка сцены после
+    /// победы) ничего не добавляют.
+    /// </summary>
+    private void FlushExpeditionRecord()
+    {
+        if (!runFinishedOnce || expeditionRecorded)
+            return;
+
+        if (HUDManager.Instance != null)
+        {
+            CaptureExpeditionSnapshot();
+        }
+
+        ExpeditionSystem3D.RecordRun(
+            pendingDistance,
+            pendingCoins,
+            pendingRescued
+        );
+
+        expeditionRecorded = true;
+    }
+
+    private void OnDestroy()
+    {
+        // Выгрузка сцены забега — единственный надёжный признак
+        // того, что забег действительно завершён (возрождение сцену
+        // не перезагружает). Здесь и фиксируем итог.
+        if (expeditionRecorded)
+            return;
+
+        if (Instance != this)
+            return;
+
+        FlushExpeditionRecord();
+    }
+
+    // =========================================================
     // REVIVE
     // =========================================================
 
@@ -208,7 +277,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
     /// Забег продолжается после возрождения (реклама или алмазы).
     /// Снова разрешаем отслеживание дистанции, монет и достижений,
     /// чтобы награды за новые рубежи 1000 м выдавались после
-    /// продолжения. Статистика «Экспедиции» повторно не пишется.
+    /// продолжения. Статистика «Экспедиции» повторно не пишется —
+    /// она фиксируется один раз при завершении забега.
     /// </summary>
     public void OnRunResumed()
     {
