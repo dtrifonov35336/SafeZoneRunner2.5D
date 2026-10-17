@@ -51,7 +51,14 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "com.ivanmurzak.unity.mcp": "1.1.0",
+    "com.ivanmurzak.unity.mcp.animation": "2.0.1",
+    "com.ivanmurzak.unity.mcp.timeline": "2.0.1",
+    "com.ivanmurzak.unity.mcp.tilemap": "2.0.1",
+    "com.ivanmurzak.unity.mcp.navigation": "2.0.1",
+    "com.ivanmurzak.unity.mcp.cinemachine": "2.0.1",
+    "com.ivanmurzak.unity.mcp.inputsystem": "2.0.1"
   },
   "scopedRegistries": [
     {
@@ -59,6 +66,14 @@
       "url": "https://nexus-external.vkteam.ru/repository/npm-unity-rustore-exposed/",
       "scopes": [
         "ru.rustore"
+      ]
+    },
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.ivanmurzak",
+        "extensions.unity"
       ]
     }
   ]
