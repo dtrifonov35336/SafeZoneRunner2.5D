@@ -21,6 +21,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
     private bool finished;
     private bool mainGoalCompleted;
 
+    private bool expeditionRecorded;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -137,7 +139,12 @@ public class RunModeChallengeManager3D : MonoBehaviour
             return;
 
         // Накопительная статистика для долгосрочных «Экспедиций».
-        if (HUDManager.Instance != null)
+        // Пишется один раз за забег: если игрок возродился и погиб
+        // повторно, повторной записи не будет.
+        if (
+            !expeditionRecorded &&
+            HUDManager.Instance != null
+        )
         {
             ExpeditionSystem3D.RecordRun(
                 Mathf.RoundToInt(
@@ -146,6 +153,8 @@ public class RunModeChallengeManager3D : MonoBehaviour
                 collectedCoins,
                 rescued
             );
+
+            expeditionRecorded = true;
         }
 
         if (victory && !infiniteRun)
@@ -189,6 +198,24 @@ public class RunModeChallengeManager3D : MonoBehaviour
         finished = true;
 
         RefreshTaskUI();
+    }
+
+    // =========================================================
+    // REVIVE
+    // =========================================================
+
+    /// <summary>
+    /// Забег продолжается после возрождения (реклама или алмазы).
+    /// Снова разрешаем отслеживание дистанции, монет и достижений,
+    /// чтобы награды за новые рубежи 1000 м выдавались после
+    /// продолжения. Статистика «Экспедиции» повторно не пишется.
+    /// </summary>
+    public void OnRunResumed()
+    {
+        if (!finished)
+            return;
+
+        finished = false;
     }
 
     // =========================================================

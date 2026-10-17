@@ -549,6 +549,16 @@ public class ChaseManager : MonoBehaviour
         {
             HUDManager.Instance.ResumeRun();
         }
+
+        // Забег продолжается: снова разрешаем отслеживание дистанции
+        // и достижений (награды за новые 1000 м после возрождения).
+        if (
+            RunModeChallengeManager3D.Instance != null
+        )
+        {
+            RunModeChallengeManager3D.Instance
+                .OnRunResumed();
+        }
     }
 
     private void StopAllObstacles()

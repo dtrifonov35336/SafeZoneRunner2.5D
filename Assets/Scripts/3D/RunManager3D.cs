@@ -84,6 +84,10 @@ public class RunManager : MonoBehaviour
 
     private void Start()
     {
+        // Фактическое начало нового забега: прогресс бесплатных
+        // алмазов за дистанцию не переносится из прошлого забега.
+        FreeDiamondReward3D.BeginRun();
+
         // Применяем сезонное оформление окружения (обычный/зима/весна).
         SeasonManager3D.ApplyScene();
     }

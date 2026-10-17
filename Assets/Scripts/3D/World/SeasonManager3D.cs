@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Сезонные визуальные профили.
@@ -13,14 +14,10 @@ using UnityEngine;
 /// Препятствия, разметка, предметы и игрок не перекрашиваются —
 /// их материалы не входят в сезонный список, поэтому читаемость
 /// сохраняется.
+///
+/// Арифметика сезонов живёт в SeasonLogic (проверяется юнит-тестами),
+/// здесь — только применение к сцене.
 /// </summary>
-public enum GameSeason
-{
-    Normal = 0,
-    Winter = 1,
-    Spring = 2
-}
-
 public static class SeasonManager3D
 {
     private const string PREF_KEY = "SeasonId";
@@ -34,12 +31,47 @@ public static class SeasonManager3D
         block =
             new MaterialPropertyBlock();
 
-    // Исходное глобальное освещение сцены. Нужно, чтобы
-    // «Обычный» сезон возвращал ровно то, что было до сезона,
-    // а не «примерно похожее» значение.
-    private static bool hasOriginalLighting;
-    private static Color originalAmbient;
-    private static Color originalFogColor;
+    // Чистая логика сезонов. Хранит освещение, захваченное именно
+    // для ТЕКУЩЕЙ сцены, и умеет считать оттенки материалов.
+    private static readonly SeasonLogic
+        logic =
+            new SeasonLogic();
+
+    private static readonly int BaseColorId =
+        Shader.PropertyToID("_BaseColor");
+
+    private static readonly int ColorId =
+        Shader.PropertyToID("_Color");
+
+    // =========================================================
+    // СЦЕНА
+    // =========================================================
+
+    /// <summary>
+    /// При каждой загрузке сцены «забываем» освещение предыдущей
+    /// сцены: значения RenderSettings у каждой сцены свои, поэтому
+    /// восстановление Normal должно опираться на данные текущей
+    /// сцены, а не на случайно сохранённые ранее.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(
+        RuntimeInitializeLoadType.BeforeSceneLoad
+    )]
+    private static void HookSceneLoading()
+    {
+        SceneManager.sceneLoaded -=
+            OnSceneLoaded;
+
+        SceneManager.sceneLoaded +=
+            OnSceneLoaded;
+    }
+
+    private static void OnSceneLoaded(
+        Scene scene,
+        LoadSceneMode mode
+    )
+    {
+        logic.BeginScene();
+    }
 
     // =========================================================
     // СОСТОЯНИЕ
@@ -148,76 +180,37 @@ public static class SeasonManager3D
     {
         EnsureLoaded();
 
-        if (current == GameSeason.Winter)
+        // Для не-Normal сезонов сначала запоминаем исходное
+        // освещение текущей сцены (один раз за сцену).
+        if (current != GameSeason.Normal)
         {
-            CaptureOriginalLighting();
-
-            RenderSettings.ambientLight =
-                new Color(
-                    0.66f,
-                    0.72f,
-                    0.82f,
-                    1f
-                );
-
-            RenderSettings.fogColor =
-                new Color(
-                    0.82f,
-                    0.86f,
-                    0.92f,
-                    1f
-                );
+            logic.Capture(
+                RenderSettings.ambientLight,
+                RenderSettings.fogColor
+            );
         }
-        else if (current == GameSeason.Spring)
+
+        Color ambient;
+        Color fog;
+
+        if (
+            !logic.TryGetLighting(
+                current,
+                out ambient,
+                out fog
+            )
+        )
         {
-            CaptureOriginalLighting();
-
-            RenderSettings.ambientLight =
-                new Color(
-                    0.74f,
-                    0.76f,
-                    0.64f,
-                    1f
-                );
-
-            RenderSettings.fogColor =
-                new Color(
-                    0.72f,
-                    0.76f,
-                    0.64f,
-                    1f
-                );
-        }
-        else if (hasOriginalLighting)
-        {
-            // «Обычный» сезон — вернуть ровно то освещение,
-            // которое было в сцене до применения сезона.
-            RenderSettings.ambientLight =
-                originalAmbient;
-
-            RenderSettings.fogColor =
-                originalFogColor;
-        }
-    }
-
-    /// <summary>
-    /// Запоминает исходное глобальное освещение сцены один раз
-    /// за сессию, до первой сезонной перекраски. Благодаря этому
-    /// возврат в «Обычный» сезон восстанавливает точные значения,
-    /// а не «похожие» из констант.
-    /// </summary>
-    private static void CaptureOriginalLighting()
-    {
-        if (hasOriginalLighting)
+            // Normal и для текущей сцены ничего не захвачено —
+            // значит сцена уже в исходном состоянии, менять нечего.
             return;
+        }
 
-        originalAmbient =
-            RenderSettings.ambientLight;
+        RenderSettings.ambientLight =
+            ambient;
 
-        originalFogColor =
-            RenderSettings.fogColor;
-
-        hasOriginalLighting = true;
+        RenderSettings.fogColor =
+            fog;
     }
 
     public static void ApplyTo(
@@ -253,12 +246,14 @@ public static class SeasonManager3D
 
         EnsureLoaded();
 
+        Material source;
         Color tint;
         float blend;
 
         if (
             !TryGetTint(
                 renderer,
+                out source,
                 out tint,
                 out blend
             )
@@ -269,8 +264,11 @@ public static class SeasonManager3D
 
         if (blend <= 0f)
         {
-            // Обычный сезон — вернуть исходный цвет.
-            renderer.SetPropertyBlock(null);
+            // «Обычный» сезон — вернуть исходный цвет материала.
+            RestoreRenderer(
+                renderer,
+                source
+            );
 
             return;
         }
@@ -282,19 +280,88 @@ public static class SeasonManager3D
                 Mathf.Clamp01(blend)
             );
 
+        // Читаем существующий блок и дописываем только свои
+        // свойства, чтобы не потерять чужие MaterialPropertyBlock.
         renderer.GetPropertyBlock(block);
 
         block.SetColor(
-            "_BaseColor",
+            BaseColorId,
             final
         );
 
         block.SetColor(
-            "_Color",
+            ColorId,
             final
         );
 
         renderer.SetPropertyBlock(block);
+    }
+
+    /// <summary>
+    /// Возвращает материалу исходный цвет, НЕ затирая чужие
+    /// свойства MaterialPropertyBlock вызовом SetPropertyBlock(null).
+    /// </summary>
+    private static void RestoreRenderer(
+        Renderer renderer,
+        Material source
+    )
+    {
+        Color original;
+
+        if (
+            !TryGetMaterialColor(
+                source,
+                out original
+            )
+        )
+        {
+            // У материала нет цветового свойства — наш оттенок
+            // на него не влиял, трогать блок не нужно.
+            return;
+        }
+
+        renderer.GetPropertyBlock(block);
+
+        block.SetColor(
+            BaseColorId,
+            original
+        );
+
+        block.SetColor(
+            ColorId,
+            original
+        );
+
+        renderer.SetPropertyBlock(block);
+    }
+
+    private static bool TryGetMaterialColor(
+        Material material,
+        out Color color
+    )
+    {
+        color = Color.white;
+
+        if (material == null)
+            return false;
+
+        if (material.HasProperty(BaseColorId))
+        {
+            color =
+                material.GetColor(BaseColorId);
+
+            return true;
+        }
+
+        if (material.HasProperty(ColorId))
+        {
+            color =
+                material.GetColor(ColorId);
+
+            return true;
+        }
+
+        return false;
     }
 
     // =========================================================
@@ -303,10 +370,12 @@ public static class SeasonManager3D
 
     private static bool TryGetTint(
         Renderer renderer,
+        out Material source,
         out Color tint,
         out float blend
     )
     {
+        source = null;
         tint = Color.white;
         blend = 0f;
 
@@ -315,8 +384,6 @@ public static class SeasonManager3D
 
         if (materials == null)
             return false;
-
-        bool matched = false;
 
         for (
             int i = 0;
@@ -327,179 +394,21 @@ public static class SeasonManager3D
             if (materials[i] == null)
                 continue;
 
-            string name =
-                materials[i].name;
-
             if (
-                TryGetMaterialTint(
-                    name,
-                    out Color materialTint,
-                    out float materialBlend
+                SeasonLogic.TryGetTint(
+                    current,
+                    materials[i].name,
+                    out tint,
+                    out blend
                 )
             )
             {
-                tint = materialTint;
-                blend = materialBlend;
-                matched = true;
+                source = materials[i];
 
-                break;
+                return true;
             }
         }
 
-        return matched;
-    }
-
-    private static bool TryGetMaterialTint(
-        string materialName,
-        out Color tint,
-        out float blend
-    )
-    {
-        tint = Color.white;
-        blend = 0f;
-
-        if (string.IsNullOrEmpty(materialName))
-            return false;
-
-        string name =
-            materialName.ToLowerInvariant();
-
-        // Разметку, тени и служебные материалы не трогаем —
-        // это сохраняет читаемость трассы.
-        if (
-            name.Contains("marking") ||
-            name.Contains("shadow")
-        )
-        {
-            return false;
-        }
-
-        bool isSnowSurface =
-            name.Contains("ground") ||
-            name.Contains("shoulder") ||
-            name.Contains("road");
-
-        bool isForest =
-            name.Contains("forest");
-
-        bool isDecor =
-            name.Contains("decor");
-
-        bool isSky =
-            name.Contains("sky") ||
-            name.Contains("city");
-
-        if (
-            !isSnowSurface &&
-            !isForest &&
-            !isDecor &&
-            !isSky
-        )
-        {
-            return false;
-        }
-
-        if (current == GameSeason.Winter)
-        {
-            if (isSnowSurface)
-            {
-                tint = new Color(
-                    0.80f,
-                    0.85f,
-                    0.92f,
-                    1f
-                );
-
-                blend = 0.45f;
-            }
-            else if (isForest)
-            {
-                tint = new Color(
-                    0.58f,
-                    0.66f,
-                    0.72f,
-                    1f
-                );
-
-                blend = 0.50f;
-            }
-            else if (isSky)
-            {
-                tint = new Color(
-                    0.74f,
-                    0.80f,
-                    0.90f,
-                    1f
-                );
-
-                blend = 0.55f;
-            }
-            else
-            {
-                tint = new Color(
-                    0.84f,
-                    0.89f,
-                    0.95f,
-                    1f
-                );
-
-                blend = 0.40f;
-            }
-
-            return true;
-        }
-
-        if (current == GameSeason.Spring)
-        {
-            if (isForest)
-            {
-                tint = new Color(
-                    0.42f,
-                    0.74f,
-                    0.34f,
-                    1f
-                );
-
-                blend = 0.42f;
-            }
-            else if (isSky)
-            {
-                tint = new Color(
-                    0.80f,
-                    0.88f,
-                    0.66f,
-                    1f
-                );
-
-                blend = 0.30f;
-            }
-            else if (isDecor)
-            {
-                tint = new Color(
-                    0.48f,
-                    0.80f,
-                    0.40f,
-                    1f
-                );
-
-                blend = 0.32f;
-            }
-            else
-            {
-                tint = new Color(
-                    0.52f,
-                    0.62f,
-                    0.40f,
-                    1f
-                );
-
-                blend = 0.16f;
-            }
-
-            return true;
-        }
-
-        // Normal — сброс.
-        return true;
+        return false;
     }
 }

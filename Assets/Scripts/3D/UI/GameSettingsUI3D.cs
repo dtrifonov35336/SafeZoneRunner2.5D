@@ -32,6 +32,9 @@ public class GameSettingsUI3D : MonoBehaviour
     [SerializeField]
     private Button seasonWinterButton;
 
+    [SerializeField]
+    private Button seasonSpringButton;
+
     private bool seasonSectionCreated;
 
     // =========================================================
@@ -259,6 +262,9 @@ public class GameSettingsUI3D : MonoBehaviour
             seasonWinterButton
         );
         ConfigureButton(
+            seasonSpringButton
+        );
+        ConfigureButton(
             closeButton
         );
 
@@ -330,6 +336,23 @@ public class GameSettingsUI3D : MonoBehaviour
             "СЕЗОН"
         );
 
+        // Шаблон третьей кнопки берём ДО переименования опций:
+        // SetupSeasonOption переименовывает FPS30/FPS60.
+        Transform springTemplate =
+            clone.transform.Find("FPS30");
+
+        Transform springOption = null;
+
+        if (springTemplate != null)
+        {
+            springOption =
+                Instantiate(
+                    springTemplate.gameObject,
+                    clone.transform,
+                    false
+                ).transform;
+        }
+
         seasonNormalButton =
             SetupSeasonOption(
                 clone.transform,
@@ -346,7 +369,82 @@ public class GameSettingsUI3D : MonoBehaviour
                 "ЗИМА"
             );
 
+        if (springOption != null)
+        {
+            seasonSpringButton =
+                SetupSeasonOption(
+                    springOption,
+                    "SeasonSpring",
+                    "ВЕСНА"
+                );
+        }
+
+        LayoutSeasonOptions(
+            clone.transform
+        );
+
         seasonSectionCreated = true;
+    }
+
+    /// <summary>
+    /// Раскладывает кнопки сезона в один ряд внутри секции.
+    /// Раньше секция клонировала двухкнопочный блок FPS, поэтому
+    /// после добавления «Весны» кнопки нужно пересчитать вручную.
+    /// </summary>
+    private static void LayoutSeasonOptions(
+        Transform section
+    )
+    {
+        string[] names =
+        {
+            "SeasonNormal",
+            "SeasonWinter",
+            "SeasonSpring"
+        };
+
+        const float left = 0.06f;
+        const float right = 0.94f;
+        const float gap = 0.02f;
+
+        float width =
+            ((right - left) - gap * 2f) / 3f;
+
+        for (
+            int i = 0;
+            i < names.Length;
+            i++
+        )
+        {
+            Transform option =
+                section.Find(names[i]);
+
+            if (option == null)
+                continue;
+
+            RectTransform rect =
+                option as RectTransform;
+
+            if (rect == null)
+                continue;
+
+            float xMin =
+                left + i * (width + gap);
+
+            rect.anchorMin =
+                new Vector2(
+                    xMin,
+                    rect.anchorMin.y
+                );
+
+            rect.anchorMax =
+                new Vector2(
+                    xMin + width,
+                    rect.anchorMax.y
+                );
+
+            rect.anchoredPosition =
+                Vector2.zero;
+        }
     }
 
     private static void SetHeaderTitle(
@@ -382,9 +480,19 @@ public class GameSettingsUI3D : MonoBehaviour
         string label
     )
     {
-        Transform option =
-            section.Find(sourceName);
+        return SetupSeasonOption(
+            section.Find(sourceName),
+            newName,
+            label
+        );
+    }
 
+    private static Button SetupSeasonOption(
+        Transform option,
+        string newName,
+        string label
+    )
+    {
         if (option == null)
             return null;
 
@@ -715,6 +823,19 @@ public class GameSettingsUI3D : MonoBehaviour
                     SetSeasonWinter
                 );
         }
+
+        if (seasonSpringButton != null)
+        {
+            seasonSpringButton.onClick
+                .RemoveListener(
+                    SetSeasonSpring
+                );
+
+            seasonSpringButton.onClick
+                .AddListener(
+                    SetSeasonSpring
+                );
+        }
     }
 
     // =========================================================
@@ -857,6 +978,11 @@ public class GameSettingsUI3D : MonoBehaviour
         ApplySeason(GameSeason.Winter);
     }
 
+    private void SetSeasonSpring()
+    {
+        ApplySeason(GameSeason.Spring);
+    }
+
     private void ApplySeason(
         GameSeason season
     )
@@ -889,6 +1015,13 @@ public class GameSettingsUI3D : MonoBehaviour
             seasonWinterButton,
             SeasonManager3D.IsActive(
                 GameSeason.Winter
+            )
+        );
+
+        SetButtonState(
+            seasonSpringButton,
+            SeasonManager3D.IsActive(
+                GameSeason.Spring
             )
         );
     }

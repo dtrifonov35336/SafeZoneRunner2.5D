@@ -1,4 +1,7 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="RunnerSafeZone.Logic.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="RunnerSafeZone.PlayModeTests.csproj" />
+  <Project Path="RunnerSafeZone.EditModeTests.csproj" />
 </Solution>

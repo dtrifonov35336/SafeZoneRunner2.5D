@@ -1,147 +1,73 @@
 using UnityEngine;
 
 /// <summary>
-/// Контролируемый бесплатный источник алмазов.
+/// Бесплатные алмазы за дистанцию.
 ///
 /// Правила:
-///  - за каждые 1000 м суммарной дистанции в бесконечном режиме
-///    выдаётся 5 алмазов;
-///  - порог хранится в PlayerPrefs, поэтому ни перезапуск сцены,
-///    ни повторный вход в забег, ни запуск приложения не позволяют
-///    получить награду за одну и ту же дистанцию повторно;
-///  - за редкие/сложные достижения выдаётся одноразовый бонус
-///    (см. TryClaimBonus), защищённый отдельным ключом.
+///  - 5 алмазов за каждые 1000 м В РАМКАХ ОДНОГО забега;
+///  - прогресс разных забегов не суммируется (900 м + 900 м = 0);
+///  - продолжение забега после смерти (реклама или оплата
+///    алмазами) сохраняет счётчик дистанции и уже выданные
+///    рубежи: повторной выдачи за 1000 м не будет;
+///  - счётчик сбрасывается только при фактическом начале нового
+///    забега, а не при воскрешении;
+///  - в режиме «До убежища» награды за дистанцию не выдаются.
 ///
-/// Валюта не создаётся заново — начисление идёт в существующий
-/// постоянный баланс "TotalDiamonds".
+/// Вся арифметика живёт в DistanceRewardLogic (проверяется
+/// юнит-тестами), здесь — только доступ к PlayerPrefs, UI и звуку.
 /// </summary>
 public static class FreeDiamondReward3D
 {
-    private const string ODOMETER_KEY =
-        "DiamondDistanceOdometer";
-
-    private const string PAID_KEY =
-        "DiamondDistancePaid";
-
     private const string BONUS_PREFIX =
         "DiamondBonus_";
 
-    public const int DiamondsPerStep = 5;
-    public const int StepMeters = 1000;
+    public const int DiamondsPerStep =
+        DistanceRewardLogic.DiamondsPerStep;
+
+    public const int StepMeters =
+        DistanceRewardLogic.StepMeters;
 
     // Состояние текущего забега. Живёт в пределах сессии приложения,
-    // что позволяет отличать новый забег от продолжения.
-    private static float lastRunDistance = -1f;
-    private static int runStartOdometer = 0;
+    // что позволяет отличать новый забег от продолжения после смерти.
+    private static readonly DistanceRewardLogic
+        logic =
+            new DistanceRewardLogic();
 
     // =========================================================
     // ДИСТАНЦИЯ
     // =========================================================
 
     /// <summary>
-    /// Вызывать во время забега с фактически пройденной дистанцией.
-    /// Награда выдаётся только при пересечении порога 1000 м, но сам
-    /// одометр хранит всю пройденную дистанцию (в том числе меньше
-    /// 1000 м), поэтому остаток переносится в следующий забег.
+    /// Вызывается при фактическом старте нового забега
+    /// (загрузка сцены забега). Сбрасывает прогресс рубежей.
+    /// </summary>
+    public static void BeginRun()
+    {
+        logic.BeginRun();
+    }
+
+    /// <summary>
+    /// Вызывать во время забега с дистанцией текущего забега.
+    /// Награда выдаётся за каждый новый пройденный рубеж 1000 м.
     /// </summary>
     public static void CheckDistanceRewards(
         int runDistanceMeters,
         bool infiniteRun
     )
     {
-        // Сюжетные забеги «До убежища» не усложняем.
-        if (!infiniteRun)
-        {
-            lastRunDistance = -1f;
-            return;
-        }
-
-        if (runDistanceMeters < 0)
-            return;
-
-        // Новый забег: дистанция сбросилась.
-        if (
-            lastRunDistance < 0f ||
-            runDistanceMeters <
-                lastRunDistance - 1f
-        )
-        {
-            // Фиксируем дистанцию завершившегося забега в одометре,
-            // чтобы пройденные < 1000 м не потерялись между забегами.
-            if (lastRunDistance >= 0f)
-            {
-                PlayerPrefs.SetInt(
-                    ODOMETER_KEY,
-                    runStartOdometer +
-                        Mathf.RoundToInt(
-                            lastRunDistance
-                        )
-                );
-
-                PlayerPrefs.Save();
-            }
-
-            runStartOdometer =
-                PlayerPrefs.GetInt(
-                    ODOMETER_KEY,
-                    0
-                );
-
-            lastRunDistance = runDistanceMeters;
-        }
-
-        lastRunDistance = runDistanceMeters;
-
-        int lifetime =
-            runStartOdometer +
-            runDistanceMeters;
-
-        int paid =
-            PlayerPrefs.GetInt(
-                PAID_KEY,
-                0
+        int granted =
+            logic.Evaluate(
+                runDistanceMeters,
+                infiniteRun
             );
-
-        int granted = 0;
-
-        while (
-            lifetime >=
-            paid + StepMeters
-        )
-        {
-            paid += StepMeters;
-            granted += DiamondsPerStep;
-        }
-
-        // Одоометр всегда отражает фактически пройденную суммарную
-        // дистанцию, даже если порог 1000 м ещё не достигнут.
-        if (
-            lifetime >
-            PlayerPrefs.GetInt(
-                ODOMETER_KEY,
-                0
-            )
-        )
-        {
-            PlayerPrefs.SetInt(
-                ODOMETER_KEY,
-                lifetime
-            );
-        }
 
         if (granted <= 0)
             return;
 
-        PlayerPrefs.SetInt(
-            PAID_KEY,
-            paid
-        );
-
-        PlayerPrefs.Save();
-
         GrantDiamonds(
             granted,
-            $"+{granted} алмазов за {paid} м"
+            $"+{granted} алмазов за " +
+            $"{logic.PaidMilestones * StepMeters} м"
         );
     }
 
