@@ -22,14 +22,14 @@ public static class InfiniteRunSpeedLogic
     // Значения по умолчанию для бесконечного режима.
     // Стартовая скорость выше базовой (baseObstacleSpeed = 15),
     // чтобы начальный темп был заметно быстрее.
-    public const float DefaultStartSpeed = 20f;
+    public const float DefaultStartSpeed = 22f;
 
     // Коэффициент логарифмического роста.
-    public const float DefaultGrowth = 7f;
+    public const float DefaultGrowth = 9f;
 
     // Масштабная дистанция кривой (м): чем меньше — тем быстрее
     // набирается скорость на первых километрах.
-    public const float DefaultRampDistance = 1200f;
+    public const float DefaultRampDistance = 1000f;
 
     /// <summary>
     /// Возвращает скорость движения препятствий (ед/с) на заданной

@@ -913,14 +913,14 @@ public class GameSettingsUI3D : MonoBehaviour
     // VIBRATION
     // =========================================================
 
-    private void OnVibrationChanged(
-        bool value
-    )
+    private void OnVibrationChanged(bool value)
     {
-        GameSettingsManager3D
-            .SetVibrationEnabled(
-                value
-            );
+        GameSettingsManager3D.SetVibrationEnabled(value);
+
+        if (value)
+        {
+            GameSettingsManager3D.Vibrate();
+        }
     }
 
     // =========================================================

@@ -140,6 +140,8 @@ public class RescuedPerson : MonoBehaviour
 
         isSaved = true;
 
+        GameSettingsManager3D.Vibrate();
+
         int coinsBefore = 0;
 
         if (HUDManager.Instance != null)

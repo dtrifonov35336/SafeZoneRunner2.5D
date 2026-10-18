@@ -83,6 +83,12 @@ public class ProfileSettingsPanel : MonoBehaviour
 
     public void OpenPanel()
     {
+        Debug.Log(
+            $"[ProfileDebug] OpenPanel: " +
+            $"rootActive={gameObject.activeInHierarchy}, " +
+            $"panelNull={panel == null}"
+        );
+
         if (panel == null) return;
 
         panel.SetActive(true);

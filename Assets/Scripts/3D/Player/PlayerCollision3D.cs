@@ -519,6 +519,8 @@ public class PlayerCollision : MonoBehaviour
             mover
         );
 
+        GameSettingsManager3D.Vibrate();
+
         string charId =
             ProfileManager
                 .GetSelectedCharacterId();

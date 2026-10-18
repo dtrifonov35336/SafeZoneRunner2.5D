@@ -970,7 +970,7 @@ public class AchievementsUI3D : MonoBehaviour
         ClearContent();
 
         List<ExpeditionTask3D> list =
-            ExpeditionSystem3D.GetUnlockedTasks();
+            ExpeditionSystem3D.GetAll();
 
         const float cardHeight = 120f;
         const float gap = 10f;

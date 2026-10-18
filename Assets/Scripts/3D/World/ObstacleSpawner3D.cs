@@ -78,20 +78,20 @@ public class ObstacleSpawner3D : MonoBehaviour
         "Стартовая скорость бесконечного забега. Заметно выше " +
         "базовой, чтобы начальный темп был быстрее."
     )]
-    public float infiniteStartSpeed = 20f;
+    public float infiniteStartSpeed = 22f;
 
     [Tooltip(
         "Коэффициент логарифмического роста скорости в бесконечном " +
         "режиме. Скорость продолжает расти на больших дистанциях " +
         "без конечного порога, после которого рост прекращается."
     )]
-    public float infiniteSpeedGrowth = 7f;
+    public float infiniteSpeedGrowth = 9f;
 
     [Tooltip(
         "Масштабная дистанция кривой скорости (м). Чем меньше, " +
         "тем быстрее набирается скорость на первых километрах."
     )]
-    public float infiniteSpeedRampDistance = 1200f;
+    public float infiniteSpeedRampDistance = 1000f;
 
     [Tooltip(
         "Максимальный шанс двойной волны препятствий " +

@@ -258,6 +258,8 @@ public class MainMenuManager : MonoBehaviour
 
     private void OnProfileAvatarClicked()
     {
+        Debug.Log("[ProfileDebug] Клик по кнопке профиля");
+
         PlayMenuClickSound();
 
         OpenProfileSettings();
@@ -265,6 +267,8 @@ public class MainMenuManager : MonoBehaviour
 
     public void OpenProfileSettings()
     {
+        Debug.Log("[ProfileDebug] Вызов открытия профиля");
+
         if (profileSettingsPanel == null)
         {
             profileSettingsPanel =
