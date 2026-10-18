@@ -38,6 +38,10 @@ public class GameSettingsUI3D : MonoBehaviour
     [SerializeField] 
     private TMP_Dropdown doubleJumpModeDropdown;
 
+    [SerializeField] private Button modeDoubleTapButton;
+    [SerializeField] private Button modeDoubleSwipeButton;
+    [SerializeField] private Button modeSwipeThenTapButton;
+
     private bool seasonSectionCreated;
 
     // =========================================================
@@ -262,7 +266,8 @@ public class GameSettingsUI3D : MonoBehaviour
         ConfigureSlider();
         ConfigureToggle();
 
-        EnsureSeasonSection();
+        EnsureDoubleJumpModeButtons();
+        HideSeasonSection();
 
         ConfigureButton(
             fps30Button
@@ -851,6 +856,27 @@ public class GameSettingsUI3D : MonoBehaviour
                     SetSeasonSpring
                 );
         }
+
+        if (modeDoubleTapButton != null)
+        {
+            modeDoubleTapButton.onClick.RemoveAllListeners();
+            modeDoubleTapButton.onClick.AddListener(
+                () => SetDoubleJumpMode(0));
+        }
+
+        if (modeDoubleSwipeButton != null)
+        {
+            modeDoubleSwipeButton.onClick.RemoveAllListeners();
+            modeDoubleSwipeButton.onClick.AddListener(
+                () => SetDoubleJumpMode(1));
+        }
+
+        if (modeSwipeThenTapButton != null)
+        {
+            modeSwipeThenTapButton.onClick.RemoveAllListeners();
+            modeSwipeThenTapButton.onClick.AddListener(
+                () => SetDoubleJumpMode(2));
+        }
     }
 
     // =========================================================
@@ -886,6 +912,8 @@ public class GameSettingsUI3D : MonoBehaviour
         }
 
         RefreshFPSButtons();
+
+        RefreshDoubleJumpModeButtons();
 
         RefreshSeasonButtons();
     }
@@ -1075,118 +1103,274 @@ public class GameSettingsUI3D : MonoBehaviour
                 );
     }
 
-    private void EnsureDoubleJumpModeDropdown()
+    //private void EnsureDoubleJumpModeDropdown()
+    //{
+    //    if (doubleJumpModeDropdown != null)
+    //        return;
+
+    //    Transform controlSection =
+    //        transform.Find("Window/Panel/ControlSection");
+
+    //    if (controlSection == null)
+    //        return;
+
+    //    GameObject root = new GameObject(
+    //        "DoubleJumpModeDropdown",
+    //        typeof(RectTransform),
+    //        typeof(Image),
+    //        typeof(TMP_Dropdown));
+
+    //    root.transform.SetParent(controlSection, false);
+
+    //    RectTransform rect = root.GetComponent<RectTransform>();
+    //    rect.anchorMin = new Vector2(0.08f, 0.02f);
+    //    rect.anchorMax = new Vector2(0.92f, 0.22f);
+    //    rect.offsetMin = Vector2.zero;
+    //    rect.offsetMax = Vector2.zero;
+
+    //    Image background = root.GetComponent<Image>();
+    //    background.color = new Color32(38, 43, 46, 255);
+
+    //    doubleJumpModeDropdown = root.GetComponent<TMP_Dropdown>();
+    //    doubleJumpModeDropdown.targetGraphic = background;
+    //    doubleJumpModeDropdown.options.Clear();
+
+    //    doubleJumpModeDropdown.options.Add(
+    //        new TMP_Dropdown.OptionData("Двойное нажатие"));
+
+    //    doubleJumpModeDropdown.options.Add(
+    //        new TMP_Dropdown.OptionData("Два свайпа вверх"));
+
+    //    doubleJumpModeDropdown.options.Add(
+    //        new TMP_Dropdown.OptionData("Свайп вверх + двойное нажатие"));
+
+    //    doubleJumpModeDropdown.captionText =
+    //        CreateDropdownLabel(root.transform, "Caption", 22f);
+
+    //    GameObject template = new GameObject(
+    //        "Template",
+    //        typeof(RectTransform),
+    //        typeof(Image),
+    //        typeof(ScrollRect));
+
+    //    template.transform.SetParent(root.transform, false);
+    //    template.SetActive(false);
+
+    //    doubleJumpModeDropdown.template =
+    //        template.GetComponent<RectTransform>();
+
+    //    doubleJumpModeDropdown.value =
+    //        (int)TouchControls.SavedControlMode;
+
+    //    doubleJumpModeDropdown.RefreshShownValue();
+
+    //    doubleJumpModeDropdown.onValueChanged.AddListener(
+    //        OnDoubleJumpModeChanged);
+    //}
+
+    //private TMP_Text CreateDropdownLabel(
+    //    Transform parent,
+    //    string objectName,
+    //    float fontSize)
+    //{
+    //    GameObject labelObject = new GameObject(
+    //        objectName,
+    //        typeof(RectTransform),
+    //        typeof(TextMeshProUGUI));
+
+    //    labelObject.transform.SetParent(parent, false);
+
+    //    RectTransform rect =
+    //        labelObject.GetComponent<RectTransform>();
+
+    //    rect.anchorMin = Vector2.zero;
+    //    rect.anchorMax = Vector2.one;
+    //    rect.offsetMin = new Vector2(12f, 4f);
+    //    rect.offsetMax = new Vector2(-32f, -4f);
+
+    //    TMP_Text label =
+    //        labelObject.GetComponent<TMP_Text>();
+
+    //    label.fontSize = fontSize;
+    //    label.color = Color.white;
+    //    label.alignment = TextAlignmentOptions.MidlineLeft;
+    //    label.raycastTarget = false;
+
+    //    if (TMP_Settings.defaultFontAsset != null)
+    //        label.font = TMP_Settings.defaultFontAsset;
+
+    //    return label;
+    //}
+
+    //private void OnDoubleJumpModeChanged(int index)
+    //{
+    //    DoubleJumpControlMode mode =
+    //        (DoubleJumpControlMode)Mathf.Clamp(index, 0, 2);
+
+    //    if (TouchControls.Instance != null)
+    //    {
+    //        TouchControls.Instance.SetControlMode(mode);
+    //    }
+    //    else
+    //    {
+    //        PlayerPrefs.SetInt("Settings_DoubleJumpControl", index);
+    //        PlayerPrefs.Save();
+    //    }
+    //}
+
+
+    private void EnsureDoubleJumpModeButtons()
     {
-        if (doubleJumpModeDropdown != null)
+        Transform section = transform.Find(
+            "Window/Panel/ControlSection");
+
+        if (section == null)
             return;
 
-        Transform controlSection =
-            transform.Find("Window/Panel/ControlSection");
+        modeDoubleTapButton = CreateModeButton(
+            section, "ModeDoubleTap",
+            "ДВОЙНОЕ\nНАЖАТИЕ", 0);
 
-        if (controlSection == null)
-            return;
+        modeDoubleSwipeButton = CreateModeButton(
+            section, "ModeDoubleSwipe",
+            "ДВА СВАЙПА\nВВЕРХ", 1);
 
-        GameObject root = new GameObject(
-            "DoubleJumpModeDropdown",
+        modeSwipeThenTapButton = CreateModeButton(
+            section, "ModeSwipeThenTap",
+            "СВАЙП + ДВОЙНОЕ\nНАЖАТИЕ", 2);
+
+        RefreshDoubleJumpModeButtons();
+    }
+
+    private Button CreateModeButton(
+        Transform parent,
+        string objectName,
+        string label,
+        int index)
+    {
+        Transform existing = parent.Find(objectName);
+        if (existing != null)
+        {
+            Button found = existing.GetComponent<Button>();
+            if (found != null)
+            {
+                SetModeButtonLabel(found, label);
+                ConfigureButton(found);
+                return found;
+            }
+        }
+
+        GameObject obj = new GameObject(
+            objectName,
             typeof(RectTransform),
             typeof(Image),
-            typeof(TMP_Dropdown));
+            typeof(Button));
 
-        root.transform.SetParent(controlSection, false);
+        obj.transform.SetParent(parent, false);
 
-        RectTransform rect = root.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.08f, 0.02f);
-        rect.anchorMax = new Vector2(0.92f, 0.22f);
+        RectTransform rect = obj.GetComponent<RectTransform>();
+
+        float width = 0.29f;
+        float gap = 0.025f;
+        float totalWidth = width * 3f + gap * 2f;
+        float left = (1f - totalWidth) * 0.5f;
+
+        float xMin = left + index * (width + gap);
+
+        rect.anchorMin = new Vector2(xMin, 0.03f);
+        rect.anchorMax = new Vector2(xMin + width, 0.48f);
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
 
-        Image background = root.GetComponent<Image>();
-        background.color = new Color32(38, 43, 46, 255);
+        Image image = obj.GetComponent<Image>();
+        image.color = new Color32(45, 58, 64, 255);
+        image.raycastTarget = true;
 
-        doubleJumpModeDropdown = root.GetComponent<TMP_Dropdown>();
-        doubleJumpModeDropdown.targetGraphic = background;
-        doubleJumpModeDropdown.options.Clear();
+        Button button = obj.GetComponent<Button>();
+        button.targetGraphic = image;
+        button.transition = Selectable.Transition.None;
+        button.navigation = new Navigation
+        {
+            mode = Navigation.Mode.None
+        };
 
-        doubleJumpModeDropdown.options.Add(
-            new TMP_Dropdown.OptionData("Двойное нажатие"));
-
-        doubleJumpModeDropdown.options.Add(
-            new TMP_Dropdown.OptionData("Два свайпа вверх"));
-
-        doubleJumpModeDropdown.options.Add(
-            new TMP_Dropdown.OptionData("Свайп вверх + двойное нажатие"));
-
-        doubleJumpModeDropdown.captionText =
-            CreateDropdownLabel(root.transform, "Caption", 22f);
-
-        GameObject template = new GameObject(
-            "Template",
-            typeof(RectTransform),
-            typeof(Image),
-            typeof(ScrollRect));
-
-        template.transform.SetParent(root.transform, false);
-        template.SetActive(false);
-
-        doubleJumpModeDropdown.template =
-            template.GetComponent<RectTransform>();
-
-        doubleJumpModeDropdown.value =
-            (int)TouchControls.SavedControlMode;
-
-        doubleJumpModeDropdown.RefreshShownValue();
-
-        doubleJumpModeDropdown.onValueChanged.AddListener(
-            OnDoubleJumpModeChanged);
-    }
-
-    private TMP_Text CreateDropdownLabel(
-        Transform parent,
-        string objectName,
-        float fontSize)
-    {
         GameObject labelObject = new GameObject(
-            objectName,
+            "Label",
             typeof(RectTransform),
             typeof(TextMeshProUGUI));
 
-        labelObject.transform.SetParent(parent, false);
+        labelObject.transform.SetParent(obj.transform, false);
 
-        RectTransform rect =
+        RectTransform labelRect =
             labelObject.GetComponent<RectTransform>();
 
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = new Vector2(12f, 4f);
-        rect.offsetMax = new Vector2(-32f, -4f);
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(3f, 3f);
+        labelRect.offsetMax = new Vector2(-3f, -3f);
 
-        TMP_Text label =
-            labelObject.GetComponent<TMP_Text>();
-
-        label.fontSize = fontSize;
-        label.color = Color.white;
-        label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.raycastTarget = false;
+        TMP_Text text = labelObject.GetComponent<TMP_Text>();
+        text.text = label;
+        text.fontSize = 15f;
+        text.color = Color.white;
+        text.alignment = TextAlignmentOptions.Center;
+        text.raycastTarget = false;
 
         if (TMP_Settings.defaultFontAsset != null)
-            label.font = TMP_Settings.defaultFontAsset;
+            text.font = TMP_Settings.defaultFontAsset;
 
-        return label;
+        button.onClick.AddListener(() =>
+        {
+            SetDoubleJumpMode(index);
+        });
+
+        return button;
     }
 
-    private void OnDoubleJumpModeChanged(int index)
+    private void SetModeButtonLabel(Button button, string value)
+    {
+        if (button == null)
+            return;
+
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+        if (text != null)
+            text.text = value;
+    }
+
+    private void SetDoubleJumpMode(int index)
     {
         DoubleJumpControlMode mode =
             (DoubleJumpControlMode)Mathf.Clamp(index, 0, 2);
 
         if (TouchControls.Instance != null)
-        {
             TouchControls.Instance.SetControlMode(mode);
-        }
         else
         {
             PlayerPrefs.SetInt("Settings_DoubleJumpControl", index);
             PlayerPrefs.Save();
         }
+
+        RefreshDoubleJumpModeButtons();
     }
+
+    private void RefreshDoubleJumpModeButtons()
+    {
+        int selected = (int)TouchControls.SavedControlMode;
+
+        SetButtonState(modeDoubleTapButton, selected == 0);
+        SetButtonState(modeDoubleSwipeButton, selected == 1);
+        SetButtonState(modeSwipeThenTapButton, selected == 2);
+    }
+
+    private void HideSeasonSection()
+    {
+        Transform panel = transform.Find("Window/Panel");
+        if (panel == null)
+            return;
+
+        Transform season = panel.Find("SeasonSection");
+        if (season != null)
+            season.gameObject.SetActive(false);
+    }
+
 }

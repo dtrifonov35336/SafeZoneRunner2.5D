@@ -1188,15 +1188,15 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 switch (TouchControls.SavedControlMode)
                 {
                     case DoubleJumpControlMode.DoubleSwipeUp:
-                        message = "Двойной прыжок: сделай два свайпа вверх подряд.";
+                        message = "Двойной прыжок: два свайпа вверх подряд.";
                         break;
 
                     case DoubleJumpControlMode.SwipeUpThenDoubleTap:
-                        message = "Свайпни вверх, чтобы прыгнуть, затем дважды нажми на экран.";
+                        message = "Сначала свайп вверх, затем дважды нажми на экран.";
                         break;
 
                     default:
-                        message = "Чтобы выполнить двойной прыжок, дважды нажми на экран.";
+                        message = "Дважды быстро нажми на экран, чтобы выполнить двойной прыжок.";
                         break;
                 }
                 break;

@@ -910,6 +910,68 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             yield return WaitForOk();
         }
 
+        // УПРАВЛЕНИЕ ДВОЙНЫМ ПРЫЖКОМ
+        Button doubleTapMode =
+            FindButtonFromMember(
+                gameSettings,
+                "modeDoubleTapButton");
+
+        Button doubleSwipeMode =
+            FindButtonFromMember(
+                gameSettings,
+                "modeDoubleSwipeButton");
+
+        Button swipeThenTapMode =
+            FindButtonFromMember(
+                gameSettings,
+                "modeSwipeThenTapButton");
+
+        if (doubleTapMode != null ||
+            doubleSwipeMode != null ||
+            swipeThenTapMode != null)
+        {
+            ShowInfoOverlay(
+                "УПРАВЛЕНИЕ ДВОЙНЫМ ПРЫЖКОМ\n\n" +
+                "Выбери удобный способ выполнения двойного прыжка.\n\n" +
+                "Настройка сохраняется между забегами. " +
+                "Изменить её можно в любое время.");
+
+            yield return WaitForOk();
+
+            if (doubleTapMode != null)
+            {
+                ShowTargetOverlayGeneric(
+                    doubleTapMode,
+                    "ДВОЙНОЕ НАЖАТИЕ\n\n" +
+                    "Дважды быстро нажми на экран. " +
+                    "Во время прыжка это выполнит второй прыжок.");
+
+                yield return WaitForOk();
+            }
+
+            if (doubleSwipeMode != null)
+            {
+                ShowTargetOverlayGeneric(
+                    doubleSwipeMode,
+                    "ДВА СВАЙПА ВВЕРХ\n\n" +
+                    "Сделай свайп вверх, чтобы прыгнуть, " +
+                    "затем повтори свайп в воздухе.");
+
+                yield return WaitForOk();
+            }
+
+            if (swipeThenTapMode != null)
+            {
+                ShowTargetOverlayGeneric(
+                    swipeThenTapMode,
+                    "СВАЙП + ДВОЙНОЕ НАЖАТИЕ\n\n" +
+                    "Сначала свайпни вверх, чтобы прыгнуть, " +
+                    "затем дважды нажми на экран для второго прыжка.");
+
+                yield return WaitForOk();
+            }
+        }
+
         // ПРОИЗВОДИТЕЛЬНОСТЬ
         Button fps30 =
             FindButtonFromMember(
