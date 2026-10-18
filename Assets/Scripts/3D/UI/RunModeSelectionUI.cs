@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using UnityEngine.EventSystems;
 
 public class RunModeSelectionUI : MonoBehaviour
 {
@@ -329,6 +330,11 @@ public class RunModeSelectionUI : MonoBehaviour
 
         AddHeight(shelter.gameObject, 170f);
 
+        if (firstTutorialRun)
+        {
+            CreateTutorialCallout(panel.transform);
+        }
+
         AddSpacer(content.transform, 20f);
 
         // -------------------------------------------------
@@ -350,7 +356,18 @@ public class RunModeSelectionUI : MonoBehaviour
 
         if (firstTutorialRun)
         {
+            // При первом запуске заранее выбираем режим обучения.
+            PlayerPrefs.SetInt(INFINITE_RUN_KEY, 0);
+            PlayerPrefs.Save();
+
+            // Бесконечный забег пока недоступен.
             infinite.interactable = false;
+
+            // Устанавливаем фокус на карточку обучения.
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(shelter.gameObject);
+            }
         }
 
         AddHeight(infinite.gameObject, 170f);
@@ -373,7 +390,59 @@ public class RunModeSelectionUI : MonoBehaviour
 
         back.onClick.AddListener(Close);
 
+        if (firstTutorialRun)
+        {
+            back.interactable = false;
+        }
+
         AddHeight(back.gameObject, 72f);
+    }
+
+    private void CreateTutorialCallout(Transform parent)
+    {
+        GameObject callout = CreateUIObject(
+            "FirstRunTutorialCallout",
+            parent
+        );
+
+        RectTransform rect = callout.GetComponent<RectTransform>();
+
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, 550f);
+        rect.sizeDelta = new Vector2(760f, 120f);
+
+        Image background = callout.AddComponent<Image>();
+        background.color = new Color32(39, 49, 39, 255);
+
+        // Фон подсказки не должен перехватывать нажатия.
+        background.raycastTarget = false;
+
+        Outline outline = callout.AddComponent<Outline>();
+        outline.effectColor = new Color32(155, 190, 125, 255);
+        outline.effectDistance = new Vector2(3f, 3f);
+
+        TMP_Text message = CreateText(
+            "TutorialInstruction",
+            callout.transform,
+            "ШАГ 1  ↓\nНАЖМИ НА «ДОБРАТЬСЯ ДО УБЕЖИЩА»",
+            27f,
+            PrimaryText,
+            FontRole.DisplaySemi
+        );
+
+        RectTransform messageRect =
+            message.GetComponent<RectTransform>();
+
+        Stretch(messageRect);
+
+        messageRect.offsetMin = new Vector2(15f, 8f);
+        messageRect.offsetMax = new Vector2(-15f, -8f);
+
+        message.alignment = TextAlignmentOptions.Center;
+        message.fontSize = 27f;
+        message.raycastTarget = false;
     }
 
     private Button CreateModeCard(

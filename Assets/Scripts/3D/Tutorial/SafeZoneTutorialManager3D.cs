@@ -124,6 +124,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
     [SerializeField] private float repeatObstacleDelay = 0.35f;
     [SerializeField] private float repeatPickupDelay = 0.5f;
 
+    [Header("Повторные подсказки")]
+    [SerializeField] private float actionToastDelay = 5f;
+
+    private bool actionToastShown;
+
     [Header("Область подтверждения")]
     [Tooltip(
         "Делает весь контейнер подсказки кликабельным: нажатие рядом " +
@@ -342,6 +347,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         UpdateRepeatingPickups();
 
         UpdateTutorialTimedHelp();
+
+        UpdateActionToast();
     }
 
     private void CacheReferences()
@@ -706,6 +713,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         rescueFinished = false;
 
         currentStageStartTime = Time.unscaledTime;
+
+        actionToastShown = false;
+
         doubleJumpRetryHintShown = false;
         doubleJumpAltHintShown = false;
 
@@ -1162,20 +1172,24 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void OnAltControlTry()
     {
-        alternativeSchemeActive = true;
-
         if (TouchControls.Instance != null)
         {
-            TouchControls.Instance
-                .alternativeDoubleJumpSwipe = true;
+            TouchControls.Instance.SetControlMode(
+                DoubleJumpControlMode.DoubleSwipeUp);
+        }
+        else
+        {
+            PlayerPrefs.SetInt(
+                "Settings_DoubleJumpControl",
+                (int)DoubleJumpControlMode.DoubleSwipeUp);
+
+            PlayerPrefs.Save();
         }
 
         HideAlternativeControlPrompt();
 
         ShowToast(
-            "Включено: двойной прыжок — " +
-            "двумя свайпами вверх подряд."
-        );
+            "Управление изменено. Два свайпа вверх — двойной прыжок.");
     }
 
     private void OnAltControlKeep()
@@ -1189,16 +1203,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private void RestoreAlternativeScheme()
     {
-        if (!alternativeSchemeActive)
-            return;
-
-        alternativeSchemeActive = false;
-
-        if (TouchControls.Instance != null)
-        {
-            TouchControls.Instance
-                .alternativeDoubleJumpSwipe = false;
-        }
+        // Не возвращаем старую схему:
+        // выбор игрока должен сохраняться между забегами.
     }
 
     private void HideAlternativeControlPrompt()
@@ -2647,4 +2653,70 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         );
     }
 
+    private void UpdateActionToast()
+    {
+        if (!IsRunning ||
+            !hintConfirmed ||
+            waitingForReward ||
+            actionToastShown)
+        {
+            return;
+        }
+
+        if (Time.unscaledTime - currentStageStartTime < actionToastDelay)
+            return;
+
+        string message;
+
+        switch (CurrentStage)
+        {
+            case TutorialStage.Move:
+                message = "Свайпни влево или вправо, чтобы сменить полосу.";
+                break;
+
+            case TutorialStage.Jump:
+                message = "Свайпни вверх, чтобы перепрыгнуть препятствие.";
+                break;
+
+            case TutorialStage.Coins:
+                message = "Свайпни в сторону монет, чтобы перейти на нужную полосу.";
+                break;
+
+            case TutorialStage.Slide:
+                message = "Свайпни вниз, чтобы проскользнуть под препятствием.";
+                break;
+
+            case TutorialStage.DoubleJump:
+                message = GetDoubleJumpHint();
+                break;
+
+            case TutorialStage.Rescue:
+                message = "Перейди на полосу с человеком, чтобы спасти его.";
+                break;
+
+            default:
+                return;
+        }
+
+        actionToastShown = true;
+        ShowToast(message);
+    }
+
+    private string GetDoubleJumpHint()
+    {
+        DoubleJumpControlMode mode =
+            TouchControls.SavedControlMode;
+
+        switch (mode)
+        {
+            case DoubleJumpControlMode.DoubleSwipeUp:
+                return "Двойной прыжок: два свайпа вверх подряд.";
+
+            case DoubleJumpControlMode.SwipeUpThenDoubleTap:
+                return "Свайпни вверх, чтобы прыгнуть, затем дважды нажми на экран.";
+
+            default:
+                return "Свайпни вверх, чтобы прыгнуть, затем дважды нажми на экран.";
+        }
+    }
 }

@@ -33,6 +33,20 @@ public class TouchControls : MonoBehaviour
     )]
     public float doubleSwipeWindow = 0.6f;
 
+    private const string DoubleJumpControlKey =
+    "Settings_DoubleJumpControl";
+
+    public DoubleJumpControlMode ControlMode { get; private set; }
+        = DoubleJumpControlMode.DoubleTap;
+
+    public static DoubleJumpControlMode SavedControlMode =>
+        (DoubleJumpControlMode)Mathf.Clamp(
+            PlayerPrefs.GetInt(
+                DoubleJumpControlKey,
+                (int)DoubleJumpControlMode.DoubleTap),
+            0,
+            2);
+
     public bool LeftRequested { get; private set; }
     public bool RightRequested { get; private set; }
     public bool JumpRequested { get; private set; }
@@ -58,6 +72,8 @@ public class TouchControls : MonoBehaviour
         }
 
         Instance = this;
+
+        LoadControlMode();
     }
 
     private void Update()
@@ -153,9 +169,8 @@ public class TouchControls : MonoBehaviour
             // Вертикальный свайп.
             if (delta.y > 0f)
             {
-                if (alternativeDoubleJumpSwipe &&
-                    Time.unscaledTime - lastUpSwipeTime
-                        <= doubleSwipeWindow)
+                if (ControlMode == DoubleJumpControlMode.DoubleSwipeUp &&
+                    Time.unscaledTime - lastUpSwipeTime <= doubleSwipeWindow)
                 {
                     lastUpSwipeTime = -100f;
                     DoubleJumpRequested = true;
@@ -196,15 +211,21 @@ public class TouchControls : MonoBehaviour
 
         if (waitingForSecondTap)
         {
-            float timeSinceFirstTap = now - firstTapTime;
-            float distanceFromFirstTap =
-                Vector2.Distance(position, firstTapPosition);
+            float elapsed = now - firstTapTime;
+            float distance = Vector2.Distance(
+                position,
+                firstTapPosition);
 
-            if (timeSinceFirstTap <= doubleTapTime &&
-                distanceFromFirstTap <= doubleTapMaxDistance)
+            if (elapsed <= doubleTapTime &&
+                distance <= doubleTapMaxDistance)
             {
                 waitingForSecondTap = false;
-                DoubleJumpRequested = true;
+
+                if (ControlMode != DoubleJumpControlMode.DoubleSwipeUp)
+                {
+                    DoubleJumpRequested = true;
+                }
+
                 return;
             }
         }
@@ -268,5 +289,32 @@ public class TouchControls : MonoBehaviour
 
         SlideRequested = false;
         return true;
+    }
+
+    public void SetControlMode(DoubleJumpControlMode mode)
+    {
+        ControlMode = mode;
+        alternativeDoubleJumpSwipe =
+            mode == DoubleJumpControlMode.DoubleSwipeUp;
+
+        PlayerPrefs.SetInt(
+            DoubleJumpControlKey,
+            (int)mode);
+
+        PlayerPrefs.Save();
+
+        waitingForSecondTap = false;
+        lastUpSwipeTime = -100f;
+
+        JumpRequested = false;
+        DoubleJumpRequested = false;
+    }
+
+    private void LoadControlMode()
+    {
+        ControlMode = SavedControlMode;
+
+        alternativeDoubleJumpSwipe =
+            ControlMode == DoubleJumpControlMode.DoubleSwipeUp;
     }
 }

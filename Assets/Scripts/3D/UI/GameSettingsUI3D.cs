@@ -35,6 +35,9 @@ public class GameSettingsUI3D : MonoBehaviour
     [SerializeField]
     private Button seasonSpringButton;
 
+    [SerializeField] 
+    private TMP_Dropdown doubleJumpModeDropdown;
+
     private bool seasonSectionCreated;
 
     // =========================================================
@@ -193,6 +196,18 @@ public class GameSettingsUI3D : MonoBehaviour
                     found.GetComponent<
                         Toggle
                     >();
+            }
+        }
+
+        if (doubleJumpModeDropdown == null)
+        {
+            Transform found = transform.Find(
+                "Window/Panel/ControlSection/DoubleJumpModeDropdown");
+
+            if (found != null)
+            {
+                doubleJumpModeDropdown =
+                    found.GetComponent<TMP_Dropdown>();
             }
         }
 
@@ -1058,5 +1073,120 @@ public class GameSettingsUI3D : MonoBehaviour
                     58,
                     255
                 );
+    }
+
+    private void EnsureDoubleJumpModeDropdown()
+    {
+        if (doubleJumpModeDropdown != null)
+            return;
+
+        Transform controlSection =
+            transform.Find("Window/Panel/ControlSection");
+
+        if (controlSection == null)
+            return;
+
+        GameObject root = new GameObject(
+            "DoubleJumpModeDropdown",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(TMP_Dropdown));
+
+        root.transform.SetParent(controlSection, false);
+
+        RectTransform rect = root.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.08f, 0.02f);
+        rect.anchorMax = new Vector2(0.92f, 0.22f);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+
+        Image background = root.GetComponent<Image>();
+        background.color = new Color32(38, 43, 46, 255);
+
+        doubleJumpModeDropdown = root.GetComponent<TMP_Dropdown>();
+        doubleJumpModeDropdown.targetGraphic = background;
+        doubleJumpModeDropdown.options.Clear();
+
+        doubleJumpModeDropdown.options.Add(
+            new TMP_Dropdown.OptionData("Двойное нажатие"));
+
+        doubleJumpModeDropdown.options.Add(
+            new TMP_Dropdown.OptionData("Два свайпа вверх"));
+
+        doubleJumpModeDropdown.options.Add(
+            new TMP_Dropdown.OptionData("Свайп вверх + двойное нажатие"));
+
+        doubleJumpModeDropdown.captionText =
+            CreateDropdownLabel(root.transform, "Caption", 22f);
+
+        GameObject template = new GameObject(
+            "Template",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(ScrollRect));
+
+        template.transform.SetParent(root.transform, false);
+        template.SetActive(false);
+
+        doubleJumpModeDropdown.template =
+            template.GetComponent<RectTransform>();
+
+        doubleJumpModeDropdown.value =
+            (int)TouchControls.SavedControlMode;
+
+        doubleJumpModeDropdown.RefreshShownValue();
+
+        doubleJumpModeDropdown.onValueChanged.AddListener(
+            OnDoubleJumpModeChanged);
+    }
+
+    private TMP_Text CreateDropdownLabel(
+        Transform parent,
+        string objectName,
+        float fontSize)
+    {
+        GameObject labelObject = new GameObject(
+            objectName,
+            typeof(RectTransform),
+            typeof(TextMeshProUGUI));
+
+        labelObject.transform.SetParent(parent, false);
+
+        RectTransform rect =
+            labelObject.GetComponent<RectTransform>();
+
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = new Vector2(12f, 4f);
+        rect.offsetMax = new Vector2(-32f, -4f);
+
+        TMP_Text label =
+            labelObject.GetComponent<TMP_Text>();
+
+        label.fontSize = fontSize;
+        label.color = Color.white;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+        label.raycastTarget = false;
+
+        if (TMP_Settings.defaultFontAsset != null)
+            label.font = TMP_Settings.defaultFontAsset;
+
+        return label;
+    }
+
+    private void OnDoubleJumpModeChanged(int index)
+    {
+        DoubleJumpControlMode mode =
+            (DoubleJumpControlMode)Mathf.Clamp(index, 0, 2);
+
+        if (TouchControls.Instance != null)
+        {
+            TouchControls.Instance.SetControlMode(mode);
+        }
+        else
+        {
+            PlayerPrefs.SetInt("Settings_DoubleJumpControl", index);
+            PlayerPrefs.Save();
+        }
     }
 }

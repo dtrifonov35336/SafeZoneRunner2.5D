@@ -45,9 +45,6 @@ public class ProfileSettingsPanel : MonoBehaviour
 
     private void Start()
     {
-        // Скрываем панель при старте
-        if (panel != null) panel.SetActive(false);
-
         // Привязка кнопок
         if (saveNameButton != null) saveNameButton.onClick.AddListener(OnSaveName);
         if (uploadButton != null) uploadButton.onClick.AddListener(OnUploadFromDevice);
