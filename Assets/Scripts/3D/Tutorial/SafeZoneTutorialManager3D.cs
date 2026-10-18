@@ -1901,6 +1901,52 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         return null;
     }
 
+    private bool IsWideTutorialObstacle(GameObject prefab)
+    {
+        if (prefab == null)
+            return false;
+
+        string obstacleName =
+            prefab.name.ToLowerInvariant();
+
+        // Резервная проверка по названиям префабов.
+        if (
+            obstacleName.Contains("bus") ||
+            obstacleName.Contains("автобус") ||
+            obstacleName.Contains("obstacle4") ||
+            obstacleName.Contains("obstacle_4") ||
+            obstacleName.Contains("obstacle 4")
+        )
+        {
+            return true;
+        }
+
+        // Проверяем ширину коллайдера относительно расстояния
+        // между полосами. Широкий объект занимает обе полосы.
+        Collider obstacleCollider =
+            prefab.GetComponentInChildren<Collider>(true);
+
+        if (obstacleCollider == null || player == null)
+            return false;
+
+        float laneGap = 2.7f;
+
+        if (
+            player.lanePositions != null &&
+            player.lanePositions.Length >= 2
+        )
+        {
+            laneGap = Mathf.Abs(
+                player.lanePositions[
+                    player.lanePositions.Length - 1
+                ] -
+                player.lanePositions[0]
+            );
+        }
+
+        return obstacleCollider.bounds.size.x >= laneGap;
+    }
+
     private void SpawnTutorialObstacle(
         GameObject prefab
     )
@@ -1917,7 +1963,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         ClearTutorialObstacleOnly();
 
         float laneX =
-            GetCurrentLaneX();
+            IsWideTutorialObstacle(prefab)
+                ? 0f
+                : GetCurrentLaneX();
 
         float spawnZ =
             player.transform.position.z +

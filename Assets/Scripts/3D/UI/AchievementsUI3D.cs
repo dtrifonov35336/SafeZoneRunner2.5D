@@ -408,6 +408,10 @@ public class AchievementsUI3D : MonoBehaviour
         SetTabAnchors(infiniteTab, 0.34f, 0.66f);
         SetTabAnchors(expeditionTab, 0.68f, 1f);
 
+        // Экспедиции доступны для просмотра с самого начала.
+        expeditionTab.interactable = true;
+        expeditionTab.enabled = true;
+
         expeditionTabCreated = true;
     }
 

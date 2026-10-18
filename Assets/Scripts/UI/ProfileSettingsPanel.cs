@@ -84,16 +84,38 @@ public class ProfileSettingsPanel : MonoBehaviour
     public void OpenPanel()
     {
         Debug.Log(
-            $"[ProfileDebug] OpenPanel: " +
-            $"rootActive={gameObject.activeInHierarchy}, " +
-            $"panelNull={panel == null}"
+            $"[ProfileDebug] OpenPanel BEFORE: " +
+            $"componentObject={gameObject.name}, " +
+            $"componentActive={gameObject.activeSelf}, " +
+            $"componentInHierarchy={gameObject.activeInHierarchy}, " +
+            $"panel={(panel != null ? panel.name : "NULL")}"
         );
 
-        if (panel == null) return;
+        if (panel == null)
+        {
+            Debug.LogError(
+                "[ProfileDebug] Не назначена ссылка на panel."
+            );
+            return;
+        }
 
-        panel.SetActive(true);
+        // Активируем объект, на котором находится компонент.
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
+
+        // Затем активируем саму панель.
+        if (!panel.activeSelf)
+            panel.SetActive(true);
+
         LoadSaved();
         RefreshAvatarBorders();
+
+        Debug.Log(
+            $"[ProfileDebug] OpenPanel AFTER: " +
+            $"componentInHierarchy={gameObject.activeInHierarchy}, " +
+            $"panelActive={panel.activeSelf}, " +
+            $"panelInHierarchy={panel.activeInHierarchy}"
+        );
     }
 
     public void ClosePanel()
