@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class SafeZoneTutorialManager3D : MonoBehaviour
@@ -1586,6 +1588,10 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         StageChanged?.Invoke(
             TutorialStage.Completed
         );
+
+        StartCoroutine(
+            RestartAsNormalShelterRun()
+        );
     }
 
     // =========================================================
@@ -2568,4 +2574,29 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         if (Instance == this)
             Instance = null;
     }
+
+
+    private IEnumerator RestartAsNormalShelterRun()
+    {
+        // Даём текущему завершению обучения
+        // закончить обработку событий.
+        yield return null;
+
+        yield return new WaitForSecondsRealtime(0.2f);
+
+        // Следующий забег должен быть обычным.
+        PlayerPrefs.SetInt(
+            "RunMode_Infinite",
+            0
+        );
+
+        PlayerPrefs.Save();
+
+        // Новый запуск сцены обнулит HUD, дистанцию,
+        // временные монеты и прогресс до убежища.
+        SceneManager.LoadScene(
+            SceneManager.GetActiveScene().buildIndex
+        );
+    }
+
 }

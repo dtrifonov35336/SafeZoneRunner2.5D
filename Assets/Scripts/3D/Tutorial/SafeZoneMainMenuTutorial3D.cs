@@ -1082,6 +1082,44 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             yield return WaitForOk();
         }
 
+
+        // =================================================
+        // ЭКСПЕДИЦИИ
+        // =================================================
+
+        Button expeditions =
+            FindButtonInObject(
+                achievements.gameObject,
+                "ЭКСПЕДИЦИИ",
+                "ЭКСПЕДИЦИЯ"
+            );
+
+        if (expeditions != null)
+        {
+            ShowTargetOverlay(
+                expeditions,
+                "ЭКСПЕДИЦИИ\n\n" +
+                "Здесь находятся долгосрочные цели, " +
+                "которые выполняются между забегами.\n\n" +
+                "За выполнение заданий можно получать награды. " +
+                "Нажми на вкладку «Экспедиции»."
+            );
+
+            yield return WaitForTargetClick(
+                expeditions
+            );
+
+            ShowInfoOverlay(
+                "ЦЕЛИ ЭКСПЕДИЦИЙ\n\n" +
+                "Выполняй задания, собирай монеты, " +
+                "спасай людей и преодолевай дистанции.\n\n" +
+                "После выполнения задания забери награду вручную."
+            );
+
+            yield return WaitForOk();
+        }
+
+
         UnlockTutorialAchievement();
 
         yield return new WaitForSecondsRealtime(0.2f);

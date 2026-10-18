@@ -246,6 +246,17 @@ public class RunModeSelectionUI : MonoBehaviour
                 FontRole.DisplayBold
             );
 
+        bool firstTutorialRun =
+            PlayerPrefs.GetInt(
+                "SafeZoneTutorialCompleted",
+                0
+            ) == 0;
+
+        if (firstTutorialRun)
+        {
+            title.text = "НАЧНИ С ОБУЧЕНИЯ";
+        }
+
         title.characterSpacing = 1.5f;
         AddHeight(title.gameObject, 68f);
 
@@ -258,6 +269,13 @@ public class RunModeSelectionUI : MonoBehaviour
                 SecondaryText,
                 FontRole.Body
             );
+
+        if (firstTutorialRun)
+        {
+            subtitle.text =
+                "Выбери «Добраться до убежища», " +
+                "чтобы пройти обучение.";
+        }
 
         AddHeight(subtitle.gameObject, 42f);
 
@@ -280,6 +298,35 @@ public class RunModeSelectionUI : MonoBehaviour
             () => StartRun(false)
         );
 
+        if (firstTutorialRun)
+        {
+            Outline shelterOutline =
+                shelter.GetComponent<Outline>();
+
+            if (shelterOutline != null)
+            {
+                shelterOutline.effectColor =
+                    new Color(
+                        ShelterAccent.r,
+                        ShelterAccent.g,
+                        ShelterAccent.b,
+                        1f
+                    );
+
+                shelterOutline.effectDistance =
+                    new Vector2(5f, 5f);
+            }
+
+            Image shelterImage =
+                shelter.GetComponent<Image>();
+
+            if (shelterImage != null)
+            {
+                shelterImage.color =
+                    new Color32(39, 49, 39, 255);
+            }
+        }
+
         AddHeight(shelter.gameObject, 170f);
 
         AddSpacer(content.transform, 20f);
@@ -300,6 +347,11 @@ public class RunModeSelectionUI : MonoBehaviour
         infinite.onClick.AddListener(
             () => StartRun(true)
         );
+
+        if (firstTutorialRun)
+        {
+            infinite.interactable = false;
+        }
 
         AddHeight(infinite.gameObject, 170f);
 
