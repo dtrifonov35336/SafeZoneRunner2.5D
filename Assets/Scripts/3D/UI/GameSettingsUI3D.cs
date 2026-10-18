@@ -1105,106 +1105,158 @@ public class GameSettingsUI3D : MonoBehaviour
 
     private void EnsureDoubleJumpModeButtons()
     {
-        Transform section = transform.Find(
-            "Window/Panel/ControlSection");
-
-        if (section == null)
+        Transform panel = transform.Find("Window/Panel");
+        if (panel == null)
             return;
 
-        // Увеличиваем высоту секции управления,
-        // чтобы поместились вибрация и три кнопки.
-        RectTransform sectionRect =
-            section.GetComponent<RectTransform>();
+        Transform controlSection = panel.Find("ControlSection");
+        if (controlSection == null)
+            return;
 
-        if (sectionRect != null)
-        {
-            sectionRect.anchorMin =
-                new Vector2(sectionRect.anchorMin.x, 0.39f);
+        // Блок вибрации — отдельная секция.
+        SetSectionAnchors(controlSection, 0.44f, 0.58f);
 
-            sectionRect.anchorMax =
-                new Vector2(sectionRect.anchorMax.x, 0.60f);
-
-            sectionRect.offsetMin = Vector2.zero;
-            sectionRect.offsetMax = Vector2.zero;
-        }
-
-        // Освобождаем место снизу под секцией управления.
-        Transform panel = transform.Find("Window/Panel");
-
-        if (panel != null)
-        {
-            Transform performance =
-                panel.Find("PerformanceSection");
-
-            if (performance != null)
-            {
-                RectTransform performanceRect =
-                    performance.GetComponent<RectTransform>();
-
-                if (performanceRect != null)
-                {
-                    performanceRect.anchorMin =
-                        new Vector2(performanceRect.anchorMin.x, 0.16f);
-
-                    performanceRect.anchorMax =
-                        new Vector2(performanceRect.anchorMax.x, 0.35f);
-
-                    performanceRect.offsetMin = Vector2.zero;
-                    performanceRect.offsetMax = Vector2.zero;
-                }
-            }
-        }
-
-        // Переносим подпись вибрации наверх секции.
-        Transform vibrationLabel =
-            section.Find("VibrationLabel");
-
+        Transform vibrationLabel = controlSection.Find("VibrationLabel");
         if (vibrationLabel != null)
         {
-            RectTransform labelRect =
-                vibrationLabel.GetComponent<RectTransform>();
-
-            if (labelRect != null)
+            RectTransform rect = vibrationLabel.GetComponent<RectTransform>();
+            if (rect != null)
             {
-                labelRect.anchorMin = new Vector2(0.06f, 0.64f);
-                labelRect.anchorMax = new Vector2(0.55f, 0.96f);
-                labelRect.offsetMin = Vector2.zero;
-                labelRect.offsetMax = Vector2.zero;
+                rect.anchorMin = new Vector2(0.06f, 0.25f);
+                rect.anchorMax = new Vector2(0.55f, 0.62f);
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
             }
         }
 
-        // Переносим переключатель вибрации в верхний ряд.
-        Transform vibrationToggle =
-            section.Find("VibrationToggle");
-
+        Transform vibrationToggle = controlSection.Find("VibrationToggle");
         if (vibrationToggle != null)
         {
-            RectTransform toggleRect =
-                vibrationToggle.GetComponent<RectTransform>();
-
-            if (toggleRect != null)
+            RectTransform rect = vibrationToggle.GetComponent<RectTransform>();
+            if (rect != null)
             {
-                toggleRect.anchorMin = new Vector2(1f, 0.80f);
-                toggleRect.anchorMax = new Vector2(1f, 0.80f);
-                toggleRect.pivot = new Vector2(1f, 0.5f);
-                toggleRect.sizeDelta = new Vector2(74f, 40f);
-                toggleRect.anchoredPosition = new Vector2(-28f, 0f);
+                rect.anchorMin = new Vector2(1f, 0.5f);
+                rect.anchorMax = new Vector2(1f, 0.5f);
+                rect.pivot = new Vector2(1f, 0.5f);
+                rect.sizeDelta = new Vector2(74f, 40f);
+                rect.anchoredPosition = new Vector2(-28f, 0f);
             }
+        }
+
+        // Самостоятельный блок двойного прыжка.
+        Transform doubleJumpSection = panel.Find("DoubleJumpSection");
+
+        if (doubleJumpSection == null)
+        {
+            GameObject sectionObject = Instantiate(
+                controlSection.gameObject,
+                panel,
+                false);
+
+            sectionObject.name = "DoubleJumpSection";
+            doubleJumpSection = sectionObject.transform;
+
+            // Удаляем скопированные элементы вибрации и старые кнопки.
+            for (int i = doubleJumpSection.childCount - 1; i >= 0; i--)
+            {
+                Transform child = doubleJumpSection.GetChild(i);
+
+                if (child.name != "Header")
+                    Destroy(child.gameObject);
+            }
+
+            // Меняем заголовок нового блока.
+            Transform title = doubleJumpSection.Find("Header/Title");
+            if (title != null)
+            {
+                TMP_Text titleText = title.GetComponent<TMP_Text>();
+                if (titleText != null)
+                    titleText.text = "ДВОЙНОЙ ПРЫЖОК";
+            }
+        }
+
+        SetSectionAnchors(doubleJumpSection, 0.34f, 0.43f);
+
+        // Переносим кнопки из старого блока, если они там остались.
+        string[] buttonNames =
+        {
+        "ModeDoubleTap",
+        "ModeDoubleSwipe",
+        "ModeSwipeThenTap"
+    };
+
+        foreach (string buttonName in buttonNames)
+        {
+            Transform oldButton = controlSection.Find(buttonName);
+            if (oldButton != null)
+                oldButton.SetParent(doubleJumpSection, false);
         }
 
         modeDoubleTapButton = CreateModeButton(
-            section, "ModeDoubleTap",
-            "ДВОЙНОЕ\nНАЖАТИЕ", 0);
+            doubleJumpSection,
+            "ModeDoubleTap",
+            "ДВОЙНОЕ\nНАЖАТИЕ",
+            0);
 
         modeDoubleSwipeButton = CreateModeButton(
-            section, "ModeDoubleSwipe",
-            "ДВА СВАЙПА\nВВЕРХ", 1);
+            doubleJumpSection,
+            "ModeDoubleSwipe",
+            "ДВА СВАЙПА\nВВЕРХ",
+            1);
 
         modeSwipeThenTapButton = CreateModeButton(
-            section, "ModeSwipeThenTap",
-            "СВАЙП + ДВОЙНОЕ\nНАЖАТИЕ", 2);
+            doubleJumpSection,
+            "ModeSwipeThenTap",
+            "СВАЙП + ДВОЙНОЕ\nНАЖАТИЕ",
+            2);
+
+        // Оставляем кнопки ниже заголовка.
+        Button[] buttons =
+        {
+        modeDoubleTapButton,
+        modeDoubleSwipeButton,
+        modeSwipeThenTapButton
+    };
+
+        foreach (Button button in buttons)
+        {
+            if (button == null)
+                continue;
+
+            RectTransform rect = button.GetComponent<RectTransform>();
+            if (rect == null)
+                continue;
+
+            rect.anchorMin = new Vector2(rect.anchorMin.x, 0.02f);
+            rect.anchorMax = new Vector2(rect.anchorMax.x, 0.62f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+
+        // Освобождаем место под блоки управления.
+        Transform performance = panel.Find("PerformanceSection");
+        if (performance != null)
+            SetSectionAnchors(performance, 0.14f, 0.32f);
 
         RefreshDoubleJumpModeButtons();
+    }
+
+    private void SetSectionAnchors(
+        Transform section,
+        float minY,
+        float maxY)
+    {
+        if (section == null)
+            return;
+
+        RectTransform rect = section.GetComponent<RectTransform>();
+        if (rect == null)
+            return;
+
+        rect.anchorMin = new Vector2(rect.anchorMin.x, minY);
+        rect.anchorMax = new Vector2(rect.anchorMax.x, maxY);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
     }
 
     private Button CreateModeButton(

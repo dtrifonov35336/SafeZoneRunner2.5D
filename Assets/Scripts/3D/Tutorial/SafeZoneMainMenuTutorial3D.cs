@@ -1349,8 +1349,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
                 0f,
                 0.72f);
 
-        dimImage.raycastTarget =
-            true;
+        dimImage.raycastTarget = false;
 
         // =========================================================
         // HIGHLIGHT

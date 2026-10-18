@@ -77,8 +77,25 @@ public class TouchControls : MonoBehaviour
 
     private void Update()
     {
+    #if UNITY_EDITOR
+        Mouse mouse = Mouse.current;
+
+        bool mouseIsActive =
+            mouse != null &&
+            (mouse.leftButton.isPressed ||
+             mouse.leftButton.wasPressedThisFrame ||
+             mouse.leftButton.wasReleasedThisFrame);
+
+        // Во время работы мыши не обрабатываем эмулируемый Touchscreen.
+        // Это не позволяет двум источникам менять trackingTouch одновременно.
+        if (mouseIsActive)
+            ProcessMouseForEditor();
+        else
+            ProcessTouch();
+    #else
         ProcessTouch();
-        ProcessMouseForEditor();
+    #endif
+
         CheckDoubleTapTimeout();
     }
 
