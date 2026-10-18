@@ -1151,6 +1151,68 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         }
     }
 
+    private void UpdateActionToast()
+    {
+        if (!IsRunning ||
+            !hintConfirmed ||
+            waitingForReward ||
+            actionToastShown)
+        {
+            return;
+        }
+
+        if (Time.unscaledTime - currentStageStartTime < actionToastDelay)
+            return;
+
+        string message;
+
+        switch (CurrentStage)
+        {
+            case TutorialStage.Move:
+                message = "Свайпни влево или вправо, чтобы сменить полосу.";
+                break;
+
+            case TutorialStage.Jump:
+                message = "Свайпни вверх, чтобы перепрыгнуть препятствие.";
+                break;
+
+            case TutorialStage.Coins:
+                message = "Свайпни в сторону монет, чтобы перейти на нужную полосу.";
+                break;
+
+            case TutorialStage.Slide:
+                message = "Свайпни вниз, чтобы проскользнуть под препятствием.";
+                break;
+
+            case TutorialStage.DoubleJump:
+                switch (TouchControls.SavedControlMode)
+                {
+                    case DoubleJumpControlMode.DoubleSwipeUp:
+                        message = "Двойной прыжок: сделай два свайпа вверх подряд.";
+                        break;
+
+                    case DoubleJumpControlMode.SwipeUpThenDoubleTap:
+                        message = "Свайпни вверх, чтобы прыгнуть, затем дважды нажми на экран.";
+                        break;
+
+                    default:
+                        message = "Чтобы выполнить двойной прыжок, дважды нажми на экран.";
+                        break;
+                }
+                break;
+
+            case TutorialStage.Rescue:
+                message = "Перейди на полосу с человеком, чтобы спасти его.";
+                break;
+
+            default:
+                return;
+        }
+
+        actionToastShown = true;
+        ShowToast(message);
+    }
+
     private void ShowToast(string message)
     {
         if (string.IsNullOrEmpty(message))
@@ -2651,55 +2713,6 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         SceneManager.LoadScene(
             SceneManager.GetActiveScene().buildIndex
         );
-    }
-
-    private void UpdateActionToast()
-    {
-        if (!IsRunning ||
-            !hintConfirmed ||
-            waitingForReward ||
-            actionToastShown)
-        {
-            return;
-        }
-
-        if (Time.unscaledTime - currentStageStartTime < actionToastDelay)
-            return;
-
-        string message;
-
-        switch (CurrentStage)
-        {
-            case TutorialStage.Move:
-                message = "Свайпни влево или вправо, чтобы сменить полосу.";
-                break;
-
-            case TutorialStage.Jump:
-                message = "Свайпни вверх, чтобы перепрыгнуть препятствие.";
-                break;
-
-            case TutorialStage.Coins:
-                message = "Свайпни в сторону монет, чтобы перейти на нужную полосу.";
-                break;
-
-            case TutorialStage.Slide:
-                message = "Свайпни вниз, чтобы проскользнуть под препятствием.";
-                break;
-
-            case TutorialStage.DoubleJump:
-                message = GetDoubleJumpHint();
-                break;
-
-            case TutorialStage.Rescue:
-                message = "Перейди на полосу с человеком, чтобы спасти его.";
-                break;
-
-            default:
-                return;
-        }
-
-        actionToastShown = true;
-        ShowToast(message);
     }
 
     private string GetDoubleJumpHint()
