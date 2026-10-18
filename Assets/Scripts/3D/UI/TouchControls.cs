@@ -21,11 +21,10 @@ public class TouchControls : MonoBehaviour
 
     [Header("Альтернативная схема (двойной прыжок)")]
     [Tooltip(
-        "Если включено: двойной прыжок выполняется двумя " +
-        "последовательными свайпами вверх. По умолчанию выключено, " +
-        "чтобы не менять управление в обычных забегах."
+    "Включено, если двойной прыжок выполняется двумя " +
+    "последовательными свайпами вверх."
     )]
-    public bool alternativeDoubleJumpSwipe = false;
+    public bool alternativeDoubleJumpSwipe = true;
 
     [Tooltip(
         "Максимальное время между двумя свайпами вверх " +
@@ -37,13 +36,13 @@ public class TouchControls : MonoBehaviour
     "Settings_DoubleJumpControl";
 
     public DoubleJumpControlMode ControlMode { get; private set; }
-        = DoubleJumpControlMode.DoubleTap;
+        = DoubleJumpControlMode.DoubleSwipeUp;
 
     public static DoubleJumpControlMode SavedControlMode =>
         (DoubleJumpControlMode)Mathf.Clamp(
             PlayerPrefs.GetInt(
                 DoubleJumpControlKey,
-                (int)DoubleJumpControlMode.DoubleTap),
+                (int)DoubleJumpControlMode.DoubleSwipeUp),
             0,
             2);
 

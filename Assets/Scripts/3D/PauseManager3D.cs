@@ -26,6 +26,9 @@ public class PauseManager : MonoBehaviour
     private Button fps30Button;
     private Button fps60Button;
 
+    private string restartButtonDefaultLabel = "ПЕРЕЗАПУСТИТЬ";
+    private bool menuButtonInitialActive = true;
+
     private static readonly string[] ModeNames =
     {
         "Двойное нажатие",
@@ -75,6 +78,21 @@ public class PauseManager : MonoBehaviour
             menuButton.onClick.AddListener(GoToMenu);
         }
 
+        if (menuButton != null)
+            menuButtonInitialActive = menuButton.gameObject.activeSelf;
+
+        if (restartButton != null)
+        {
+            TMP_Text restartLabel =
+                restartButton.GetComponentInChildren<TMP_Text>(true);
+
+            if (restartLabel != null &&
+                !string.IsNullOrWhiteSpace(restartLabel.text))
+            {
+                restartButtonDefaultLabel = restartLabel.text;
+            }
+        }
+
         BuildSettingsButton();
         BuildSettingsPanel();
     }
@@ -89,6 +107,9 @@ public class PauseManager : MonoBehaviour
             return;
 
         isPaused = true;
+
+        ApplyTutorialPauseRules();
+
         Time.timeScale = 0f;
 
         if (pausePanel != null)
@@ -178,27 +199,7 @@ public class PauseManager : MonoBehaviour
         settingsButton.transform.SetSiblingIndex(
             restartButton.transform.GetSiblingIndex() + 1);
 
-        // Если у кнопок нет Layout Group, ставим новую под «Перезапустить».
-        if (settingsButton.transform.parent != null &&
-            settingsButton.transform.parent.GetComponent<LayoutGroup>() == null)
-        {
-            RectTransform restartRect =
-                restartButton.GetComponent<RectTransform>();
-
-            RectTransform settingsRect =
-                settingsButton.GetComponent<RectTransform>();
-
-            if (restartRect != null && settingsRect != null)
-            {
-                settingsRect.anchorMin = restartRect.anchorMin;
-                settingsRect.anchorMax = restartRect.anchorMax;
-                settingsRect.pivot = restartRect.pivot;
-                settingsRect.sizeDelta = restartRect.sizeDelta;
-                settingsRect.anchoredPosition =
-                    restartRect.anchoredPosition +
-                    Vector2.down * (restartRect.rect.height + 12f);
-            }
-        }
+        ArrangePauseButtons();
     }
 
     private void BuildSettingsPanel()
@@ -532,5 +533,95 @@ public class PauseManager : MonoBehaviour
         rect.anchorMax = Vector2.one;
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
+    }
+
+    private void ArrangePauseButtons()
+    {
+        if (restartButton == null || settingsButton == null)
+            return;
+
+        Transform parent = restartButton.transform.parent;
+
+        if (parent == null || settingsButton.transform.parent != parent)
+            return;
+
+        // Если кнопками управляет Layout Group,
+        // достаточно правильного порядка элементов.
+        if (parent.GetComponent<LayoutGroup>() != null)
+        {
+            settingsButton.transform.SetSiblingIndex(
+                restartButton.transform.GetSiblingIndex() + 1);
+
+            return;
+        }
+
+        RectTransform restartRect =
+            restartButton.GetComponent<RectTransform>();
+
+        RectTransform settingsRect =
+            settingsButton.GetComponent<RectTransform>();
+
+        if (restartRect == null || settingsRect == null)
+            return;
+
+        float height = Mathf.Max(
+            restartRect.rect.height,
+            restartRect.sizeDelta.y);
+
+        float step = height + 12f;
+
+        settingsRect.anchorMin = restartRect.anchorMin;
+        settingsRect.anchorMax = restartRect.anchorMax;
+        settingsRect.pivot = restartRect.pivot;
+        settingsRect.sizeDelta = restartRect.sizeDelta;
+
+        // Настройки сразу под перезапуском.
+        settingsRect.anchoredPosition =
+            restartRect.anchoredPosition + Vector2.down * step;
+
+        // Перемещаем существующую кнопку меню ещё на один шаг вниз.
+        if (menuButton != null &&
+            menuButton.transform.parent == parent)
+        {
+            RectTransform menuRect =
+                menuButton.GetComponent<RectTransform>();
+
+            if (menuRect != null)
+            {
+                menuRect.anchoredPosition =
+                    restartRect.anchoredPosition +
+                    Vector2.down * (step * 2f);
+            }
+        }
+    }
+
+    private void ApplyTutorialPauseRules()
+    {
+        SafeZoneTutorialManager3D tutorial =
+            SafeZoneTutorialManager3D.Instance;
+
+        bool tutorialActive =
+            tutorial != null && tutorial.IsRunning;
+
+        // Во время обучения выход в меню недоступен.
+        if (menuButton != null)
+        {
+            menuButton.gameObject.SetActive(
+                !tutorialActive && menuButtonInitialActive);
+        }
+
+        // Кнопка перезапуска явно обозначает перезапуск обучения.
+        if (restartButton != null)
+        {
+            TMP_Text label =
+                restartButton.GetComponentInChildren<TMP_Text>(true);
+
+            if (label != null)
+            {
+                label.text = tutorialActive
+                    ? "ЗАНОВО"
+                    : restartButtonDefaultLabel;
+            }
+        }
     }
 }
