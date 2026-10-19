@@ -37,8 +37,11 @@ public class RunManager : MonoBehaviour
     public GameObject safeZonePrefab;
 
     [Header("Появление SafeZone")]
-    public float safeZoneSpawnZ = 90f;
+    public float safeZoneSpawnZ = 130f;
     public float safeZoneY = -0.5f;
+
+    [Tooltip("Время между остановкой спавнеров и появлением убежища.")]
+    public float safeZoneClearanceSeconds = 2f;
 
     [Header("Возрождение перед убежищем")]
     public float reviveRewindDistance = 1.2f;
@@ -113,11 +116,13 @@ public class RunManager : MonoBehaviour
             return;
         }
 
+        float stopAhead = GetRequiredStopSpawnAhead();
+
         float stopTime =
             Mathf.Max(
                 0f,
                 runDuration -
-                stopSpawnAhead
+                stopAhead
             );
 
         if (!spawnStopped &&
@@ -193,10 +198,15 @@ public class RunManager : MonoBehaviour
             return 0f;
         }
 
+        float targetSpawnZ =
+            activeSafeZone != null
+                ? activeSafeZone.spawnZ
+                : safeZoneSpawnZ;
+
         return
             Mathf.Max(
                 0f,
-                source.spawnZ /
+                targetSpawnZ /
                 source.speed
             );
     }
@@ -508,6 +518,43 @@ public class RunManager : MonoBehaviour
         return Mathf.Clamp01(
             runTime /
             runDuration
+        );
+    }
+
+    private float GetRequiredStopSpawnAhead()
+    {
+        float clearance =
+            Mathf.Max(
+                0f,
+                safeZoneClearanceSeconds
+            );
+
+        float safeZoneApproachTime =
+            GetSafeZoneApproachTime();
+
+        float obstacleApproachTime = 0f;
+
+        if (obstacleSpawner != null)
+        {
+            float obstacleSpeed =
+                Mathf.Max(
+                    0.1f,
+                    obstacleSpawner.CurrentObstacleSpeed
+                );
+
+            obstacleApproachTime =
+                Mathf.Max(
+                    0f,
+                    obstacleSpawner.spawnZ
+                ) / obstacleSpeed;
+        }
+
+        return Mathf.Max(
+            stopSpawnAhead,
+            Mathf.Max(
+                safeZoneApproachTime + clearance,
+                obstacleApproachTime + clearance
+            )
         );
     }
 }

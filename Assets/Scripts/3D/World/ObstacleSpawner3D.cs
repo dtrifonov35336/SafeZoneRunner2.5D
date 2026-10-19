@@ -8,17 +8,29 @@ public class ObstacleSpawner3D : MonoBehaviour
     public GameObject[] obstaclePrefabs;
 
     [Header("Lanes")]
-    public float[] lanePositions =
-        new float[]
-        {
-            -1.35f,
-            1.35f
-        };
+    public float[] lanePositions = new float[]
+    {
+        -1.35f,
+        1.35f
+    };
 
     [Header("Spawning")]
-    public float startInterval = 3.5f;
-    public float minInterval = 3.0f;
+    public float startInterval = 3.3f;
+    public float minInterval = 2.7f;
     public float difficultyRampTime = 114f;
+
+    [Tooltip("Желаемое расстояние между волнами препятствий в метрах.")]
+    public float targetDistanceBetweenWaves = 38f;
+
+    [Tooltip("Минимальный интервал между волнами в секундах.")]
+    public float minWaveIntervalSeconds = 1f;
+
+    [Header("Шанс автобуса")]
+    [Range(0f, 1f)]
+    public float shelterBusSpawnChance = 0.22f;
+
+    [Range(0f, 1f)]
+    public float infiniteBusSpawnChance = 0.32f;
 
     [Header("Двойной спавн")]
     public bool allowDoubleObstacleWaves = true;
@@ -30,92 +42,60 @@ public class ObstacleSpawner3D : MonoBehaviour
     public int maxObstaclesPerWave = 2;
 
     [Header("Position")]
-    public float spawnZ = 90f;
+    public float spawnZ = 130f;
 
     [Header("Высота дороги")]
     public float obstacleGroundY = -0.04f;
     public float obstacleHeightOffset = 0f;
 
     [Header("Скорость препятствий")]
-    [Tooltip(
-        "Базовая скорость. Используется режимом «До убежища»."
-    )]
-    public float baseObstacleSpeed = 15f;
+    [Tooltip("Базовая скорость режима «До убежища».")]
+    public float baseObstacleSpeed = 17f;
 
-    [Tooltip(
-        "Максимальная скорость разгона по времени. Используется " +
-        "только режимом «До убежища» (в бесконечном режиме " +
-        "скорость растёт по отдельной кривой без верхнего потолка)."
-    )]
-    public float maxObstacleSpeed = 20f;
+    [Tooltip("Максимальная скорость режима «До убежища».")]
+    public float maxObstacleSpeed = 22f;
 
-    [Tooltip(
-        "Дистанция бесконечного режима, на которой сложность " +
-        "интервалов спавна и шанс двойных волн достигают максимума. " +
-        "На скорость препятствий не влияет (у неё отдельная кривая)."
-    )]
+    [Tooltip("Дистанция, на которой сложность бесконечного режима достигает максимума.")]
     public float infiniteDifficultyDistance = 2500f;
 
     [Header("Кривая сложности (бесконечный режим)")]
-    [Tooltip(
-        "Во сколько раз быстрее достигается максимум сложности " +
-        "относительно infiniteDifficultyDistance."
-    )]
+    [Tooltip("Во сколько раз быстрее достигается максимум сложности.")]
     public float infiniteRampSpeedup = 1.6f;
 
-    [Tooltip(
-        "Нелинейность кривой: >1 — мягкий старт и ускоренный рост."
-    )]
+    [Tooltip("Нелинейность кривой сложности.")]
     public float infiniteCurveExponent = 1.25f;
 
-    [Tooltip(
-        "Минимальный интервал спавна в бесконечном режиме. " +
-        "Жёстче, чем minInterval, но не нарушает проверку безопасного зазора."
-    )]
+    [Tooltip("Минимальный интервал спавна в бесконечном режиме.")]
     public float infiniteMinInterval = 2.1f;
 
-    [Tooltip(
-        "Стартовая скорость бесконечного забега. Заметно выше " +
-        "базовой, чтобы начальный темп был быстрее."
-    )]
+    [Tooltip("Стартовая скорость бесконечного забега.")]
     public float infiniteStartSpeed = 22f;
 
-    [Tooltip(
-        "Коэффициент логарифмического роста скорости в бесконечном " +
-        "режиме. Скорость продолжает расти на больших дистанциях " +
-        "без конечного порога, после которого рост прекращается."
-    )]
+    [Tooltip("Коэффициент логарифмического роста скорости.")]
     public float infiniteSpeedGrowth = 9f;
 
-    [Tooltip(
-        "Масштабная дистанция кривой скорости (м). Чем меньше, " +
-        "тем быстрее набирается скорость на первых километрах."
-    )]
+    [Tooltip("Масштабная дистанция кривой скорости в метрах.")]
     public float infiniteSpeedRampDistance = 1000f;
 
-    [Tooltip(
-        "Максимальный шанс двойной волны препятствий " +
-        "на пике сложности бесконечного режима."
-    )]
+    [Tooltip("Максимальный шанс двойной волны в бесконечном режиме.")]
     [Range(0f, 1f)]
     public float infiniteDoubleWaveMaxChance = 0.55f;
 
-    [Tooltip(
-        "Разрешать двойные волны в бесконечном режиме даже при " +
-        "maxObstaclesPerWave = 1. Оба препятствия волны — обычные " +
-        "(перепрыгиваемые), поэтому полоса всегда проходима. " +
-        "Режим \"До убежища\" этим флагом не затрагивается."
-    )]
+    [Tooltip("Разрешить двойные волны в бесконечном режиме при maxObstaclesPerWave = 1.")]
     public bool infiniteAllowDoubleWaves = true;
 
     [Header("Reveal")]
-    public float revealZ = 70f;
+    public float revealZ = 110f;
 
     [Header("Проверка пикапов")]
     public bool checkPickups = true;
-    public float pickupCheckFromZ = 80f;
+
+    // Оставлены для совместимости с настройками сцены.
+    // Проверка теперь выполняется относительно точки спавна,
+    // чтобы удалённые пикапы не блокировали появление препятствий.
+    public float pickupCheckFromZ = 140f;
     public float pickupCheckToZ = 5f;
-    public float pickupLaneWidth = 0.55f;
+    public float pickupLaneWidth = 0.4f;
 
     [Header("Безопасная дистанция")]
     public float minLaneGap = 12f;
@@ -128,21 +108,17 @@ public class ObstacleSpawner3D : MonoBehaviour
     public bool drawLaneGizmos = true;
 
     private float spawnTimer;
-
     private float runTime;
-
     private int obstacleCounter;
-
     private RunManager runManager;
-
     private float currentObstacleSpeed;
+
+    private int lastNormalLaneIndex = -1;
+    private int consecutiveNormalLaneCount;
 
     public float CurrentObstacleSpeed
     {
-        get
-        {
-            return currentObstacleSpeed;
-        }
+        get { return currentObstacleSpeed; }
     }
 
     // =========================================================
@@ -151,10 +127,7 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private void Awake()
     {
-        if (
-            Instance != null &&
-            Instance != this
-        )
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -164,26 +137,19 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         SyncLanePositions();
 
-        currentObstacleSpeed =
-            Mathf.Max(
-                0f,
-                baseObstacleSpeed
-            );
+        currentObstacleSpeed = Mathf.Max(0f, baseObstacleSpeed);
     }
 
     private void Start()
     {
         SyncLanePositions();
 
-        runManager =
-            FindFirstObjectByType<
-                RunManager
-            >();
+        runManager = FindFirstObjectByType<RunManager>();
 
         // Первая волна появляется сразу после начала забега.
-        // Интервал между следующими волнами не меняется.
-        spawnTimer =
-            0f;
+        spawnTimer = 0f;
+
+        ResetNormalLaneSequence();
 
         UpdateCurrentObstacleSpeed();
     }
@@ -202,9 +168,12 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private void SyncLanePositions()
     {
-        lanePositions =
-            RunnerLaneSettings3D
-                .GetLanePositions();
+        lanePositions = RunnerLaneSettings3D.GetLanePositions();
+    }
+
+    private bool HasTwoLanes()
+    {
+        return lanePositions != null && lanePositions.Length >= 2;
     }
 
     // =========================================================
@@ -213,10 +182,8 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private void Update()
     {
-        if (
-            ChaseManager.Instance != null &&
-            ChaseManager.Instance.IsGameOver()
-        )
+        if (ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver())
         {
             return;
         }
@@ -228,29 +195,33 @@ public class ObstacleSpawner3D : MonoBehaviour
             return;
         }
 
-        runTime +=
-            Time.deltaTime;
+        runTime += Time.deltaTime;
 
-        float difficulty =
-            GetDifficulty01();
+        float difficulty = GetDifficulty01();
 
-        float minIntervalForMode =
-            IsInfiniteMode()
-                ? Mathf.Min(
-                    minInterval,
-                    infiniteMinInterval
-                )
-                : minInterval;
+        float minIntervalForMode = IsInfiniteMode()
+            ? Mathf.Min(minInterval, infiniteMinInterval)
+            : minInterval;
 
-        float interval =
-            Mathf.Lerp(
-                startInterval,
-                minIntervalForMode,
-                difficulty
-            );
+        float timeBasedInterval = Mathf.Lerp(
+            startInterval,
+            minIntervalForMode,
+            difficulty
+        );
 
-        spawnTimer -=
-            Time.deltaTime;
+        // Интервал рассчитывается с учётом скорости движения.
+        // Это не даёт волнам отдаляться друг от друга на сотни метров
+        // по мере ускорения бесконечного режима.
+        float distanceBasedInterval =
+            Mathf.Max(1f, targetDistanceBetweenWaves) /
+            Mathf.Max(currentObstacleSpeed, 0.1f);
+
+        float interval = Mathf.Max(
+            minWaveIntervalSeconds,
+            Mathf.Min(timeBasedInterval, distanceBasedInterval)
+        );
+
+        spawnTimer -= Time.deltaTime;
 
         if (spawnTimer > 0f)
         {
@@ -259,13 +230,12 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         if (TrySpawnWave())
         {
-            spawnTimer =
-                interval;
+            spawnTimer = interval;
         }
         else
         {
-            spawnTimer =
-                0.2f;
+            // Повторяем проверку вскоре, если зона спавна занята.
+            spawnTimer = 0.2f;
         }
     }
 
@@ -277,37 +247,23 @@ public class ObstacleSpawner3D : MonoBehaviour
     {
         if (IsInfiniteMode())
         {
-            /*
-             * Бесконечный режим: логарифмический рост скорости без
-             * конечного порога. Рост продолжается и на больших
-             * дистанциях, но так медленно, что сложность остаётся
-             * управляемой, а интервалы спавна и безопасные зазоры
-             * (они пропорциональны скорости) — корректными.
-             */
-            currentObstacleSpeed =
-                InfiniteRunSpeedLogic.Evaluate(
-                    GetRunDistance(),
-                    infiniteStartSpeed,
-                    infiniteSpeedGrowth,
-                    infiniteSpeedRampDistance
-                );
+            currentObstacleSpeed = InfiniteRunSpeedLogic.Evaluate(
+                GetRunDistance(),
+                infiniteStartSpeed,
+                infiniteSpeedGrowth,
+                infiniteSpeedRampDistance
+            );
 
             return;
         }
 
-        /*
-         * Режим «До убежища» сохраняет прежние правила:
-         * линейный разгон по времени забега до maxObstacleSpeed.
-         */
-        float t =
-            GetDifficulty01();
+        float t = GetDifficulty01();
 
-        currentObstacleSpeed =
-            Mathf.Lerp(
-                baseObstacleSpeed,
-                maxObstacleSpeed,
-                t
-            );
+        currentObstacleSpeed = Mathf.Lerp(
+            baseObstacleSpeed,
+            maxObstacleSpeed,
+            t
+        );
     }
 
     public float GetCurrentObstacleSpeed()
@@ -319,105 +275,60 @@ public class ObstacleSpawner3D : MonoBehaviour
     {
         if (runManager == null)
         {
-            runManager =
-                FindFirstObjectByType<
-                    RunManager
-                >();
+            runManager = FindFirstObjectByType<RunManager>();
         }
 
-        return
-            runManager != null &&
-            runManager.infiniteRun;
+        return runManager != null && runManager.infiniteRun;
     }
 
     private float GetRunDistance()
     {
         if (HUDManager.Instance == null)
+        {
             return 0f;
+        }
 
-        return Mathf.Max(
-            0f,
-            HUDManager.Instance.GetDistance()
-        );
+        return Mathf.Max(0f, HUDManager.Instance.GetDistance());
     }
 
     private float GetLinearDifficulty01()
     {
         if (IsInfiniteMode())
         {
-            float distance = 0f;
+            float distance = GetRunDistance();
 
-            if (HUDManager.Instance != null)
-            {
-                distance =
-                    HUDManager.Instance
-                        .GetDistance();
-            }
-
-            if (
-                infiniteDifficultyDistance <=
-                0.01f
-            )
+            if (infiniteDifficultyDistance <= 0.01f)
             {
                 return 1f;
             }
 
-            return Mathf.Clamp01(
-                distance /
-                infiniteDifficultyDistance
-            );
+            return Mathf.Clamp01(distance / infiniteDifficultyDistance);
         }
 
-        if (
-            difficultyRampTime <=
-            0.01f
-        )
+        if (difficultyRampTime <= 0.01f)
         {
             return 1f;
         }
 
-        return Mathf.Clamp01(
-            runTime /
-            difficultyRampTime
-        );
+        return Mathf.Clamp01(runTime / difficultyRampTime);
     }
 
     private float GetDifficulty01()
     {
-        float linear =
-            GetLinearDifficulty01();
+        float linear = GetLinearDifficulty01();
 
         if (!IsInfiniteMode())
         {
-            /*
-             * Режим "До убежища" сохраняет прежние правила.
-             */
             return linear;
         }
 
-        /*
-         * Бесконечный режим: заметнее и нелинейнее.
-         * Мягкое начало (до 500 м), затем ускоренный рост.
-         */
-        float boosted =
-            Mathf.Clamp01(
-                linear *
-                Mathf.Max(
-                    1f,
-                    infiniteRampSpeedup
-                )
-            );
-
-        float exponent =
-            Mathf.Max(
-                0.1f,
-                infiniteCurveExponent
-            );
-
-        return Mathf.Pow(
-            boosted,
-            exponent
+        float boosted = Mathf.Clamp01(
+            linear * Mathf.Max(1f, infiniteRampSpeedup)
         );
+
+        float exponent = Mathf.Max(0.1f, infiniteCurveExponent);
+
+        return Mathf.Pow(boosted, exponent);
     }
 
     // =========================================================
@@ -428,42 +339,27 @@ public class ObstacleSpawner3D : MonoBehaviour
     {
         SyncLanePositions();
 
-        if (
+        if (!HasTwoLanes() ||
             obstaclePrefabs == null ||
-            obstaclePrefabs.Length == 0
-        )
+            obstaclePrefabs.Length == 0)
         {
             return false;
         }
 
-        float waveChance =
-            doubleObstacleWaveChance;
+        float waveChance = doubleObstacleWaveChance;
 
         if (IsInfiniteMode())
         {
-            /*
-             * Чем дальше — тем чаще комбинации из двух
-             * препятствий. Проходимость проверяется
-             * в CanSpawnAnotherObstacle, поэтому
-             * невозможных комбинаций не возникает.
-             */
-            waveChance =
-                Mathf.Lerp(
+            waveChance = Mathf.Lerp(
+                doubleObstacleWaveChance,
+                Mathf.Max(
                     doubleObstacleWaveChance,
-                    Mathf.Max(
-                        doubleObstacleWaveChance,
-                        infiniteDoubleWaveMaxChance
-                    ),
-                    GetDifficulty01()
-                );
+                    infiniteDoubleWaveMaxChance
+                ),
+                GetDifficulty01()
+            );
         }
 
-        /*
-         * В бесконечном режиме двойные волны включаются отдельным
-         * флагом (даже если maxObstaclesPerWave = 1), чтобы растущая
-         * плотность испытаний работала. В режиме "До убежища" условие
-         * прежнее и поведение не меняется.
-         */
         bool allowWaveForMode =
             allowDoubleObstacleWaves &&
             (
@@ -472,15 +368,9 @@ public class ObstacleSpawner3D : MonoBehaviour
                     : maxObstaclesPerWave >= 2
             );
 
-        if (
-            allowWaveForMode &&
-            Random.value <
-            waveChance
-        )
+        if (allowWaveForMode && Random.value < waveChance)
         {
-            if (
-                TrySpawnDoubleNormalWave()
-            )
+            if (TrySpawnDoubleNormalWave())
             {
                 return true;
             }
@@ -495,94 +385,53 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private bool TrySpawnDoubleNormalWave()
     {
-        GameObject firstPrefab =
-            GetRandomRegularObstaclePrefab();
+        GameObject firstPrefab = GetRandomRegularObstaclePrefab();
 
         if (firstPrefab == null)
         {
             return false;
         }
 
-        GameObject secondPrefab =
-            GetRandomRegularObstaclePrefab();
+        GameObject secondPrefab = GetRandomRegularObstaclePrefab();
 
         if (secondPrefab == null)
         {
             return false;
         }
 
-        int coinLane =
-            Random.Range(
-                0,
-                2
-            );
+        int firstLane = Random.Range(0, 2);
+        int secondLane = 1 - firstLane;
 
-        int secondLane =
-            coinLane == 0
-                ? 1
-                : 0;
+        float firstX = lanePositions[firstLane];
+        float secondX = lanePositions[secondLane];
 
-        float firstX =
-            lanePositions[
-                coinLane
-            ];
-
-        float secondX =
-            lanePositions[
-                secondLane
-            ];
-
-        if (
-            checkPickups &&
-            !IsLaneClearOfSpecialObjects(
-                firstX
-            )
-        )
+        if (checkPickups &&
+            !IsLaneClearOfSpecialObjects(firstX))
         {
             return false;
         }
 
-        if (
-            checkPickups &&
-            !IsLaneClearOfSpecialObjects(
-                secondX
-            )
-        )
+        if (checkPickups &&
+            !IsLaneClearOfSpecialObjects(secondX))
         {
             return false;
         }
 
-        if (
-            !CanSpawnAnotherObstacle(
-                firstPrefab,
-                firstX
-            )
-        )
+        if (!CanSpawnAnotherObstacle(firstPrefab, firstX))
         {
             return false;
         }
 
-        if (
-            !CanSpawnAnotherObstacle(
-                secondPrefab,
-                secondX
-            )
-        )
+        if (!CanSpawnAnotherObstacle(secondPrefab, secondX))
         {
             return false;
         }
 
-        SpawnOne(
-            firstPrefab,
-            firstX,
-            true
-        );
+        SpawnOne(firstPrefab, firstX, true);
+        SpawnOne(secondPrefab, secondX, false);
 
-        SpawnOne(
-            secondPrefab,
-            secondX,
-            false
-        );
+        // Двойная волна затрагивает обе полосы.
+        ResetNormalLaneSequence();
 
         return true;
     }
@@ -593,121 +442,98 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private bool TrySpawnOne()
     {
-        GameObject prefab =
-            obstaclePrefabs[
-                Random.Range(
-                    0,
-                    obstaclePrefabs.Length
-                )
-            ];
+        GameObject prefab = GetRandomWeightedObstaclePrefab();
 
         if (prefab == null)
         {
             return false;
         }
 
-        bool wide =
-            IsWideObstacle(
-                prefab
-            );
+        bool wide = IsWideObstacle(prefab);
 
         // =====================================================
-        // WIDE
-        // BUS / OBSTACLE4 / SLIDE / DOUBLE JUMP / PIPE
+        // WIDE: BUS / OBSTACLE4 / SLIDE / DOUBLE JUMP
         // =====================================================
 
         if (wide)
         {
-            /*
-             * Все широкие препятствия идут строго по центру.
-             *
-             * Это означает:
-             * - автобус — обе полосы;
-             * - Obstacle4 — обе полосы;
-             * - Slide — обе полосы;
-             * - DoubleJump — обе полосы.
-             */
-            if (
-                !CanSpawnAnotherObstacle(
-                    prefab,
-                    0f
-                )
-            )
+            bool canSpawnWide =
+                CanSpawnAnotherObstacle(prefab, 0f) &&
+                (
+                    !checkPickups ||
+                    IsWideSpawnZoneClearOfSpecialObjects()
+                );
+
+            if (canSpawnWide)
+            {
+                SpawnOne(prefab, 0f, true);
+
+                ResetNormalLaneSequence();
+
+                return true;
+            }
+
+            // Если широкое препятствие пока нельзя поставить,
+            // не создаём длинный пустой промежуток.
+            // Вместо него пробуем обычное препятствие.
+            prefab = GetRandomRegularObstaclePrefab();
+
+            if (prefab == null)
             {
                 return false;
             }
 
-            if (
-                checkPickups &&
-                !IsWideSpawnZoneClearOfSpecialObjects()
-            )
-            {
-                return false;
-            }
-
-            SpawnOne(
-                prefab,
-                0f,
-                true
-            );
-
-            return true;
+            wide = false;
         }
 
         // =====================================================
         // NORMAL
         // =====================================================
 
-        int first =
-            Random.Range(
-                0,
-                2
-            );
-
-        int second =
-            first == 0
-                ? 1
-                : 0;
-
-        int[] order =
+        if (!HasTwoLanes())
         {
-            first,
-            second
-        };
+            return false;
+        }
 
-        foreach (
-            int index
-            in order
-        )
+        int first = Random.Range(0, 2);
+
+        // Не допускаем три обычные волны подряд в одной полосе,
+        // если альтернативная полоса доступна.
+        bool mustAlternate =
+            consecutiveNormalLaneCount >= 2 &&
+            lastNormalLaneIndex >= 0;
+
+        if (mustAlternate)
         {
-            float laneX =
-                lanePositions[index];
+            first = 1 - lastNormalLaneIndex;
+        }
 
-            if (
-                checkPickups &&
-                !IsLaneClearOfSpecialObjects(
-                    laneX
-                )
-            )
+        int second = 1 - first;
+
+        int[] order = { first, second };
+
+        int lanesToCheck = mustAlternate ? 1 : order.Length;
+
+        for (int i = 0; i < lanesToCheck; i++)
+        {
+            int index = order[i];
+
+            float laneX = lanePositions[index];
+
+            if (checkPickups &&
+                !IsLaneClearOfSpecialObjects(laneX))
             {
                 continue;
             }
 
-            if (
-                !CanSpawnAnotherObstacle(
-                    prefab,
-                    laneX
-                )
-            )
+            if (!CanSpawnAnotherObstacle(prefab, laneX))
             {
                 continue;
             }
 
-            SpawnOne(
-                prefab,
-                laneX,
-                true
-            );
+            SpawnOne(prefab, laneX, true);
+
+            RegisterNormalLaneSpawn(index);
 
             return true;
         }
@@ -716,24 +542,39 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // REGULAR PREFAB
+    // LANE SEQUENCE
+    // =========================================================
+
+    private void RegisterNormalLaneSpawn(int laneIndex)
+    {
+        if (lastNormalLaneIndex == laneIndex)
+        {
+            consecutiveNormalLaneCount++;
+        }
+        else
+        {
+            lastNormalLaneIndex = laneIndex;
+            consecutiveNormalLaneCount = 1;
+        }
+    }
+
+    private void ResetNormalLaneSequence()
+    {
+        lastNormalLaneIndex = -1;
+        consecutiveNormalLaneCount = 0;
+    }
+
+    // =========================================================
+    // PREFAB SELECTION
     // =========================================================
 
     private GameObject GetRandomRegularObstaclePrefab()
     {
         int validCount = 0;
 
-        foreach (
-            GameObject prefab
-            in obstaclePrefabs
-        )
+        foreach (GameObject prefab in obstaclePrefabs)
         {
-            if (
-                prefab == null ||
-                IsWideObstacle(
-                    prefab
-                )
-            )
+            if (prefab == null || IsWideObstacle(prefab))
             {
                 continue;
             }
@@ -746,23 +587,97 @@ public class ObstacleSpawner3D : MonoBehaviour
             return null;
         }
 
-        int target =
-            Random.Range(
-                0,
-                validCount
-            );
+        int target = Random.Range(0, validCount);
 
-        foreach (
-            GameObject prefab
-            in obstaclePrefabs
-        )
+        foreach (GameObject prefab in obstaclePrefabs)
         {
-            if (
-                prefab == null ||
-                IsWideObstacle(
-                    prefab
-                )
-            )
+            if (prefab == null || IsWideObstacle(prefab))
+            {
+                continue;
+            }
+
+            if (target == 0)
+            {
+                return prefab;
+            }
+
+            target--;
+        }
+
+        return null;
+    }
+
+    private bool IsBusPrefab(GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            return false;
+        }
+
+        return prefab.name
+            .Replace("(Clone)", "")
+            .Trim()
+            .ToLowerInvariant()
+            .Contains("bus");
+    }
+
+    private int CountObstaclePrefabs(bool busOnly)
+    {
+        if (obstaclePrefabs == null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+
+        foreach (GameObject prefab in obstaclePrefabs)
+        {
+            if (prefab == null)
+            {
+                continue;
+            }
+
+            if (IsBusPrefab(prefab) == busOnly)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private GameObject GetRandomWeightedObstaclePrefab()
+    {
+        if (obstaclePrefabs == null || obstaclePrefabs.Length == 0)
+        {
+            return null;
+        }
+
+        bool selectBus = Random.value < (
+            IsInfiniteMode()
+                ? infiniteBusSpawnChance
+                : shelterBusSpawnChance
+        );
+
+        int count = CountObstaclePrefabs(selectBus);
+
+        // Если в выбранной категории нет prefab, используем другую.
+        if (count == 0)
+        {
+            selectBus = !selectBus;
+            count = CountObstaclePrefabs(selectBus);
+        }
+
+        if (count == 0)
+        {
+            return null;
+        }
+
+        int target = Random.Range(0, count);
+
+        foreach (GameObject prefab in obstaclePrefabs)
+        {
+            if (prefab == null || IsBusPrefab(prefab) != selectBus)
             {
                 continue;
             }
@@ -787,67 +702,43 @@ public class ObstacleSpawner3D : MonoBehaviour
         float candidateLaneX
     )
     {
-        bool candidateWide =
-            IsWideObstacle(
-                candidatePrefab
-            );
+        bool candidateWide = IsWideObstacle(candidatePrefab);
 
-        float normalGap =
-            Mathf.Max(
-                minLaneGap,
-                currentObstacleSpeed *
-                0.65f
-            );
+        float normalGap = Mathf.Max(
+            minLaneGap,
+            currentObstacleSpeed * 0.65f
+        );
 
-        float wideGap =
-            Mathf.Max(
-                wideObstacleGap,
-                currentObstacleSpeed *
-                0.90f
-            );
+        float wideGap = Mathf.Max(
+            wideObstacleGap,
+            currentObstacleSpeed * 0.90f
+        );
 
         ObstacleMover3D[] obstacles =
-            FindObjectsByType<
-                ObstacleMover3D
-            >(
+            FindObjectsByType<ObstacleMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            ObstacleMover3D obstacle
-            in obstacles
-        )
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
             {
                 continue;
             }
 
-            bool existingWide =
-                IsWideObstacle(
-                    obstacle.gameObject
-                );
+            bool existingWide = IsWideObstacle(obstacle.gameObject);
 
             bool laneConflict;
 
-            if (
-                candidateWide ||
-                existingWide
-            )
+            if (candidateWide || existingWide)
             {
-                /*
-                 * Любое широкое препятствие
-                 * конфликтует со всей дорогой.
-                 */
+                // Широкое препятствие занимает всю дорогу.
                 laneConflict = true;
             }
             else
             {
                 laneConflict =
-                    Mathf.Abs(
-                        obstacle.laneX -
-                        candidateLaneX
-                    ) < 0.55f;
+                    Mathf.Abs(obstacle.laneX - candidateLaneX) < 0.55f;
             }
 
             if (!laneConflict)
@@ -856,19 +747,14 @@ public class ObstacleSpawner3D : MonoBehaviour
             }
 
             float requiredGap =
-                candidateWide ||
-                existingWide
+                candidateWide || existingWide
                     ? wideGap
                     : normalGap;
 
             float distance =
-                spawnZ -
-                obstacle.transform.position.z;
+                spawnZ - obstacle.transform.position.z;
 
-            if (
-                distance <
-                requiredGap
-            )
+            if (distance < requiredGap)
             {
                 return false;
             }
@@ -878,100 +764,56 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // WIDE
+    // WIDE OBSTACLES
     // =========================================================
 
-    private bool IsWideObstacle(
-        GameObject obj
-    )
+    private bool IsWideObstacle(GameObject obj)
     {
         if (obj == null)
         {
             return false;
         }
 
-        /*
-         * Сначала проверяем ObstacleType3D.
-         */
         ObstacleType3D type =
-            obj.GetComponentInChildren<
-                ObstacleType3D
-            >(true);
+            obj.GetComponentInChildren<ObstacleType3D>(true);
 
         if (type != null)
         {
-            if (
-                type.type ==
-                ObstacleType.Slide ||
-                type.type ==
-                ObstacleType.DoubleJump
-            )
+            if (type.type == ObstacleType.Slide ||
+                type.type == ObstacleType.DoubleJump)
             {
                 return true;
             }
         }
 
-        /*
-         * BUS и Obstacle4 в текущем проекте имеют
-         * тип Normal, поэтому одного ObstacleType3D
-         * недостаточно.
-         *
-         * Проверяем имя самого prefab и его дочерних
-         * объектов.
-         */
-        string objectName =
-            obj.name
-                .Replace(
-                    "(Clone)",
-                    ""
-                )
-                .Trim()
-                .ToLowerInvariant();
+        string objectName = obj.name
+            .Replace("(Clone)", "")
+            .Trim()
+            .ToLowerInvariant();
 
-        if (
-            objectName.Contains(
-                "obstacle_bus"
-            ) ||
-            objectName.Contains(
-                "obstacle4"
-            )
-        )
+        if (objectName.Contains("obstacle_bus") ||
+            objectName.Contains("obstacle4"))
         {
             return true;
         }
 
         Transform[] children =
-            obj.GetComponentsInChildren<
-                Transform
-            >(true);
+            obj.GetComponentsInChildren<Transform>(true);
 
-        foreach (
-            Transform child
-            in children
-        )
+        foreach (Transform child in children)
         {
             if (child == null)
             {
                 continue;
             }
 
-            string childName =
-                child.name
-                    .Replace(
-                        "(Clone)",
-                        ""
-                    )
-                    .Trim()
-                    .ToLowerInvariant();
+            string childName = child.name
+                .Replace("(Clone)", "")
+                .Trim()
+                .ToLowerInvariant();
 
-            if (
-                childName.Contains(
-                    "obstacle_bus"
-                ) ||
-                childName.Contains(
-                    "obstacle4"
-                )
-            )
+            if (childName.Contains("obstacle_bus") ||
+                childName.Contains("obstacle4"))
             {
                 return true;
             }
@@ -981,11 +823,12 @@ public class ObstacleSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // SPECIAL OBJECTS
+    // SPECIAL OBJECTS: HEARTS AND RESCUED PEOPLE
     // =========================================================
 
     private bool IsLaneClearOfSpecialObjects(
-        float laneX
+        float laneX,
+        bool candidateWide = false
     )
     {
         if (!checkPickups)
@@ -993,99 +836,68 @@ public class ObstacleSpawner3D : MonoBehaviour
             return true;
         }
 
+        float requiredGap = candidateWide
+            ? Mathf.Max(wideObstacleGap, currentObstacleSpeed * 0.90f)
+            : Mathf.Max(minLaneGap, currentObstacleSpeed * 0.65f);
+
         PickupMover3D[] pickups =
-            FindObjectsByType<
-                PickupMover3D
-            >(
+            FindObjectsByType<PickupMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            PickupMover3D pickup
-            in pickups
-        )
+        foreach (PickupMover3D pickup in pickups)
         {
             if (pickup == null)
             {
                 continue;
             }
 
-            Pickup3D data =
-                pickup.GetComponent<
-                    Pickup3D
-                >();
+            Pickup3D data = pickup.GetComponent<Pickup3D>();
 
-            if (
-                data == null ||
-                data.type !=
-                Pickup3DType.Heart
-            )
+            if (data == null || data.type != Pickup3DType.Heart)
             {
                 continue;
             }
 
-            float z =
-                pickup.transform.position.z;
+            float distanceFromSpawn =
+                Mathf.Abs(pickup.transform.position.z - spawnZ);
 
-            if (
-                z <
-                pickupCheckToZ ||
-                z >
-                pickupCheckFromZ
-            )
+            // Проверяем только объекты, действительно находящиеся
+            // рядом с точкой появления новой волны.
+            if (distanceFromSpawn > requiredGap)
             {
                 continue;
             }
 
-            if (
-                Mathf.Abs(
-                    pickup.transform.position.x -
-                    laneX
-                ) <
-                pickupLaneWidth
-            )
+            if (candidateWide ||
+                Mathf.Abs(pickup.transform.position.x - laneX) < pickupLaneWidth)
             {
                 return false;
             }
         }
 
         RescuedPerson[] rescued =
-            FindObjectsByType<
-                RescuedPerson
-            >(
+            FindObjectsByType<RescuedPerson>(
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            RescuedPerson person
-            in rescued
-        )
+        foreach (RescuedPerson person in rescued)
         {
             if (person == null)
             {
                 continue;
             }
 
-            float z =
-                person.transform.position.z;
+            float distanceFromSpawn =
+                Mathf.Abs(person.transform.position.z - spawnZ);
 
-            if (
-                z <
-                pickupCheckToZ ||
-                z >
-                pickupCheckFromZ
-            )
+            if (distanceFromSpawn > requiredGap)
             {
                 continue;
             }
 
-            if (
-                Mathf.Abs(
-                    person.transform.position.x -
-                    laneX
-                ) <
-                pickupLaneWidth
-            )
+            if (candidateWide ||
+                Mathf.Abs(person.transform.position.x - laneX) < pickupLaneWidth)
             {
                 return false;
             }
@@ -1096,16 +908,19 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private bool IsWideSpawnZoneClearOfSpecialObjects()
     {
-        foreach (
-            float laneX
-            in lanePositions
-        )
+        if (!checkPickups)
         {
-            if (
-                !IsLaneClearOfSpecialObjects(
-                    laneX
-                )
-            )
+            return true;
+        }
+
+        if (!HasTwoLanes())
+        {
+            return true;
+        }
+
+        foreach (float laneX in lanePositions)
+        {
+            if (!IsLaneClearOfSpecialObjects(laneX, true))
             {
                 return false;
             }
@@ -1129,126 +944,81 @@ public class ObstacleSpawner3D : MonoBehaviour
             return;
         }
 
-        float targetY =
-            prefab.transform.position.y;
+        float targetY = prefab.transform.position.y;
 
         SpawnHeightOffset3D overrideHeight =
-            prefab.GetComponent<
-                SpawnHeightOffset3D
-            >();
+            prefab.GetComponent<SpawnHeightOffset3D>();
 
         if (overrideHeight != null)
         {
-            targetY =
-                overrideHeight.spawnY;
+            targetY = overrideHeight.spawnY;
         }
 
-        GameObject instance =
-            Instantiate(
-                prefab,
-                new Vector3(
-                    laneX,
-                    targetY,
-                    spawnZ
-                ),
-                Quaternion.identity,
-                transform
-            );
+        GameObject instance = Instantiate(
+            prefab,
+            new Vector3(laneX, targetY, spawnZ),
+            Quaternion.identity,
+            transform
+        );
 
-        instance.name =
-            $"Obstacle3D_{obstacleCounter++}";
+        instance.name = $"Obstacle3D_{obstacleCounter++}";
 
         RunnerDepthSorter3D depthSorter =
-            instance.GetComponent<
-                RunnerDepthSorter3D
-            >();
+            instance.GetComponent<RunnerDepthSorter3D>();
 
         if (depthSorter == null)
         {
-            instance.AddComponent<
-                RunnerDepthSorter3D
-            >();
+            instance.AddComponent<RunnerDepthSorter3D>();
         }
 
         GroundSnap3D groundSnap =
-            instance.GetComponent<
-                GroundSnap3D
-            >();
+            instance.GetComponent<GroundSnap3D>();
 
         if (groundSnap == null)
         {
-            groundSnap =
-                instance.AddComponent<
-                    GroundSnap3D
-                >();
+            groundSnap = instance.AddComponent<GroundSnap3D>();
         }
 
-        groundSnap.groundY =
-            obstacleGroundY;
-
-        groundSnap.heightOffset =
-            obstacleHeightOffset;
-
+        groundSnap.groundY = obstacleGroundY;
+        groundSnap.heightOffset = obstacleHeightOffset;
         groundSnap.SnapToGround();
 
         ObstacleMover3D mover =
-            instance.GetComponent<
-                ObstacleMover3D
-            >();
+            instance.GetComponent<ObstacleMover3D>();
 
         if (mover != null)
         {
-            mover.laneX =
-                laneX;
-
-            mover.spawnZ =
-                spawnZ;
-
-            mover.speed =
-                currentObstacleSpeed;
-
+            mover.laneX = laneX;
+            mover.spawnZ = spawnZ;
+            mover.speed = currentObstacleSpeed;
             mover.ApplyInitialState();
         }
 
-        string charId =
-            ProfileManager
-                .GetSelectedCharacterId();
+        string charId = ProfileManager.GetSelectedCharacterId();
 
         float effectiveRevealZ =
-            BonusCalculator
-                .GetObstacleRevealZ(
-                    charId,
-                    revealZ,
-                    spawnZ
-                );
+            BonusCalculator.GetObstacleRevealZ(
+                charId,
+                revealZ,
+                spawnZ
+            );
 
         SpawnReveal3D reveal =
-            instance.GetComponent<
-                SpawnReveal3D
-            >();
+            instance.GetComponent<SpawnReveal3D>();
 
         if (reveal == null)
         {
-            reveal =
-                instance.AddComponent<
-                    SpawnReveal3D
-                >();
+            reveal = instance.AddComponent<SpawnReveal3D>();
         }
 
-        reveal.Initialize(
-            effectiveRevealZ
-        );
+        reveal.Initialize(effectiveRevealZ);
 
-        if (
-            PickupSpawner3D.Instance !=
-            null
-        )
+        if (PickupSpawner3D.Instance != null)
         {
-            PickupSpawner3D.Instance
-                .RegisterObstacleSpawned(
-                    instance,
-                    generateCoinRoute
-                );
+            PickupSpawner3D.Instance.RegisterObstacleSpawned(
+                instance,
+                generateCoinRoute
+            );
         }
     }
 
@@ -1256,34 +1026,25 @@ public class ObstacleSpawner3D : MonoBehaviour
     // RUNTIME
     // =========================================================
 
-    public void SetRunning(
-        bool running
-    )
+    public void SetRunning(bool running)
     {
-        isRunning =
-            running;
+        isRunning = running;
 
         UpdateCurrentObstacleSpeed();
     }
 
     public void ClearAllObstacles()
     {
-        for (
-            int i =
-                transform.childCount - 1;
-            i >= 0;
-            i--
-        )
+        for (int i = transform.childCount - 1; i >= 0; i--)
         {
-            GameObject child =
-                transform
-                    .GetChild(i)
-                    .gameObject;
+            GameObject child = transform.GetChild(i).gameObject;
 
             child.SetActive(false);
 
             Destroy(child);
         }
+
+        ResetNormalLaneSequence();
     }
 
     // =========================================================
@@ -1292,33 +1053,18 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (
-            !drawLaneGizmos ||
-            lanePositions == null
-        )
+        if (!drawLaneGizmos || lanePositions == null)
         {
             return;
         }
 
-        Gizmos.color =
-            Color.yellow;
+        Gizmos.color = Color.yellow;
 
-        foreach (
-            float x
-            in lanePositions
-        )
+        foreach (float x in lanePositions)
         {
             Gizmos.DrawLine(
-                new Vector3(
-                    x,
-                    0f,
-                    spawnZ - 2f
-                ),
-                new Vector3(
-                    x,
-                    0f,
-                    spawnZ + 2f
-                )
+                new Vector3(x, 0f, spawnZ - 2f),
+                new Vector3(x, 0f, spawnZ + 2f)
             );
         }
     }
