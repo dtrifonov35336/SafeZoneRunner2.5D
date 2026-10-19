@@ -22,13 +22,12 @@ public class RescuedPerson : MonoBehaviour
     private float currentZ;
     private float baseY;
 
-    private bool isSaved = false;
-    private bool initialised = false;
+    private bool isSaved;
+    private bool initialised;
 
     private void Start()
     {
-        baseY =
-            transform.position.y;
+        baseY = transform.position.y;
 
         if (!initialised)
         {
@@ -38,23 +37,14 @@ public class RescuedPerson : MonoBehaviour
 
     public void ApplyInitialState()
     {
-        currentZ =
-            spawnZ;
+        currentZ = spawnZ;
+        baseY = transform.position.y;
 
-        baseY =
-            transform.position.y;
+        Vector3 p = transform.position;
+        p.x = laneX;
+        p.z = spawnZ;
 
-        Vector3 p =
-            transform.position;
-
-        p.x =
-            laneX;
-
-        p.z =
-            spawnZ;
-
-        transform.position =
-            p;
+        transform.position = p;
 
         initialised = true;
     }
@@ -64,73 +54,50 @@ public class RescuedPerson : MonoBehaviour
         if (isSaved)
             return;
 
-        float moveSpeed =
-            speed;
+        float moveSpeed = speed;
 
-        if (
-            ObstacleSpawner3D.Instance != null
-        )
+        if (ObstacleSpawner3D.Instance != null)
         {
             moveSpeed =
-                ObstacleSpawner3D.Instance
-                    .CurrentObstacleSpeed;
+                ObstacleSpawner3D.Instance.CurrentObstacleSpeed;
         }
-
-        float bob =
-            Mathf.Sin(
-                Time.time *
-                bobSpeed
-            ) *
-            bobAmount;
 
         float currentY =
             baseY +
-            bob;
+            Mathf.Sin(Time.time * bobSpeed) * bobAmount;
 
         float desiredZ =
-            currentZ -
-            moveSpeed *
-            Time.deltaTime;
+            currentZ - moveSpeed * Time.deltaTime;
 
-        desiredZ =
-            RunnerMovingObjectBlocker3D.ResolveZ(
-                gameObject,
-                currentZ,
-                desiredZ,
-                transform.position.x,
-                currentY,
-                0.03f
-            );
+        desiredZ = RunnerMovingObjectBlocker3D.ResolveZ(
+            gameObject,
+            currentZ,
+            desiredZ,
+            transform.position.x,
+            currentY,
+            0.03f
+        );
 
-        currentZ =
-            desiredZ;
+        currentZ = desiredZ;
 
-        Vector3 p =
-            transform.position;
+        Vector3 p = transform.position;
+        p.z = currentZ;
+        p.y = currentY;
 
-        p.z =
-            currentZ;
-
-        p.y =
-            currentY;
-
-        transform.position =
-            p;
+        transform.position = p;
 
         if (currentZ <= despawnZ)
         {
             if (HUDManager.Instance != null)
             {
-                HUDManager.Instance
-                    .RegisterMissedRescue();
+                HUDManager.Instance.RegisterMissedRescue();
             }
 
             Destroy(gameObject);
         }
     }
 
-    private void OnTriggerEnter(
-        Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         if (isSaved)
             return;
@@ -143,54 +110,51 @@ public class RescuedPerson : MonoBehaviour
         GameSettingsManager3D.Vibrate();
 
         int coinsBefore = 0;
+        float comboMultiplier = 1f;
 
         if (HUDManager.Instance != null)
         {
-            coinsBefore =
-                HUDManager.Instance.GetCoins();
+            coinsBefore = HUDManager.Instance.GetCoins();
+
+            comboMultiplier =
+                RunComboSystem3D.RegisterSuccessfulAction(false);
 
             HUDManager.Instance.AddRescued(1);
 
-            if (
-                RunModeChallengeManager3D.Instance != null
-            )
+            if (RunModeChallengeManager3D.Instance != null)
             {
-                RunModeChallengeManager3D.Instance
-                    .OnRescued();
+                RunModeChallengeManager3D.Instance.OnRescued();
             }
 
-            // Только награда за спасение.
-            // Бонус рюкзака применяется здесь,
-            // как и раньше.
-            HUDManager.Instance.AddCoinsWithBonus(
-                coinReward
+            int reward = Mathf.Max(
+                1,
+                Mathf.RoundToInt(coinReward * comboMultiplier)
             );
+
+            HUDManager.Instance.AddCoinsWithBonus(reward);
         }
 
-        if (
-            AudioManager3D.Instance != null
-        )
+        if (AudioManager3D.Instance != null)
         {
-            AudioManager3D.Instance
-                .PlaySurvivor();
+            AudioManager3D.Instance.PlaySurvivor();
         }
 
         int gained = 0;
 
         if (HUDManager.Instance != null)
         {
-            int total =
-                HUDManager.Instance.GetCoins();
-
             gained =
-                total -
-                coinsBefore;
+                HUDManager.Instance.GetCoins() - coinsBefore;
         }
 
         if (ToastNotification.Instance != null)
         {
+            string comboText = comboMultiplier > 1f
+                ? $" · КОМБО x{comboMultiplier:0.##}"
+                : "";
+
             ToastNotification.Instance.Show(
-                $"Спасён выживший! +{gained}"
+                $"Спасён выживший! +{gained}{comboText}"
             );
         }
 

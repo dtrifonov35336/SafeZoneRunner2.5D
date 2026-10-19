@@ -101,6 +101,18 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float minLaneGap = 12f;
     public float wideObstacleGap = 18f;
 
+    [Header("Восстановление после широких препятствий")]
+    [Min(0f)]
+    public float postWideRecoverySeconds = 1.25f;
+
+    [Min(0f)]
+    public float postWideExtraGap = 5f;
+
+    [Min(0)]
+    public int normalWavesBetweenWide = 2;
+
+    private int wavesSinceWide = 99;
+
     [Header("Runtime")]
     public bool isRunning = true;
 
@@ -150,6 +162,8 @@ public class ObstacleSpawner3D : MonoBehaviour
         spawnTimer = 0f;
 
         ResetNormalLaneSequence();
+
+        wavesSinceWide = 99;
 
         UpdateCurrentObstacleSpeed();
     }
@@ -430,6 +444,8 @@ public class ObstacleSpawner3D : MonoBehaviour
         SpawnOne(firstPrefab, firstX, true);
         SpawnOne(secondPrefab, secondX, false);
 
+        wavesSinceWide++;
+
         // Двойная волна затрагивает обе полосы.
         ResetNormalLaneSequence();
 
@@ -484,6 +500,13 @@ public class ObstacleSpawner3D : MonoBehaviour
             }
 
             wide = false;
+
+            SpawnOne(prefab, 0f, true);
+
+            wavesSinceWide = 0;
+            ResetNormalLaneSequence();
+
+            return true;
         }
 
         // =====================================================
@@ -512,7 +535,7 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         int[] order = { first, second };
 
-        int lanesToCheck = mustAlternate ? 1 : order.Length;
+        int lanesToCheck = order.Length;
 
         for (int i = 0; i < lanesToCheck; i++)
         {
@@ -534,6 +557,8 @@ public class ObstacleSpawner3D : MonoBehaviour
             SpawnOne(prefab, laneX, true);
 
             RegisterNormalLaneSpawn(index);
+
+            wavesSinceWide++;
 
             return true;
         }
@@ -648,6 +673,11 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private GameObject GetRandomWeightedObstaclePrefab()
     {
+        if (wavesSinceWide < normalWavesBetweenWide)
+        {
+            return GetRandomRegularObstaclePrefab();
+        }
+
         if (obstaclePrefabs == null || obstaclePrefabs.Length == 0)
         {
             return null;
@@ -706,12 +736,13 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         float normalGap = Mathf.Max(
             minLaneGap,
-            currentObstacleSpeed * 0.65f
+            currentObstacleSpeed * 0.75f
         );
 
         float wideGap = Mathf.Max(
             wideObstacleGap,
-            currentObstacleSpeed * 0.90f
+            currentObstacleSpeed * postWideRecoverySeconds
+                + postWideExtraGap
         );
 
         ObstacleMover3D[] obstacles =

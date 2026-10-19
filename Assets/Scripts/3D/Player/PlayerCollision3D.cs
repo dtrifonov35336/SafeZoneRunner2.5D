@@ -426,6 +426,8 @@ public class PlayerCollision : MonoBehaviour
                  * 3. запускает анимацию падения;
                  * 4. после падения вызывает Die().
                  */
+                RunComboSystem3D.ResetAfterHit();
+
                 playerMovement.FallIntoPit();
 
                 /*
@@ -514,6 +516,8 @@ public class PlayerCollision : MonoBehaviour
         {
             return;
         }
+
+        RunComboSystem3D.ResetAfterHit();
 
         MarkObstacleHit(
             mover

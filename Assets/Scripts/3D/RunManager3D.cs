@@ -93,6 +93,8 @@ public class RunManager : MonoBehaviour
 
         // Применяем сезонное оформление окружения (обычный/зима/весна).
         SeasonManager3D.ApplyScene();
+
+        RunComboSystem3D.Reset();
     }
 
     private void Update()

@@ -9,15 +9,12 @@ public enum Pickup3DType
 
 public class Pickup3D : MonoBehaviour
 {
-    public Pickup3DType type =
-        Pickup3DType.Coin;
-
+    public Pickup3DType type = Pickup3DType.Coin;
     public int amount = 1;
 
     private bool collected;
 
-    private void OnTriggerEnter(
-        Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         if (collected)
             return;
@@ -30,48 +27,38 @@ public class Pickup3D : MonoBehaviour
 
         collected = true;
 
-        string charId =
-            ProfileManager.GetSelectedCharacterId();
+        string charId = ProfileManager.GetSelectedCharacterId();
 
         switch (type)
         {
             case Pickup3DType.Coin:
                 {
-                    float multiplier =
-                        BonusCalculator
-                            .GetCoinPickupMultiplier(
-                                charId
-                            );
+                    float characterMultiplier =
+                        BonusCalculator.GetCoinPickupMultiplier(charId);
 
-                    int finalAmount =
-                        Mathf.Max(
-                            1,
-                            Mathf.RoundToInt(
-                                amount *
-                                multiplier
-                            )
-                        );
+                    float comboMultiplier =
+                        RunComboSystem3D.RegisterSuccessfulAction();
 
-                    HUDManager.Instance.AddCoins(
-                        finalAmount
+                    int finalAmount = Mathf.Max(
+                        1,
+                        Mathf.RoundToInt(
+                            amount *
+                            characterMultiplier *
+                            comboMultiplier
+                        )
                     );
 
-                    if (
-                        RunModeChallengeManager3D.Instance != null
-                    )
+                    HUDManager.Instance.AddCoins(finalAmount);
+
+                    if (RunModeChallengeManager3D.Instance != null)
                     {
                         RunModeChallengeManager3D.Instance
-                            .OnCoinCollected(
-                                finalAmount
-                            );
+                            .OnCoinCollected(finalAmount);
                     }
 
-                    if (
-                        AudioManager3D.Instance != null
-                    )
+                    if (AudioManager3D.Instance != null)
                     {
-                        AudioManager3D.Instance
-                            .PlayCoin();
+                        AudioManager3D.Instance.PlayCoin();
                     }
 
                     break;
@@ -80,22 +67,13 @@ public class Pickup3D : MonoBehaviour
             case Pickup3DType.Heart:
                 {
                     float multiplier =
-                        BonusCalculator
-                            .GetHeartHealMultiplier(
-                                charId
-                            );
+                        BonusCalculator.GetHeartHealMultiplier(charId);
 
-                    HUDManager.Instance.AddHealth(
-                        amount *
-                        multiplier
-                    );
+                    HUDManager.Instance.AddHealth(amount * multiplier);
 
-                    if (
-                        AudioManager3D.Instance != null
-                    )
+                    if (AudioManager3D.Instance != null)
                     {
-                        AudioManager3D.Instance
-                            .PlayHeart();
+                        AudioManager3D.Instance.PlayHeart();
                     }
 
                     break;
@@ -103,10 +81,7 @@ public class Pickup3D : MonoBehaviour
 
             case Pickup3DType.Diamond:
                 {
-                    HUDManager.Instance.AddDiamonds(
-                        amount
-                    );
-
+                    HUDManager.Instance.AddDiamonds(amount);
                     break;
                 }
         }
