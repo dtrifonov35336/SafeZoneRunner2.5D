@@ -101,17 +101,33 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float minLaneGap = 12f;
     public float wideObstacleGap = 18f;
 
-    [Header("Восстановление после широких препятствий")]
+    [Header("Интервал после широких препятствий")]
     [Min(0f)]
-    public float postWideRecoverySeconds = 1.25f;
+    public float postWideRecoverySeconds = 1.35f;
 
     [Min(0f)]
-    public float postWideExtraGap = 5f;
+    public float postWideExtraGap = 6f;
 
-    [Min(0)]
-    public int normalWavesBetweenWide = 2;
+    [Header("Управляемые комбинации")]
+    [Min(3)]
+    public int minNormalWavesBeforeWide = 4;
 
-    private int wavesSinceWide = 99;
+    [Min(3)]
+    public int maxNormalWavesBeforeWide = 6;
+
+    [Min(1)]
+    public int minRecoveryWavesAfterWide = 2;
+
+    [Min(1)]
+    public int maxRecoveryWavesAfterWide = 3;
+
+    [Min(2)]
+    public int normalWavesBetweenDouble = 4;
+
+    private int wavesSinceWide;
+    private int normalWavesBeforeNextWide = 5;
+    private int recoveryWavesRemaining;
+    private int wavesSinceDouble;
 
     [Header("Runtime")]
     public bool isRunning = true;
@@ -163,7 +179,15 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         ResetNormalLaneSequence();
 
-        wavesSinceWide = 99;
+        wavesSinceWide = 0;
+
+        normalWavesBeforeNextWide =
+            GetRandomNormalWavesBeforeWide();
+
+        recoveryWavesRemaining = 0;
+
+        wavesSinceDouble =
+            Mathf.Max(1, normalWavesBetweenDouble);
 
         UpdateCurrentObstacleSpeed();
     }
@@ -360,6 +384,27 @@ public class ObstacleSpawner3D : MonoBehaviour
             return false;
         }
 
+        // ЭТАП C: настало время особого широкого препятствия.
+        // После него будет обязательный восстановительный участок.
+        bool wideIsDue =
+            recoveryWavesRemaining <= 0 &&
+            wavesSinceWide >= normalWavesBeforeNextWide &&
+            wavesSinceDouble > 0;
+
+        if (wideIsDue)
+        {
+            GameObject widePrefab =
+                GetRandomWideObstaclePrefab();
+
+            if (widePrefab != null)
+            {
+                // Если зона занята, метод вернёт false,
+                // и спавнер попробует снова через короткий интервал.
+                return TrySpawnPlannedWideWave(widePrefab);
+            }
+        }
+
+        // ЭТАП B: редкие двойные волны.
         float waveChance = doubleObstacleWaveChance;
 
         if (IsInfiniteMode())
@@ -374,7 +419,7 @@ public class ObstacleSpawner3D : MonoBehaviour
             );
         }
 
-        bool allowWaveForMode =
+        bool allowDoubleForMode =
             allowDoubleObstacleWaves &&
             (
                 IsInfiniteMode()
@@ -382,15 +427,32 @@ public class ObstacleSpawner3D : MonoBehaviour
                     : maxObstaclesPerWave >= 2
             );
 
-        if (allowWaveForMode && Random.value < waveChance)
+        bool doubleCooldownPassed =
+            recoveryWavesRemaining <= 0 &&
+            wavesSinceWide >= 2 &&
+            wavesSinceDouble >=
+                Mathf.Max(1, normalWavesBetweenDouble);
+
+        if (allowDoubleForMode &&
+            doubleCooldownPassed &&
+            Random.value < waveChance)
         {
             if (TrySpawnDoubleNormalWave())
             {
+                RegisterNormalPatternWave(true);
                 return true;
             }
         }
 
-        return TrySpawnOne();
+        // ЭТАП A или D: одиночное обычное препятствие.
+        // Во время восстановления другие виды волн запрещены.
+        if (TrySpawnOne())
+        {
+            RegisterNormalPatternWave(false);
+            return true;
+        }
+
+        return false;
     }
 
     // =========================================================
@@ -444,9 +506,9 @@ public class ObstacleSpawner3D : MonoBehaviour
         SpawnOne(firstPrefab, firstX, true);
         SpawnOne(secondPrefab, secondX, false);
 
-        wavesSinceWide++;
-
         // Двойная волна затрагивает обе полосы.
+        // Счётчики последовательности обновляются
+        // централизованно в TrySpawnWave().
         ResetNormalLaneSequence();
 
         return true;
@@ -458,75 +520,20 @@ public class ObstacleSpawner3D : MonoBehaviour
 
     private bool TrySpawnOne()
     {
-        GameObject prefab = GetRandomWeightedObstaclePrefab();
+        // Обычный спавн выбирает только обычные препятствия.
+        // Автобусы и широкие барьеры появляются по плану.
+        GameObject prefab = GetRandomRegularObstaclePrefab();
 
-        if (prefab == null)
+        if (prefab == null || !HasTwoLanes())
         {
             return false;
         }
 
-        bool wide = IsWideObstacle(prefab);
-
-        // =====================================================
-        // WIDE: BUS / OBSTACLE4 / SLIDE / DOUBLE JUMP
-        // =====================================================
-
-        if (wide)
-        {
-            bool canSpawnWide =
-                CanSpawnAnotherObstacle(prefab, 0f) &&
-                (
-                    !checkPickups ||
-                    IsWideSpawnZoneClearOfSpecialObjects()
-                );
-
-            if (canSpawnWide)
-            {
-                SpawnOne(prefab, 0f, true);
-
-                ResetNormalLaneSequence();
-
-                return true;
-            }
-
-            // Если широкое препятствие пока нельзя поставить,
-            // не создаём длинный пустой промежуток.
-            // Вместо него пробуем обычное препятствие.
-            prefab = GetRandomRegularObstaclePrefab();
-
-            if (prefab == null)
-            {
-                return false;
-            }
-
-            wide = false;
-
-            SpawnOne(prefab, 0f, true);
-
-            wavesSinceWide = 0;
-            ResetNormalLaneSequence();
-
-            return true;
-        }
-
-        // =====================================================
-        // NORMAL
-        // =====================================================
-
-        if (!HasTwoLanes())
-        {
-            return false;
-        }
-
+        // Если уже была одиночная волна, сначала проверяем
+        // противоположную полосу.
         int first = Random.Range(0, 2);
 
-        // Не допускаем три обычные волны подряд в одной полосе,
-        // если альтернативная полоса доступна.
-        bool mustAlternate =
-            consecutiveNormalLaneCount >= 2 &&
-            lastNormalLaneIndex >= 0;
-
-        if (mustAlternate)
+        if (lastNormalLaneIndex >= 0)
         {
             first = 1 - lastNormalLaneIndex;
         }
@@ -535,12 +542,9 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         int[] order = { first, second };
 
-        int lanesToCheck = order.Length;
-
-        for (int i = 0; i < lanesToCheck; i++)
+        for (int i = 0; i < order.Length; i++)
         {
             int index = order[i];
-
             float laneX = lanePositions[index];
 
             if (checkPickups &&
@@ -558,12 +562,88 @@ public class ObstacleSpawner3D : MonoBehaviour
 
             RegisterNormalLaneSpawn(index);
 
-            wavesSinceWide++;
-
             return true;
         }
 
         return false;
+    }
+
+    // =========================================================
+    // УПРАВЛЕНИЕ ПАТТЕРНАМИ
+    // =========================================================
+
+    private int GetRandomNormalWavesBeforeWide()
+    {
+        int min = Mathf.Max(3, minNormalWavesBeforeWide);
+        int max = Mathf.Max(min, maxNormalWavesBeforeWide);
+
+        return Random.Range(min, max + 1);
+    }
+
+    private int GetRandomRecoveryWavesAfterWide()
+    {
+        int min = Mathf.Max(1, minRecoveryWavesAfterWide);
+        int max = Mathf.Max(min, maxRecoveryWavesAfterWide);
+
+        return Random.Range(min, max + 1);
+    }
+
+    private void RegisterNormalPatternWave(bool wasDouble)
+    {
+        wavesSinceWide++;
+
+        if (wasDouble)
+        {
+            wavesSinceDouble = 0;
+        }
+        else
+        {
+            wavesSinceDouble++;
+        }
+
+        if (recoveryWavesRemaining > 0)
+        {
+            recoveryWavesRemaining--;
+        }
+    }
+
+    private bool TrySpawnPlannedWideWave(GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            return false;
+        }
+
+        // Широкое препятствие занимает обе полосы.
+        if (!CanSpawnAnotherObstacle(prefab, 0f))
+        {
+            return false;
+        }
+
+        if (checkPickups &&
+            !IsWideSpawnZoneClearOfSpecialObjects())
+        {
+            return false;
+        }
+
+        SpawnOne(prefab, 0f, true);
+
+        // Начинаем новый цикл комбинаций.
+        wavesSinceWide = 0;
+
+        normalWavesBeforeNextWide =
+            GetRandomNormalWavesBeforeWide();
+
+        // Две или три следующие волны — обязательно одиночные.
+        recoveryWavesRemaining =
+            GetRandomRecoveryWavesAfterWide();
+
+        // Не ставим двойную волну сразу после особого препятствия.
+        wavesSinceDouble = 0;
+
+        ResetNormalLaneSequence();
+
+        return true;
     }
 
     // =========================================================
@@ -646,7 +726,7 @@ public class ObstacleSpawner3D : MonoBehaviour
             .Contains("bus");
     }
 
-    private int CountObstaclePrefabs(bool busOnly)
+    private int CountWideObstaclePrefabs(bool busOnly)
     {
         if (obstaclePrefabs == null)
         {
@@ -657,7 +737,8 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         foreach (GameObject prefab in obstaclePrefabs)
         {
-            if (prefab == null)
+            if (prefab == null ||
+                !IsWideObstacle(prefab))
             {
                 continue;
             }
@@ -671,31 +752,30 @@ public class ObstacleSpawner3D : MonoBehaviour
         return count;
     }
 
-    private GameObject GetRandomWeightedObstaclePrefab()
+    private GameObject GetRandomWideObstaclePrefab()
     {
-        if (wavesSinceWide < normalWavesBetweenWide)
-        {
-            return GetRandomRegularObstaclePrefab();
-        }
-
-        if (obstaclePrefabs == null || obstaclePrefabs.Length == 0)
+        if (obstaclePrefabs == null ||
+            obstaclePrefabs.Length == 0)
         {
             return null;
         }
 
+        // Вероятность автобуса применяется именно к особым волнам,
+        // а не ко всем волнам забега.
         bool selectBus = Random.value < (
             IsInfiniteMode()
                 ? infiniteBusSpawnChance
                 : shelterBusSpawnChance
         );
 
-        int count = CountObstaclePrefabs(selectBus);
+        int count = CountWideObstaclePrefabs(selectBus);
 
-        // Если в выбранной категории нет prefab, используем другую.
+        // Если в выбранной категории нет широкого объекта,
+        // выбираем другую категорию.
         if (count == 0)
         {
             selectBus = !selectBus;
-            count = CountObstaclePrefabs(selectBus);
+            count = CountWideObstaclePrefabs(selectBus);
         }
 
         if (count == 0)
@@ -707,7 +787,9 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         foreach (GameObject prefab in obstaclePrefabs)
         {
-            if (prefab == null || IsBusPrefab(prefab) != selectBus)
+            if (prefab == null ||
+                !IsWideObstacle(prefab) ||
+                IsBusPrefab(prefab) != selectBus)
             {
                 continue;
             }
@@ -728,10 +810,15 @@ public class ObstacleSpawner3D : MonoBehaviour
     // =========================================================
 
     private bool CanSpawnAnotherObstacle(
-        GameObject candidatePrefab,
-        float candidateLaneX
-    )
+    GameObject candidatePrefab,
+    float candidateLaneX
+)
     {
+        if (candidatePrefab == null)
+        {
+            return false;
+        }
+
         bool candidateWide = IsWideObstacle(candidatePrefab);
 
         float normalGap = Mathf.Max(
@@ -741,9 +828,21 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         float wideGap = Mathf.Max(
             wideObstacleGap,
-            currentObstacleSpeed * postWideRecoverySeconds
-                + postWideExtraGap
+            currentObstacleSpeed *
+                Mathf.Max(0f, postWideRecoverySeconds) +
+                Mathf.Max(0f, postWideExtraGap)
         );
+
+        float candidateBackEdgeZ = spawnZ;
+
+        if (TryGetObstacleBounds(
+                candidatePrefab,
+                out Bounds candidateBounds))
+        {
+            candidateBackEdgeZ +=
+                candidateBounds.min.z -
+                candidatePrefab.transform.position.z;
+        }
 
         ObstacleMover3D[] obstacles =
             FindObjectsByType<ObstacleMover3D>(
@@ -757,19 +856,22 @@ public class ObstacleSpawner3D : MonoBehaviour
                 continue;
             }
 
-            bool existingWide = IsWideObstacle(obstacle.gameObject);
+            bool existingWide =
+                IsWideObstacle(obstacle.gameObject);
 
             bool laneConflict;
 
             if (candidateWide || existingWide)
             {
-                // Широкое препятствие занимает всю дорогу.
                 laneConflict = true;
             }
             else
             {
                 laneConflict =
-                    Mathf.Abs(obstacle.laneX - candidateLaneX) < 0.55f;
+                    Mathf.Abs(
+                        obstacle.laneX -
+                        candidateLaneX
+                    ) < 0.55f;
             }
 
             if (!laneConflict)
@@ -777,21 +879,106 @@ public class ObstacleSpawner3D : MonoBehaviour
                 continue;
             }
 
+            float existingFrontEdgeZ =
+                obstacle.transform.position.z;
+
+            if (TryGetObstacleBounds(
+                    obstacle.gameObject,
+                    out Bounds existingBounds))
+            {
+                existingFrontEdgeZ = existingBounds.max.z;
+            }
+
+            // Считаем физическое расстояние между краями объектов,
+            // а не между центрами.
+            float edgeGap =
+                candidateBackEdgeZ -
+                existingFrontEdgeZ;
+
             float requiredGap =
                 candidateWide || existingWide
                     ? wideGap
                     : normalGap;
 
-            float distance =
-                spawnZ - obstacle.transform.position.z;
-
-            if (distance < requiredGap)
+            if (edgeGap < requiredGap)
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private bool TryGetObstacleBounds(
+        GameObject obj,
+        out Bounds bounds
+    )
+    {
+        bounds = default;
+
+        if (obj == null)
+        {
+            return false;
+        }
+
+        bool found = false;
+
+        Collider[] colliders =
+            obj.GetComponentsInChildren<Collider>(true);
+
+        foreach (Collider collider in colliders)
+        {
+            if (collider == null)
+            {
+                continue;
+            }
+
+            Bounds current = collider.bounds;
+
+            if (current.size.sqrMagnitude <= 0.0001f)
+            {
+                continue;
+            }
+
+            if (!found)
+            {
+                bounds = current;
+                found = true;
+            }
+            else
+            {
+                bounds.Encapsulate(current);
+            }
+        }
+
+        if (found)
+        {
+            return true;
+        }
+
+        Renderer[] renderers =
+            obj.GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null ||
+                renderer is ParticleSystemRenderer)
+            {
+                continue;
+            }
+
+            if (!found)
+            {
+                bounds = renderer.bounds;
+                found = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        return found;
     }
 
     // =========================================================
