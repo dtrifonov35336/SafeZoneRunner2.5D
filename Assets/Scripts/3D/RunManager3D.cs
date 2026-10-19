@@ -246,6 +246,7 @@ public class RunManager : MonoBehaviour
             activeSafeZone.InitializeAt(
                 safeZoneSpawnZ
             );
+            ConfigureSafeZoneReveal(activeSafeZone, safeZoneSpawnZ, false);
         }
     }
 
@@ -311,6 +312,12 @@ public class RunManager : MonoBehaviour
         {
             safeZone.InitializeAt(
                 safeZoneReviveSpawnZ
+            );
+
+            ConfigureSafeZoneReveal(
+                safeZone,
+                safeZoneReviveSpawnZ,
+                true
             );
 
             activeSafeZone =
@@ -556,5 +563,44 @@ public class RunManager : MonoBehaviour
                 obstacleApproachTime + clearance
             )
         );
+    }
+
+    private void ConfigureSafeZoneReveal(
+    SafeZone safeZone,
+    float objectSpawnZ,
+    bool revealImmediately)
+    {
+        if (safeZone == null)
+            return;
+
+        SpawnReveal3D reveal =
+            safeZone.GetComponent<SpawnReveal3D>();
+
+        if (reveal == null)
+            reveal = safeZone.gameObject.AddComponent<SpawnReveal3D>();
+
+        reveal.fadeDuration = 0.45f;
+
+        float targetRevealZ;
+
+        if (revealImmediately)
+        {
+            targetRevealZ = objectSpawnZ;
+        }
+        else if (obstacleSpawner != null)
+        {
+            float revealDistance = Mathf.Max(
+                0f,
+                obstacleSpawner.spawnZ - obstacleSpawner.revealZ
+            );
+
+            targetRevealZ = objectSpawnZ - revealDistance;
+        }
+        else
+        {
+            targetRevealZ = objectSpawnZ - 20f;
+        }
+
+        reveal.Initialize(targetRevealZ);
     }
 }
