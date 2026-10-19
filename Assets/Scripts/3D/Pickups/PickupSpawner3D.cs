@@ -47,7 +47,7 @@ public class PickupSpawner3D : MonoBehaviour
     public float slideCoinY = 0.35f;
 
     [Header("Позиция спавна")]
-    public float spawnZ = 60f;
+    public float spawnZ = 130f;
 
     [Header("Безопасность сердечек")]
     public float heartSpawnGap = 5f;
@@ -78,12 +78,13 @@ public class PickupSpawner3D : MonoBehaviour
 
     private int straightLane = 0;
 
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Awake()
     {
-        if (
-            Instance != null &&
-            Instance != this
-        )
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -98,17 +99,10 @@ public class PickupSpawner3D : MonoBehaviour
     {
         SyncLanePositionsWithPlayer();
 
-        coinTimer =
-            coinSpawnInterval;
+        coinTimer = coinSpawnInterval;
+        heartTimer = heartSpawnInterval;
 
-        heartTimer =
-            heartSpawnInterval;
-
-        straightLane =
-            Random.Range(
-                0,
-                2
-            );
+        straightLane = Random.Range(0, 2);
     }
 
     private void OnDestroy()
@@ -121,10 +115,8 @@ public class PickupSpawner3D : MonoBehaviour
 
     private void Update()
     {
-        if (
-            ChaseManager.Instance != null &&
-            ChaseManager.Instance.IsGameOver()
-        )
+        if (ChaseManager.Instance != null &&
+            ChaseManager.Instance.IsGameOver())
         {
             return;
         }
@@ -146,35 +138,29 @@ public class PickupSpawner3D : MonoBehaviour
         PlayerMovement3D player =
             FindFirstObjectByType<PlayerMovement3D>();
 
-        if (
-            player != null &&
+        if (player != null &&
             player.lanePositions != null &&
-            player.lanePositions.Length == 2
-        )
+            player.lanePositions.Length == 2)
         {
-            lanePositions =
-                new float[]
-                {
-                    player.lanePositions[0],
-                    player.lanePositions[1]
-                };
+            lanePositions = new float[]
+            {
+                player.lanePositions[0],
+                player.lanePositions[1]
+            };
         }
-        else if (
-            lanePositions == null ||
-            lanePositions.Length != 2
-        )
+        else if (lanePositions == null ||
+                 lanePositions.Length != 2)
         {
-            lanePositions =
-                new float[]
-                {
-                    -0.8f,
-                    0.8f
-                };
+            lanePositions = new float[]
+            {
+                -0.8f,
+                0.8f
+            };
         }
     }
 
     // =========================================================
-    // ОБСТОЯЗАТЕЛЬНАЯ РЕГИСТРАЦИЯ ПРЕПЯТСТВИЯ
+    // РЕГИСТРАЦИЯ ПОЯВИВШЕГОСЯ ПРЕПЯТСТВИЯ
     // =========================================================
 
     public void RegisterObstacleSpawned(
@@ -188,9 +174,7 @@ public class PickupSpawner3D : MonoBehaviour
         }
 
         ObstacleMover3D obstacle =
-            obstacleInstance.GetComponent<
-                ObstacleMover3D
-            >();
+            obstacleInstance.GetComponent<ObstacleMover3D>();
 
         if (obstacle == null)
         {
@@ -198,9 +182,7 @@ public class PickupSpawner3D : MonoBehaviour
         }
 
         ObstacleType3D type =
-            obstacleInstance.GetComponentInChildren<
-                ObstacleType3D
-            >(true);
+            obstacleInstance.GetComponentInChildren<ObstacleType3D>(true);
 
         if (type == null)
         {
@@ -209,29 +191,15 @@ public class PickupSpawner3D : MonoBehaviour
 
         if (generateCoinRoute)
         {
-            GenerateCoinRoute(
-                obstacle,
-                type.type
-            );
+            GenerateCoinRoute(obstacle, type.type);
         }
         else
         {
-            if (
-                TryGetObstacleBounds(
-                    obstacle,
-                    out Bounds bounds
-                )
-            )
+            if (TryGetObstacleBounds(obstacle, out Bounds bounds))
             {
-                bool wide =
-                    IsWideObstacleType(
-                        type.type
-                    );
+                bool wide = IsWideObstacleType(type.type);
 
-                int lane =
-                    GetNearestLaneIndex(
-                        obstacle.laneX
-                    );
+                int lane = GetNearestLaneIndex(obstacle.laneX);
 
                 RemoveCoinsAroundObstacle(
                     bounds,
@@ -253,21 +221,16 @@ public class PickupSpawner3D : MonoBehaviour
             return;
         }
 
-        coinTimer -=
-            Time.deltaTime;
+        coinTimer -= Time.deltaTime;
 
         if (coinTimer > 0f)
         {
             return;
         }
 
-        coinTimer =
-            coinSpawnInterval;
+        coinTimer = coinSpawnInterval;
 
-        if (
-            Random.value >
-            coinSpawnChance
-        )
+        if (Random.value > coinSpawnChance)
         {
             return;
         }
@@ -292,24 +255,16 @@ public class PickupSpawner3D : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            ObstacleMover3D obstacle
-            in obstacles
-        )
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
             {
                 continue;
             }
 
-            float z =
-                obstacle.transform.position.z;
+            float z = obstacle.transform.position.z;
 
-            if (
-                z >= 0f &&
-                z <=
-                spawnZ + 5f
-            )
+            if (z >= 0f && z <= spawnZ + 5f)
             {
                 return true;
             }
@@ -319,7 +274,7 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // BOUNDS
+    // BOUNDS ПРЕПЯТСТВИЯ
     // =========================================================
 
     private bool TryGetObstacleBounds(
@@ -335,42 +290,30 @@ public class PickupSpawner3D : MonoBehaviour
         }
 
         Renderer[] renderers =
-            obstacle.GetComponentsInChildren<
-                Renderer
-            >(true);
+            obstacle.GetComponentsInChildren<Renderer>(true);
 
         bool found = false;
 
-        foreach (
-            Renderer renderer
-            in renderers
-        )
+        foreach (Renderer renderer in renderers)
         {
             if (renderer == null)
             {
                 continue;
             }
 
-            if (
-                renderer is
-                ParticleSystemRenderer
-            )
+            if (renderer is ParticleSystemRenderer)
             {
                 continue;
             }
 
             if (!found)
             {
-                bounds =
-                    renderer.bounds;
-
+                bounds = renderer.bounds;
                 found = true;
             }
             else
             {
-                bounds.Encapsulate(
-                    renderer.bounds
-                );
+                bounds.Encapsulate(renderer.bounds);
             }
         }
 
@@ -379,17 +322,11 @@ public class PickupSpawner3D : MonoBehaviour
             return true;
         }
 
-        Collider collider =
-            obstacle.GetComponent<
-                Collider
-            >();
+        Collider collider = obstacle.GetComponent<Collider>();
 
         if (collider == null)
         {
-            collider =
-                obstacle.GetComponentInChildren<
-                    Collider
-                >();
+            collider = obstacle.GetComponentInChildren<Collider>();
         }
 
         if (collider == null)
@@ -397,8 +334,7 @@ public class PickupSpawner3D : MonoBehaviour
             return false;
         }
 
-        bounds =
-            collider.bounds;
+        bounds = collider.bounds;
 
         return true;
     }
@@ -411,42 +347,33 @@ public class PickupSpawner3D : MonoBehaviour
         }
 
         Renderer[] renderers =
-            coinPrefab.GetComponentsInChildren<
-                Renderer
-            >(true);
+            coinPrefab.GetComponentsInChildren<Renderer>(true);
 
         float result = 0.1f;
 
-        foreach (
-            Renderer renderer
-            in renderers
-        )
+        foreach (Renderer renderer in renderers)
         {
             if (renderer == null)
             {
                 continue;
             }
 
-            if (
-                renderer is
-                ParticleSystemRenderer
-            )
+            if (renderer is ParticleSystemRenderer)
             {
                 continue;
             }
 
-            result =
-                Mathf.Max(
-                    result,
-                    renderer.bounds.extents.y
-                );
+            result = Mathf.Max(
+                result,
+                renderer.bounds.extents.y
+            );
         }
 
         return result;
     }
 
     // =========================================================
-    // ROUTE
+    // МАРШРУТ МОНЕТ
     // =========================================================
 
     private void GenerateCoinRoute(
@@ -454,58 +381,32 @@ public class PickupSpawner3D : MonoBehaviour
         ObstacleType type
     )
     {
-        if (
-            coinPrefab == null ||
-            obstacle == null
-        )
+        if (coinPrefab == null || obstacle == null)
         {
             return;
         }
 
-        if (
-            !TryGetObstacleBounds(
-                obstacle,
-                out Bounds obstacleBounds
-            )
-        )
+        if (!TryGetObstacleBounds(obstacle, out Bounds obstacleBounds))
         {
             return;
         }
 
         int lane = 0;
-
         bool removeBothLanes = false;
 
         if (type == ObstacleType.Slide)
         {
-            lane =
-                Random.Range(
-                    0,
-                    2
-                );
-
+            lane = Random.Range(0, 2);
             removeBothLanes = true;
         }
-        else if (
-            type == ObstacleType.Normal ||
-            type == ObstacleType.Pit
-        )
+        else if (type == ObstacleType.Normal ||
+                 type == ObstacleType.Pit)
         {
-            lane =
-                GetNearestLaneIndex(
-                    obstacle.laneX
-                );
+            lane = GetNearestLaneIndex(obstacle.laneX);
         }
-        else if (
-            type == ObstacleType.DoubleJump
-        )
+        else if (type == ObstacleType.DoubleJump)
         {
-            lane =
-                Random.Range(
-                    0,
-                    2
-                );
-
+            lane = Random.Range(0, 2);
             removeBothLanes = true;
         }
         else
@@ -519,47 +420,26 @@ public class PickupSpawner3D : MonoBehaviour
             removeBothLanes
         );
 
-        float groundY =
-            coinPrefab.transform.position.y;
+        float groundY = coinPrefab.transform.position.y;
 
-        float nearZ =
-            obstacleBounds.min.z;
+        float nearZ = obstacleBounds.min.z;
+        float farZ = obstacleBounds.max.z;
 
-        float farZ =
-            obstacleBounds.max.z;
+        float startZ = nearZ - pathForward;
+        float endZ = farZ + pathBackward;
+        float centerZ = obstacleBounds.center.z;
 
-        float startZ =
-            nearZ -
-            pathForward;
+        // Синхронизация появления монет с препятствием.
+        float referenceSpawnZ = obstacle.spawnZ;
+        float referenceRevealZ = 40f;
 
-        float endZ =
-            farZ +
-            pathBackward;
-
-        float centerZ =
-            obstacleBounds.center.z;
-
-        // =====================================================
-        // REVEAL СИНХРОНИЗАЦИЯ
-        // =====================================================
-
-        float referenceSpawnZ =
-            obstacle.spawnZ;
-
-        float referenceRevealZ =
-            40f;
-
-        if (
-            ObstacleSpawner3D.Instance != null
-        )
+        if (ObstacleSpawner3D.Instance != null)
         {
             string charId =
-                ProfileManager
-                    .GetSelectedCharacterId();
+                ProfileManager.GetSelectedCharacterId();
 
             referenceSpawnZ =
-                ObstacleSpawner3D.Instance
-                    .spawnZ;
+                ObstacleSpawner3D.Instance.spawnZ;
 
             referenceRevealZ =
                 BonusCalculator.GetObstacleRevealZ(
@@ -570,23 +450,17 @@ public class PickupSpawner3D : MonoBehaviour
         }
 
         // =====================================================
-        // SLIDE
+        // SLIDE / OBSTACLE4
+        // Все монеты маршрута имеют одну высоту.
+        // Больше нет отдельной монеты, проваливающейся вниз.
         // =====================================================
 
         if (type == ObstacleType.Slide)
         {
-            for (
-                float z = startZ;
-                z <= endZ;
-                z += coinSpacing
-            )
-            {
-                float y =
-                    z < nearZ ||
-                    z > farZ
-                        ? groundY
-                        : slideCoinY;
+            float y = slideCoinY;
 
+            for (float z = startZ; z <= endZ; z += coinSpacing)
+            {
                 SpawnCoinAt(
                     lanePositions[lane],
                     y,
@@ -604,44 +478,32 @@ public class PickupSpawner3D : MonoBehaviour
         // NORMAL / PIT
         // =====================================================
 
-        if (
-            type == ObstacleType.Normal ||
-            type == ObstacleType.Pit
-        )
+        if (type == ObstacleType.Normal ||
+            type == ObstacleType.Pit)
         {
-            float coinHalfHeight =
-                GetCoinHalfHeight();
+            float coinHalfHeight = GetCoinHalfHeight();
 
             float requiredPeak =
                 obstacleBounds.max.y +
                 coinHalfHeight +
                 obstacleClearance;
 
-            float requiredHeight =
-                requiredPeak -
-                groundY;
+            float requiredHeight = requiredPeak - groundY;
 
-            float finalHeight =
-                Mathf.Max(
-                    jumpArcHeight,
-                    requiredHeight
-                );
+            float finalHeight = Mathf.Max(
+                jumpArcHeight,
+                requiredHeight
+            );
 
-            for (
-                float z = startZ;
-                z <= endZ;
-                z += coinSpacing
-            )
+            for (float z = startZ; z <= endZ; z += coinSpacing)
             {
-                float y =
-                    groundY +
-                    GetArcHeight(
-                        z,
-                        startZ,
-                        centerZ,
-                        endZ,
-                        finalHeight
-                    );
+                float y = groundY + GetArcHeight(
+                    z,
+                    startZ,
+                    centerZ,
+                    endZ,
+                    finalHeight
+                );
 
                 SpawnCoinAt(
                     lanePositions[lane],
@@ -662,39 +524,29 @@ public class PickupSpawner3D : MonoBehaviour
 
         if (type == ObstacleType.DoubleJump)
         {
-            float coinHalfHeight =
-                GetCoinHalfHeight();
+            float coinHalfHeight = GetCoinHalfHeight();
 
             float requiredPeak =
                 obstacleBounds.max.y +
                 coinHalfHeight +
                 obstacleClearance;
 
-            float requiredHeight =
-                requiredPeak -
-                groundY;
+            float requiredHeight = requiredPeak - groundY;
 
-            float finalHeight =
-                Mathf.Max(
-                    doubleJumpArcHeight,
-                    requiredHeight
-                );
+            float finalHeight = Mathf.Max(
+                doubleJumpArcHeight,
+                requiredHeight
+            );
 
-            for (
-                float z = startZ;
-                z <= endZ;
-                z += coinSpacing
-            )
+            for (float z = startZ; z <= endZ; z += coinSpacing)
             {
-                float y =
-                    groundY +
-                    GetArcHeight(
-                        z,
-                        startZ,
-                        centerZ,
-                        endZ,
-                        finalHeight
-                    );
+                float y = groundY + GetArcHeight(
+                    z,
+                    startZ,
+                    centerZ,
+                    endZ,
+                    finalHeight
+                );
 
                 SpawnCoinAt(
                     lanePositions[lane],
@@ -709,20 +561,17 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // WIDE
+    // ШИРОКИЕ ПРЕПЯТСТВИЯ
     // =========================================================
 
-    private bool IsWideObstacleType(
-        ObstacleType type
-    )
+    private bool IsWideObstacleType(ObstacleType type)
     {
-        return
-            type == ObstacleType.Slide ||
-            type == ObstacleType.DoubleJump;
+        return type == ObstacleType.Slide ||
+               type == ObstacleType.DoubleJump;
     }
 
     // =========================================================
-    // ARC
+    // ДУГА МОНЕТ
     // =========================================================
 
     private float GetArcHeight(
@@ -735,56 +584,40 @@ public class PickupSpawner3D : MonoBehaviour
     {
         if (z <= centerZ)
         {
-            float length =
-                centerZ -
-                startZ;
+            float length = centerZ - startZ;
 
             if (length <= 0.001f)
             {
                 return height;
             }
 
-            float t =
-                Mathf.Clamp01(
-                    (z - startZ) /
-                    length
-                );
+            float t = Mathf.Clamp01(
+                (z - startZ) / length
+            );
 
-            return
-                Mathf.Sin(
-                    t *
-                    Mathf.PI *
-                    0.5f
-                ) *
-                height;
+            return Mathf.Sin(
+                t * Mathf.PI * 0.5f
+            ) * height;
         }
 
-        float downLength =
-            endZ -
-            centerZ;
+        float downLength = endZ - centerZ;
 
         if (downLength <= 0.001f)
         {
             return 0f;
         }
 
-        float downT =
-            Mathf.Clamp01(
-                (z - centerZ) /
-                downLength
-            );
+        float downT = Mathf.Clamp01(
+            (z - centerZ) / downLength
+        );
 
-        return
-            Mathf.Sin(
-                (1f - downT) *
-                Mathf.PI *
-                0.5f
-            ) *
-            height;
+        return Mathf.Sin(
+            (1f - downT) * Mathf.PI * 0.5f
+        ) * height;
     }
 
     // =========================================================
-    // DELETE COINS
+    // УДАЛЕНИЕ МОНЕТ ВОКРУГ ПРЕПЯТСТВИЯ
     // =========================================================
 
     private void RemoveCoinsAroundObstacle(
@@ -808,66 +641,45 @@ public class PickupSpawner3D : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            PickupMover3D pickup
-            in pickups
-        )
+        foreach (PickupMover3D pickup in pickups)
         {
             if (pickup == null)
             {
                 continue;
             }
 
-            Pickup3D data =
-                pickup.GetComponent<
-                    Pickup3D
-                >();
+            Pickup3D data = pickup.GetComponent<Pickup3D>();
 
-            if (
-                data == null ||
-                data.type !=
-                Pickup3DType.Coin
-            )
+            if (data == null ||
+                data.type != Pickup3DType.Coin)
             {
                 continue;
             }
 
-            float z =
-                pickup.transform.position.z;
+            float z = pickup.transform.position.z;
 
-            if (
-                z < minZ ||
-                z > maxZ
-            )
+            if (z < minZ || z > maxZ)
             {
                 continue;
             }
 
             if (bothLanes)
             {
-                Destroy(
-                    pickup.gameObject
-                );
-
+                Destroy(pickup.gameObject);
                 continue;
             }
 
-            if (
-                Mathf.Abs(
-                    pickup.transform.position.x -
-                    laneX
-                ) < 0.55f
-            )
+            if (Mathf.Abs(
+                    pickup.transform.position.x - laneX
+                ) < 0.55f)
             {
-                Destroy(
-                    pickup.gameObject
-                );
+                Destroy(pickup.gameObject);
             }
         }
     }
 
     // =========================================================
-    // SPAWN COIN
+    // СОЗДАНИЕ МОНЕТЫ
     // =========================================================
 
     private void SpawnCoinAt(
@@ -884,58 +696,36 @@ public class PickupSpawner3D : MonoBehaviour
             return;
         }
 
-        GameObject inst =
-            Instantiate(
-                coinPrefab,
-                new Vector3(
-                    laneX,
-                    y,
-                    z
-                ),
-                Quaternion.identity,
-                transform
-            );
+        GameObject inst = Instantiate(
+            coinPrefab,
+            new Vector3(laneX, y, z),
+            Quaternion.identity,
+            transform
+        );
 
-        if (
-            inst.GetComponent<
-                RunnerDepthSorter3D
-            >() == null
-        )
+        if (inst.GetComponent<RunnerDepthSorter3D>() == null)
         {
-            inst.AddComponent<
-                RunnerDepthSorter3D
-            >();
+            inst.AddComponent<RunnerDepthSorter3D>();
         }
 
         PickupMover3D mover =
-            inst.GetComponent<
-                PickupMover3D
-            >();
+            inst.GetComponent<PickupMover3D>();
 
         if (mover != null)
         {
-            mover.laneX =
-                laneX;
-
-            mover.spawnZ =
-                z;
-
+            mover.laneX = laneX;
+            mover.spawnZ = z;
             mover.ApplyInitialState();
         }
 
         if (synchronizeReveal)
         {
             SpawnReveal3D reveal =
-                inst.GetComponent<
-                    SpawnReveal3D
-                >();
+                inst.GetComponent<SpawnReveal3D>();
 
             if (reveal == null)
             {
-                reveal =
-                    inst.AddComponent<
-                        SpawnReveal3D
-                    >();
+                reveal = inst.AddComponent<SpawnReveal3D>();
             }
 
             reveal.InitializeSynchronized(
@@ -947,57 +737,42 @@ public class PickupSpawner3D : MonoBehaviour
     }
 
     // =========================================================
-    // HEART
+    // СЕРДЕЧКИ: СЛОЖНОСТЬ ПО ДИСТАНЦИИ
     // =========================================================
 
     private float GetHeartDistanceDifficulty01()
     {
         if (runManager == null)
         {
-            runManager =
-                FindFirstObjectByType<
-                    RunManager
-                >();
+            runManager = FindFirstObjectByType<RunManager>();
         }
 
-        if (
-            runManager == null ||
-            !runManager.infiniteRun
-        )
+        if (runManager == null || !runManager.infiniteRun)
         {
             return 0f;
         }
 
-        if (
-            HUDManager.Instance == null ||
-            heartDistanceRamp <= 0.01f
-        )
+        if (HUDManager.Instance == null ||
+            heartDistanceRamp <= 0.01f)
         {
             return 0f;
         }
 
         return Mathf.Clamp01(
-            HUDManager.Instance
-                .GetDistance() /
+            HUDManager.Instance.GetDistance() /
             heartDistanceRamp
         );
     }
 
     private void UpdateHeart()
     {
-        heartTimer -=
-            Time.deltaTime;
+        heartTimer -= Time.deltaTime;
 
         if (heartTimer > 0f)
         {
             return;
         }
 
-        /*
-         * Чем дальше в бесконечном режиме — тем реже
-         * появляются сердечки. В режиме "До убежища"
-         * правила не меняются.
-         */
         float distanceDifficulty =
             GetHeartDistanceDifficulty01();
 
@@ -1005,10 +780,7 @@ public class PickupSpawner3D : MonoBehaviour
             heartSpawnInterval *
             Mathf.Lerp(
                 1f,
-                Mathf.Max(
-                    1f,
-                    heartIntervalDistanceScale
-                ),
+                Mathf.Max(1f, heartIntervalDistanceScale),
                 distanceDifficulty
             );
 
@@ -1016,66 +788,38 @@ public class PickupSpawner3D : MonoBehaviour
             heartSpawnChance *
             Mathf.Lerp(
                 1f,
-                Mathf.Clamp01(
-                    heartChanceDistanceScale
-                ),
+                Mathf.Clamp01(heartChanceDistanceScale),
                 distanceDifficulty
             );
 
-        heartTimer =
-            Mathf.Max(
-                1f,
-                interval
-            );
+        heartTimer = Mathf.Max(1f, interval);
 
-        if (
-            Random.value >
-            chance
-        )
+        if (Random.value > chance)
         {
             return;
         }
 
-        int lane =
-            GetSafeLaneForHeart();
+        int lane = GetSafeLaneForHeart();
 
         if (lane == -1)
         {
             return;
         }
 
-        SpawnHeart(
-            lanePositions[lane]
-        );
+        SpawnHeart(lanePositions[lane]);
     }
 
     private int GetSafeLaneForHeart()
     {
-        int first =
-            Random.Range(
-                0,
-                2
-            );
+        int first = Random.Range(0, 2);
+        int second = first == 0 ? 1 : 0;
 
-        int second =
-            first == 0
-                ? 1
-                : 0;
-
-        if (
-            IsLaneSafe(
-                lanePositions[first]
-            )
-        )
+        if (IsLaneSafe(lanePositions[first]))
         {
             return first;
         }
 
-        if (
-            IsLaneSafe(
-                lanePositions[second]
-            )
-        )
+        if (IsLaneSafe(lanePositions[second]))
         {
             return second;
         }
@@ -1083,65 +827,41 @@ public class PickupSpawner3D : MonoBehaviour
         return -1;
     }
 
-    private bool IsLaneSafe(
-        float laneX
-    )
+    private bool IsLaneSafe(float laneX)
     {
         ObstacleMover3D[] obstacles =
             FindObjectsByType<ObstacleMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            ObstacleMover3D obstacle
-            in obstacles
-        )
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
             {
                 continue;
             }
 
-            if (
-                !TryGetObstacleBounds(
-                    obstacle,
-                    out Bounds bounds
-                )
-            )
+            if (!TryGetObstacleBounds(obstacle, out Bounds bounds))
             {
                 continue;
             }
 
             ObstacleType3D type =
-                obstacle.GetComponentInParent<
-                    ObstacleType3D
-                >();
+                obstacle.GetComponentInParent<ObstacleType3D>();
 
             bool occupiesBothLanes =
                 type != null &&
-                IsWideObstacleType(
-                    type.type
-                );
+                IsWideObstacleType(type.type);
 
             bool sameLane =
-                Mathf.Abs(
-                    obstacle.laneX -
-                    laneX
-                ) < 0.55f;
+                Mathf.Abs(obstacle.laneX - laneX) < 0.55f;
 
-            if (
-                !occupiesBothLanes &&
-                !sameLane
-            )
+            if (!occupiesBothLanes && !sameLane)
             {
                 continue;
             }
 
-            if (
-                spawnZ <=
-                bounds.max.z +
-                heartSpawnGap
-            )
+            if (spawnZ <= bounds.max.z + heartSpawnGap)
             {
                 return false;
             }
@@ -1150,92 +870,56 @@ public class PickupSpawner3D : MonoBehaviour
         return true;
     }
 
-    private void SpawnHeart(
-        float laneX
-    )
+    private void SpawnHeart(float laneX)
     {
         if (heartPrefab == null)
         {
             return;
         }
 
-        float y =
-            heartPrefab.transform.position.y;
+        float y = heartPrefab.transform.position.y;
 
-        GameObject inst =
-            Instantiate(
-                heartPrefab,
-                new Vector3(
-                    laneX,
-                    y,
-                    spawnZ
-                ),
-                Quaternion.identity,
-                transform
-            );
+        GameObject inst = Instantiate(
+            heartPrefab,
+            new Vector3(laneX, y, spawnZ),
+            Quaternion.identity,
+            transform
+        );
 
-        if (
-            inst.GetComponent<
-                RunnerDepthSorter3D
-            >() == null
-        )
+        if (inst.GetComponent<RunnerDepthSorter3D>() == null)
         {
-            inst.AddComponent<
-                RunnerDepthSorter3D
-            >();
+            inst.AddComponent<RunnerDepthSorter3D>();
         }
 
         PickupMover3D mover =
-            inst.GetComponent<
-                PickupMover3D
-            >();
+            inst.GetComponent<PickupMover3D>();
 
         if (mover != null)
         {
-            mover.laneX =
-                laneX;
-
-            mover.spawnZ =
-                spawnZ;
-
+            mover.laneX = laneX;
+            mover.spawnZ = spawnZ;
             mover.ApplyInitialState();
         }
     }
 
     // =========================================================
-    // LANE
+    // ПОЛОСА
     // =========================================================
 
-    private int GetNearestLaneIndex(
-        float x
-    )
+    private int GetNearestLaneIndex(float x)
     {
-        float left =
-            Mathf.Abs(
-                x -
-                lanePositions[0]
-            );
+        float left = Mathf.Abs(x - lanePositions[0]);
+        float right = Mathf.Abs(x - lanePositions[1]);
 
-        float right =
-            Mathf.Abs(
-                x -
-                lanePositions[1]
-            );
-
-        return left < right
-            ? 0
-            : 1;
+        return left < right ? 0 : 1;
     }
 
     // =========================================================
     // RUN
     // =========================================================
 
-    public void SetRunning(
-        bool running
-    )
+    public void SetRunning(bool running)
     {
-        enabled =
-            running;
+        enabled = running;
     }
 }
