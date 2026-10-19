@@ -4,10 +4,10 @@ public class RunnerDepthSorter3D : MonoBehaviour
 {
     [Header("Глубина")]
     [Tooltip("Чем меньше Z, тем ближе объект к игроку.")]
-    public float zMultiplier = 1000f;
+    public float zMultiplier = 100f;
 
     [Tooltip("Базовый Sorting Order.")]
-    public int sortingBase = 100000;
+    public int sortingBase = 15000;
 
     private SpriteRenderer[] spriteRenderers;
     private int[] originalOrders;
@@ -73,9 +73,13 @@ public class RunnerDepthSorter3D : MonoBehaviour
                     sharedSortingLayerId;
             }
 
+            // Ограничиваем Sorting Order допустимым диапазоном Unity.
             sr.sortingOrder =
-                originalOrders[i] +
-                depthOrder;
+                Mathf.Clamp(
+                    originalOrders[i] + depthOrder,
+                    -32768,
+                    32767
+                );
         }
     }
 

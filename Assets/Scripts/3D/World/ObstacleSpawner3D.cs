@@ -180,8 +180,10 @@ public class ObstacleSpawner3D : MonoBehaviour
                 RunManager
             >();
 
+        // Первая волна появляется сразу после начала забега.
+        // Интервал между следующими волнами не меняется.
         spawnTimer =
-            startInterval;
+            0f;
 
         UpdateCurrentObstacleSpeed();
     }
