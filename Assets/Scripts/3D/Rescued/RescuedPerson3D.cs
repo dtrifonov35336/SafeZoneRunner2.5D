@@ -110,14 +110,10 @@ public class RescuedPerson : MonoBehaviour
         GameSettingsManager3D.Vibrate();
 
         int coinsBefore = 0;
-        float comboMultiplier = 1f;
 
         if (HUDManager.Instance != null)
         {
             coinsBefore = HUDManager.Instance.GetCoins();
-
-            comboMultiplier =
-                RunComboSystem3D.RegisterSuccessfulAction(false);
 
             HUDManager.Instance.AddRescued(1);
 
@@ -126,12 +122,9 @@ public class RescuedPerson : MonoBehaviour
                 RunModeChallengeManager3D.Instance.OnRescued();
             }
 
-            int reward = Mathf.Max(
-                1,
-                Mathf.RoundToInt(coinReward * comboMultiplier)
+            HUDManager.Instance.AddCoinsWithBonus(
+                coinReward
             );
-
-            HUDManager.Instance.AddCoinsWithBonus(reward);
         }
 
         if (AudioManager3D.Instance != null)
@@ -149,12 +142,8 @@ public class RescuedPerson : MonoBehaviour
 
         if (ToastNotification.Instance != null)
         {
-            string comboText = comboMultiplier > 1f
-                ? $" · КОМБО x{comboMultiplier:0.##}"
-                : "";
-
             ToastNotification.Instance.Show(
-                $"Спасён выживший! +{gained}{comboText}"
+                $"Спасён выживший! +{gained}"
             );
         }
 

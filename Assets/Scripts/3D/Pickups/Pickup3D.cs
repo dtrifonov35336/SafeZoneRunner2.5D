@@ -36,15 +36,10 @@ public class Pickup3D : MonoBehaviour
                     float characterMultiplier =
                         BonusCalculator.GetCoinPickupMultiplier(charId);
 
-                    float comboMultiplier =
-                        RunComboSystem3D.RegisterSuccessfulAction();
-
                     int finalAmount = Mathf.Max(
                         1,
                         Mathf.RoundToInt(
-                            amount *
-                            characterMultiplier *
-                            comboMultiplier
+                            amount * characterMultiplier
                         )
                     );
 
