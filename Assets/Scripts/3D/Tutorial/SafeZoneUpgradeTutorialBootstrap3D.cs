@@ -89,15 +89,14 @@ public class SafeZoneUpgradeTutorialBootstrap3D : MonoBehaviour
                 ) == 0
             )
             {
+                // После пропуска обучения забегу сначала подготавливаем
+                // временный бюджет и сохраняем исходный прогресс.
+                SafeZoneTutorialSelection3D
+                    .PrepareAutomaticMenuTutorialAfterRunSkip();
+
                 SafeZoneUpgradeTutorial3D
                     .MarkTutorialPending();
 
-                /*
-                 * Не надеемся на порядок
-                 * sceneLoaded-событий.
-                 *
-                 * Запускаем Tutorial напрямую.
-                 */
                 SafeZoneUpgradeTutorial3D
                     .StartPendingFromMainMenu();
             }

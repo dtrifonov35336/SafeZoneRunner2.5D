@@ -394,21 +394,7 @@ public class SafeZoneTutorialSelection3D : MonoBehaviour
         if (PlayerPrefs.GetInt(SessionKey, 0) == 1)
             service.RecoverInterruptedSession();
 
-        service.SaveSnapshot();
-
-        int currentCoins =
-            PlayerPrefs.GetInt("TotalCoins", 0);
-
-        // Если у игрока меньше 150 монет,
-        // выдаём для обучения дополнительно 150.
-        int grant = currentCoins < TrainingCoins
-            ? TrainingCoins
-            : 0;
-
-        PlayerPrefs.SetInt(
-            "TotalCoins",
-            currentCoins + grant
-        );
+        service.PrepareMenuTutorialBudget();
 
         PlayerPrefs.SetInt(
             "SafeZoneFirstLaunchFlowCompleted", 1);
@@ -850,5 +836,46 @@ public class SafeZoneTutorialSelection3D : MonoBehaviour
             "SafeZoneMainMenuTutorialStarted");
 
         PlayerPrefs.Save();
+    }
+
+    public static void PrepareAutomaticMenuTutorialAfterRunSkip()
+    {
+        // Подготовка нужна только после явного пропуска обучения забегу.
+        if (PlayerPrefs.GetInt("SafeZoneTutorialSkipped", 0) != 1)
+            return;
+
+        SafeZoneTutorialSelection3D service = EnsureInstance();
+
+        // Не создавать второй снимок и не начислять монеты повторно.
+        if (PlayerPrefs.GetInt(SessionKey, 0) == 1)
+            return;
+
+        service.PrepareMenuTutorialBudget();
+    }
+
+    private void PrepareMenuTutorialBudget()
+    {
+        if (PlayerPrefs.GetInt(SessionKey, 0) == 1)
+            return;
+
+        // Сохраняем баланс и улучшения до обучения.
+        SaveSnapshot();
+
+        int currentCoins = PlayerPrefs.GetInt("TotalCoins", 0);
+
+        // Используем ту же логику, что и при обучении из настроек.
+        int grant = currentCoins < TrainingCoins
+            ? TrainingCoins
+            : 0;
+
+        PlayerPrefs.SetInt("TotalCoins", currentCoins + grant);
+        PlayerPrefs.Save();
+
+        Debug.Log(
+            $"[Tutorial] Бюджет подготовлен. " +
+            $"Баланс до обучения: {currentCoins}, " +
+            $"добавлено: {grant}, " +
+            $"баланс для обучения: {currentCoins + grant}"
+        );
     }
 }
