@@ -9,6 +9,10 @@ using UnityEngine.UI;
 
 public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 {
+    private bool skipConfirmationOpen;
+
+    private bool tutorialAchievementCompletedBefore;
+    private bool tutorialAchievementClaimedBefore;
     private const string COMPLETED_KEY =
         "SafeZoneMainMenuTutorialCompleted";
 
@@ -107,6 +111,12 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
     private IEnumerator TutorialRoutine()
     {
+        tutorialAchievementCompletedBefore =
+            AchievementSystem3D.IsCompleted(TUTORIAL_ACHIEVEMENT_ID);
+
+        tutorialAchievementClaimedBefore =
+            AchievementSystem3D.IsClaimed(TUTORIAL_ACHIEVEMENT_ID);
+
         PlayerPrefs.SetInt(STARTED_KEY, 1);
         PlayerPrefs.Save();
 
@@ -1559,6 +1569,15 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
             false;
 
         instructionText.ForceMeshUpdate();
+
+        TutorialSkipConfirmation3D.CreateSkipButton(
+            overlayRoot,
+            "MainMenuTutorialSkipButton",
+            "ПРОПУСТИТЬ",
+            new Vector2(230f, 60f),
+            new Vector2(-28f, -28f),
+            RequestSkipTutorial
+        );
     }
 
     private void DestroyOverlay()
@@ -2871,5 +2890,102 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         rect.anchoredPosition +=
             offset;
+    }
+
+    private void RequestSkipTutorial()
+    {
+        if (tutorialRoutine == null || skipConfirmationOpen)
+            return;
+
+        skipConfirmationOpen = true;
+
+        TutorialSkipConfirmation3D.Show(
+            "Обучение главного меню будет пропущено. " +
+            "Оно будет отмечено завершённым, но достижение " +
+            "«Первые шаги» за это не выдаётся. Продолжить?",
+            SkipTutorialConfirmed,
+            () => skipConfirmationOpen = false
+        );
+    }
+
+    private void SkipTutorialConfirmed()
+    {
+        skipConfirmationOpen = false;
+
+        bool sandboxActive =
+            PlayerPrefs.GetInt("SZ_MenuTutorialSandboxActive", 0) == 1;
+
+        bool tutorialRewardClaimedDuringThisTutorial =
+            !sandboxActive
+            && !tutorialAchievementCompletedBefore
+            && !tutorialAchievementClaimedBefore
+            && AchievementSystem3D.IsClaimed(TUTORIAL_ACHIEVEMENT_ID);
+
+        if (tutorialRoutine != null)
+        {
+            StopCoroutine(tutorialRoutine);
+            tutorialRoutine = null;
+        }
+
+        RestoreSelectables();
+        DestroyOverlay();
+
+        MainMenuModalManager3D modal =
+            MainMenuModalManager3D.Instance;
+
+        if (modal == null)
+            modal = FindFirstObjectByType<MainMenuModalManager3D>();
+
+        if (modal != null && modal.IsModalOpen())
+            modal.CloseModal();
+
+        // Если достижение и его награда были получены именно
+        // в прерываемом обучении, в обычном режиме убираем эти 50 монет.
+        // При ручном обучении Sandbox восстановит исходный баланс сам.
+        if (tutorialRewardClaimedDuringThisTutorial)
+        {
+            AchievementDefinition3D achievement =
+                AchievementSystem3D.Find(TUTORIAL_ACHIEVEMENT_ID);
+
+            int reward = achievement != null ? achievement.reward : 50;
+
+            int coins = PlayerPrefs.GetInt("TotalCoins", 0);
+
+            PlayerPrefs.SetInt(
+                "TotalCoins",
+                Mathf.Max(0, coins - reward)
+            );
+        }
+
+        SafeZoneTutorialSelection3D.OnMainMenuTrainingSkipped();
+
+        RestoreTutorialAchievementState();
+
+        PlayerPrefs.SetInt(COMPLETED_KEY, 1);
+        PlayerPrefs.DeleteKey(STARTED_KEY);
+        PlayerPrefs.Save();
+
+        Debug.Log("[MainMenuTutorial] Обучение пропущено.");
+    }
+
+    private void RestoreTutorialAchievementState()
+    {
+        string completedKey =
+            "AchievementCompleted_" + TUTORIAL_ACHIEVEMENT_ID;
+
+        string claimedKey =
+            "AchievementClaimed_" + TUTORIAL_ACHIEVEMENT_ID;
+
+        if (tutorialAchievementCompletedBefore)
+            PlayerPrefs.SetInt(completedKey, 1);
+        else
+            PlayerPrefs.DeleteKey(completedKey);
+
+        if (tutorialAchievementClaimedBefore)
+            PlayerPrefs.SetInt(claimedKey, 1);
+        else
+            PlayerPrefs.DeleteKey(claimedKey);
+
+        PlayerPrefs.Save();
     }
 }

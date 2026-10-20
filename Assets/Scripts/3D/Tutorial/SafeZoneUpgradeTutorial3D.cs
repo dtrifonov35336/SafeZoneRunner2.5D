@@ -7,6 +7,7 @@ using TMPro;
 
 public class SafeZoneUpgradeTutorial3D : MonoBehaviour
 {
+    private bool skipConfirmationOpen;
     public static SafeZoneUpgradeTutorial3D Instance { get; private set; }
 
     private const string COMPLETED_KEY =
@@ -1118,6 +1119,15 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             );
 
         overlayRoot.SetAsLastSibling();
+
+        TutorialSkipConfirmation3D.CreateSkipButton(
+            overlayRoot,
+            "UpgradeTutorialSkipButton",
+            "ПРОПУСТИТЬ",
+            new Vector2(230f, 60f),
+            new Vector2(-28f, -28f),
+            RequestSkipMainMenuTutorial
+        );
     }
 
     private void ShowFullTutorialOverlay(
@@ -1227,6 +1237,14 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         {
             if (selectable == null)
                 continue;
+
+            if (
+                overlayCanvas != null &&
+                selectable.transform.IsChildOf(overlayCanvas.transform)
+            )
+            {
+                continue;
+            }
 
             savedSelectables.Add(
                 new SelectableState
@@ -1933,5 +1951,44 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         );
 
         SafeZoneMainMenuTutorial3D.StartAfterUpgradeTutorial();
+    }
+
+    private void RequestSkipMainMenuTutorial()
+    {
+        if (skipConfirmationOpen)
+            return;
+
+        skipConfirmationOpen = true;
+
+        TutorialSkipConfirmation3D.Show(
+            "Обучение ангара, снаряжения и главного меню " +
+            "будет пропущено. Временные монеты и покупки " +
+            "для обучения не сохранятся. Продолжить?",
+            SkipMainMenuTutorialConfirmed,
+            () => skipConfirmationOpen = false
+        );
+    }
+
+    private void SkipMainMenuTutorialConfirmed()
+    {
+        skipConfirmationOpen = false;
+
+        if (runningRoutine != null)
+        {
+            StopCoroutine(runningRoutine);
+            runningRoutine = null;
+        }
+
+        currentStep = TutorialStep.Complete;
+        waitingForUpgradeResult = false;
+
+        Time.timeScale = 1f;
+
+        RestoreSelectables();
+        DestroyOverlay();
+
+        SafeZoneTutorialSelection3D.OnMainMenuTrainingSkipped();
+
+        SceneManager.LoadScene(MAIN_MENU_SCENE);
     }
 }

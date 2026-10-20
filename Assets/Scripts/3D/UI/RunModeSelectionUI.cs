@@ -248,10 +248,8 @@ public class RunModeSelectionUI : MonoBehaviour
             );
 
         bool firstTutorialRun =
-            PlayerPrefs.GetInt(
-                "SafeZoneTutorialCompleted",
-                0
-            ) == 0;
+            PlayerPrefs.GetInt("SafeZoneTutorialCompleted", 0) == 0
+            && PlayerPrefs.GetInt("SafeZoneTutorialSkipped", 0) == 0;
 
         if (firstTutorialRun)
         {

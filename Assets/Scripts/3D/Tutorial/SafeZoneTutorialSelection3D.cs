@@ -59,7 +59,10 @@ public class SafeZoneTutorialSelection3D : MonoBehaviour
         "SafeZoneMainMenuTutorialCompleted",
         "SafeZoneMainMenuTutorialStarted",
         "SafeZoneUpgradeTutorialCompleted",
-        "SafeZoneUpgradeTutorialPending"
+        "SafeZoneUpgradeTutorialPending",
+        "SafeZoneTutorialSkipped",
+        "AchievementCompleted_tutorial_completed",
+        "AchievementClaimed_tutorial_completed"
     };
 
     [RuntimeInitializeOnLoadMethod(
@@ -358,6 +361,9 @@ public class SafeZoneTutorialSelection3D : MonoBehaviour
 
         PlayerPrefs.SetInt(
             "SafeZoneTutorialCompleted", 0);
+
+        PlayerPrefs.SetInt(
+            "SafeZoneTutorialSkipped", 0);
 
         PlayerPrefs.SetInt(
             "SafeZoneUpgradeTutorialCompleted", 1);
@@ -806,5 +812,43 @@ public class SafeZoneTutorialSelection3D : MonoBehaviour
             return;
 
         EnsureInstance().FinishMenuTraining();
+    }
+
+    public static void OnMainMenuTrainingSkipped()
+    {
+        SafeZoneTutorialSelection3D service = EnsureInstance();
+
+        // Если обучение запускалось из настроек, возвращаем
+        // ровно тот прогресс и баланс, которые были до него.
+        if (PlayerPrefs.GetInt(SessionKey, 0) == 1)
+        {
+            service.RestoreAllSnapshotKeys();
+            service.ClearSnapshot();
+        }
+
+        // Завершаем только обучение меню и ангара.
+        // Состояние фактического прохождения забега не меняем.
+        PlayerPrefs.SetInt(
+            "SafeZoneUpgradeTutorialCompleted", 1);
+
+        PlayerPrefs.SetInt(
+            "SafeZoneMainMenuTutorialCompleted", 1);
+
+        PlayerPrefs.SetInt(
+            "SafeZoneFirstLaunchFlowCompleted", 1);
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneFirstLaunchRunStarted");
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneUpgradeTutorialPending");
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneFirstLaunchMenuPending");
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneMainMenuTutorialStarted");
+
+        PlayerPrefs.Save();
     }
 }

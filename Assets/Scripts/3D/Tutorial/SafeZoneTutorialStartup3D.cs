@@ -65,6 +65,8 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
 
     private bool upgradeStateSaved;
 
+    private bool skipConfirmationOpen;
+
     private struct SelectableState
     {
         public Selectable selectable;
@@ -1021,6 +1023,15 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
             false;
 
         instructionText.ForceMeshUpdate();
+
+        TutorialSkipConfirmation3D.CreateSkipButton(
+            overlayRoot,
+            "StartupTutorialSkipButton",
+            "ПРОПУСТИТЬ",
+            new Vector2(230f, 60f),
+            new Vector2(-28f, -28f),
+            RequestSkipRunTutorial
+        );
     }
 
     private void DestroyOverlay()
@@ -1652,5 +1663,26 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
                 0.5f,
                 0.5f
             );
+    }
+
+    private void RequestSkipRunTutorial()
+    {
+        if (skipConfirmationOpen)
+            return;
+
+        skipConfirmationOpen = true;
+
+        TutorialSkipConfirmation3D.Show(
+            "Обучение забегу будет пропущено. " +
+            "Награда за прохождение не начисляется. " +
+            "Начнётся обычный забег, а после смерти — " +
+            "обучение главного меню. Продолжить?",
+            () =>
+            {
+                skipConfirmationOpen = false;
+                SafeZoneTutorialManager3D.SkipTutorialFromStartMenu();
+            },
+            () => skipConfirmationOpen = false
+        );
     }
 }

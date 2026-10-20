@@ -200,6 +200,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private bool waitingForReward;
 
+    private bool skipConfirmationOpen;
+
     private float nextObstacleSpawnTime;
     private float nextPickupSpawnTime;
 
@@ -281,11 +283,13 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
          * Кнопка "Пропустить" полностью отключена.
          * Она больше не участвует в обучении.
          */
+        if (skipButton == null)
+            skipButton = CreateRuntimeSkipButton();
+
         if (skipButton != null)
         {
-            skipButton.onClick.RemoveListener(
-                SkipTutorial
-            );
+            skipButton.onClick.RemoveListener(SkipTutorial);
+            skipButton.onClick.AddListener(SkipTutorial);
 
             skipButton.gameObject.SetActive(false);
             skipButton.interactable = false;
@@ -309,6 +313,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         {
             return;
         }
+
+        if (PlayerPrefs.GetInt("SafeZoneTutorialSkipped", 0) == 1)
+            return;
 
         bool completed =
             PlayerPrefs.GetInt(
@@ -445,6 +452,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
             return;
         }
+
+        PlayerPrefs.DeleteKey("SafeZoneTutorialSkipped");
 
         Time.timeScale = 1f;
 
@@ -902,11 +911,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         /*
          * "Пропустить" никогда не показываем.
          */
-        if (skipButton != null)
-        {
-            skipButton.gameObject.SetActive(false);
-            skipButton.interactable = false;
-        }
+        SetSkipButtonVisible(true);
     }
 
     private void ShowCompletionReward()
@@ -2643,9 +2648,92 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
      */
     public void SkipTutorial()
     {
-        Debug.Log(
-            "[Tutorial] Пропуск обучения отключён."
+        if (!IsRunning || skipConfirmationOpen)
+            return;
+
+        skipConfirmationOpen = true;
+
+        TutorialSkipConfirmation3D.Show(
+            "Обучение забегу будет пропущено. " +
+            "Монеты за прохождение не начисляются. " +
+            "После смерти начнётся обучение главного меню. Продолжить?",
+            SkipTutorialConfirmed,
+            () => skipConfirmationOpen = false
         );
+    }
+
+    private void SkipTutorialConfirmed()
+    {
+        skipConfirmationOpen = false;
+
+        if (!IsRunning)
+            return;
+
+        Time.timeScale = 1f;
+
+        IsRunning = false;
+        waitingForReward = false;
+        hintConfirmed = true;
+
+        CurrentStage = TutorialStage.Completed;
+
+        HideAlternativeControlPrompt();
+        RestoreAlternativeScheme();
+        HoldRunManager(false);
+        ClearTutorialObjects();
+
+        if (playerCollision != null)
+            playerCollision.SetTutorialInvulnerable(false);
+
+        RestoreNormalSpawners();
+        HideHint();
+
+        MarkRunTutorialSkipped();
+
+        StartCoroutine(RestartAsNormalShelterRun());
+    }
+
+    private static void MarkRunTutorialSkipped()
+    {
+        // Это именно пропуск, а не успешное прохождение.
+        // SafeZoneTutorialCompleted не устанавливаем в 1.
+        PlayerPrefs.SetInt("SafeZoneTutorialSkipped", 1);
+
+        PlayerPrefs.SetInt(
+            "SafeZoneFirstLaunchFlowCompleted", 1);
+
+        PlayerPrefs.SetInt(
+            "SafeZoneFirstLaunchRunStarted", 0);
+
+        // После обычного забега разрешаем обучение меню.
+        PlayerPrefs.SetInt(
+            "SafeZoneUpgradeTutorialCompleted", 0);
+
+        PlayerPrefs.SetInt(
+            "SafeZoneMainMenuTutorialCompleted", 0);
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneMainMenuTutorialStarted");
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneUpgradeTutorialPending");
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneFirstLaunchMenuPending");
+
+        PlayerPrefs.SetInt("RunMode_Infinite", 0);
+
+        PlayerPrefs.Save();
+    }
+
+    public static void SkipTutorialFromStartMenu()
+    {
+        // Используется кнопкой пропуска на вводном окне меню,
+        // до загрузки MainRoad.
+        MarkRunTutorialSkipped();
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainRoad");
     }
 
     public void ResetTutorialProgress()
@@ -2744,5 +2832,77 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             default:
                 return "Свайпни вверх, чтобы прыгнуть, затем дважды нажми на экран.";
         }
+    }
+
+    private Button CreateRuntimeSkipButton()
+    {
+        if (hintPanel == null)
+            return null;
+
+        GameObject go = new GameObject(
+            "SkipTutorialButton",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Button)
+        );
+
+        go.transform.SetParent(hintPanel.transform, false);
+
+        RectTransform rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = Vector2.zero;
+        rect.sizeDelta = new Vector2(200f, 58f);
+        rect.anchoredPosition = new Vector2(20f, 18f);
+
+        Image image = go.GetComponent<Image>();
+        image.color = new Color32(48, 67, 73, 255);
+        image.raycastTarget = true;
+
+        Button button = go.GetComponent<Button>();
+        button.targetGraphic = image;
+        button.navigation = new Navigation
+        {
+            mode = Navigation.Mode.None
+        };
+
+        GameObject labelObject = new GameObject(
+            "Label",
+            typeof(RectTransform),
+            typeof(TextMeshProUGUI)
+        );
+
+        labelObject.transform.SetParent(go.transform, false);
+
+        RectTransform labelRect =
+            labelObject.GetComponent<RectTransform>();
+
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(4f, 2f);
+        labelRect.offsetMax = new Vector2(-4f, -2f);
+
+        TextMeshProUGUI label =
+            labelObject.GetComponent<TextMeshProUGUI>();
+
+        label.text = "ПРОПУСТИТЬ";
+        label.fontSize = 18f;
+        label.color = Color.white;
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
+
+        if (TMP_Settings.defaultFontAsset != null)
+            label.font = TMP_Settings.defaultFontAsset;
+
+        return button;
+    }
+
+    private void SetSkipButtonVisible(bool visible)
+    {
+        if (skipButton == null)
+            return;
+
+        skipButton.gameObject.SetActive(visible);
+        skipButton.interactable = visible;
     }
 }
