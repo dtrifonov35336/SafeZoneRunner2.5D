@@ -137,7 +137,19 @@ public class ProfileSettingsPanel : MonoBehaviour
         // Имя
         if (nameInputField != null)
         {
-            string savedName = PlayerPrefs.GetString(NAME_KEY, "Выживший");
+            nameInputField.characterLimit = 13;
+
+            string savedName =
+                PlayerPrefs.GetString(NAME_KEY, "Выживший");
+
+            if (savedName.Length > 13)
+            {
+                savedName = savedName.Substring(0, 13);
+
+                PlayerPrefs.SetString(NAME_KEY, savedName);
+                PlayerPrefs.Save();
+            }
+
             nameInputField.text = savedName;
         }
 
@@ -158,6 +170,12 @@ public class ProfileSettingsPanel : MonoBehaviour
         if (nameInputField == null) return;
 
         string name = nameInputField.text.Trim();
+
+        if (name.Length > 13)
+            name = name.Substring(0, 13);
+
+        nameInputField.text = name;
+
         if (string.IsNullOrEmpty(name))
         {
             if (ToastNotification.Instance != null)

@@ -30,7 +30,7 @@ public class AudioManager3D : MonoBehaviour
     [SerializeField] private float musicVolume = 0.35f;
 
     [Range(0f, 1f)]
-    [SerializeField] private float sfxVolume = 0.8f;
+    [SerializeField] private float sfxVolume = 0.6f;
 
     [Header("Монеты")]
     [Tooltip("Минимальный интервал между звуками сбора монет.")]

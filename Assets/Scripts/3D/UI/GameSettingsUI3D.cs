@@ -35,6 +35,8 @@ public class GameSettingsUI3D : MonoBehaviour
     [SerializeField]
     private Button seasonSpringButton;
 
+    private Button tutorialButton;
+
     [SerializeField] 
     private TMP_Dropdown doubleJumpModeDropdown;
 
@@ -268,6 +270,8 @@ public class GameSettingsUI3D : MonoBehaviour
 
         EnsureDoubleJumpModeButtons();
         HideSeasonSection();
+
+        EnsureTutorialButton();
 
         ConfigureButton(
             fps30Button
@@ -1390,4 +1394,84 @@ public class GameSettingsUI3D : MonoBehaviour
             season.gameObject.SetActive(false);
     }
 
+    private void EnsureTutorialButton()
+    {
+        Transform panel = transform.Find("Window/Panel");
+
+        if (panel == null)
+            return;
+
+        Transform existing = panel.Find("TutorialButton");
+
+        if (existing != null)
+        {
+            tutorialButton = existing.GetComponent<Button>();
+        }
+        else
+        {
+            GameObject go = new GameObject(
+                "TutorialButton",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
+
+            go.transform.SetParent(panel, false);
+
+            RectTransform rect = go.GetComponent<RectTransform>();
+
+            rect.anchorMin = new Vector2(0.20f, 0.015f);
+            rect.anchorMax = new Vector2(0.80f, 0.105f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            Image image = go.GetComponent<Image>();
+            image.color = new Color32(35, 105, 118, 255);
+            image.raycastTarget = true;
+
+            tutorialButton = go.GetComponent<Button>();
+            tutorialButton.targetGraphic = image;
+
+            GameObject labelObject = new GameObject(
+                "Label",
+                typeof(RectTransform),
+                typeof(TextMeshProUGUI)
+            );
+
+            labelObject.transform.SetParent(go.transform, false);
+
+            RectTransform labelRect =
+                labelObject.GetComponent<RectTransform>();
+
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(5f, 3f);
+            labelRect.offsetMax = new Vector2(-5f, -3f);
+
+            TextMeshProUGUI label =
+                labelObject.GetComponent<TextMeshProUGUI>();
+
+            label.text = "ОБУЧЕНИЕ";
+            label.fontSize = 18;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = Color.white;
+            label.raycastTarget = false;
+
+            if (TMP_Settings.defaultFontAsset != null)
+                label.font = TMP_Settings.defaultFontAsset;
+        }
+
+        if (tutorialButton == null)
+            return;
+
+        ConfigureButton(tutorialButton);
+
+        tutorialButton.onClick.RemoveAllListeners();
+        tutorialButton.onClick.AddListener(OpenTutorialSelection);
+    }
+
+    private void OpenTutorialSelection()
+    {
+        SafeZoneTutorialSelection3D.ShowSelection(this);
+    }
 }

@@ -366,6 +366,52 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         tutorial.StartPendingFromMainMenuInternal();
     }
 
+    public static void StartManualTutorialSequence()
+    {
+        if (SceneManager.GetActiveScene().name != MAIN_MENU_SCENE)
+            return;
+
+        PlayerPrefs.SetInt(COMPLETED_KEY, 0);
+        PlayerPrefs.SetInt(PENDING_KEY, 1);
+        PlayerPrefs.Save();
+
+        SafeZoneUpgradeTutorial3D tutorial = Instance;
+
+        if (tutorial == null)
+        {
+            tutorial =
+                Object.FindFirstObjectByType<SafeZoneUpgradeTutorial3D>(
+                    FindObjectsInactive.Include
+                );
+        }
+
+        if (tutorial == null)
+        {
+            GameObject go =
+                new GameObject("SafeZoneUpgradeTutorial3D");
+
+            tutorial =
+                go.AddComponent<SafeZoneUpgradeTutorial3D>();
+        }
+
+        tutorial.ResetForManualReplay();
+        tutorial.StartPendingFromMainMenuInternal();
+    }
+
+    private void ResetForManualReplay()
+    {
+        if (runningRoutine != null)
+        {
+            StopCoroutine(runningRoutine);
+            runningRoutine = null;
+        }
+
+        currentStep = TutorialStep.None;
+        waitingForUpgradeResult = false;
+
+        DestroyOverlay();
+    }
+
     private void StartPendingFromMainMenuInternal()
     {
         if (!tutorialEnabled)

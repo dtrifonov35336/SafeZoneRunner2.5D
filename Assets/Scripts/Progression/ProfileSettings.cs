@@ -16,8 +16,23 @@ public class ProfileSettings : MonoBehaviour
     private void Start()
     {
         // 1. Загружаем сохраненное имя при старте
-        string savedName = PlayerPrefs.GetString("Profile_Name", "Выживший");
-        if (nameInputField != null) nameInputField.text = savedName;
+        string savedName =
+            PlayerPrefs.GetString("Profile_Name", "Выживший");
+
+        if (nameInputField != null)
+        {
+            nameInputField.characterLimit = 13;
+
+            if (savedName.Length > 13)
+            {
+                savedName = savedName.Substring(0, 13);
+
+                PlayerPrefs.SetString("Profile_Name", savedName);
+                PlayerPrefs.Save();
+            }
+
+            nameInputField.text = savedName;
+        }
 
         // 2. Пытаемся загрузить сохраненный аватар
         LoadSavedAvatar();
@@ -68,9 +83,16 @@ public class ProfileSettings : MonoBehaviour
     // === Сохранение имени ===
     private void OnSaveNameClicked()
     {
-        if (nameInputField != null && !string.IsNullOrEmpty(nameInputField.text))
+        string name = nameInputField.text.Trim();
+
+        if (name.Length > 13)
+            name = name.Substring(0, 13);
+
+        nameInputField.text = name;
+
+        if (!string.IsNullOrEmpty(name))
         {
-            PlayerPrefs.SetString("Profile_Name", nameInputField.text);
+            PlayerPrefs.SetString("Profile_Name", name);
             PlayerPrefs.Save();
 
             if (ToastNotification.Instance != null)

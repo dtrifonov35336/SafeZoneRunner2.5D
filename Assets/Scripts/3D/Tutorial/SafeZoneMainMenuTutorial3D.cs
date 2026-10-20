@@ -2764,6 +2764,8 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         PlayerPrefs.Save();
 
+        SafeZoneTutorialSelection3D.OnMainMenuTrainingCompleted();
+
         DestroyOverlay();
 
         Debug.Log(
