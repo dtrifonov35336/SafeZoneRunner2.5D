@@ -604,9 +604,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             ProfileManager.GetSelectedCharacterId();
 
         upgradeLevelBefore =
-            PlayerPrefs.GetInt(
-                $"EquipLevel_{data.id}_{charId}",
-                0
+            UpgradeProgression.GetEquipmentStages(
+                data.id,
+                charId,
+                data.maxLevel
             );
 
         waitingForUpgradeResult = true;
@@ -738,9 +739,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             ProfileManager.GetSelectedCharacterId();
 
         upgradeLevelBefore =
-            PlayerPrefs.GetInt(
-                $"Upgrade_{data.id}_{charId}",
-                0
+            UpgradeProgression.GetHangarStages(
+                data.id,
+                charId,
+                data.maxLevel
             );
 
         waitingForUpgradeResult = true;
@@ -781,9 +783,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 ProfileManager.GetSelectedCharacterId();
 
             int currentLevel =
-                PlayerPrefs.GetInt(
-                    $"EquipLevel_{data.id}_{charId}",
-                    0
+                UpgradeProgression.GetEquipmentStages(
+                    data.id,
+                    charId,
+                    data.maxLevel
                 );
 
             if (
@@ -833,9 +836,10 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
                 ProfileManager.GetSelectedCharacterId();
 
             int currentLevel =
-                PlayerPrefs.GetInt(
-                    $"Upgrade_{data.id}_{charId}",
-                    0
+                UpgradeProgression.GetHangarStages(
+                    data.id,
+                    charId,
+                    data.maxLevel
                 );
 
             if (

@@ -33,13 +33,9 @@ public class HangarManager : MonoBehaviour
         }
 
         if (upgrades == null || upgrades.Count == 0)
-        {
             upgrades = GetDefaults();
-        }
         else
-        {
             NormalizeUpgradeData();
-        }
 
         UpdateCharacterPreview();
         BuildList();
@@ -67,8 +63,7 @@ public class HangarManager : MonoBehaviour
             {
                 case "speed":
                     data.displayName = "МАНЕВРЕННОСТЬ";
-                    data.description =
-                        "+3% к скорости смены полосы";
+                    data.description = "+3% к скорости смены полосы";
                     break;
 
                 case "stamina":
@@ -79,20 +74,17 @@ public class HangarManager : MonoBehaviour
 
                 case "health":
                     data.displayName = "ЗДОРОВЬЕ";
-                    data.description =
-                        "+0,5 HP";
+                    data.description = "+0,5 HP";
                     break;
 
                 case "resistance":
                     data.displayName = "УСТОЙЧИВОСТЬ";
-                    data.description =
-                        "-5% к силе отбрасывания";
+                    data.description = "-5% к силе отбрасывания";
                     break;
 
                 case "reward":
                     data.displayName = "НАГРАДА ЗА СПАСЕНИЕ";
-                    data.description =
-                        "+5% к награде за спасённого";
+                    data.description = "+5% к награде за спасённого";
                     break;
             }
         }
@@ -106,30 +98,18 @@ public class HangarManager : MonoBehaviour
         string charId =
             ProfileManager.GetSelectedCharacterId();
 
-        Sprite s =
-            Resources.Load<Sprite>(
-                $"Characters/{charId}_front"
-            );
+        Sprite sprite =
+            Resources.Load<Sprite>($"Characters/{charId}_front");
 
-        if (s == null)
-        {
-            s =
-                Resources.Load<Sprite>(
-                    $"Characters/{charId}_back"
-                );
-        }
+        if (sprite == null)
+            sprite = Resources.Load<Sprite>($"Characters/{charId}_back");
 
-        if (s == null)
-        {
-            s =
-                Resources.Load<Sprite>(
-                    $"Characters/{charId}"
-                );
-        }
+        if (sprite == null)
+            sprite = Resources.Load<Sprite>($"Characters/{charId}");
 
-        if (s != null)
+        if (sprite != null)
         {
-            characterPreview.sprite = s;
+            characterPreview.sprite = sprite;
             characterPreview.enabled = true;
             characterPreview.preserveAspect = true;
             characterPreview.color = Color.white;
@@ -137,12 +117,7 @@ public class HangarManager : MonoBehaviour
         else
         {
             characterPreview.color =
-                new Color(
-                    0.4f,
-                    0.45f,
-                    0.55f,
-                    1f
-                );
+                new Color(0.4f, 0.45f, 0.55f, 1f);
         }
     }
 
@@ -154,13 +129,11 @@ public class HangarManager : MonoBehaviour
             {
                 id = "speed",
                 displayName = "МАНЕВРЕННОСТЬ",
-                description =
-                    "+3% к скорости смены полосы",
+                description = "+3% к скорости смены полосы",
                 maxLevel = 5,
                 basePrice = 100,
                 priceStep = 50
             },
-
             new UpgradeData
             {
                 id = "stamina",
@@ -171,35 +144,29 @@ public class HangarManager : MonoBehaviour
                 basePrice = 100,
                 priceStep = 50
             },
-
             new UpgradeData
             {
                 id = "health",
                 displayName = "ЗДОРОВЬЕ",
-                description =
-                    "+0,5 HP",
+                description = "+0,5 HP",
                 maxLevel = 5,
                 basePrice = 150,
                 priceStep = 60
             },
-
             new UpgradeData
             {
                 id = "resistance",
                 displayName = "УСТОЙЧИВОСТЬ",
-                description =
-                    "-5% к силе отбрасывания",
+                description = "-5% к силе отбрасывания",
                 maxLevel = 5,
                 basePrice = 120,
                 priceStep = 50
             },
-
             new UpgradeData
             {
                 id = "reward",
                 displayName = "НАГРАДА ЗА СПАСЕНИЕ",
-                description =
-                    "+5% к награде за спасённого",
+                description = "+5% к награде за спасённого",
                 maxLevel = 5,
                 basePrice = 200,
                 priceStep = 80
@@ -217,38 +184,35 @@ public class HangarManager : MonoBehaviour
 
         spawned.Clear();
 
-        if (contentContainer == null ||
-            upgradePrefab == null)
-        {
+        if (contentContainer == null || upgradePrefab == null)
             return;
-        }
 
         string charId =
             ProfileManager.GetSelectedCharacterId();
 
-        foreach (UpgradeData upg in upgrades)
+        foreach (UpgradeData data in upgrades)
         {
-            int level =
-                PlayerPrefs.GetInt(
-                    $"Upgrade_{upg.id}_{charId}",
-                    0
+            if (data == null)
+                continue;
+
+            int stages =
+                UpgradeProgression.GetHangarStages(
+                    data.id,
+                    charId,
+                    data.maxLevel
                 );
 
             GameObject go =
-                Instantiate(
-                    upgradePrefab,
-                    contentContainer
-                );
+                Instantiate(upgradePrefab, contentContainer);
 
-            UpgradeRow row =
-                go.GetComponent<UpgradeRow>();
+            UpgradeRow row = go.GetComponent<UpgradeRow>();
 
             if (row != null)
             {
                 row.Setup(
-                    upg,
-                    level,
-                    () => OnUpgrade(upg)
+                    data,
+                    stages,
+                    () => OnUpgrade(data)
                 );
 
                 spawned.Add(row);
@@ -261,68 +225,89 @@ public class HangarManager : MonoBehaviour
         string charId =
             ProfileManager.GetSelectedCharacterId();
 
-        int level =
-            PlayerPrefs.GetInt(
-                $"Upgrade_{data.id}_{charId}",
-                0
+        string levelKey =
+            $"Upgrade_{data.id}_{charId}";
+
+        string stagesKey =
+            $"HangarUpgradeStages_{data.id}_{charId}";
+
+        int stages =
+            UpgradeProgression.GetHangarStages(
+                data.id,
+                charId,
+                data.maxLevel
             );
 
-        if (level >= data.maxLevel)
+        int level =
+            UpgradeProgression.GetLevel(
+                stages,
+                data.maxLevel
+            );
+
+        int maxStages =
+            UpgradeProgression.GetMaxStages(data.maxLevel);
+
+        if (stages >= maxStages)
             return;
 
-        int price =
-            data.GetPrice(level);
+        // Цена зависит от целого уровня.
+        // Все пять покупок уровня имеют одинаковую цену.
+        int price = data.GetPrice(level);
+        int coins = PlayerPrefs.GetInt("TotalCoins", 0);
 
-        int coins =
-            PlayerPrefs.GetInt(
-                "TotalCoins",
-                0
-            );
-
-        if (coins >= price)
-        {
-            PlayerPrefs.SetInt(
-                "TotalCoins",
-                coins - price
-            );
-
-            PlayerPrefs.SetInt(
-                $"Upgrade_{data.id}_{charId}",
-                level + 1
-            );
-
-            PlayerPrefs.Save();
-
-            BuildList();
-            UpdateTopCurrencies();
-
-            string bonus =
-                data.GetBonusText(level + 1);
-
-            if (ToastNotification.Instance != null)
-            {
-                ToastNotification.Instance.Show(
-                    $"{data.displayName} → Ур. {level + 1}\n{bonus}"
-                );
-            }
-
-            Debug.Log(
-                $"[Hangar] {data.displayName} улучшен до ур. {level + 1}"
-            );
-        }
-        else
+        if (coins < price)
         {
             if (ToastNotification.Instance != null)
+                ToastNotification.Instance.Show("Недостаточно монет");
+
+            return;
+        }
+
+        int newStages = stages + 1;
+
+        int newLevel =
+            UpgradeProgression.GetLevel(
+                newStages,
+                data.maxLevel
+            );
+
+        PlayerPrefs.SetInt("TotalCoins", coins - price);
+        PlayerPrefs.SetInt(stagesKey, newStages);
+        PlayerPrefs.SetInt(levelKey, newLevel);
+        PlayerPrefs.Save();
+
+        BuildList();
+        UpdateTopCurrencies();
+
+        if (ToastNotification.Instance != null)
+        {
+            if (newLevel > level)
             {
+                // Бонус показываем только при достижении целого уровня.
+                string bonus = data.GetBonusText(newLevel);
+
                 ToastNotification.Instance.Show(
-                    "Недостаточно монет"
+                    $"{data.displayName} → Ур. {newLevel}/{data.maxLevel}\n{bonus}"
                 );
             }
+            else
+            {
+                int step = newStages % UpgradeProgression.StepsPerLevel;
 
-            Debug.Log(
-                "[Hangar] Недостаточно монет"
-            );
+                ToastNotification.Instance.Show(
+                    $"{data.displayName}\n" +
+                    $"Прогресс: {step}/5 до Ур. {level + 1}"
+                );
+            }
         }
+
+        Debug.Log(
+            $"[Hangar] {data.displayName}: " +
+            UpgradeProgression.GetLevelLabel(
+                newStages,
+                data.maxLevel
+            )
+        );
     }
 
     private void UpdateTopCurrencies()
@@ -330,19 +315,13 @@ public class HangarManager : MonoBehaviour
         if (coinsText != null)
         {
             coinsText.text =
-                PlayerPrefs.GetInt(
-                    "TotalCoins",
-                    0
-                ).ToString();
+                PlayerPrefs.GetInt("TotalCoins", 0).ToString();
         }
 
         if (diamondsText != null)
         {
             diamondsText.text =
-                PlayerPrefs.GetInt(
-                    "TotalDiamonds",
-                    0
-                ).ToString();
+                PlayerPrefs.GetInt("TotalDiamonds", 0).ToString();
         }
     }
 }
@@ -352,6 +331,7 @@ public class UpgradeData
 {
     public string id;
     public string displayName;
+
     [TextArea(2, 3)]
     public string description;
 
@@ -371,24 +351,20 @@ public class UpgradeData
         switch (id)
         {
             case "speed":
-                return
-                    $"+{newLevel * 3}% к скорости смены полосы";
+                return $"+{newLevel * 3}% к скорости смены полосы";
 
             case "stamina":
                 return
                     $"+{newLevel * 8}% к скорости восстановления после удара";
 
             case "health":
-                return
-                    $"+{newLevel * 0.5f:0.0} HP";
+                return $"+{newLevel * 0.5f:0.0} HP";
 
             case "resistance":
-                return
-                    $"-{newLevel * 5}% к силе отбрасывания";
+                return $"-{newLevel * 5}% к силе отбрасывания";
 
             case "reward":
-                return
-                    $"+{newLevel * 5}% к награде за спасённого";
+                return $"+{newLevel * 5}% к награде за спасённого";
 
             default:
                 return $"Уровень {newLevel}";

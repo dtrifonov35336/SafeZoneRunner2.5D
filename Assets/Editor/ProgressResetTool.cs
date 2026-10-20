@@ -88,8 +88,13 @@ public class ProgressResetTool : EditorWindow
         string[] chars = { "survivor", "military", "medic", "firefighter", "mechanic", "scout" };
 
         foreach (var u in upgrades)
+        {
             foreach (var c in chars)
+            {
                 PlayerPrefs.DeleteKey($"Upgrade_{u}_{c}");
+                PlayerPrefs.DeleteKey($"HangarUpgradeStages_{u}_{c}");
+            }
+        }
 
         PlayerPrefs.Save();
         Debug.Log("✅ Сброшены улучшения Ангара для всех персонажей");
@@ -101,8 +106,13 @@ public class ProgressResetTool : EditorWindow
         string[] chars = { "survivor", "military", "medic", "firefighter", "mechanic", "scout" };
 
         foreach (var i in items)
+        {
             foreach (var c in chars)
+            {
                 PlayerPrefs.DeleteKey($"EquipLevel_{i}_{c}");
+                PlayerPrefs.DeleteKey($"EquipmentUpgradeStages_{i}_{c}");
+            }
+        }
 
         PlayerPrefs.Save();
         Debug.Log("✅ Сброшены улучшения Снаряжения для всех персонажей");
