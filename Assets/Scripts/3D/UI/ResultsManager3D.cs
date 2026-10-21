@@ -210,6 +210,21 @@ public class ResultsManager : MonoBehaviour
                 HUDManager.Instance.GetMissedRescued();
         }
 
+        string analyticsMode = IsInfiniteRun()
+            ? "infinite"
+            : "shelter";
+
+        string analyticsResult = victory
+            ? "victory"
+            : "defeat";
+
+        int analyticsDistance = Mathf.RoundToInt(distance);
+
+        AppMetricaBootstrap.TrackEvent(
+            "run_finished",
+            $"{{\"mode\":\"{analyticsMode}\",\"result\":\"{analyticsResult}\",\"distance_m\":{analyticsDistance},\"coins\":{coins},\"rescued\":{rescued},\"missed\":{missed}}}"
+        );
+
         if (distanceValue != null)
         {
             distanceValue.text =

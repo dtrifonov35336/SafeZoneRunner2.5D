@@ -276,6 +276,11 @@ public class HangarManager : MonoBehaviour
         PlayerPrefs.SetInt(levelKey, newLevel);
         PlayerPrefs.Save();
 
+        AppMetricaBootstrap.TrackEvent(
+            "upgrade_purchased",
+            $"{{\"upgrade_type\":\"hangar\",\"upgrade_id\":\"{data.id}\",\"character_id\":\"{charId}\",\"stage\":{newStages},\"level\":{newLevel},\"coins_spent\":{price}}}"
+        );
+
         BuildList();
         UpdateTopCurrencies();
 

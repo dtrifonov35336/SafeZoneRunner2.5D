@@ -790,6 +790,11 @@ public class DailyLoginUI3D : MonoBehaviour
 
         PlayerPrefs.Save();
 
+        AppMetricaBootstrap.TrackEvent(
+            "daily_reward_claimed",
+            $"{{\"day\":{day + 1},\"coins\":{reward}}}"
+        );
+
         if (
             AudioManager3D.Instance != null
         )

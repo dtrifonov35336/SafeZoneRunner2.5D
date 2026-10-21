@@ -93,6 +93,18 @@ public class RunManager : MonoBehaviour
 
         // Применяем сезонное оформление окружения (обычный/зима/весна).
         SeasonManager3D.ApplyScene();
+
+        string analyticsMode = infiniteRun
+            ? "infinite"
+            : "shelter";
+
+        string analyticsCharacter =
+            ProfileManager.GetSelectedCharacterId();
+
+        AppMetricaBootstrap.TrackEvent(
+            "run_started",
+            $"{{\"mode\":\"{analyticsMode}\",\"character_id\":\"{analyticsCharacter}\"}}"
+        );
     }
 
     private void Update()

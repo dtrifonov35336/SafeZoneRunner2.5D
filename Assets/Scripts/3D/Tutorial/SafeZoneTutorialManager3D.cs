@@ -1669,6 +1669,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         PlayerPrefs.Save();
 
+        AppMetricaBootstrap.TrackEvent(
+            "tutorial_completed",
+            "{\"tutorial_id\":\"run\"}"
+        );
+
         HideHint();
 
         StageChanged?.Invoke(
@@ -2724,6 +2729,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         PlayerPrefs.SetInt("RunMode_Infinite", 0);
 
         PlayerPrefs.Save();
+
+        AppMetricaBootstrap.TrackEvent(
+            "tutorial_skipped",
+            "{\"tutorial_id\":\"run\"}"
+        );
     }
 
     public static void SkipTutorialFromStartMenu()

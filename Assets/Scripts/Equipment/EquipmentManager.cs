@@ -200,6 +200,11 @@ public class EquipmentManager : MonoBehaviour
         PlayerPrefs.SetInt(levelKey, newLevel);
         PlayerPrefs.Save();
 
+        AppMetricaBootstrap.TrackEvent(
+            "upgrade_purchased",
+            $"{{\"upgrade_type\":\"equipment\",\"upgrade_id\":\"{data.id}\",\"character_id\":\"{charId}\",\"stage\":{newStages},\"level\":{newLevel},\"coins_spent\":{price}}}"
+        );
+
         BuildList();
         UpdateTopCurrencies();
 

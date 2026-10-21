@@ -2785,6 +2785,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
 
         SafeZoneTutorialSelection3D.OnMainMenuTrainingCompleted();
 
+        AppMetricaBootstrap.TrackEvent(
+            "tutorial_completed",
+            "{\"tutorial_id\":\"main_menu\"}"
+        );
+
         DestroyOverlay();
 
         Debug.Log(
@@ -2964,6 +2969,11 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         PlayerPrefs.SetInt(COMPLETED_KEY, 1);
         PlayerPrefs.DeleteKey(STARTED_KEY);
         PlayerPrefs.Save();
+
+        AppMetricaBootstrap.TrackEvent(
+            "tutorial_skipped",
+            "{\"tutorial_id\":\"main_menu\"}"
+        );
 
         Debug.Log("[MainMenuTutorial] Обучение пропущено.");
     }
