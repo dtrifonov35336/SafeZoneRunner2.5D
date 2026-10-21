@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.google.external-dependency-manager": {
+      "version": "1.2.187",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.ivanmurzak.unity.mcp": {
       "version": "1.2.0",
       "depth": 0,
@@ -522,6 +529,15 @@
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
+    },
+    "io.appmetrica.analytics": {
+      "version": "https://github.com/appmetrica/appmetrica-unity-plugin.git#v6.10.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.187"
+      },
+      "hash": "3c536f6a20c2f03c539887be4e209a138c3979a5"
     },
     "ru.rustore.core": {
       "version": "10.5.0",

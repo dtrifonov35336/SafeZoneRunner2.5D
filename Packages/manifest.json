@@ -11,6 +11,7 @@
     "com.ivanmurzak.unity.mcp.terrain": "2.0.1",
     "com.ivanmurzak.unity.mcp.tilemap": "2.0.1",
     "com.ivanmurzak.unity.mcp.timeline": "2.0.1",
+    "com.google.external-dependency-manager": "1.2.187",
     "com.unity.2d.common": "12.0.1",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.spriteshape": "13.0.0",
@@ -29,6 +30,7 @@
     "com.unity.ugui": "2.0.0",
     "com.unity.visualscripting": "1.9.11",
     "com.yasirkula.nativegallery": "https://github.com/yasirkula/UnityNativeGallery.git",
+    "io.appmetrica.analytics": "https://github.com/appmetrica/appmetrica-unity-plugin.git#v6.10.0",
     "ru.rustore.pay": "11.1.0",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
@@ -77,7 +79,9 @@
       "url": "https://package.openupm.com",
       "scopes": [
         "com.ivanmurzak",
-        "extensions.unity"
+        "extensions.unity",
+        "com.google.external-dependency-manager",
+        "io.appmetrica.analytics"
       ]
     }
   ]

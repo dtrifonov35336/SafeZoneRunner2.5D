@@ -6,6 +6,8 @@ apply from: '../shared/common.gradle'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 // Android Resolver Dependencies Start
+    implementation 'androidx.annotation:annotation:1.7.1' // Packages/io.appmetrica.analytics/Editor/AppMetricaDependencies.xml:5
+    implementation 'io.appmetrica.analytics:analytics:8.4.1' // Packages/io.appmetrica.analytics/Editor/AppMetricaDependencies.xml:4
     implementation 'ru.rustore.sdk:core:10.5.0' // Packages/ru.rustore.core/Editor/CoreClientDependencies.xml:7
     implementation 'ru.rustore.sdk:pay:11.1.0' // Packages/ru.rustore.pay/Editor/PayClientDependencies.xml:7
 // Android Resolver Dependencies End
