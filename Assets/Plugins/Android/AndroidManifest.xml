@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
     <application>
         <!--Used when Application Entry is set to Activity, otherwise remove this activity block-->
-        <activity android:name="com.unity3d.player.UnityPlayerActivity"
-                  android:theme="@style/UnityThemeSelector">
+        <activity android:name="com.unity3d.player.UnityPlayerActivity" android:theme="@style/UnityThemeSelector">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -13,8 +10,7 @@
             <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
         </activity>
         <!--Used when Application Entry is set to GameActivity, otherwise remove this activity block-->
-        <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
-                  android:theme="@style/BaseUnityGameActivityTheme">
+        <activity android:name="com.unity3d.player.UnityPlayerGameActivity" android:theme="@style/BaseUnityGameActivityTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -22,5 +18,16 @@
             <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
             <meta-data android:name="android.app.lib_name" android:value="game" />
         </activity>
+        <activity android:name="ru.rustore.unitysdk.RuStoreDeeplinkActivityDefault" android:theme="@android:style/Theme.NoDisplay" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/rustore_PayClientSettings_deeplinkScheme" />
+            </intent-filter>
+        </activity>
+        <meta-data android:name="console_app_id_value" android:value="@string/rustore_PayClientSettings_consoleApplicationId" />
+        <meta-data android:name="internal_config_key" android:value="@string/rustore_PayClientSettings_internalConfigKey" />
+        <meta-data android:name="sdk_pay_scheme_value" android:value="@string/rustore_PayClientSettings_deeplinkScheme" />
     </application>
 </manifest>
