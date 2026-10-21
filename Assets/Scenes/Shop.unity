@@ -1275,7 +1275,7 @@ MonoBehaviour:
     grantCoins: 2000
     grantDiamonds: 200
   - id: pack_weapons
-    displayName: "\u041D\u0410\u0411\u041E\u0420 \u041E\u0420\u0423\u0416\u0418\u042F"
+    displayName: "\u041D\u0410\u0411\u041E\u0420 \u0421\u041D\u0410\u0411\u0416\u0415\u041D\u0418\u042F"
     icon: {fileID: 21300000, guid: 6d1bc97703deaf04884c21ce9686a515, type: 3}
     priceRub: 399
     discountPercent: 0

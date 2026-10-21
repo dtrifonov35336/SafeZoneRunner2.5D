@@ -29,6 +29,10 @@ public class ShopManager : MonoBehaviour
 
     private bool paymentsAvailable;
     private bool purchaseInProgress;
+
+    #pragma warning disable 0414
+    private bool productsLoaded;
+    #pragma warning restore 0414
     private const string GrantedPurchaseKey =
         "SafeZoneRunner_RuStore_Granted_";
 
@@ -64,23 +68,23 @@ public class ShopManager : MonoBehaviour
             {
                 id = "pack_survivor",
                 displayName = "НАБОР ВЫЖИВШЕГО",
-                priceRub = 249,
-                discountPercent = 40,
+                priceRub = 199,
+                discountPercent = 0,
                 isPopular = false,
-                grantCoins = 1000,
+                grantCoins = 2000,
                 grantDiamonds = 200,
-                contents = "• 1000 монет\n• 200 кристаллов"
+                contents = "• 2000 монет\n• 200 кристаллов"
             },
             new ShopPackData
             {
                 id = "pack_weapons",
-                displayName = "НАБОР ОРУЖИЯ",
-                priceRub = 449,
+                displayName = "НАБОР СНАБЖЕНИЯ",
+                priceRub = 399,
                 discountPercent = 0,
-                isPopular = true,
-                grantCoins = 3000,
+                isPopular = false,
+                grantCoins = 5000,
                 grantDiamonds = 500,
-                contents = "• 3000 монет\n• 500 кристаллов"
+                contents = "• 5000 монет\n• 500 кристаллов"
             },
             new ShopPackData
             {
@@ -97,12 +101,45 @@ public class ShopManager : MonoBehaviour
             {
                 id = "pack_crystals",
                 displayName = "СУНДУК КРИСТАЛЛОВ",
-                priceRub = 199,
-                discountPercent = 20,
+                priceRub = 149,
+                discountPercent = 0,
                 isPopular = false,
                 grantCoins = 0,
-                grantDiamonds = 500,
-                contents = "• 500 кристаллов"
+                grantDiamonds = 300,
+                contents = "• 300 кристаллов"
+            },
+            new ShopPackData
+            {
+                id = "big_pack_crystals",
+                displayName = "БОЛЬШОЙ СУНДУК КРИСТАЛЛОВ",
+                priceRub = 299,
+                discountPercent = 0,
+                isPopular = false,
+                grantCoins = 0,
+                grantDiamonds = 700,
+                contents = "• 700 кристаллов"
+            },
+            new ShopPackData
+            {
+                id = "big_pack_coin",
+                displayName = "БОЛЬШОЙ МЕШОК МОНЕТ",
+                priceRub = 199,
+                discountPercent = 0,
+                isPopular = false,
+                grantCoins = 5000,
+                grantDiamonds = 0,
+                contents = "• 5000 монет"
+            },
+            new ShopPackData
+            {
+                id = "reward_ad",
+                displayName = "МОНЕТЫ ЗА ВИДЕО",
+                priceRub = 0,
+                discountPercent = 0,
+                isPopular = false,
+                grantCoins = 500,
+                grantDiamonds = 0,
+                contents = "• 500 монет"
             }
         };
     }
@@ -208,9 +245,11 @@ public class ShopManager : MonoBehaviour
             ids[i] = new ProductId(packs[i].id);
 
         RuStorePayClient.Instance.GetProducts(
-            productsId: ids,
+            productIds: ids,
             onFailure: error =>
             {
+                productsLoaded = false;
+
                 SetBuyButtonsInteractable(false);
 
                 Debug.LogError(
@@ -236,6 +275,8 @@ public class ShopManager : MonoBehaviour
                     if (!string.IsNullOrWhiteSpace(id))
                         storeProducts[id] = product;
                 }
+
+                productsLoaded = true;
 
                 int missingCount = 0;
 

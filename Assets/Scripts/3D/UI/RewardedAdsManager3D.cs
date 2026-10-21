@@ -8,14 +8,18 @@ public class RewardedAdsManager3D : MonoBehaviour
 {
     public static RewardedAdsManager3D Instance { get; private set; }
 
+    #pragma warning disable 0414
     [Header("Настройки рекламы")]
     [SerializeField]
     private string rewardedAdUnitId = "demo-rewarded-yandex";
+    #pragma warning restore 0414
 
     private RewardedAdLoader rewardedAdLoader;
     private RewardedAd rewardedAd;
 
+    #pragma warning disable 0414
     private bool isLoading;
+    #pragma warning restore 0414
     private bool isShowing;
     private bool rewardEarned;
 
