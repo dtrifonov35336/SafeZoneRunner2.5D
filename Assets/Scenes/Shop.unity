@@ -1268,20 +1268,20 @@ MonoBehaviour:
   - id: pack_survivor
     displayName: "\u041D\u0410\u0411\u041E\u0420 \u0412\u042B\u0416\u0418\u0412\u0428\u0415\u0413\u041E"
     icon: {fileID: 21300000, guid: ad296908664996d44b529abc5bb5e5bf, type: 3}
-    priceRub: 249
-    discountPercent: 40
+    priceRub: 199
+    discountPercent: 0
     isPopular: 0
-    contents: "\u2022 1000 \u043C\u043E\u043D\u0435\u0442\r\n\u2022 200 \u043A\u0440\u0438\u0441\u0442\u0430\u043B\u043B\u043E\u0432"
-    grantCoins: 1000
+    contents: "\u2022 2000 \u043C\u043E\u043D\u0435\u0442\r\n\u2022 200 \u043A\u0440\u0438\u0441\u0442\u0430\u043B\u043B\u043E\u0432"
+    grantCoins: 2000
     grantDiamonds: 200
   - id: pack_weapons
     displayName: "\u041D\u0410\u0411\u041E\u0420 \u041E\u0420\u0423\u0416\u0418\u042F"
     icon: {fileID: 21300000, guid: 6d1bc97703deaf04884c21ce9686a515, type: 3}
-    priceRub: 449
+    priceRub: 399
     discountPercent: 0
-    isPopular: 1
-    contents: "\u2022 3000 \u043C\u043E\u043D\u0435\u0442\r\n\u2022 500 \u043A\u0440\u0438\u0441\u0442\u0430\u043B\u043B\u043E\u0432"
-    grantCoins: 3000
+    isPopular: 0
+    contents: "\u2022 5000 \u043C\u043E\u043D\u0435\u0442\r\n\u2022 500 \u043A\u0440\u0438\u0441\u0442\u0430\u043B\u043B\u043E\u0432"
+    grantCoins: 5000
     grantDiamonds: 500
   - id: pack_coins
     displayName: "\u041C\u0415\u0428\u041E\u041A \u041C\u041E\u041D\u0415\u0422"
@@ -1295,12 +1295,41 @@ MonoBehaviour:
   - id: pack_crystals
     displayName: "\u0421\u0423\u041D\u0414\u0423\u041A \u041A\u0420\u0418\u0421\u0422\u0410\u041B\u041B\u041E\u0412"
     icon: {fileID: 21300000, guid: c9ace0a8e03fc904a9bcbfd4c18b1bb6, type: 3}
-    priceRub: 199
-    discountPercent: 20
+    priceRub: 149
+    discountPercent: 0
     isPopular: 0
-    contents: "\u2022 500 \u043A\u0440\u0438\u0441\u0442\u0430\u043B\u043B\u043E\u0432"
+    contents: "\u2022 300 \u043A\u0440\u0438\u0441\u0442\u0430\u043B\u043B\u043E\u0432"
     grantCoins: 0
-    grantDiamonds: 500
+    grantDiamonds: 300
+  - id: big_pack_crystals
+    displayName: "\u0411\u041E\u041B\u042C\u0428\u041E\u0419 \u0421\u0423\u041D\u0414\u0423\u041A
+      \u041A\u0420\u0418\u0421\u0422\u0410\u041B\u041B\u041E\u0412"
+    icon: {fileID: 21300000, guid: c9ace0a8e03fc904a9bcbfd4c18b1bb6, type: 3}
+    priceRub: 299
+    discountPercent: 0
+    isPopular: 0
+    contents: "\u2022 700 \u043A\u0440\u0438\u0441\u0442\u0430\u043B\u043B\u043E\u0432"
+    grantCoins: 0
+    grantDiamonds: 700
+  - id: big_pack_coin
+    displayName: "\u0411\u041E\u041B\u042C\u0428\u041E\u0419 \u041C\u0415\u0428\u041E\u041A
+      \u041C\u041E\u041D\u0415\u0422"
+    icon: {fileID: 21300000, guid: f80040f9d8416d347b3e4ca6592ca77e, type: 3}
+    priceRub: 199
+    discountPercent: 0
+    isPopular: 0
+    contents: "\u2022 5 000 \u043C\u043E\u043D\u0435\u0442"
+    grantCoins: 5000
+    grantDiamonds: 0
+  - id: reward_ad
+    displayName: "\u041D\u0410\u0413\u0420\u0410\u0414\u0410 \u0417\u0410 \u0420\u0415\u041A\u041B\u0410\u041C\u0423"
+    icon: {fileID: 21300000, guid: 55ffa976f23f3b444b5d03635112dfdd, type: 3}
+    priceRub: 0
+    discountPercent: 0
+    isPopular: 0
+    contents: "\u2022 500 \u043C\u043E\u043D\u0435\u0442"
+    grantCoins: 500
+    grantDiamonds: 0
 --- !u!4 &1491568394
 Transform:
   m_ObjectHideFlags: 0

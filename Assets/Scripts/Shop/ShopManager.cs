@@ -29,8 +29,6 @@ public class ShopManager : MonoBehaviour
 
     private bool paymentsAvailable;
     private bool purchaseInProgress;
-    private bool productsLoaded;
-
     private const string GrantedPurchaseKey =
         "SafeZoneRunner_RuStore_Granted_";
 
@@ -213,7 +211,6 @@ public class ShopManager : MonoBehaviour
             productsId: ids,
             onFailure: error =>
             {
-                productsLoaded = false;
                 SetBuyButtonsInteractable(false);
 
                 Debug.LogError(
@@ -239,8 +236,6 @@ public class ShopManager : MonoBehaviour
                     if (!string.IsNullOrWhiteSpace(id))
                         storeProducts[id] = product;
                 }
-
-                productsLoaded = true;
 
                 int missingCount = 0;
 
