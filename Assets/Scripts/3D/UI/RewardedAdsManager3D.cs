@@ -23,6 +23,8 @@ public class RewardedAdsManager3D : MonoBehaviour
     private bool isShowing;
     private bool rewardEarned;
 
+    private string currentPlacement = "revive";
+
     private Action rewardCallback;
     private Action<string> failureCallback;
 
@@ -74,21 +76,40 @@ public class RewardedAdsManager3D : MonoBehaviour
     }
 
     public bool ShowRewardedAd(
-        Action onRewarded,
-        Action<string> onFailed)
+    Action onRewarded,
+    Action<string> onFailed)
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
+        return ShowRewardedAd(
+            onRewarded,
+            onFailed,
+            "revive"
+        );
+    }
+
+    public bool ShowRewardedAd(
+        Action onRewarded,
+        Action<string> onFailed,
+        string placement)
+    {
         if (isShowing)
         {
             onFailed?.Invoke("Показ рекламы уже выполняется.");
             return false;
         }
 
+        currentPlacement = string.IsNullOrWhiteSpace(placement)
+            ? "other"
+            : placement;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+
+    if (rewardedAd == null)
+
         if (rewardedAd == null)
         {
             AppMetricaBootstrap.TrackEvent(
                 "rewarded_ad_unavailable",
-                "{\"placement\":\"revive\"}"
+                PlacementPayload()
             );
 
             onFailed?.Invoke(
@@ -111,7 +132,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         AppMetricaBootstrap.TrackEvent(
             "rewarded_ad_show_requested",
-            "{\"placement\":\"revive\"}"
+            PlacementPayload()
         );
 
         try
@@ -161,7 +182,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         AppMetricaBootstrap.TrackEvent(
             "rewarded_ad_loaded",
-            "{\"placement\":\"revive\"}"
+            PlacementPayload()
         );
     }
 
@@ -177,7 +198,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         AppMetricaBootstrap.TrackEvent(
             "rewarded_ad_failed",
-            "{\"placement\":\"revive\",\"stage\":\"load\"}"
+            PlacementPayload("\"stage\":\"load\"")
         );
 
         // Не запускаем бесконечные попытки загрузки.
@@ -216,7 +237,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         AppMetricaBootstrap.TrackEvent(
             "rewarded_ad_shown",
-            "{\"placement\":\"revive\"}"
+            PlacementPayload()
         );
     }
 
@@ -224,7 +245,7 @@ public class RewardedAdsManager3D : MonoBehaviour
     {
         AppMetricaBootstrap.TrackEvent(
             "rewarded_ad_clicked",
-            "{\"placement\":\"revive\"}"
+            PlacementPayload()
         );
     }
 
@@ -234,7 +255,7 @@ public class RewardedAdsManager3D : MonoBehaviour
     {
         AppMetricaBootstrap.TrackEvent(
             "rewarded_ad_impression",
-            "{\"placement\":\"revive\"}"
+            PlacementPayload()
         );
     }
 
@@ -252,7 +273,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         AppMetricaBootstrap.TrackEvent(
             "rewarded_ad_completed",
-            "{\"placement\":\"revive\"}"
+            PlacementPayload()
         );
     }
 
@@ -315,7 +336,7 @@ public class RewardedAdsManager3D : MonoBehaviour
         {
             AppMetricaBootstrap.TrackEvent(
                 "rewarded_ad_failed",
-                "{\"placement\":\"revive\",\"stage\":\"show\"}"
+                PlacementPayload("\"stage\":\"show\"")
             );
 
             failure?.Invoke(
@@ -343,5 +364,16 @@ public class RewardedAdsManager3D : MonoBehaviour
         }
 
         Instance = null;
+    }
+
+    private string PlacementPayload(string extraFields = null)
+    {
+        string payload =
+            "{\"placement\":\"" + currentPlacement + "\"";
+
+        if (!string.IsNullOrWhiteSpace(extraFields))
+            payload += "," + extraFields;
+
+        return payload + "}";
     }
 }

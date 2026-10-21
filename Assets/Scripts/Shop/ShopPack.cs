@@ -85,14 +85,39 @@ public class ShopPack : MonoBehaviour
             else saveText.gameObject.SetActive(false);
         }
 
-        // Кнопка
-        if (buyButtonText != null) buyButtonText.text = $"{d.priceRub} ₽";
+        // Кнопка: рекламная карточка не отображает цену 0 ₽.
+        bool isRewardedAd = d.id == "reward_ad";
+
+        if (buyButtonText != null)
+        {
+            buyButtonText.text = isRewardedAd
+                ? "СМОТРЕТЬ"
+                : $"{d.priceRub} ₽";
+        }
 
         if (buyButton != null)
         {
             buyButton.onClick.RemoveAllListeners();
             buyButton.onClick.AddListener(() => onClick?.Invoke());
         }
+    }
+
+    public void SetRewardedState(
+    string description,
+    string buttonLabel,
+    bool interactable)
+    {
+        if (contentsText != null)
+        {
+            contentsText.text = description;
+            contentsText.gameObject.SetActive(true);
+        }
+
+        if (buyButtonText != null)
+            buyButtonText.text = buttonLabel;
+
+        if (buyButton != null)
+            buyButton.interactable = interactable;
     }
 }
 

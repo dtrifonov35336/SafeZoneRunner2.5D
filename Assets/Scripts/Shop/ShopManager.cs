@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Globalization;
 
 public class ShopManager : MonoBehaviour
 {
@@ -32,7 +33,24 @@ public class ShopManager : MonoBehaviour
 
     #pragma warning disable 0414
     private bool productsLoaded;
-    #pragma warning restore 0414
+#pragma warning restore 0414
+
+    private bool rewardedCoinsAdInProgress;
+    private float nextRewardedCardRefreshTime;
+
+    private const string RewardedCoinsPackId = "reward_ad";
+    private const int RewardedCoinsAmount = 500;
+    private const int RewardedCoinsMaxUses = 3;
+    private const int RewardedCoinsCooldownSeconds = 3 * 60 * 60;
+
+    private const string RewardedCoinsDayKey =
+        "SafeZoneRunner_RewardAd_Day";
+
+    private const string RewardedCoinsCountKey =
+        "SafeZoneRunner_RewardAd_Count";
+
+    private const string RewardedCoinsNextTimeKey =
+        "SafeZoneRunner_RewardAd_NextUtc";
     private const string GrantedPurchaseKey =
         "SafeZoneRunner_RuStore_Granted_";
 
@@ -51,6 +69,8 @@ public class ShopManager : MonoBehaviour
         BuildPacks();
         UpdateTopCurrencies();
 
+        RefreshRewardedCoinsCard();
+
 #if UNITY_ANDROID && !UNITY_EDITOR
         InitializePayments();
 #else
@@ -58,6 +78,16 @@ public class ShopManager : MonoBehaviour
             "[Shop] RuStore Pay проверяется в Android-сборке."
         );
 #endif
+    }
+
+    private void Update()
+    {
+        if (Time.unscaledTime < nextRewardedCardRefreshTime)
+            return;
+
+        nextRewardedCardRefreshTime = Time.unscaledTime + 1f;
+
+        RefreshRewardedCoinsCard();
     }
 
     private List<ShopPackData> GetDefaults()
@@ -239,18 +269,43 @@ public class ShopManager : MonoBehaviour
 
     private void LoadProducts()
     {
-        ProductId[] ids = new ProductId[packs.Count];
+        List<ProductId> requestedProducts = new List<ProductId>();
 
-        for (int i = 0; i < packs.Count; i++)
-            ids[i] = new ProductId(packs[i].id);
+        foreach (ShopPackData pack in packs)
+        {
+            if (pack == null ||
+                string.IsNullOrWhiteSpace(pack.id) ||
+                pack.id == RewardedCoinsPackId)
+            {
+                continue;
+            }
 
+            requestedProducts.Add(new ProductId(pack.id));
+        }
+
+        productsLoaded = false;
+        storeProducts.Clear();
+        SetBuyButtonsInteractable(false);
+
+        if (requestedProducts.Count == 0)
+        {
+            productsLoaded = true;
+            RefreshBuyButtons();
+            return;
+        }
+
+        // Передаём массив первым позиционным аргументом:
+        // это не зависит от имени параметра в установленной DLL SDK.
         RuStorePayClient.Instance.GetProducts(
-            productIds: ids,
-            onFailure: error =>
+            requestedProducts.ToArray(),
+
+            error =>
             {
                 productsLoaded = false;
+                storeProducts.Clear();
 
                 SetBuyButtonsInteractable(false);
+                RefreshRewardedCoinsCard();
 
                 Debug.LogError(
                     "[Shop] Не удалось загрузить товары: " + error
@@ -260,15 +315,35 @@ public class ShopManager : MonoBehaviour
                     "Не удалось загрузить каталог покупок."
                 );
             },
-            onSuccess: result =>
+
+            result =>
             {
                 storeProducts.Clear();
+
+                if (result == null)
+                {
+                    productsLoaded = false;
+                    SetBuyButtonsInteractable(false);
+                    RefreshRewardedCoinsCard();
+
+                    Debug.LogError(
+                        "[Shop] SDK вернул пустой каталог товаров."
+                    );
+
+                    ShowMessage(
+                        "Не удалось загрузить каталог покупок."
+                    );
+
+                    return;
+                }
 
                 foreach (Product product in result)
                 {
                     if (product == null ||
                         product.productId == null)
+                    {
                         continue;
+                    }
 
                     string id = product.productId.value;
 
@@ -282,18 +357,27 @@ public class ShopManager : MonoBehaviour
 
                 foreach (ShopPackData pack in packs)
                 {
-                    bool found =
-                        storeProducts.ContainsKey(pack.id);
+                    if (pack == null ||
+                        pack.id == RewardedCoinsPackId)
+                    {
+                        continue;
+                    }
+
+                    bool found = storeProducts.ContainsKey(pack.id);
 
                     ShopPack view;
 
                     if (packViews.TryGetValue(pack.id, out view))
                     {
                         if (view.buyButton != null)
-                            view.buyButton.interactable = found;
+                        {
+                            view.buyButton.interactable =
+                                paymentsAvailable &&
+                                productsLoaded &&
+                                !purchaseInProgress &&
+                                found;
+                        }
 
-                        // Показываем цену из каталога RuStore,
-                        // если SDK вернул её для товара.
                         Product product;
 
                         if (found &&
@@ -320,8 +404,10 @@ public class ShopManager : MonoBehaviour
                     }
                 }
 
+                RefreshRewardedCoinsCard();
+
                 Debug.Log(
-                    "[Shop] Каталог загружен. Получено товаров: " +
+                    "[Shop] Каталог загружен. Получено платных товаров: " +
                     storeProducts.Count
                 );
 
@@ -337,6 +423,15 @@ public class ShopManager : MonoBehaviour
 
     private void OnBuy(ShopPackData pack)
     {
+        if (pack == null)
+            return;
+
+        if (pack.id == RewardedCoinsPackId)
+        {
+            TryClaimRewardedCoins();
+            return;
+        }
+
 #if !UNITY_ANDROID || UNITY_EDITOR
         ShowMessage(
             "Покупки проверяются только в Android-сборке."
@@ -366,6 +461,8 @@ public class ShopManager : MonoBehaviour
 
         purchaseInProgress = true;
         SetBuyButtonsInteractable(false);
+
+        RefreshRewardedCoinsCard();
 
         AppMetricaBootstrap.TrackEvent(
             "inapp_purchase_started",
@@ -648,32 +745,49 @@ public class ShopManager : MonoBehaviour
     private void RefreshBuyButtons()
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        bool enabled =
-            paymentsAvailable &&
-            productsLoaded &&
-            !purchaseInProgress;
 
-        foreach (ShopPackData pack in packs)
+    bool enabled =
+        paymentsAvailable &&
+        productsLoaded &&
+        !purchaseInProgress;
+
+    foreach (ShopPackData pack in packs)
+    {
+        if (pack == null ||
+            pack.id == RewardedCoinsPackId)
         {
-            ShopPack view;
-
-            bool available =
-                enabled &&
-                storeProducts.ContainsKey(pack.id);
-
-            if (packViews.TryGetValue(pack.id, out view) &&
-                view.buyButton != null)
-            {
-                view.buyButton.interactable = available;
-            }
+            continue;
         }
+
+        ShopPack view;
+
+        bool available =
+            enabled &&
+            storeProducts.ContainsKey(pack.id);
+
+        if (packViews.TryGetValue(pack.id, out view) &&
+            view != null &&
+            view.buyButton != null)
+        {
+            view.buyButton.interactable = available;
+        }
+    }
+
 #endif
+
+        RefreshRewardedCoinsCard();
     }
 
     private void SetBuyButtonsInteractable(bool interactable)
     {
-        foreach (ShopPack view in packViews.Values)
+        foreach (KeyValuePair<string, ShopPack> item in packViews)
         {
+            // Рекламная карточка не относится к RuStore Pay.
+            if (item.Key == RewardedCoinsPackId)
+                continue;
+
+            ShopPack view = item.Value;
+
             if (view != null && view.buyButton != null)
                 view.buyButton.interactable = interactable;
         }
@@ -693,6 +807,317 @@ public class ShopManager : MonoBehaviour
 
         PlayerPrefs.SetInt("TotalDiamonds", total);
         PlayerPrefs.Save();
+    }
+
+    private void RefreshRewardedCoinsDay()
+    {
+        // День определяется по местному времени телефона.
+        string today = DateTime.Now.ToString(
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture
+        );
+
+        string savedDay = PlayerPrefs.GetString(
+            RewardedCoinsDayKey,
+            string.Empty
+        );
+
+        if (savedDay != today)
+        {
+            PlayerPrefs.SetString(RewardedCoinsDayKey, today);
+            PlayerPrefs.SetInt(RewardedCoinsCountKey, 0);
+
+            // Не сбрасываем незавершённый трёхчасовой интервал.
+            PlayerPrefs.Save();
+        }
+    }
+
+    private long GetRewardedCoinsCooldownRemaining()
+    {
+        string savedValue = PlayerPrefs.GetString(
+            RewardedCoinsNextTimeKey,
+            "0"
+        );
+
+        long nextAllowedTime;
+
+        if (!long.TryParse(
+            savedValue,
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out nextAllowedTime))
+        {
+            return 0;
+        }
+
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        return Math.Max(0L, nextAllowedTime - now);
+    }
+
+    private static string FormatRewardedCoinsTime(long seconds)
+    {
+        TimeSpan remaining = TimeSpan.FromSeconds(
+            Math.Max(0L, seconds)
+        );
+
+        int totalHours = (int)Math.Floor(remaining.TotalHours);
+
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0:00}:{1:00}:{2:00}",
+            totalHours,
+            remaining.Minutes,
+            remaining.Seconds
+        );
+    }
+
+    private void RefreshRewardedCoinsCard()
+    {
+        ShopPack view;
+
+        if (!packViews.TryGetValue(
+            RewardedCoinsPackId,
+            out view) ||
+            view == null)
+        {
+            return;
+        }
+
+        RefreshRewardedCoinsDay();
+
+        int used = Mathf.Clamp(
+            PlayerPrefs.GetInt(RewardedCoinsCountKey, 0),
+            0,
+            RewardedCoinsMaxUses
+        );
+
+        if (rewardedCoinsAdInProgress)
+        {
+            view.SetRewardedState(
+                "Награда: +500 монет\n" +
+                "Просмотр рекламы выполняется.\n" +
+                "Награда будет выдана после подтверждения просмотра.",
+                "ИДЁТ ВИДЕО",
+                false
+            );
+
+            return;
+        }
+
+        if (purchaseInProgress)
+        {
+            view.SetRewardedState(
+                "Награда: +500 монет\n" +
+                "Дождитесь завершения текущей покупки.\n" +
+                "Сегодня использовано: " + used + "/3",
+                "ПОДОЖДИТЕ",
+                false
+            );
+
+            return;
+        }
+
+        if (used >= RewardedCoinsMaxUses)
+        {
+            TimeSpan untilMidnight =
+                DateTime.Today.AddDays(1) - DateTime.Now;
+
+            long secondsUntilMidnight = Math.Max(
+                0L,
+                (long)Math.Ceiling(untilMidnight.TotalSeconds)
+            );
+
+            view.SetRewardedState(
+                "Награда: +500 монет\n" +
+                "Сегодня использовано: 3/3\n" +
+                "Новый лимит через " +
+                FormatRewardedCoinsTime(secondsUntilMidnight),
+                "ЗАВТРА",
+                false
+            );
+
+            return;
+        }
+
+        long cooldown = GetRewardedCoinsCooldownRemaining();
+
+        if (cooldown > 0)
+        {
+            view.SetRewardedState(
+                "Награда: +500 монет\n" +
+                "Сегодня использовано: " + used + "/3\n" +
+                "Следующий просмотр через " +
+                FormatRewardedCoinsTime(cooldown),
+                "ОЖИДАНИЕ",
+                false
+            );
+
+            return;
+        }
+
+        view.SetRewardedState(
+            "Награда: +500 монет\n" +
+            "Сегодня использовано: " + used + "/3\n" +
+            "Посмотри видео, чтобы получить монеты.",
+            "СМОТРЕТЬ",
+            true
+        );
+    }
+
+    private void TryClaimRewardedCoins()
+    {
+#if !UNITY_ANDROID || UNITY_EDITOR
+
+        ShowMessage(
+            "Награда за рекламу доступна в Android-сборке."
+        );
+
+        return;
+
+#else
+
+    if (rewardedCoinsAdInProgress)
+        return;
+
+    if (purchaseInProgress)
+    {
+        ShowMessage(
+            "Дождитесь завершения текущей покупки."
+        );
+
+        return;
+    }
+
+    RefreshRewardedCoinsDay();
+
+    int used = Mathf.Clamp(
+        PlayerPrefs.GetInt(RewardedCoinsCountKey, 0),
+        0,
+        RewardedCoinsMaxUses
+    );
+
+    if (used >= RewardedCoinsMaxUses)
+    {
+        ShowMessage(
+            "На сегодня все три просмотра использованы."
+        );
+
+        RefreshRewardedCoinsCard();
+        return;
+    }
+
+    long cooldown = GetRewardedCoinsCooldownRemaining();
+
+    if (cooldown > 0)
+    {
+        ShowMessage(
+            "Следующий просмотр через " +
+            FormatRewardedCoinsTime(cooldown)
+        );
+
+        RefreshRewardedCoinsCard();
+        return;
+    }
+
+    if (RewardedAdsManager3D.Instance == null)
+    {
+        ShowMessage(
+            "Реклама временно недоступна. Попробуйте позже."
+        );
+
+        Debug.LogWarning(
+            "[Shop] RewardedAdsManager3D не найден."
+        );
+
+        return;
+    }
+
+    rewardedCoinsAdInProgress = true;
+    RefreshRewardedCoinsCard();
+
+    RewardedAdsManager3D.Instance.ShowRewardedAd(
+        onRewarded: GrantRewardedCoinsAfterAd,
+
+        onFailed: error =>
+        {
+            rewardedCoinsAdInProgress = false;
+
+            Debug.LogWarning(
+                "[Shop] Просмотр рекламы не завершён: " + error
+            );
+
+            RefreshRewardedCoinsCard();
+
+            ShowMessage(
+                "Не удалось получить награду. " +
+                "Попробуйте посмотреть рекламу позже."
+            );
+        },
+
+        placement: "shop_coins"
+    );
+
+#endif
+    }
+
+    private void GrantRewardedCoinsAfterAd()
+    {
+        // Не допускаем повторного начисления одной рекламной попытки.
+        if (!rewardedCoinsAdInProgress)
+            return;
+
+        rewardedCoinsAdInProgress = false;
+
+        RefreshRewardedCoinsDay();
+
+        int used = Mathf.Clamp(
+            PlayerPrefs.GetInt(RewardedCoinsCountKey, 0),
+            0,
+            RewardedCoinsMaxUses - 1
+        );
+
+        used++;
+
+        int totalCoins =
+            PlayerPrefs.GetInt("TotalCoins", 0) +
+            RewardedCoinsAmount;
+
+        PlayerPrefs.SetInt("TotalCoins", totalCoins);
+        PlayerPrefs.SetInt(RewardedCoinsCountKey, used);
+
+        if (used < RewardedCoinsMaxUses)
+        {
+            long nextAllowedTime =
+                DateTimeOffset.UtcNow
+                    .AddSeconds(RewardedCoinsCooldownSeconds)
+                    .ToUnixTimeSeconds();
+
+            PlayerPrefs.SetString(
+                RewardedCoinsNextTimeKey,
+                nextAllowedTime.ToString(
+                    CultureInfo.InvariantCulture
+                )
+            );
+        }
+        else
+        {
+            // После третьего просмотра ограничение до полуночи
+            // обеспечивается дневным счётчиком.
+            PlayerPrefs.DeleteKey(RewardedCoinsNextTimeKey);
+        }
+
+        PlayerPrefs.Save();
+
+        UpdateTopCurrencies();
+        RefreshRewardedCoinsCard();
+
+        AppMetricaBootstrap.TrackEvent(
+            "rewarded_coins_granted",
+            "{\"placement\":\"shop_coins\",\"amount\":500}"
+        );
+
+        ShowMessage("Получено 500 монет!");
     }
 
     private void UpdateTopCurrencies()
