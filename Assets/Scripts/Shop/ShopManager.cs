@@ -1,5 +1,3 @@
-
-using RuStore.Pay;
 using RuStore.PayClient;
 using System;
 using System.Collections.Generic;
