@@ -35,6 +35,7 @@ public class ReviveManager : MonoBehaviour
     private float timer;
     private bool active;
     private bool revived;
+    private bool waitingForAd;
 
     private void Awake()
     {
@@ -66,6 +67,7 @@ public class ReviveManager : MonoBehaviour
     {
         active = true;
         revived = false;
+        waitingForAd = false;
 
         timer =
             countdownSeconds;
@@ -121,15 +123,81 @@ public class ReviveManager : MonoBehaviour
 
     private void OnReviveAd()
     {
-        if (!active ||
-            revived)
+        if (!active || revived || waitingForAd)
+            return;
+
+        if (RewardedAdsManager3D.Instance == null)
         {
+            if (ToastNotification.Instance != null)
+            {
+                ToastNotification.Instance.Show(
+                    "Реклама временно недоступна."
+                );
+            }
+
+            AppMetricaBootstrap.TrackEvent(
+                "rewarded_ad_failed",
+                "{\"placement\":\"revive\",\"stage\":\"manager_missing\"}"
+            );
+
             return;
         }
 
-        DoRevive(
-            reviveHealthAd,
-            "Возрождение (+1 HP)"
+        // Останавливаем таймер, пока игрок смотрит рекламу.
+        waitingForAd = true;
+        active = false;
+
+        if (reviveAdButton != null)
+            reviveAdButton.interactable = false;
+
+        AppMetricaBootstrap.TrackEvent(
+            "rewarded_ad_requested",
+            "{\"placement\":\"revive\"}"
+        );
+
+        RewardedAdsManager3D.Instance.ShowRewardedAd(
+            onRewarded: () =>
+            {
+                if (!waitingForAd || revived)
+                    return;
+
+                waitingForAd = false;
+
+                AppMetricaBootstrap.TrackEvent(
+                    "reward_granted",
+                    "{\"placement\":\"revive\"}"
+                );
+
+                DoRevive(
+                    reviveHealthAd,
+                    "Возрождение (+1 HP)"
+                );
+            },
+            onFailed: error =>
+            {
+                if (!waitingForAd || revived)
+                    return;
+
+                waitingForAd = false;
+
+                // Возвращаем отсчёт после неудачного показа.
+                active = true;
+                timer = Mathf.Max(timer, 3f);
+
+                if (reviveAdButton != null)
+                    reviveAdButton.interactable = true;
+
+                Debug.LogWarning(
+                    "[Revive] Реклама не завершена: " + error
+                );
+
+                if (ToastNotification.Instance != null)
+                {
+                    ToastNotification.Instance.Show(
+                        "Реклама не загрузилась. Попробуйте снова."
+                    );
+                }
+            }
         );
     }
 
@@ -307,5 +375,6 @@ public class ReviveManager : MonoBehaviour
     {
         active = false;
         timer = 0f;
+        waitingForAd = false;
     }
 }
