@@ -24,6 +24,9 @@ dependencyResolutionManagement {
         maven {
             url "https://nexus-external.vkteam.ru/repository/maven-rustore-exposed" // Packages/ru.rustore.pay/Editor/PayClientDependencies.xml:7
         }
+        maven {
+            url "https://maven.google.com/" // Packages/com.yandex.mobileads/Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:7, Packages/com.yandex.mobileads/Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:12, Packages/com.yandex.mobileads/Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:17
+        }
         mavenLocal()
 // Android Resolver Repos End
         flatDir {

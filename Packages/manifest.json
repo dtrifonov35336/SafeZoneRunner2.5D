@@ -31,6 +31,7 @@
     "com.unity.visualscripting": "1.9.11",
     "com.yasirkula.nativegallery": "https://github.com/yasirkula/UnityNativeGallery.git",
     "io.appmetrica.analytics": "https://github.com/appmetrica/appmetrica-unity-plugin.git#v6.10.0",
+    "com.yandex.mobileads": "8.5.0",
     "ru.rustore.pay": "11.1.0",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
@@ -81,7 +82,8 @@
         "com.ivanmurzak",
         "extensions.unity",
         "com.google.external-dependency-manager",
-        "io.appmetrica.analytics"
+        "io.appmetrica.analytics",
+        "com.yandex.mobileads"
       ]
     }
   ]
