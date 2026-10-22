@@ -15,6 +15,8 @@ public class ShopPack : MonoBehaviour
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI contentsText;
 
+    private bool rewardedLayoutConfigured;
+
     [Header("Бейджи")]
     public GameObject popularBadge;
     public GameObject discountBadge;
@@ -109,6 +111,32 @@ public class ShopPack : MonoBehaviour
     {
         if (contentsText != null)
         {
+            RectTransform textRect = contentsText.rectTransform;
+
+            // Настраиваем расположение только один раз.
+            // Остальные карточки магазина не затрагиваются.
+            if (!rewardedLayoutConfigured)
+            {
+                // Область между заголовком и кнопкой.
+                textRect.anchorMin = new Vector2(0f, 0.24f);
+                textRect.anchorMax = new Vector2(1f, 0.48f);
+                textRect.pivot = new Vector2(0.5f, 0.5f);
+
+                // Отступы от левого и правого края.
+                textRect.offsetMin = new Vector2(20f, 0f);
+                textRect.offsetMax = new Vector2(-20f, 0f);
+
+                // Компактный шрифт для динамического текста.
+                contentsText.enableAutoSizing = false;
+                contentsText.fontSize = 20f;
+                contentsText.alignment = TextAlignmentOptions.Center;
+
+                // Текст не должен рисоваться за пределами области.
+                contentsText.overflowMode = TextOverflowModes.Truncate;
+
+                rewardedLayoutConfigured = true;
+            }
+
             contentsText.text = description;
             contentsText.gameObject.SetActive(true);
         }

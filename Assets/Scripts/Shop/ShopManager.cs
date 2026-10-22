@@ -895,9 +895,8 @@ public class ShopManager : MonoBehaviour
         if (rewardedCoinsAdInProgress)
         {
             view.SetRewardedState(
-                "Награда: +500 монет\n" +
-                "Просмотр рекламы выполняется.\n" +
-                "Награда будет выдана после подтверждения просмотра.",
+                "Идёт просмотр рекламы.\n" +
+                "Дождитесь подтверждения награды.",
                 "ИДЁТ ВИДЕО",
                 false
             );
@@ -908,8 +907,7 @@ public class ShopManager : MonoBehaviour
         if (purchaseInProgress)
         {
             view.SetRewardedState(
-                "Награда: +500 монет\n" +
-                "Дождитесь завершения текущей покупки.\n" +
+                "Дождитесь завершения покупки.\n" +
                 "Сегодня использовано: " + used + "/3",
                 "ПОДОЖДИТЕ",
                 false
@@ -929,9 +927,8 @@ public class ShopManager : MonoBehaviour
             );
 
             view.SetRewardedState(
-                "Награда: +500 монет\n" +
-                "Сегодня использовано: 3/3\n" +
-                "Новый лимит через " +
+                "Лимит на сегодня: 3/3\n" +
+                "Новый лимит через\n" +
                 FormatRewardedCoinsTime(secondsUntilMidnight),
                 "ЗАВТРА",
                 false
@@ -945,9 +942,8 @@ public class ShopManager : MonoBehaviour
         if (cooldown > 0)
         {
             view.SetRewardedState(
-                "Награда: +500 монет\n" +
                 "Сегодня использовано: " + used + "/3\n" +
-                "Следующий просмотр через " +
+                "Следующий просмотр через\n" +
                 FormatRewardedCoinsTime(cooldown),
                 "ОЖИДАНИЕ",
                 false
@@ -957,9 +953,9 @@ public class ShopManager : MonoBehaviour
         }
 
         view.SetRewardedState(
-            "Награда: +500 монет\n" +
+            "+500 монет за просмотр\n" +
             "Сегодня использовано: " + used + "/3\n" +
-            "Посмотри видео, чтобы получить монеты.",
+            "Перерыв между просмотрами — 3 ч.",
             "СМОТРЕТЬ",
             true
         );
