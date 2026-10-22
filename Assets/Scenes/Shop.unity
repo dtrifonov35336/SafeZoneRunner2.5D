@@ -1304,7 +1304,7 @@ MonoBehaviour:
   - id: big_pack_crystals
     displayName: "\u0411\u041E\u041B\u042C\u0428\u041E\u0419 \u0421\u0423\u041D\u0414\u0423\u041A
       \u041A\u0420\u0418\u0421\u0422\u0410\u041B\u041B\u041E\u0412"
-    icon: {fileID: 21300000, guid: c9ace0a8e03fc904a9bcbfd4c18b1bb6, type: 3}
+    icon: {fileID: 21300000, guid: 1de9a6b3b81d42f4495d3ca6008ffdd9, type: 3}
     priceRub: 299
     discountPercent: 0
     isPopular: 0
@@ -1314,7 +1314,7 @@ MonoBehaviour:
   - id: big_pack_coin
     displayName: "\u0411\u041E\u041B\u042C\u0428\u041E\u0419 \u041C\u0415\u0428\u041E\u041A
       \u041C\u041E\u041D\u0415\u0422"
-    icon: {fileID: 21300000, guid: f80040f9d8416d347b3e4ca6592ca77e, type: 3}
+    icon: {fileID: 21300000, guid: 3e9b13b80c344fe498271304541cb9ee, type: 3}
     priceRub: 199
     discountPercent: 0
     isPopular: 0
@@ -1323,7 +1323,7 @@ MonoBehaviour:
     grantDiamonds: 0
   - id: reward_ad
     displayName: "\u041C\u041E\u041D\u0415\u0422\u042B \u0417\u0410 \u0412\u0418\u0414\u0415\u041E"
-    icon: {fileID: 21300000, guid: 55ffa976f23f3b444b5d03635112dfdd, type: 3}
+    icon: {fileID: 21300000, guid: 0e4c605baa77e9e488b7c18219fcf32e, type: 3}
     priceRub: 0
     discountPercent: 0
     isPopular: 0

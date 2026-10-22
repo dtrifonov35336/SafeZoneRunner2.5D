@@ -17,6 +17,8 @@ public class ShopPack : MonoBehaviour
 
     private bool rewardedLayoutConfigured;
 
+    private TextMeshProUGUI rewardedTimerText;
+
     [Header("Бейджи")]
     public GameObject popularBadge;
     public GameObject discountBadge;
@@ -109,29 +111,38 @@ public class ShopPack : MonoBehaviour
     string buttonLabel,
     bool interactable)
     {
+        // Старые вызовы остаются совместимыми.
+        SetRewardedState(
+            description,
+            string.Empty,
+            buttonLabel,
+            interactable
+        );
+    }
+
+    public void SetRewardedState(
+        string description,
+        string timerText,
+        string buttonLabel,
+        bool interactable)
+    {
         if (contentsText != null)
         {
             RectTransform textRect = contentsText.rectTransform;
 
-            // Настраиваем расположение только один раз.
-            // Остальные карточки магазина не затрагиваются.
             if (!rewardedLayoutConfigured)
             {
-                // Область между заголовком и кнопкой.
-                textRect.anchorMin = new Vector2(0f, 0.24f);
-                textRect.anchorMax = new Vector2(1f, 0.48f);
+                // Описание располагается под заголовком.
+                textRect.anchorMin = new Vector2(0.05f, 0.35f);
+                textRect.anchorMax = new Vector2(0.95f, 0.48f);
                 textRect.pivot = new Vector2(0.5f, 0.5f);
 
-                // Отступы от левого и правого края.
-                textRect.offsetMin = new Vector2(20f, 0f);
-                textRect.offsetMax = new Vector2(-20f, 0f);
+                textRect.offsetMin = Vector2.zero;
+                textRect.offsetMax = Vector2.zero;
 
-                // Компактный шрифт для динамического текста.
+                contentsText.fontSize = 17f;
                 contentsText.enableAutoSizing = false;
-                contentsText.fontSize = 20f;
                 contentsText.alignment = TextAlignmentOptions.Center;
-
-                // Текст не должен рисоваться за пределами области.
                 contentsText.overflowMode = TextOverflowModes.Truncate;
 
                 rewardedLayoutConfigured = true;
@@ -141,11 +152,73 @@ public class ShopPack : MonoBehaviour
             contentsText.gameObject.SetActive(true);
         }
 
+        EnsureRewardedTimerText();
+
+        if (rewardedTimerText != null)
+        {
+            rewardedTimerText.text = timerText;
+
+            rewardedTimerText.gameObject.SetActive(
+                !string.IsNullOrWhiteSpace(timerText)
+            );
+        }
+
         if (buyButtonText != null)
             buyButtonText.text = buttonLabel;
 
         if (buyButton != null)
             buyButton.interactable = interactable;
+    }
+
+    private void EnsureRewardedTimerText()
+    {
+        if (rewardedTimerText != null)
+            return;
+
+        GameObject timerObject = new GameObject(
+            "RewardedTimerText",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(TextMeshProUGUI)
+        );
+
+        timerObject.layer = gameObject.layer;
+        timerObject.transform.SetParent(transform, false);
+
+        rewardedTimerText =
+            timerObject.GetComponent<TextMeshProUGUI>();
+
+        // Используем тот же шрифт, что и у заголовка карточки.
+        if (nameText != null && nameText.font != null)
+        {
+            rewardedTimerText.font = nameText.font;
+        }
+        else if (contentsText != null && contentsText.font != null)
+        {
+            rewardedTimerText.font = contentsText.font;
+        }
+
+        RectTransform timerRect =
+            rewardedTimerText.rectTransform;
+
+        // Отдельная строка между описанием и кнопкой.
+        timerRect.anchorMin = new Vector2(0.05f, 0.27f);
+        timerRect.anchorMax = new Vector2(0.95f, 0.34f);
+        timerRect.pivot = new Vector2(0.5f, 0.5f);
+        timerRect.offsetMin = Vector2.zero;
+        timerRect.offsetMax = Vector2.zero;
+
+        rewardedTimerText.fontSize = 23f;
+        rewardedTimerText.fontStyle = FontStyles.Bold;
+        rewardedTimerText.alignment = TextAlignmentOptions.Center;
+        rewardedTimerText.enableAutoSizing = false;
+        rewardedTimerText.overflowMode = TextOverflowModes.Truncate;
+        rewardedTimerText.raycastTarget = false;
+
+        // Тёплый жёлтый цвет для заметного отображения времени.
+        rewardedTimerText.color = new Color32(255, 203, 76, 255);
+
+        timerObject.transform.SetAsLastSibling();
     }
 }
 

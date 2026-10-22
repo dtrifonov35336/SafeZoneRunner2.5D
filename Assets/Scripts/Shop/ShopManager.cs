@@ -895,8 +895,9 @@ public class ShopManager : MonoBehaviour
         if (rewardedCoinsAdInProgress)
         {
             view.SetRewardedState(
-                "Идёт просмотр рекламы.\n" +
+                "Просмотр рекламы выполняется.\n" +
                 "Дождитесь подтверждения награды.",
+                "ПРОСМОТР ИДЁТ",
                 "ИДЁТ ВИДЕО",
                 false
             );
@@ -909,6 +910,7 @@ public class ShopManager : MonoBehaviour
             view.SetRewardedState(
                 "Дождитесь завершения покупки.\n" +
                 "Сегодня использовано: " + used + "/3",
+                "ОЖИДАНИЕ",
                 "ПОДОЖДИТЕ",
                 false
             );
@@ -928,7 +930,7 @@ public class ShopManager : MonoBehaviour
 
             view.SetRewardedState(
                 "Лимит на сегодня: 3/3\n" +
-                "Новый лимит через\n" +
+                "Следующий набор доступен после полуночи.",
                 FormatRewardedCoinsTime(secondsUntilMidnight),
                 "ЗАВТРА",
                 false
@@ -943,7 +945,7 @@ public class ShopManager : MonoBehaviour
         {
             view.SetRewardedState(
                 "Сегодня использовано: " + used + "/3\n" +
-                "Следующий просмотр через\n" +
+                "Следующий просмотр через:",
                 FormatRewardedCoinsTime(cooldown),
                 "ОЖИДАНИЕ",
                 false
@@ -954,8 +956,8 @@ public class ShopManager : MonoBehaviour
 
         view.SetRewardedState(
             "+500 монет за просмотр\n" +
-            "Сегодня использовано: " + used + "/3\n" +
-            "Перерыв между просмотрами — 3 ч.",
+            "Сегодня использовано: " + used + "/3",
+            "ИНТЕРВАЛ 03:00:00",
             "СМОТРЕТЬ",
             true
         );
