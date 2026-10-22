@@ -38,57 +38,57 @@ public class InfiniteRunSpeedLogicTests
     public void Distance_0_EqualsStartSpeed()
     {
         Assert.AreEqual(
-            20f,
+            Start,
             Speed(0f),
             0.001f
         );
     }
 
     [Test]
-    public void Distance_1000_SpeedIsAbout24_24()
+    public void Distance_1000_SpeedIsAbout28_24()
     {
         Assert.AreEqual(
-            24.242951f,
+            28.238325f,
             Speed(1000f),
             0.05f
         );
     }
 
     [Test]
-    public void Distance_5000_SpeedIsAbout31_50()
+    public void Distance_5000_SpeedIsAbout38_13()
     {
         Assert.AreEqual(
-            31.495594f,
+            38.125835,
             Speed(5000f),
             0.05f
         );
     }
 
     [Test]
-    public void Distance_10000_SpeedIsAbout35_64()
+    public void Distance_10000_SpeedIsAbout43_58()
     {
         Assert.AreEqual(
-            35.635146f,
+            43.581057f,
             Speed(10000f),
             0.05f
         );
     }
 
     [Test]
-    public void Distance_20000_SpeedIsAbout40_10()
+    public void Distance_20000_SpeedIsAbout49_40()
     {
         Assert.AreEqual(
-            40.101757f,
+            49.400702f,
             Speed(20000f),
             0.05f
         );
     }
 
     [Test]
-    public void Distance_50000_SpeedIsAbout46_27()
+    public void Distance_50000_SpeedIsAbout57_39()
     {
         Assert.AreEqual(
-            46.273926f,
+            57.386431f,
             Speed(50000f),
             0.05f
         );

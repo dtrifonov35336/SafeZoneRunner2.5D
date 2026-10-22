@@ -320,8 +320,10 @@ public class DiamondEconomyIntegrationTests
             "не меняется."
         );
 
-        Assert.IsTrue(
-            (bool)GetPrivate(revive, "revived")
+        Assert.IsFalse(
+            (bool)GetPrivate(revive, "revived"),
+            "В Unity Editor без подтверждённой рекламной награды " +
+            "возрождение не должно происходить."
         );
     }
 
