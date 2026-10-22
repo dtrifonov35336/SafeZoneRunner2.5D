@@ -69,6 +69,8 @@ public class ShopManager : MonoBehaviour
         BuildPacks();
         UpdateTopCurrencies();
 
+        AppMetricaBootstrap.TrackEvent("shop_opened");
+
         RefreshRewardedCoinsCard();
 
 #if UNITY_ANDROID && !UNITY_EDITOR

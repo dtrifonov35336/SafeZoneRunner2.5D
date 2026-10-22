@@ -126,6 +126,11 @@ public class ReviveManager : MonoBehaviour
         if (!active || revived || waitingForAd)
             return;
 
+        AppMetricaBootstrap.TrackEvent(
+            "revive_attempted",
+            "{\"method\":\"ad\"}"
+        );
+
         if (RewardedAdsManager3D.Instance == null)
         {
             if (ToastNotification.Instance != null)
@@ -170,7 +175,9 @@ public class ReviveManager : MonoBehaviour
 
                 DoRevive(
                     reviveHealthAd,
-                    "Возрождение (+1 HP)"
+                    "Возрождение (+1 HP)",
+                    "ad",
+                    0
                 );
             },
             onFailed: error =>
@@ -209,6 +216,11 @@ public class ReviveManager : MonoBehaviour
             return;
         }
 
+        AppMetricaBootstrap.TrackEvent(
+            "revive_attempted",
+            $"{{\"method\":\"crystals\",\"cost\":{revivePriceGems}}}"
+        );
+
         // Защита от повторного нажатия: ставим флаг до оплаты,
         // чтобы повторный клик не списал алмазы дважды.
         revived = true;
@@ -216,6 +228,11 @@ public class ReviveManager : MonoBehaviour
         if (!SpendDiamonds(revivePriceGems))
         {
             revived = false;
+
+            AppMetricaBootstrap.TrackEvent(
+                "revive_failed",
+                "{\"method\":\"crystals\",\"reason\":\"insufficient_balance\"}"
+            );
 
             if (ToastNotification.Instance != null)
             {
@@ -229,7 +246,9 @@ public class ReviveManager : MonoBehaviour
 
         DoRevive(
             reviveHealthGems,
-            "Возрождение (полное HP)"
+            "Возрождение (полное HP)",
+            "crystals",
+            revivePriceGems
         );
     }
 
@@ -270,7 +289,9 @@ public class ReviveManager : MonoBehaviour
 
     private void DoRevive(
         float healthAfter,
-        string toastMsg)
+        string toastMsg,
+        string reviveMethod,
+        int crystalsSpent)
     {
         revived = true;
         active = false;
@@ -346,6 +367,11 @@ public class ReviveManager : MonoBehaviour
             ChaseManager.Instance.ResetKillTrigger();
             ChaseManager.Instance.ResumeAfterRevive();
         }
+
+        AppMetricaBootstrap.TrackEvent(
+            "revive_completed",
+            $"{{\"method\":\"{reviveMethod}\",\"crystals_spent\":{crystalsSpent}}}"
+        );
 
         if (ToastNotification.Instance != null)
         {
