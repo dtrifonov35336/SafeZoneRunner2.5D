@@ -2,7 +2,10 @@ using UnityEngine;
 
 public class RescuedPersonSpawner : MonoBehaviour
 {
+    [Header("Пресеты спасаемых")]
     public GameObject rescuedPersonPrefab;
+
+    public GameObject[] rescuedPersonPrefabs;
 
     [Header("Полосы")]
     [HideInInspector]
@@ -42,9 +45,7 @@ public class RescuedPersonSpawner : MonoBehaviour
     private void Start()
     {
         SyncLanePositions();
-
-        timer =
-            firstSpawnDelay;
+        timer = firstSpawnDelay;
     }
 
     private void Update()
@@ -57,62 +58,43 @@ public class RescuedPersonSpawner : MonoBehaviour
             return;
         }
 
-        timer -=
-            Time.deltaTime;
+        timer -= Time.deltaTime;
 
         if (timer > 0f)
         {
             return;
         }
 
-        timer =
-            spawnInterval;
+        timer = spawnInterval;
 
-        int lane =
-            GetFreeLane();
+        int lane = GetFreeLane();
 
         if (lane == -1)
         {
             return;
         }
 
-        SpawnOne(
-            lanePositions[lane]
-        );
+        SpawnOne(lanePositions[lane]);
     }
 
     private void SyncLanePositions()
     {
-        lanePositions = RunnerLaneSettings3D.GetLanePositions();
+        lanePositions =
+            RunnerLaneSettings3D.GetLanePositions();
     }
 
     private int GetFreeLane()
     {
-        int first =
-            Random.Range(
-                0,
-                2
-            );
+        int first = Random.Range(0, 2);
 
-        int second =
-            first == 0
-                ? 1
-                : 0;
+        int second = first == 0 ? 1 : 0;
 
-        if (
-            IsLaneClear(
-                lanePositions[first]
-            )
-        )
+        if (IsLaneClear(lanePositions[first]))
         {
             return first;
         }
 
-        if (
-            IsLaneClear(
-                lanePositions[second]
-            )
-        )
+        if (IsLaneClear(lanePositions[second]))
         {
             return second;
         }
@@ -120,19 +102,14 @@ public class RescuedPersonSpawner : MonoBehaviour
         return -1;
     }
 
-    private bool IsLaneClear(
-        float laneX
-    )
+    private bool IsLaneClear(float laneX)
     {
         ObstacleMover3D[] obstacles =
             FindObjectsByType<ObstacleMover3D>(
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            ObstacleMover3D obstacle
-            in obstacles
-        )
+        foreach (ObstacleMover3D obstacle in obstacles)
         {
             if (obstacle == null)
             {
@@ -140,38 +117,27 @@ public class RescuedPersonSpawner : MonoBehaviour
             }
 
             ObstacleType3D type =
-                obstacle.GetComponentInParent<
-                    ObstacleType3D
-                >();
+                obstacle.GetComponentInParent<ObstacleType3D>();
 
             bool wide =
                 type != null &&
                 (
-                    type.type ==
-                    ObstacleType.Slide ||
-                    type.type ==
-                    ObstacleType.DoubleJump
+                    type.type == ObstacleType.Slide ||
+                    type.type == ObstacleType.DoubleJump
                 );
 
             bool sameLane =
-                Mathf.Abs(
-                    obstacle.laneX -
-                    laneX
-                ) <
-                laneCheckRadius;
+                Mathf.Abs(obstacle.laneX - laneX)
+                < laneCheckRadius;
 
-            if (
-                !wide &&
-                !sameLane
-            )
+            if (!wide && !sameLane)
             {
                 continue;
             }
 
             if (
                 spawnZ <=
-                obstacle.transform.position.z +
-                minSpawnGap
+                obstacle.transform.position.z + minSpawnGap
             )
             {
                 return false;
@@ -183,10 +149,7 @@ public class RescuedPersonSpawner : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            RescuedPerson person
-            in rescued
-        )
+        foreach (RescuedPerson person in rescued)
         {
             if (person == null)
             {
@@ -195,15 +158,11 @@ public class RescuedPersonSpawner : MonoBehaviour
 
             if (
                 Mathf.Abs(
-                    person.transform.position.x -
-                    laneX
-                ) <
-                laneCheckRadius &&
+                    person.transform.position.x - laneX
+                ) < laneCheckRadius &&
                 Mathf.Abs(
-                    person.transform.position.z -
-                    spawnZ
-                ) <
-                minSpawnGap
+                    person.transform.position.z - spawnZ
+                ) < minSpawnGap
             )
             {
                 return false;
@@ -215,10 +174,7 @@ public class RescuedPersonSpawner : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (
-            PickupMover3D pickup
-            in pickups
-        )
+        foreach (PickupMover3D pickup in pickups)
         {
             if (pickup == null)
             {
@@ -226,14 +182,11 @@ public class RescuedPersonSpawner : MonoBehaviour
             }
 
             Pickup3D data =
-                pickup.GetComponent<
-                    Pickup3D
-                >();
+                pickup.GetComponent<Pickup3D>();
 
             if (
                 data == null ||
-                data.type !=
-                Pickup3DType.Heart
+                data.type != Pickup3DType.Heart
             )
             {
                 continue;
@@ -241,15 +194,11 @@ public class RescuedPersonSpawner : MonoBehaviour
 
             if (
                 Mathf.Abs(
-                    pickup.transform.position.x -
-                    laneX
-                ) <
-                laneCheckRadius &&
+                    pickup.transform.position.x - laneX
+                ) < laneCheckRadius &&
                 Mathf.Abs(
-                    pickup.transform.position.z -
-                    spawnZ
-                ) <
-                minSpawnGap
+                    pickup.transform.position.z - spawnZ
+                ) < minSpawnGap
             )
             {
                 return false;
@@ -259,83 +208,91 @@ public class RescuedPersonSpawner : MonoBehaviour
         return true;
     }
 
-    private void SpawnOne(
-        float laneX
-    )
+    private GameObject GetRandomRescuedPersonPrefab()
     {
-        if (
-            rescuedPersonPrefab ==
-            null
-        )
+        int availableCount = 0;
+
+        if (rescuedPersonPrefabs != null)
+        {
+            foreach (GameObject prefab in rescuedPersonPrefabs)
+            {
+                if (prefab != null)
+                {
+                    availableCount++;
+                }
+            }
+        }
+
+        if (availableCount > 0)
+        {
+            int choice = Random.Range(0, availableCount);
+
+            foreach (GameObject prefab in rescuedPersonPrefabs)
+            {
+                if (prefab == null)
+                {
+                    continue;
+                }
+
+                if (choice == 0)
+                {
+                    return prefab;
+                }
+
+                choice--;
+            }
+        }
+
+        // Запасной вариант для старой настройки сцены.
+        return rescuedPersonPrefab;
+    }
+
+    private void SpawnOne(float laneX)
+    {
+        GameObject prefabToSpawn =
+            GetRandomRescuedPersonPrefab();
+
+        if (prefabToSpawn == null)
         {
             return;
         }
 
-        GameObject inst =
-            Instantiate(
-                rescuedPersonPrefab,
-                new Vector3(
-                    laneX,
-                    spawnY,
-                    spawnZ
-                ),
-                Quaternion.identity,
-                transform
-            );
+        GameObject inst = Instantiate(
+            prefabToSpawn,
+            new Vector3(laneX, spawnY, spawnZ),
+            Quaternion.identity,
+            transform
+        );
 
-        if (
-            inst.GetComponent<
-                RunnerDepthSorter3D
-            >() == null
-        )
+        if (inst.GetComponent<RunnerDepthSorter3D>() == null)
         {
-            inst.AddComponent<
-                RunnerDepthSorter3D
-            >();
+            inst.AddComponent<RunnerDepthSorter3D>();
         }
 
         SpawnReveal3D reveal =
-            inst.GetComponent<
-                SpawnReveal3D
-            >();
+            inst.GetComponent<SpawnReveal3D>();
 
         if (reveal == null)
         {
-            reveal =
-                inst.AddComponent<
-                    SpawnReveal3D
-                >();
+            reveal = inst.AddComponent<SpawnReveal3D>();
         }
 
-        reveal.fadeDuration =
-            0.35f;
-
-        reveal.Initialize(
-            revealZ
-        );
+        reveal.fadeDuration = 0.35f;
+        reveal.Initialize(revealZ);
 
         RescuedPerson person =
-            inst.GetComponent<
-                RescuedPerson
-            >();
+            inst.GetComponent<RescuedPerson>();
 
         if (person != null)
         {
-            person.laneX =
-                laneX;
-
-            person.spawnZ =
-                spawnZ;
-
+            person.laneX = laneX;
+            person.spawnZ = spawnZ;
             person.ApplyInitialState();
         }
     }
 
-    public void SetRunning(
-        bool running
-    )
+    public void SetRunning(bool running)
     {
-        enabled =
-            running;
+        enabled = running;
     }
 }
