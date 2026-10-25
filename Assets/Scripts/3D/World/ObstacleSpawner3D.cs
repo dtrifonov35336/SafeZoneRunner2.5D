@@ -8,6 +8,7 @@ public class ObstacleSpawner3D : MonoBehaviour
     public GameObject[] obstaclePrefabs;
 
     [Header("Lanes")]
+    [HideInInspector]
     public float[] lanePositions = new float[]
     {
         -1f,

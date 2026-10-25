@@ -9,6 +9,7 @@ public class PickupSpawner3D : MonoBehaviour
     public GameObject heartPrefab;
 
     [Header("Полосы")]
+    [HideInInspector]
     public float[] lanePositions =
         new float[] { -0.8f, 0.8f };
 
@@ -92,12 +93,12 @@ public class PickupSpawner3D : MonoBehaviour
 
         Instance = this;
 
-        SyncLanePositionsWithPlayer();
+        SyncLanePositions();
     }
 
     private void Start()
     {
-        SyncLanePositionsWithPlayer();
+        SyncLanePositions();
 
         coinTimer = coinSpawnInterval;
         heartTimer = heartSpawnInterval;
@@ -133,30 +134,9 @@ public class PickupSpawner3D : MonoBehaviour
     // LANES
     // =========================================================
 
-    private void SyncLanePositionsWithPlayer()
+    private void SyncLanePositions()
     {
-        PlayerMovement3D player =
-            FindFirstObjectByType<PlayerMovement3D>();
-
-        if (player != null &&
-            player.lanePositions != null &&
-            player.lanePositions.Length == 2)
-        {
-            lanePositions = new float[]
-            {
-                player.lanePositions[0],
-                player.lanePositions[1]
-            };
-        }
-        else if (lanePositions == null ||
-                 lanePositions.Length != 2)
-        {
-            lanePositions = new float[]
-            {
-                -0.8f,
-                0.8f
-            };
-        }
+        lanePositions = RunnerLaneSettings3D.GetLanePositions();
     }
 
     // =========================================================

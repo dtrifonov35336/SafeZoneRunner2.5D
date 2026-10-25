@@ -5,6 +5,7 @@ public class RescuedPersonSpawner : MonoBehaviour
     public GameObject rescuedPersonPrefab;
 
     [Header("Полосы")]
+    [HideInInspector]
     public float[] lanePositions =
         new float[]
         {
@@ -82,9 +83,7 @@ public class RescuedPersonSpawner : MonoBehaviour
 
     private void SyncLanePositions()
     {
-        lanePositions =
-            RunnerLaneSettings3D
-                .GetLanePositions();
+        lanePositions = RunnerLaneSettings3D.GetLanePositions();
     }
 
     private int GetFreeLane()

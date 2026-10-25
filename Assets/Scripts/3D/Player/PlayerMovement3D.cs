@@ -5,6 +5,7 @@ using System.Collections;
 public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Полосы движения")]
+    [HideInInspector]
     public float[] lanePositions =
         new float[]
         {
@@ -128,9 +129,7 @@ public class PlayerMovement3D : MonoBehaviour
         }
 
         // ОДНА СИСТЕМА ПОЛОС ДЛЯ ВСЕЙ ИГРЫ.
-        lanePositions =
-            RunnerLaneSettings3D
-                .GetLanePositions();
+        lanePositions = RunnerLaneSettings3D.GetLanePositions();
 
         string charId =
             ProfileManager
@@ -1269,9 +1268,7 @@ public class PlayerMovement3D : MonoBehaviour
         isJumping = false;
         hasDoubleJumped = false;
 
-        lanePositions =
-            RunnerLaneSettings3D
-                .GetLanePositions();
+        lanePositions = RunnerLaneSettings3D.GetLanePositions();
 
         currentLane = 0;
 
