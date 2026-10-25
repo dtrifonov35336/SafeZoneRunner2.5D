@@ -10,8 +10,8 @@ public class ObstacleSpawner3D : MonoBehaviour
     [Header("Lanes")]
     public float[] lanePositions = new float[]
     {
-        -1.35f,
-        1.35f
+        -1f,
+        1f
     };
 
     [Header("Spawning")]
