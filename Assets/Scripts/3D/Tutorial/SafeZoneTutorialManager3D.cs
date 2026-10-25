@@ -2062,12 +2062,21 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             player.transform.position.z +
             tutorialSpawnDistance;
 
+        SpawnHeightOffset3D overrideHeight =
+            prefab.GetComponent<SpawnHeightOffset3D>();
+
+        bool usePrefabHeight = overrideHeight != null;
+
+        float targetY = usePrefabHeight
+            ? overrideHeight.spawnY
+            : prefab.transform.position.y;
+
         GameObject instance =
             Instantiate(
                 prefab,
                 new Vector3(
                     laneX,
-                    prefab.transform.position.y,
+                    targetY,
                     spawnZ
                 ),
                 Quaternion.identity
@@ -2091,25 +2100,26 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         }
 
         GroundSnap3D groundSnap =
-            instance.GetComponent<
-                GroundSnap3D
-            >();
+            instance.GetComponent<GroundSnap3D>();
 
-        if (groundSnap == null)
+        if (usePrefabHeight)
         {
-            groundSnap =
-                instance.AddComponent<
-                    GroundSnap3D
-                >();
+            if (groundSnap != null)
+            {
+                groundSnap.enabled = false;
+            }
         }
+        else
+        {
+            if (groundSnap == null)
+            {
+                groundSnap = instance.AddComponent<GroundSnap3D>();
+            }
 
-        groundSnap.groundY =
-            obstacleSpawner.obstacleGroundY;
-
-        groundSnap.heightOffset =
-            obstacleSpawner.obstacleHeightOffset;
-
-        groundSnap.SnapToGround();
+            groundSnap.groundY = obstacleSpawner.obstacleGroundY;
+            groundSnap.heightOffset = obstacleSpawner.obstacleHeightOffset;
+            groundSnap.SnapToGround();
+        }
 
         ObstacleMover3D mover =
             instance.GetComponent<

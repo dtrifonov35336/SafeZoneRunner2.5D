@@ -143,14 +143,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8504888510931700835}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0.032688454, w: 0.9994656}
+  m_LocalPosition: {x: 0.00017170608, y: 0.0052501904, z: 0}
   m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8638647556810778702}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -3.746}
 --- !u!212 &5866106915775911666
 SpriteRenderer:
   serializedVersion: 2
@@ -287,7 +287,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed0f1cb03da30f84aa137811db86493f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnHeightOffset3D
-  spawnY: 0.7
+  spawnY: 0.6
 --- !u!114 &-2259148150025731789
 MonoBehaviour:
   m_ObjectHideFlags: 0

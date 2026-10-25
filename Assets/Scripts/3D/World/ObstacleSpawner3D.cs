@@ -1163,15 +1163,14 @@ public class ObstacleSpawner3D : MonoBehaviour
             return;
         }
 
-        float targetY = prefab.transform.position.y;
-
         SpawnHeightOffset3D overrideHeight =
             prefab.GetComponent<SpawnHeightOffset3D>();
 
-        if (overrideHeight != null)
-        {
-            targetY = overrideHeight.spawnY;
-        }
+        bool usePrefabHeight = overrideHeight != null;
+
+        float targetY = usePrefabHeight
+            ? overrideHeight.spawnY
+            : prefab.transform.position.y;
 
         GameObject instance = Instantiate(
             prefab,
@@ -1193,14 +1192,30 @@ public class ObstacleSpawner3D : MonoBehaviour
         GroundSnap3D groundSnap =
             instance.GetComponent<GroundSnap3D>();
 
-        if (groundSnap == null)
+        if (usePrefabHeight)
         {
-            groundSnap = instance.AddComponent<GroundSnap3D>();
+            // Для префабов с индивидуальной высотой
+            // сохраняем Y из Inspector.
+            // Автоматическое выравнивание отключаем.
+            if (groundSnap != null)
+            {
+                groundSnap.enabled = false;
+            }
         }
+        else
+        {
+            // Если у префаба нет индивидуальной высоты,
+            // автоматически устанавливаем его на дорогу.
+            if (groundSnap == null)
+            {
+                groundSnap =
+                    instance.AddComponent<GroundSnap3D>();
+            }
 
-        groundSnap.groundY = obstacleGroundY;
-        groundSnap.heightOffset = obstacleHeightOffset;
-        groundSnap.SnapToGround();
+            groundSnap.groundY = obstacleGroundY;
+            groundSnap.heightOffset = obstacleHeightOffset;
+            groundSnap.SnapToGround();
+        }
 
         ObstacleMover3D mover =
             instance.GetComponent<ObstacleMover3D>();
