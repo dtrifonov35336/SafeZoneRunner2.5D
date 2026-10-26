@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 72aab60f91be36a40a05ff96a52d3ecb
+guid: 5626ffabfaeb3e540b2fb29019e059fc
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5369567069543523995
-    second: PlayerRun2_0
+      213: -3223262241251099870
+    second: military_1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,9 +49,9 @@ TextureImporter:
   spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
-  alignment: 7
+  alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 7
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -72,7 +72,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -109,30 +109,17 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: PlayerRun2_0
+      name: military_1_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 13
-        width: 166
-        height: 393
+        y: 0
+        width: 243
+        height: 483
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b96e6c1fcc8848a40800000000000000
-      internalID: 5369567069543523995
+      spriteID: 22b7c44b11ca443d0800000000000000
+      internalID: -3223262241251099870
       vertices: []
       indices: 
       edges: []
@@ -161,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      PlayerRun2_0: 5369567069543523995
+      military_1_0: -3223262241251099870
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

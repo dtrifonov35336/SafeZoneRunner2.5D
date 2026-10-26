@@ -18,7 +18,7 @@ MonoBehaviour:
   - id: medic
     availableForPurchase: 1
   - id: military
-    availableForPurchase: 0
+    availableForPurchase: 1
   - id: mechanic
     availableForPurchase: 0
   - id: scout

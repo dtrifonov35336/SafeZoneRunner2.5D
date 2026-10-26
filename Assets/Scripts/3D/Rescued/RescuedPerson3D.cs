@@ -12,26 +12,29 @@ public class RescuedPerson : MonoBehaviour
     [Header("Скорость")]
     public float speed = 15f;
 
-    [Header("Покачивание")]
-    public float bobSpeed = 6f;
-    public float bobAmount = 0.05f;
+    // Оставлены только для совместимости со старыми префабами.
+    // Покачивание больше не применяется: визуальное движение задаёт Animator.
+    [HideInInspector] public float bobSpeed = 0f;
+    [HideInInspector] public float bobAmount = 0f;
 
     [Header("Награда")]
     public int coinReward = 15;
 
     private float currentZ;
     private float baseY;
-
     private bool isSaved;
     private bool initialised;
 
     private void Start()
     {
-        baseY = transform.position.y;
-
         if (!initialised)
         {
             ApplyInitialState();
+        }
+        else
+        {
+            // Запоминаем высоту уже после автоматического выравнивания по дороге.
+            baseY = transform.position.y;
         }
     }
 
@@ -43,7 +46,7 @@ public class RescuedPerson : MonoBehaviour
         Vector3 p = transform.position;
         p.x = laneX;
         p.z = spawnZ;
-
+        p.y = baseY;
         transform.position = p;
 
         initialised = true;
@@ -58,23 +61,17 @@ public class RescuedPerson : MonoBehaviour
 
         if (ObstacleSpawner3D.Instance != null)
         {
-            moveSpeed =
-                ObstacleSpawner3D.Instance.CurrentObstacleSpeed;
+            moveSpeed = ObstacleSpawner3D.Instance.CurrentObstacleSpeed;
         }
 
-        float currentY =
-            baseY +
-            Mathf.Sin(Time.time * bobSpeed) * bobAmount;
-
-        float desiredZ =
-            currentZ - moveSpeed * Time.deltaTime;
+        float desiredZ = currentZ - moveSpeed * Time.deltaTime;
 
         desiredZ = RunnerMovingObjectBlocker3D.ResolveZ(
             gameObject,
             currentZ,
             desiredZ,
             transform.position.x,
-            currentY,
+            baseY,
             0.03f
         );
 
@@ -82,8 +79,7 @@ public class RescuedPerson : MonoBehaviour
 
         Vector3 p = transform.position;
         p.z = currentZ;
-        p.y = currentY;
-
+        p.y = baseY;
         transform.position = p;
 
         if (currentZ <= despawnZ)
@@ -114,7 +110,6 @@ public class RescuedPerson : MonoBehaviour
         if (HUDManager.Instance != null)
         {
             coinsBefore = HUDManager.Instance.GetCoins();
-
             HUDManager.Instance.AddRescued(1);
 
             if (RunModeChallengeManager3D.Instance != null)
@@ -122,9 +117,7 @@ public class RescuedPerson : MonoBehaviour
                 RunModeChallengeManager3D.Instance.OnRescued();
             }
 
-            HUDManager.Instance.AddCoinsWithBonus(
-                coinReward
-            );
+            HUDManager.Instance.AddCoinsWithBonus(coinReward);
         }
 
         if (AudioManager3D.Instance != null)
@@ -136,15 +129,12 @@ public class RescuedPerson : MonoBehaviour
 
         if (HUDManager.Instance != null)
         {
-            gained =
-                HUDManager.Instance.GetCoins() - coinsBefore;
+            gained = HUDManager.Instance.GetCoins() - coinsBefore;
         }
 
         if (ToastNotification.Instance != null)
         {
-            ToastNotification.Instance.Show(
-                $"Спасён выживший! +{gained}"
-            );
+            ToastNotification.Instance.Show($"Спасён выживший! +{gained}");
         }
 
         Destroy(gameObject);

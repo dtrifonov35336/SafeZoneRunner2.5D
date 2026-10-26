@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class SideDecorationSpawner : MonoBehaviour
@@ -9,16 +10,12 @@ public class SideDecorationSpawner : MonoBehaviour
     [Header("Мировые X-позиции по типам")]
     public float treeMinX = 4.6f;
     public float treeMaxX = 5.6f;
-
     public float bushMinX = 3.9f;
     public float bushMaxX = 4.8f;
-
     public float carMinX = 3.4f;
     public float carMaxX = 4.5f;
-
     public float debrisMinX = 3.1f;
     public float debrisMaxX = 4.3f;
-
     public float buildingMinX = 5.0f;
     public float buildingMaxX = 5.8f;
 
@@ -27,560 +24,259 @@ public class SideDecorationSpawner : MonoBehaviour
     public float despawnZ = -10f;
 
     [Header("Тайминг")]
+    [Tooltip("Интервал между группами, а не отдельными объектами.")]
     public float spawnInterval = 1.5f;
-    public float minSpawnInterval = 0.8f;
+    public float minSpawnInterval = 1.0f;
     public float difficultyRampTime = 60f;
 
     [Header("Скорость")]
     public float speed = 15f;
 
     [Header("Мягкое появление")]
-    [Tooltip(
-        "За сколько Unity units до текущей позиции спавна " +
-        "декорация должна начинать появляться."
-    )]
     public float revealDistance = 20f;
-
-    [Tooltip(
-        "Продолжительность плавного появления."
-    )]
     public float fadeDuration = 0.35f;
+
+    [Header("Упорядоченные группы")]
+    [Tooltip("Максимальный небольшой случайный сдвиг точки группы по Z. Не увеличивать до больших значений.")]
+    [Min(0f)] public float groupZJitter = 0.8f;
+
+    [Tooltip("Минимальный Z-разнос объектов внутри группы.")]
+    [Min(3f)] public float groupStaggerMin = 6f;
+
+    [Tooltip("Максимальный Z-разнос объектов внутри группы.")]
+    [Min(3f)] public float groupStaggerMax = 9f;
 
     [Header("Runtime")]
     public bool isRunning = true;
 
-    private float leftTimer;
-    private float rightTimer;
-
-    private string lastLeftPrefab;
-    private string lastRightPrefab;
-
-    private string lastLeftType;
-    private string lastRightType;
-
+    private float groupTimer;
     private float runTime;
-
-    // =========================================================
-    // UNITY
-    // =========================================================
+    private int previousPattern = -1;
 
     private void Start()
     {
-        leftTimer =
-            Random.Range(
-                0.2f,
-                1.0f
-            );
-
-        rightTimer =
-            Random.Range(
-                0.7f,
-                1.6f
-            );
+        // Первая группа появляется быстро, но не в случайной глубине.
+        groupTimer = 0.2f;
     }
 
     private void Update()
     {
         if (!isRunning)
-        {
             return;
-        }
 
-        if (
-            ChaseManager.Instance != null &&
-            ChaseManager.Instance.IsGameOver()
-        )
-        {
+        if (ChaseManager.Instance != null && ChaseManager.Instance.IsGameOver())
             return;
-        }
 
-        runTime +=
-            Time.deltaTime;
+        runTime += Time.deltaTime;
 
-        float t =
-            Mathf.Clamp01(
-                runTime /
-                difficultyRampTime
-            );
+        float rampDuration = Mathf.Max(0.1f, difficultyRampTime);
+        float t = Mathf.Clamp01(runTime / rampDuration);
+        float currentInterval = Mathf.Lerp(
+            Mathf.Max(0.2f, spawnInterval),
+            Mathf.Max(0.2f, minSpawnInterval),
+            t
+        );
 
-        float currentInterval =
-            Mathf.Lerp(
-                spawnInterval,
-                minSpawnInterval,
-                t
-            );
+        groupTimer -= Time.deltaTime;
+        if (groupTimer > 0f)
+            return;
 
-        leftTimer -=
-            Time.deltaTime;
+        SpawnFormation();
+        groupTimer = Random.Range(currentInterval * 0.9f, currentInterval * 1.1f);
+    }
 
-        rightTimer -=
-            Time.deltaTime;
+    private void SpawnFormation()
+    {
+        // Не повторяем одну и ту же композицию два раза подряд.
+        int pattern = Random.Range(0, 5);
+        if (pattern == previousPattern)
+            pattern = (pattern + Random.Range(1, 5)) % 5;
+        previousPattern = pattern;
 
-        // -----------------------------------------------------
-        // LEFT
-        // -----------------------------------------------------
+        bool leadLeft = Random.value < 0.5f;
+        float baseZ = spawnZ + Random.Range(-groupZJitter, groupZJitter);
+        float stagger = Random.Range(
+            Mathf.Max(3f, groupStaggerMin),
+            Mathf.Max(groupStaggerMin, groupStaggerMax)
+        );
 
-        if (leftTimer <= 0f)
+        switch (pattern)
         {
-            SpawnAtSideRandomZ(
-                true,
-                leftPrefabs,
-                ref lastLeftPrefab,
-                ref lastLeftType
-            );
+            // A: два дерева образуют лесной коридор, но не стоят строго напротив.
+            case 0:
+                SpawnByType(leadLeft, "Tree", baseZ);
+                SpawnByType(!leadLeft, "Tree", baseZ - stagger);
+                break;
 
-            leftTimer =
-                Random.Range(
-                    currentInterval * 0.75f,
-                    currentInterval * 1.25f
-                );
-        }
+            // B: одна машина и более лёгкая декорация с другой стороны.
+            case 1:
+                SpawnByType(leadLeft, "Car", baseZ);
+                SpawnByType(!leadLeft, "Bush", baseZ - stagger);
+                break;
 
-        // -----------------------------------------------------
-        // RIGHT
-        // -----------------------------------------------------
+            // C: обломки ближе к дороге, дерево глубже на противоположной стороне.
+            case 2:
+                SpawnByType(leadLeft, "Debris", baseZ);
+                SpawnByType(!leadLeft, "Tree", baseZ - stagger);
+                break;
 
-        if (rightTimer <= 0f)
-        {
-            SpawnAtSideRandomZ(
-                false,
-                rightPrefabs,
-                ref lastRightPrefab,
-                ref lastRightType
-            );
+            // D: небольшой кластер; третий объект смещён назад, чтобы не перекрывать первые два.
+            case 3:
+                SpawnByType(leadLeft, "Tree", baseZ);
+                SpawnByType(leadLeft, "Bush", baseZ - stagger);
+                SpawnByType(!leadLeft, "Debris", baseZ - stagger - 3f);
+                break;
 
-            rightTimer =
-                Random.Range(
-                    currentInterval * 0.75f,
-                    currentInterval * 1.25f
-                );
+            // E: кусты и мусор, композиция визуально легче, чем группа с машиной.
+            default:
+                SpawnByType(leadLeft, "Bush", baseZ);
+                SpawnByType(!leadLeft, "Debris", baseZ - stagger);
+                break;
         }
     }
 
-    // =========================================================
-    // SPAWN
-    // =========================================================
-
-    private void SpawnAtSideRandomZ(
-        bool leftSide,
-        GameObject[] pool,
-        ref string lastPrefab,
-        ref string lastType
-    )
+    private void SpawnByType(bool leftSide, string desiredType, float worldZ)
     {
-        if (
-            pool == null ||
-            pool.Length == 0
-        )
-        {
+        GameObject[] pool = leftSide ? leftPrefabs : rightPrefabs;
+        if (pool == null || pool.Length == 0)
             return;
-        }
 
-        GameObject prefab =
-            ChoosePrefab(
-                pool,
-                lastPrefab,
-                lastType
-            );
-
+        GameObject prefab = FindPrefabOfType(pool, desiredType);
         if (prefab == null)
-        {
+            prefab = ChooseRandomPrefab(pool);
+        if (prefab == null)
             return;
-        }
 
-        lastPrefab =
-            prefab.name;
-
-        lastType =
-            GetDecorationType(
-                prefab.name
-            );
-
-        GameObject inst =
-            Instantiate(
-                prefab,
-                transform
-            );
-
-        inst.name =
-            "Decor_" +
-            prefab.name;
-
-        // Сезонное оформление для только что созданной декорации.
+        GameObject inst = Instantiate(prefab, transform);
+        inst.name = "Decor_" + prefab.name;
         SeasonManager3D.ApplyTo(inst);
-
-        // -----------------------------------------------------
-        // X
-        // -----------------------------------------------------
 
         float minX;
         float maxX;
+        GetXRange(prefab.name, out minX, out maxX);
 
-        GetXRange(
-            prefab.name,
-            out minX,
-            out maxX
-        );
+        float distance = Random.Range(minX, maxX);
+        Vector3 worldPosition = inst.transform.position;
+        worldPosition.x = leftSide ? -distance : distance;
+        worldPosition.y = transform.position.y;
+        worldPosition.z = worldZ + Random.Range(-0.7f, 0.7f);
+        inst.transform.position = worldPosition;
 
-        float distance =
-            Random.Range(
-                minX,
-                maxX
-            );
-
-        float worldX =
-            leftSide
-                ? -distance
-                : distance;
-
-        // -----------------------------------------------------
-        // Z
-        // -----------------------------------------------------
-
-        float randomZ =
-            spawnZ +
-            Random.Range(
-                -18f,
-                10f
-            );
-
-        Vector3 localPosition =
-            inst.transform.localPosition;
-
-        localPosition.x =
-            worldX -
-            transform.position.x;
-
-        localPosition.z =
-            randomZ -
-            transform.position.z;
-
-        inst.transform.localPosition =
-            localPosition;
-
-        // =====================================================
-        // GROUND SNAP
-        // =====================================================
-
-        GroundSnap3D snap =
-            inst.GetComponent<
-                GroundSnap3D
-            >();
-
+        // Одно правило высоты для деревьев, кустов, машин и мусора.
+        float groundY = GetRoadGroundY();
+        GroundSnap3D snap = inst.GetComponent<GroundSnap3D>();
         if (snap == null)
-        {
-            snap =
-                inst.AddComponent<
-                    GroundSnap3D
-                >();
-        }
+            snap = inst.AddComponent<GroundSnap3D>();
 
-        snap.groundY =
-            -0.04f;
+        snap.enabled = true;
+        snap.groundY = groundY;
+        snap.heightOffset = 0f;
+        snap.SnapToGround();
 
-        snap.heightOffset =
-            0f;
-
-        // =====================================================
-        // MOVEMENT
-        // =====================================================
-
-        SideDecorationMover mover =
-            inst.GetComponent<
-                SideDecorationMover
-            >();
-
+        SideDecorationMover mover = inst.GetComponent<SideDecorationMover>();
         if (mover == null)
-        {
-            mover =
-                inst.AddComponent<
-                    SideDecorationMover
-                >();
-        }
+            mover = inst.AddComponent<SideDecorationMover>();
 
-        mover.speed =
-            speed;
+        mover.speed = speed;
+        mover.despawnZ = despawnZ;
 
-        mover.despawnZ =
-            despawnZ;
-
-        // =====================================================
-        // SOFT REVEAL
-        // =====================================================
-
-        SpawnReveal3D reveal =
-            inst.GetComponent<
-                SpawnReveal3D
-            >();
-
+        SpawnReveal3D reveal = inst.GetComponent<SpawnReveal3D>();
         if (reveal == null)
-        {
-            reveal =
-                inst.AddComponent<
-                    SpawnReveal3D
-                >();
-        }
+            reveal = inst.AddComponent<SpawnReveal3D>();
 
-        reveal.fadeDuration =
-            fadeDuration;
-
-        float targetRevealZ =
-            randomZ -
-            Mathf.Max(
-                0.1f,
-                revealDistance
-            );
-
-        // Не допускаем, чтобы reveal происходил
-        // уже почти после удаления объекта.
-        targetRevealZ =
-            Mathf.Max(
-                targetRevealZ,
-                despawnZ + 5f
-            );
-
-        reveal.Initialize(
-            targetRevealZ
-        );
+        reveal.fadeDuration = fadeDuration;
+        float targetRevealZ = worldPosition.z - Mathf.Max(0.1f, revealDistance);
+        targetRevealZ = Mathf.Max(targetRevealZ, despawnZ + 5f);
+        reveal.Initialize(targetRevealZ);
     }
 
-    // =========================================================
-    // PREFAB CHOICE
-    // =========================================================
-
-    private GameObject ChoosePrefab(
-        GameObject[] pool,
-        string previousPrefab,
-        string previousType
-    )
+    private float GetRoadGroundY()
     {
-        if (
-            pool == null ||
-            pool.Length == 0
-        )
+        if (ObstacleSpawner3D.Instance != null)
+            return ObstacleSpawner3D.Instance.obstacleGroundY;
+
+        return -0.04f;
+    }
+
+    private GameObject FindPrefabOfType(GameObject[] pool, string desiredType)
+    {
+        List<GameObject> candidates = new List<GameObject>();
+
+        foreach (GameObject prefab in pool)
         {
+            if (prefab == null)
+                continue;
+
+            if (GetDecorationType(prefab.name) == desiredType)
+                candidates.Add(prefab);
+        }
+
+        if (candidates.Count == 0)
             return null;
-        }
 
-        if (pool.Length == 1)
-        {
-            return pool[0];
-        }
-
-        for (
-            int i = 0;
-            i < 10;
-            i++
-        )
-        {
-            GameObject candidate =
-                pool[
-                    Random.Range(
-                        0,
-                        pool.Length
-                    )
-                ];
-
-            if (candidate == null)
-            {
-                continue;
-            }
-
-            string candidateType =
-                GetDecorationType(
-                    candidate.name
-                );
-
-            if (
-                !string.IsNullOrEmpty(
-                    previousType
-                ) &&
-                candidateType ==
-                previousType
-            )
-            {
-                continue;
-            }
-
-            if (
-                !string.IsNullOrEmpty(
-                    previousPrefab
-                ) &&
-                candidate.name ==
-                previousPrefab
-            )
-            {
-                continue;
-            }
-
-            return candidate;
-        }
-
-        return pool[
-            Random.Range(
-                0,
-                pool.Length
-            )
-        ];
+        return candidates[Random.Range(0, candidates.Count)];
     }
 
-    // =========================================================
-    // TYPE
-    // =========================================================
-
-    private string GetDecorationType(
-        string prefabName
-    )
+    private GameObject ChooseRandomPrefab(GameObject[] pool)
     {
-        if (
-            prefabName.Contains(
-                "Tree"
-            )
-        )
+        List<GameObject> candidates = new List<GameObject>();
+        foreach (GameObject prefab in pool)
         {
-            return "Tree";
+            if (prefab != null)
+                candidates.Add(prefab);
         }
 
-        if (
-            prefabName.Contains(
-                "Bush"
-            )
-        )
-        {
-            return "Bush";
-        }
+        if (candidates.Count == 0)
+            return null;
 
-        if (
-            prefabName.Contains(
-                "Car"
-            )
-        )
-        {
-            return "Car";
-        }
+        return candidates[Random.Range(0, candidates.Count)];
+    }
 
-        if (
-            prefabName.Contains(
-                "Debris"
-            )
-        )
-        {
-            return "Debris";
-        }
-
-        if (
-            prefabName.Contains(
-                "Building"
-            )
-        )
-        {
-            return "Building";
-        }
-
+    private string GetDecorationType(string prefabName)
+    {
+        if (prefabName.Contains("Tree")) return "Tree";
+        if (prefabName.Contains("Bush")) return "Bush";
+        if (prefabName.Contains("Car")) return "Car";
+        if (prefabName.Contains("Debris")) return "Debris";
+        if (prefabName.Contains("Building")) return "Building";
         return "Other";
     }
 
-    // =========================================================
-    // X RANGE
-    // =========================================================
-
-    private void GetXRange(
-        string prefabName,
-        out float minX,
-        out float maxX
-    )
+    private void GetXRange(string prefabName, out float minX, out float maxX)
     {
-        if (
-            prefabName.Contains(
-                "Tree"
-            )
-        )
+        string type = GetDecorationType(prefabName);
+
+        switch (type)
         {
-            minX =
-                treeMinX;
-
-            maxX =
-                treeMaxX;
-
-            return;
+            case "Tree":
+                minX = treeMinX;
+                maxX = treeMaxX;
+                return;
+            case "Bush":
+                minX = bushMinX;
+                maxX = bushMaxX;
+                return;
+            case "Car":
+                minX = carMinX;
+                maxX = carMaxX;
+                return;
+            case "Debris":
+                minX = debrisMinX;
+                maxX = debrisMaxX;
+                return;
+            case "Building":
+                minX = buildingMinX;
+                maxX = buildingMaxX;
+                return;
+            default:
+                minX = 4f;
+                maxX = 5f;
+                return;
         }
-
-        if (
-            prefabName.Contains(
-                "Bush"
-            )
-        )
-        {
-            minX =
-                bushMinX;
-
-            maxX =
-                bushMaxX;
-
-            return;
-        }
-
-        if (
-            prefabName.Contains(
-                "Car"
-            )
-        )
-        {
-            minX =
-                carMinX;
-
-            maxX =
-                carMaxX;
-
-            return;
-        }
-
-        if (
-            prefabName.Contains(
-                "Debris"
-            )
-        )
-        {
-            minX =
-                debrisMinX;
-
-            maxX =
-                debrisMaxX;
-
-            return;
-        }
-
-        if (
-            prefabName.Contains(
-                "Building"
-            )
-        )
-        {
-            minX =
-                buildingMinX;
-
-            maxX =
-                buildingMaxX;
-
-            return;
-        }
-
-        minX =
-            4f;
-
-        maxX =
-            5f;
     }
 
-    // =========================================================
-    // RUNNING
-    // =========================================================
-
-    public void SetRunning(
-        bool running
-    )
+    public void SetRunning(bool running)
     {
-        isRunning =
-            running;
+        isRunning = running;
     }
 }

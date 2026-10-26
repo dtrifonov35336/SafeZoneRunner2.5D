@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3ab7a2051f058c04da94e9d9b3070504
+guid: df553e3dc3972c14db4fd8d3d88b235b
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -7313424386246260795
-    second: PlayerRun4_0
+      213: -3169666938927837229
+    second: military_slide_1 (7)_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,9 +49,9 @@ TextureImporter:
   spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
-  alignment: 7
+  alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 7
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -72,7 +72,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -109,30 +109,17 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: PlayerRun4_0
+      name: military_slide_1 (7)_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 1
-        width: 165
-        height: 418
+        y: 0
+        width: 305
+        height: 370
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5c7cc16d44f718a90800000000000000
-      internalID: -7313424386246260795
+      spriteID: 3df08e076b41304d0800000000000000
+      internalID: -3169666938927837229
       vertices: []
       indices: 
       edges: []
@@ -161,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      PlayerRun4_0: -7313424386246260795
+      military_slide_1 (7)_0: -3169666938927837229
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

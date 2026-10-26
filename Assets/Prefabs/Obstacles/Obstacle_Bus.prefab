@@ -174,7 +174,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed0f1cb03da30f84aa137811db86493f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnHeightOffset3D
+  useCustomHeight: 0
   spawnY: 1.2
+  groundOffset: 0
 --- !u!114 &-1072148514140418847
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -206,7 +208,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1774292942658953392
 Transform:
   m_ObjectHideFlags: 0
