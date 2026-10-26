@@ -10,7 +10,6 @@ Library: C:\Users\Dmitriy\RunnerSafeZone\Temp\BurstOutput\tempburstlibs\arm64-v8
 --target-framework=NetFramework
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Dmitriy\RunnerSafeZone\Temp\Burst
---debug=Full
 --key-folder=C:/Program Files/Unity/Hub/Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=C:\Users\Dmitriy\RunnerSafeZone\Library\Burst
 --output=C:\Users\Dmitriy\RunnerSafeZone\Temp\BurstOutput\tempburstlibs\arm64-v8a\lib_burst_generated
@@ -43,7 +42,6 @@ Library: C:\Users\Dmitriy\RunnerSafeZone\Temp\BurstOutput\tempburstlibs\arm64-v8
 --target-framework=NetFramework
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Dmitriy\RunnerSafeZone\Temp\Burst
---debug=Full
 --key-folder=C:/Program Files/Unity/Hub/Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=C:\Users\Dmitriy\RunnerSafeZone\Library\Burst
 --output=C:\Users\Dmitriy\RunnerSafeZone\Temp\BurstOutput\tempburstlibs\arm64-v8a\lib_burst_generated
@@ -162,7 +160,6 @@ Library: C:\Users\Dmitriy\RunnerSafeZone\Temp\BurstOutput\tempburstlibs\arm64-v8
 --float-mode=Fast
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Dmitriy\RunnerSafeZone\Temp\Burst
---debug=Full
 --key-folder=C:/Program Files/Unity/Hub/Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=C:\Users\Dmitriy\RunnerSafeZone\Library\Burst
 --output=C:\Users\Dmitriy\RunnerSafeZone\Temp\BurstOutput\tempburstlibs\arm64-v8a\lib_burst_generated
