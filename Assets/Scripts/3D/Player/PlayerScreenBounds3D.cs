@@ -113,6 +113,10 @@ public class PlayerScreenBounds3D : MonoBehaviour
             if (r.transform.name.Contains("Shadow"))
                 continue;
 
+            // Частицы (пыль и т.п.) не должны сужать игровое поле.
+            if (r is ParticleSystemRenderer)
+                continue;
+
             maxWidth =
                 Mathf.Max(
                     maxWidth,

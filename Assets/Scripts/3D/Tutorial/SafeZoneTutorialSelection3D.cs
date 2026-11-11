@@ -365,6 +365,14 @@ public class SafeZoneTutorialSelection3D : MonoBehaviour
         PlayerPrefs.SetInt(
             "SafeZoneTutorialSkipped", 0);
 
+        /*
+         * Обучение забегу запущено вручную из настроек.
+         * При пропуске нельзя включать обучение меню:
+         * игрок выбрал только обучение забегу.
+         */
+        PlayerPrefs.SetInt(
+            "SafeZoneRunTutorialFromSettings", 1);
+
         PlayerPrefs.SetInt(
             "SafeZoneUpgradeTutorialCompleted", 1);
 

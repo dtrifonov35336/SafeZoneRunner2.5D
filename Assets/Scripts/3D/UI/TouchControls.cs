@@ -120,6 +120,18 @@ public class TouchControls : MonoBehaviour
         {
             EndTouch(touch.position.ReadValue());
         }
+
+        /*
+         * Страховка: если событие отпускания потерялось,
+         * сбрасываем отслеживание, иначе следующие свайпы
+         * будут игнорироваться.
+         */
+        if (trackingTouch &&
+            !touch.press.isPressed &&
+            !touch.press.wasReleasedThisFrame)
+        {
+            trackingTouch = false;
+        }
     }
 
     private void ProcessMouseForEditor()
@@ -169,6 +181,11 @@ public class TouchControls : MonoBehaviour
         // Свайп состоялся.
         trackingTouch = false;
 
+        ApplySwipe(delta);
+    }
+
+    private void ApplySwipe(Vector2 delta)
+    {
         float absX = Mathf.Abs(delta.x);
         float absY = Mathf.Abs(delta.y);
 
@@ -213,12 +230,23 @@ public class TouchControls : MonoBehaviour
 
         Vector2 delta = releasePosition - touchStartPosition;
 
+        /*
+         * Свайп мог не успеть засчитаться в CheckSwipeWhileMoving:
+         * игрок ведёт палец медленнее swipeMaxTime или движение
+         * пришло одним кадром вместе с отпусканием.
+         *
+         * Поэтому при отпускании обязательно обрабатываем свайп,
+         * иначе на реальных устройствах часть свайпов теряется.
+         */
+        if (delta.magnitude >= swipeMinDistance)
+        {
+            ApplySwipe(delta);
+            return;
+        }
+
         // Если это было не перемещение, а короткое нажатие —
         // проверяем двойное нажатие.
-        if (delta.magnitude < swipeMinDistance)
-        {
-            RegisterTap(releasePosition);
-        }
+        RegisterTap(releasePosition);
     }
 
     private void RegisterTap(Vector2 position)

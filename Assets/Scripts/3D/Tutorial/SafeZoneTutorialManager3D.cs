@@ -55,6 +55,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
      */
     [SerializeField] private Button skipButton;
 
+    private Canvas skipOverlayCanvas;
+    private RectTransform skipOverlayRoot;
+
     [Header("Тексты")]
     [SerializeField]
     private string moveTitle =
@@ -214,6 +217,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private bool moveActionStarted;
     private bool moveActionFinished;
+
+    private float moveLastX;
+    private float moveSettleTime;
 
     private bool jumpStarted;
     private bool jumpFinished;
@@ -531,6 +537,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         )
         {
             moveActionStarted = true;
+
+            moveLastX =
+                player.transform.position.x;
+
+            moveSettleTime = 0f;
         }
 
         if (!moveActionStarted)
@@ -542,17 +553,77 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         float currentX =
             player.transform.position.x;
 
+        /*
+         * Игрок должен доехать до полосы. Допуск зависит
+         * от расстояния между полосами, чтобы задание
+         * завершалось и на узких экранах, где персонаж
+         * может быть ограничен краем видимой области.
+         */
+        float tolerance =
+            Mathf.Max(
+                0.12f,
+                GetLaneGap() * 0.18f
+            );
+
         if (
             Mathf.Abs(
                 currentX - targetX
-            ) <= 0.05f
+            ) <= tolerance
         )
         {
             moveActionFinished = true;
         }
+        else if (
+            Mathf.Abs(
+                currentX - moveLastX
+            ) <= 0.002f
+        )
+        {
+            /*
+             * Персонаж уже не движется, но до полосы
+             * не добрался (например, его ограничил край
+             * экрана). Не держим обучение на месте.
+             */
+            moveSettleTime +=
+                Time.unscaledDeltaTime;
+
+            if (moveSettleTime >= 0.25f)
+                moveActionFinished = true;
+        }
+        else
+        {
+            moveSettleTime = 0f;
+        }
+
+        moveLastX = currentX;
 
         if (moveActionFinished)
             CompleteCurrentStage();
+    }
+
+    private float GetLaneGap()
+    {
+        if (
+            player == null ||
+            player.lanePositions == null ||
+            player.lanePositions.Length < 2
+        )
+        {
+            return 2f;
+        }
+
+        float first =
+            player.lanePositions[0];
+
+        float last =
+            player.lanePositions[
+                player.lanePositions.Length - 1
+            ];
+
+        return Mathf.Max(
+            0.5f,
+            Mathf.Abs(last - first)
+        );
     }
 
     private void CheckJump()
@@ -722,6 +793,9 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         moveActionStarted = false;
         moveActionFinished = false;
+
+        moveLastX = 0f;
+        moveSettleTime = 0f;
 
         jumpStarted = false;
         jumpFinished = false;
@@ -909,9 +983,12 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         }
 
         /*
-         * "Пропустить" никогда не показываем.
+         * "Пропустить" показываем поверх подсказки
+         * справа сверху (как в обучении меню).
          */
-        SetSkipButtonVisible(true);
+        SetSkipButtonVisible(false);
+
+        ShowRunSkipButton();
     }
 
     private void ShowCompletionReward()
@@ -987,6 +1064,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             skipButton.gameObject.SetActive(false);
             skipButton.interactable = false;
         }
+
+        HideRunSkipButton();
     }
 
     public void ConfirmHint()
@@ -1667,6 +1746,11 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
             1
         );
 
+        // Ручной запуск из настроек завершён.
+        PlayerPrefs.DeleteKey(
+            "SafeZoneRunTutorialFromSettings"
+        );
+
         PlayerPrefs.Save();
 
         AppMetricaBootstrap.TrackEvent(
@@ -1763,6 +1847,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         hintConfirmed = true;
         waitingForReward = false;
 
+        HideRunSkipButton();
+
         if (hintPanel != null)
             hintPanel.SetActive(false);
     }
@@ -1773,6 +1859,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         hintConfirmed = true;
         waitingForReward = false;
+
+        HideRunSkipButton();
 
         if (hintPanel != null)
             hintPanel.SetActive(false);
@@ -2065,11 +2153,21 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         SpawnHeightOffset3D overrideHeight =
             prefab.GetComponent<SpawnHeightOffset3D>();
 
-        bool usePrefabHeight = overrideHeight != null;
+        /*
+         * Как и в обычном спавнере, фиксированная высота
+         * применяется только при включённом useCustomHeight.
+         * Иначе препятствие ставится на дорогу.
+         */
+        bool useCustomHeight =
+            overrideHeight != null &&
+            overrideHeight.useCustomHeight;
 
-        float targetY = usePrefabHeight
+        float groundY =
+            obstacleSpawner.obstacleGroundY;
+
+        float targetY = useCustomHeight
             ? overrideHeight.spawnY
-            : prefab.transform.position.y;
+            : groundY;
 
         GameObject instance =
             Instantiate(
@@ -2102,7 +2200,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         GroundSnap3D groundSnap =
             instance.GetComponent<GroundSnap3D>();
 
-        if (usePrefabHeight)
+        if (useCustomHeight)
         {
             if (groundSnap != null)
             {
@@ -2116,8 +2214,14 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 groundSnap = instance.AddComponent<GroundSnap3D>();
             }
 
-            groundSnap.groundY = obstacleSpawner.obstacleGroundY;
-            groundSnap.heightOffset = obstacleSpawner.obstacleHeightOffset;
+            groundSnap.enabled = true;
+            groundSnap.groundY = groundY;
+            groundSnap.heightOffset =
+                obstacleSpawner.obstacleHeightOffset +
+                (overrideHeight != null
+                    ? overrideHeight.groundOffset
+                    : 0f);
+
             groundSnap.SnapToGround();
         }
 
@@ -2668,10 +2772,26 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         skipConfirmationOpen = true;
 
+        /*
+         * Если обучение забегу запущено вручную из настроек,
+         * после пропуска обучение меню не начинается.
+         */
+        bool manualRunTutorial =
+            PlayerPrefs.GetInt(
+                "SafeZoneRunTutorialFromSettings",
+                0
+            ) == 1;
+
+        string message = manualRunTutorial
+            ? "Обучение забегу будет пропущено. " +
+              "Монеты за прохождение не начисляются. " +
+              "Продолжить?"
+            : "Обучение забегу будет пропущено. " +
+              "Монеты за прохождение не начисляются. " +
+              "После смерти начнётся обучение главного меню. Продолжить?";
+
         TutorialSkipConfirmation3D.Show(
-            "Обучение забегу будет пропущено. " +
-            "Монеты за прохождение не начисляются. " +
-            "После смерти начнётся обучение главного меню. Продолжить?",
+            message,
             SkipTutorialConfirmed,
             () => skipConfirmationOpen = false
         );
@@ -2710,6 +2830,18 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
     private static void MarkRunTutorialSkipped()
     {
+        /*
+         * Если обучение забегу запустили вручную из настроек,
+         * после пропуска не должно начинаться обучение меню.
+         */
+        bool manualRunTutorial =
+            PlayerPrefs.GetInt(
+                "SafeZoneRunTutorialFromSettings",
+                0) == 1;
+
+        PlayerPrefs.DeleteKey(
+            "SafeZoneRunTutorialFromSettings");
+
         // Это именно пропуск, а не успешное прохождение.
         // SafeZoneTutorialCompleted не устанавливаем в 1.
         PlayerPrefs.SetInt("SafeZoneTutorialSkipped", 1);
@@ -2720,12 +2852,24 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
         PlayerPrefs.SetInt(
             "SafeZoneFirstLaunchRunStarted", 0);
 
-        // После обычного забега разрешаем обучение меню.
-        PlayerPrefs.SetInt(
-            "SafeZoneUpgradeTutorialCompleted", 0);
+        if (manualRunTutorial)
+        {
+            // Оставляем только выбранное обучение забегу.
+            PlayerPrefs.SetInt(
+                "SafeZoneUpgradeTutorialCompleted", 1);
 
-        PlayerPrefs.SetInt(
-            "SafeZoneMainMenuTutorialCompleted", 0);
+            PlayerPrefs.SetInt(
+                "SafeZoneMainMenuTutorialCompleted", 1);
+        }
+        else
+        {
+            // После обычного забега разрешаем обучение меню.
+            PlayerPrefs.SetInt(
+                "SafeZoneUpgradeTutorialCompleted", 0);
+
+            PlayerPrefs.SetInt(
+                "SafeZoneMainMenuTutorialCompleted", 0);
+        }
 
         PlayerPrefs.DeleteKey(
             "SafeZoneMainMenuTutorialStarted");
@@ -2807,6 +2951,8 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                 false
             );
         }
+
+        HideRunSkipButton();
 
         if (Instance == this)
             Instance = null;
@@ -2924,5 +3070,77 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
 
         skipButton.gameObject.SetActive(visible);
         skipButton.interactable = visible;
+    }
+
+    // =========================================================
+    // ПЛАВАЮЩАЯ КНОПКА "ПРОПУСТИТЬ"
+    // =========================================================
+
+    /*
+     * Кнопка живёт на отдельном Canvas поверх подсказки,
+     * поэтому остаётся доступной и во время выполнения
+     * задания, когда панель подсказки скрыта.
+     */
+    private void ShowRunSkipButton()
+    {
+        if (skipOverlayCanvas != null)
+        {
+            skipOverlayCanvas.gameObject.SetActive(true);
+            return;
+        }
+
+        GameObject canvasObject =
+            new GameObject(
+                "TutorialRunSkipOverlay",
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster)
+            );
+
+        skipOverlayCanvas =
+            canvasObject.GetComponent<Canvas>();
+
+        skipOverlayCanvas.renderMode =
+            RenderMode.ScreenSpaceOverlay;
+
+        skipOverlayCanvas.sortingOrder = 6000;
+
+        CanvasScaler scaler =
+            canvasObject.GetComponent<CanvasScaler>();
+
+        scaler.uiScaleMode =
+            CanvasScaler.ScaleMode.ScaleWithScreenSize;
+
+        scaler.referenceResolution =
+            new Vector2(1080f, 1920f);
+
+        scaler.matchWidthOrHeight = 0.5f;
+
+        skipOverlayRoot =
+            canvasObject.GetComponent<RectTransform>();
+
+        TutorialSkipConfirmation3D.CreateSkipButton(
+            skipOverlayRoot,
+            "RunTutorialSkipButton",
+            "ПРОПУСТИТЬ",
+            new Vector2(250f, 70f),
+            /*
+             * Справа сверху, но ниже верхней панели HUD,
+             * чтобы не перекрывать монеты и дистанцию.
+             */
+            new Vector2(-32f, -160f),
+            SkipTutorial
+        );
+    }
+
+    private void HideRunSkipButton()
+    {
+        if (skipOverlayCanvas == null)
+            return;
+
+        Destroy(skipOverlayCanvas.gameObject);
+
+        skipOverlayCanvas = null;
+        skipOverlayRoot = null;
     }
 }
