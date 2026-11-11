@@ -155,7 +155,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpawnHeightOffset3D
   useCustomHeight: 0
   spawnY: 0.7
-  groundOffset: -0.12
+  groundOffset: 0
 --- !u!114 &1419539747640608761
 MonoBehaviour:
   m_ObjectHideFlags: 0

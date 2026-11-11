@@ -2177,7 +2177,7 @@ public class SafeZoneTutorialManager3D : MonoBehaviour
                     targetY,
                     spawnZ
                 ),
-                Quaternion.identity
+                prefab.transform.rotation
             );
 
         instance.name =
