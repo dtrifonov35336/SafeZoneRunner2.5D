@@ -14,6 +14,52 @@ public static class AppMetricaBootstrap
         RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Activate()
     {
+        // Аналитика запускается только после согласия пользователя
+        // и только для актуальной версии политики.
+        if (PlayerPrefs.GetInt(
+                PrivacyPolicy3D.ConsentVersionKey,
+                0) != PrivacyPolicy3D.ConsentVersion)
+        {
+            return;
+        }
+
+        if (PlayerPrefs.GetInt(PrivacyPolicy3D.ConsentKey, 0) != 1)
+            return;
+
+        ActivateInternal();
+    }
+
+    /// <summary>
+    /// Включает или выключает отправку аналитики в зависимости от согласия.
+    /// </summary>
+    public static void SetConsent(bool consent)
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+
+        if (!consent)
+        {
+            if (isInitialized)
+                AppMetrica.SetDataSendingEnabled(false);
+
+            return;
+        }
+
+        if (!isInitialized)
+        {
+            ActivateInternal();
+            return;
+        }
+
+        AppMetrica.SetDataSendingEnabled(true);
+
+#endif
+    }
+
+    private static void ActivateInternal()
+    {
+        if (isInitialized)
+            return;
+
 #if UNITY_ANDROID && !UNITY_EDITOR
 
         if (string.IsNullOrWhiteSpace(ApiKey) ||

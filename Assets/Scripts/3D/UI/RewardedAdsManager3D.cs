@@ -56,6 +56,15 @@ public class RewardedAdsManager3D : MonoBehaviour
             return;
         }
 
+        if (!PrivacyPolicy3D.HasConsent)
+        {
+            Debug.Log(
+                "[RewardedAds] Реклама не загружается: нет согласия на обработку данных."
+            );
+
+            return;
+        }
+
         rewardedAdLoader = new RewardedAdLoader();
         LoadRewardedAd();
 #else
@@ -68,6 +77,9 @@ public class RewardedAdsManager3D : MonoBehaviour
     public void LoadRewardedAd()
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
+        if (!PrivacyPolicy3D.HasConsent)
+            return;
+
         if (isLoading || isShowing || rewardedAd != null)
             return;
 
@@ -118,6 +130,15 @@ public class RewardedAdsManager3D : MonoBehaviour
             : placement;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
+
+    if (!PrivacyPolicy3D.HasConsent)
+    {
+        onFailed?.Invoke(
+            "Реклама доступна после согласия на обработку данных."
+        );
+
+        return false;
+    }
 
     if (!HasConfiguredAdUnit)
     {

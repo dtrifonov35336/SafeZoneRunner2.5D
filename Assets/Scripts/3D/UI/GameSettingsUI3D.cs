@@ -272,6 +272,7 @@ public class GameSettingsUI3D : MonoBehaviour
         HideSeasonSection();
 
         EnsureTutorialButton();
+        EnsurePrivacyButton();
 
         ConfigureButton(
             fps30Button
@@ -1464,10 +1465,99 @@ public class GameSettingsUI3D : MonoBehaviour
         if (tutorialButton == null)
             return;
 
+        RectTransform tutorialRect =
+            tutorialButton.transform as RectTransform;
+
+        if (tutorialRect != null)
+        {
+            tutorialRect.anchorMin = new Vector2(0.20f, 0.015f);
+            tutorialRect.anchorMax = new Vector2(0.48f, 0.105f);
+            tutorialRect.offsetMin = Vector2.zero;
+            tutorialRect.offsetMax = Vector2.zero;
+        }
+
         ConfigureButton(tutorialButton);
 
         tutorialButton.onClick.RemoveAllListeners();
         tutorialButton.onClick.AddListener(OpenTutorialSelection);
+    }
+
+    private void EnsurePrivacyButton()
+    {
+        Transform panel = transform.Find("Window/Panel");
+
+        if (panel == null)
+            return;
+
+        Transform existing = panel.Find("PrivacyButton");
+
+        Button button;
+
+        if (existing != null)
+        {
+            button = existing.GetComponent<Button>();
+        }
+        else
+        {
+            GameObject go = new GameObject(
+                "PrivacyButton",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
+
+            go.transform.SetParent(panel, false);
+
+            RectTransform rect = go.GetComponent<RectTransform>();
+
+            rect.anchorMin = new Vector2(0.52f, 0.015f);
+            rect.anchorMax = new Vector2(0.80f, 0.105f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            Image image = go.GetComponent<Image>();
+            image.color = new Color32(45, 60, 67, 255);
+            image.raycastTarget = true;
+
+            button = go.GetComponent<Button>();
+            button.targetGraphic = image;
+
+            GameObject labelObject = new GameObject(
+                "Label",
+                typeof(RectTransform),
+                typeof(TextMeshProUGUI)
+            );
+
+            labelObject.transform.SetParent(go.transform, false);
+
+            RectTransform labelRect =
+                labelObject.GetComponent<RectTransform>();
+
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(3f, 2f);
+            labelRect.offsetMax = new Vector2(-3f, -2f);
+
+            TextMeshProUGUI label =
+                labelObject.GetComponent<TextMeshProUGUI>();
+
+            label.text = "ПОЛИТИКА";
+            label.fontSize = 16;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = Color.white;
+            label.raycastTarget = false;
+
+            if (TMP_Settings.defaultFontAsset != null)
+                label.font = TMP_Settings.defaultFontAsset;
+        }
+
+        if (button == null)
+            return;
+
+        ConfigureButton(button);
+
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(PrivacyPolicy3D.ShowPolicy);
     }
 
     private void OpenTutorialSelection()
