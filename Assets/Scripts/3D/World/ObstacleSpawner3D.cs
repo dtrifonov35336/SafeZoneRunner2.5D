@@ -49,6 +49,13 @@ public class ObstacleSpawner3D : MonoBehaviour
     public float obstacleGroundY = -0.04f;
     public float obstacleHeightOffset = 0f;
 
+    [Header("Яма")]
+    [Tooltip(
+        "Высота плоскости ямы над дорогой. Дорога находится на y ≈ 0.03, " +
+        "поэтому яма кладётся чуть выше, чтобы не провалиться под асфальт."
+    )]
+    public float pitSurfaceY = 0.045f;
+
     [Header("Скорость препятствий")]
     [Tooltip("Базовая скорость режима «До убежища».")]
     public float baseObstacleSpeed = 17f;
@@ -1167,6 +1174,13 @@ public class ObstacleSpawner3D : MonoBehaviour
         bool useCustomHeight =
             heightSettings != null && heightSettings.useCustomHeight;
 
+        ObstacleType3D obstacleType =
+            prefab.GetComponentInChildren<ObstacleType3D>(true);
+
+        bool isPit =
+            obstacleType != null &&
+            obstacleType.type == ObstacleType.Pit;
+
         float targetY = useCustomHeight
             ? heightSettings.spawnY
             : obstacleGroundY;
@@ -1180,6 +1194,44 @@ public class ObstacleSpawner3D : MonoBehaviour
 
         instance.name = $"Obstacle3D_{obstacleCounter++}";
 
+        /*
+         * Яма изначально сделана вертикальным billboard-спрайтом.
+         * Кладём её на дорогу: поворот на 90° вокруг X и небольшой
+         * подъём, чтобы не было z-fighting с асфальтом.
+         */
+        if (isPit)
+        {
+            instance.transform.rotation =
+                Quaternion.Euler(90f, 0f, 0f);
+
+            instance.transform.position =
+                new Vector3(
+                    laneX,
+                    pitSurfaceY,
+                    spawnZ
+                );
+
+            /*
+             * После поворота ось Z коллайдера смотрит вверх.
+             * Возвращаем триггеру глубину 2 метра, чтобы игрок
+             * не проскакивал яму за один кадр.
+             */
+            BoxCollider pitCollider =
+                instance.GetComponent<BoxCollider>();
+
+            if (pitCollider != null)
+            {
+                float scaleY = Mathf.Max(
+                    0.01f,
+                    instance.transform.lossyScale.y);
+
+                pitCollider.size = new Vector3(
+                    pitCollider.size.x,
+                    2f / scaleY,
+                    2f);
+            }
+        }
+
         RunnerDepthSorter3D depthSorter =
             instance.GetComponent<RunnerDepthSorter3D>();
 
@@ -1192,6 +1244,12 @@ public class ObstacleSpawner3D : MonoBehaviour
         if (useCustomHeight)
         {
             // Только намеренно приподнятые объекты используют фиксированный Y.
+            if (groundSnap != null)
+                groundSnap.enabled = false;
+        }
+        else if (isPit)
+        {
+            // Яма уже лежит на дороге, GroundSnap ей не нужен.
             if (groundSnap != null)
                 groundSnap.enabled = false;
         }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -15,9 +16,10 @@ public class PrivacyPolicy3D : MonoBehaviour
 {
     public const string ConsentKey = "SafeZone_PrivacyConsent";
     public const string ConsentVersionKey = "SafeZone_PrivacyConsentVersion";
+    public const string ConsentDateKey = "SafeZone_PrivacyConsentDate";
 
     // Меняйте при существенном изменении текста политики.
-    public const int ConsentVersion = 1;
+    public const int ConsentVersion = 2;
 
     private const string PolicyResourcePath = "Privacy/privacy_policy";
 
@@ -105,6 +107,9 @@ public class PrivacyPolicy3D : MonoBehaviour
     {
         PlayerPrefs.SetInt(ConsentKey, consent ? 1 : 0);
         PlayerPrefs.SetInt(ConsentVersionKey, ConsentVersion);
+        PlayerPrefs.SetString(
+            ConsentDateKey,
+            DateTime.UtcNow.ToString("o"));
         PlayerPrefs.Save();
 
         ApplyConsent(consent);
@@ -114,6 +119,13 @@ public class PrivacyPolicy3D : MonoBehaviour
         {
             RewardedAdsManager3D.Instance.LoadRewardedAd();
         }
+
+        /*
+         * Если согласие меняют из окна политики, окно согласия
+         * под ним уже неактуально — закрываем его.
+         */
+        if (instance != null)
+            instance.CloseConsent();
     }
 
     private static void ApplyConsent(bool consent)
@@ -145,36 +157,77 @@ public class PrivacyPolicy3D : MonoBehaviour
 
         TextMeshProUGUI title = CreateText(
             card,
-            "КОНФИДЕНЦИАЛЬНОСТЬ",
-            44f,
+            "СОГЛАСИЕ НА ОБРАБОТКУ ДАННЫХ",
+            34f,
             FontStyles.Bold);
 
         SetRect(
             title.rectTransform,
-            new Vector2(0.06f, 0.82f),
-            new Vector2(0.94f, 0.95f));
+            new Vector2(0.05f, 0.87f),
+            new Vector2(0.95f, 0.96f));
+
+        string statusText;
+        Color statusColor;
+
+        if (!HasDecision)
+        {
+            statusText = "Решение ещё не принято";
+            statusColor = new Color32(255, 203, 76, 255);
+        }
+        else if (HasConsent)
+        {
+            statusText = "Текущий статус: согласие дано";
+            statusColor = new Color32(120, 210, 140, 255);
+        }
+        else
+        {
+            statusText = "Текущий статус: согласие не дано";
+            statusColor = new Color32(230, 150, 120, 255);
+        }
+
+        TextMeshProUGUI status = CreateText(
+            card,
+            statusText,
+            20f,
+            FontStyles.Normal);
+
+        status.color = statusColor;
+
+        SetRect(
+            status.rectTransform,
+            new Vector2(0.05f, 0.80f),
+            new Vector2(0.95f, 0.855f));
 
         TextMeshProUGUI message = CreateText(
             card,
-            "Для работы игры, аналитики и показа рекламы нам нужно обрабатывать " +
-            "технические данные устройства и его идентификаторы (включая " +
-            "рекламный идентификатор).\n\n" +
-            "Нажимая «СОГЛАСЕН», вы даёте согласие на обработку персональных " +
-            "данных на условиях Политики конфиденциальности.\n\n" +
-            "Можно выбрать «ТОЛЬКО НЕОБХОДИМОЕ»: игра будет работать, но " +
-            "аналитика и реклама (в том числе рекламные награды) отключатся. " +
-            "Согласие можно изменить в настройках игры.",
-            26f,
+            "Оператор: Индивидуальный предприниматель Трифонов Дмитрий " +
+            "Дмитриевич, ИНН 223203530261, ОГРНИП 324220200008012, " +
+            "e-mail: Z.Games0@yandex.ru.\n\n" +
+            "Я даю согласие на обработку моих персональных данных: " +
+            "технических данных устройства, идентификаторов (включая " +
+            "рекламный идентификатор), данных об использовании игры и " +
+            "данных о покупках — в целях работы игры, аналитики, показа " +
+            "рекламы и обработки покупок.\n\n" +
+            "Согласие действует до его отзыва. Отозвать согласие можно " +
+            "в настройках игры или по указанному e-mail.\n\n" +
+            "Отказ от согласия не ограничивает доступ к игре: аналитика " +
+            "и реклама отключаются.\n\n" +
+            "Согласие оформляется отдельно от иных документов " +
+            "(ст. 9 152-ФЗ). Условия обработки — в Политике " +
+            "конфиденциальности.",
+            22f,
             FontStyles.Normal);
+
+        message.alignment = TextAlignmentOptions.TopLeft;
 
         SetRect(
             message.rectTransform,
-            new Vector2(0.07f, 0.24f),
-            new Vector2(0.93f, 0.80f));
+            new Vector2(0.06f, 0.235f),
+            new Vector2(0.94f, 0.785f));
 
         CreateButton(
             card,
-            "СОГЛАСЕН",
+            "ДАЮ СОГЛАСИЕ",
             new Vector2(0.07f, 0.13f),
             new Vector2(0.49f, 0.22f),
             new Color32(56, 117, 76, 255),
@@ -234,25 +287,42 @@ public class PrivacyPolicy3D : MonoBehaviour
         TextMeshProUGUI title = CreateText(
             card,
             "ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ",
-            36f,
+            34f,
             FontStyles.Bold);
 
         SetRect(
             title.rectTransform,
-            new Vector2(0.05f, 0.91f),
-            new Vector2(0.95f, 0.975f));
+            new Vector2(0.05f, 0.925f),
+            new Vector2(0.95f, 0.98f));
+
+        TextMeshProUGUI status = CreateText(
+            card,
+            HasConsent
+                ? "Согласие на обработку данных: ДАНО"
+                : "Согласие на обработку данных: НЕ ДАНО",
+            20f,
+            FontStyles.Normal);
+
+        status.color = HasConsent
+            ? new Color32(120, 210, 140, 255)
+            : new Color32(230, 150, 120, 255);
+
+        SetRect(
+            status.rectTransform,
+            new Vector2(0.05f, 0.885f),
+            new Vector2(0.95f, 0.92f));
 
         ScrollRect scroll = CreateScroll(
             card,
-            new Vector2(0.04f, 0.13f),
-            new Vector2(0.96f, 0.90f),
+            new Vector2(0.04f, 0.245f),
+            new Vector2(0.96f, 0.875f),
             LoadPolicyText());
 
         CreateButton(
             card,
             "ЗАКРЫТЬ",
             new Vector2(0.06f, 0.03f),
-            new Vector2(0.94f, 0.105f),
+            new Vector2(0.94f, 0.11f),
             new Color32(62, 72, 78, 255),
             ClosePolicy);
 
@@ -261,8 +331,8 @@ public class PrivacyPolicy3D : MonoBehaviour
             CreateButton(
                 card,
                 "ОТОЗВАТЬ СОГЛАСИЕ",
-                new Vector2(0.06f, 0.115f),
-                new Vector2(0.94f, 0.19f),
+                new Vector2(0.06f, 0.13f),
+                new Vector2(0.94f, 0.21f),
                 new Color32(120, 52, 52, 255),
                 () =>
                 {
@@ -282,8 +352,8 @@ public class PrivacyPolicy3D : MonoBehaviour
             CreateButton(
                 card,
                 "ДАЮ СОГЛАСИЕ",
-                new Vector2(0.06f, 0.115f),
-                new Vector2(0.94f, 0.19f),
+                new Vector2(0.06f, 0.13f),
+                new Vector2(0.94f, 0.21f),
                 new Color32(56, 117, 76, 255),
                 () =>
                 {
@@ -578,17 +648,34 @@ public class PrivacyPolicy3D : MonoBehaviour
 
         text.text = contentText;
         text.fontSize = 24f;
+        text.lineSpacing = 6f;
+        text.margin = new Vector4(10f, 6f, 10f, 6f);
         text.color = Color.white;
         text.alignment = TextAlignmentOptions.TopLeft;
         text.textWrappingMode = TextWrappingModes.Normal;
         text.overflowMode = TextOverflowModes.Overflow;
         text.raycastTarget = false;
 
+        /*
+         * Ширина и высота контента должны быть известны до расчёта
+         * preferredHeight, иначе TMP считает высоту для нулевой ширины
+         * и часть текста обрезается.
+         */
+        Canvas.ForceUpdateCanvases();
+
+        if (viewport.rect.width <= 1f)
+        {
+            viewport.ForceUpdateRectTransforms();
+            Canvas.ForceUpdateCanvases();
+        }
+
+        content.sizeDelta = new Vector2(-8f, 0f);
+
         text.ForceMeshUpdate();
 
-        float height = Mathf.Max(100f, text.preferredHeight + 40f);
+        float height = Mathf.Max(100f, text.preferredHeight + 24f);
 
-        content.sizeDelta = new Vector2(0f, height);
+        content.sizeDelta = new Vector2(-8f, height);
 
         ScrollRect scroll =
             scrollObject.GetComponent<ScrollRect>();
@@ -599,6 +686,9 @@ public class PrivacyPolicy3D : MonoBehaviour
         scroll.vertical = true;
         scroll.movementType = ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity = 40f;
+        scroll.verticalNormalizedPosition = 1f;
+
+        Canvas.ForceUpdateCanvases();
 
         return scroll;
     }
