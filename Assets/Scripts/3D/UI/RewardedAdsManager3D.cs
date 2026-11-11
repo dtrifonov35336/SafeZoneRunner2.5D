@@ -28,6 +28,12 @@ public class RewardedAdsManager3D : MonoBehaviour
     private Action rewardCallback;
     private Action<string> failureCallback;
 
+    private bool HasConfiguredAdUnit =>
+        !string.IsNullOrWhiteSpace(rewardedAdUnitId) &&
+        !rewardedAdUnitId.StartsWith(
+            "demo-",
+            StringComparison.OrdinalIgnoreCase);
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -40,6 +46,16 @@ public class RewardedAdsManager3D : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
 #if UNITY_ANDROID && !UNITY_EDITOR
+        if (!HasConfiguredAdUnit)
+        {
+            Debug.LogError(
+                "[RewardedAds] Не задан реальный ID рекламного блока. " +
+                "Укажите ID из консоли Яндекс Рекламы вместо demo-rewarded-yandex."
+            );
+
+            return;
+        }
+
         rewardedAdLoader = new RewardedAdLoader();
         LoadRewardedAd();
 #else
@@ -103,10 +119,22 @@ public class RewardedAdsManager3D : MonoBehaviour
 
 #if UNITY_ANDROID && !UNITY_EDITOR
 
-    if (rewardedAd == null)
+    if (!HasConfiguredAdUnit)
+    {
+        AppMetricaBootstrap.TrackEvent(
+            "rewarded_ad_not_configured",
+            PlacementPayload()
+        );
 
-        if (rewardedAd == null)
-        {
+        onFailed?.Invoke(
+            "Реклама временно недоступна."
+        );
+
+        return false;
+    }
+
+    if (rewardedAd == null)
+    {
             AppMetricaBootstrap.TrackEvent(
                 "rewarded_ad_unavailable",
                 PlacementPayload()

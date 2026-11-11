@@ -31,10 +31,12 @@ namespace RunnerZone.EditorTools.ComfyUI
             imp.mipmapEnabled = false;
 
             TextureImporterPlatformSettings platform = imp.GetDefaultPlatformTextureSettings();
-            platform.textureCompression = TextureImporterCompression.Uncompressed;
+            // Сжатые текстуры вместо RGBA32: экономия памяти и размера сборки.
+            platform.textureCompression = TextureImporterCompression.Compressed;
             platform.overridden = true;
-            platform.format = TextureImporterFormat.RGBA32;
+            platform.format = TextureImporterFormat.Automatic;
             platform.maxTextureSize = 2048;
+            platform.compressionQuality = 50;
             imp.SetPlatformTextureSettings(platform);
 
             TextureImporterSettings sets = new TextureImporterSettings();

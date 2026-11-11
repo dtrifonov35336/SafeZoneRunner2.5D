@@ -1,3 +1,4 @@
+using RuStore;
 using RuStore.PayClient;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,10 @@ public class ShopManager : MonoBehaviour
 
     private bool paymentsAvailable;
     private bool purchaseInProgress;
+    private bool availabilityRequestInFlight;
+    private float nextAvailabilityRetryTime;
+
+    private const float AvailabilityRetryDelay = 2f;
 
     #pragma warning disable 0414
     private bool productsLoaded;
@@ -227,36 +232,55 @@ public class ShopManager : MonoBehaviour
 
     private void InitializePayments()
     {
-        Debug.Log("[Shop] Проверяем доступность RuStore Pay.");
+        if (availabilityRequestInFlight)
+            return;
+
+        availabilityRequestInFlight = true;
+
+        Debug.Log(
+            "[Shop] Проверяем доступность RuStore Pay. SDK: " +
+            RuStorePayClient.PluginVersion
+        );
 
         RuStorePayClient.Instance.GetPurchaseAvailability(
             onFailure: error =>
             {
+                availabilityRequestInFlight = false;
+
                 paymentsAvailable = false;
                 SetBuyButtonsInteractable(false);
 
+                string reason = DescribeError(error);
+
                 Debug.LogError(
-                    "[Shop] Проверка доступности платежей: " + error
+                    "[Shop] Проверка доступности платежей: " + reason
                 );
 
                 ShowMessage(
-                    "Не удалось проверить доступность оплаты."
+                    "Не удалось проверить оплату: " + reason
                 );
             },
             onSuccess: result =>
             {
-                paymentsAvailable = result.isAvailable;
+                availabilityRequestInFlight = false;
+
+                paymentsAvailable =
+                    result != null && result.isAvailable;
 
                 if (!paymentsAvailable)
                 {
                     SetBuyButtonsInteractable(false);
 
+                    string reason = result != null
+                        ? DescribeError(result.cause)
+                        : "SDK не вернул результат";
+
                     Debug.LogWarning(
-                        "[Shop] RuStore Pay недоступен: " + result.cause
+                        "[Shop] RuStore Pay недоступен: " + reason
                     );
 
                     ShowMessage(
-                        "Оплата временно недоступна."
+                        "Оплата недоступна: " + reason
                     );
                     return;
                 }
@@ -267,6 +291,43 @@ public class ShopManager : MonoBehaviour
                 LoadProducts();
             }
         );
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+            return;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (paymentsAvailable && productsLoaded)
+            return;
+
+        if (Time.unscaledTime < nextAvailabilityRetryTime)
+            return;
+
+        nextAvailabilityRetryTime =
+            Time.unscaledTime + AvailabilityRetryDelay;
+
+        Debug.Log(
+            "[Shop] Повторная проверка RuStore Pay после возврата в игру."
+        );
+
+        InitializePayments();
+#endif
+    }
+
+    private static string DescribeError(RuStoreError error)
+    {
+        if (error == null)
+            return "неизвестная ошибка";
+
+        if (!string.IsNullOrWhiteSpace(error.description))
+            return error.description;
+
+        if (!string.IsNullOrWhiteSpace(error.name))
+            return error.name;
+
+        return "неизвестная ошибка";
     }
 
     private void LoadProducts()
@@ -289,6 +350,11 @@ public class ShopManager : MonoBehaviour
         storeProducts.Clear();
         SetBuyButtonsInteractable(false);
 
+        Debug.Log(
+            "[Shop] Запрашиваем товары: " +
+            string.Join(", ", requestedProducts.ConvertAll(p => p.value))
+        );
+
         if (requestedProducts.Count == 0)
         {
             productsLoaded = true;
@@ -309,12 +375,14 @@ public class ShopManager : MonoBehaviour
                 SetBuyButtonsInteractable(false);
                 RefreshRewardedCoinsCard();
 
+                string reason = DescribeError(error);
+
                 Debug.LogError(
-                    "[Shop] Не удалось загрузить товары: " + error
+                    "[Shop] Не удалось загрузить товары: " + reason
                 );
 
                 ShowMessage(
-                    "Не удалось загрузить каталог покупок."
+                    "Каталог покупок недоступен: " + reason
                 );
             },
 
@@ -410,7 +478,8 @@ public class ShopManager : MonoBehaviour
 
                 Debug.Log(
                     "[Shop] Каталог загружен. Получено платных товаров: " +
-                    storeProducts.Count
+                    storeProducts.Count +
+                    " [" + string.Join(", ", new List<string>(storeProducts.Keys)) + "]"
                 );
 
                 if (missingCount > 0)
