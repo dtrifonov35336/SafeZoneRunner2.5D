@@ -9,6 +9,12 @@ public class SurfaceTextureScroller3D : MonoBehaviour
     [Header("Размер поверхности")]
     public float surfaceLength = 320f;
 
+    [Tooltip(
+        "Автоматически брать длину поверхности из мировых границ меша. " +
+        "Иначе текстура дороги движется с другой скоростью, чем препятствия."
+    )]
+    public bool autoSurfaceLength = true;
+
     [Header("Tiling текстуры")]
     public float textureTilingY = 14f;
 
@@ -27,6 +33,20 @@ public class SurfaceTextureScroller3D : MonoBehaviour
 
         surfaceMaterial =
             surfaceRenderer.material;
+
+        if (autoSurfaceLength && surfaceRenderer != null)
+        {
+            Bounds bounds = surfaceRenderer.bounds;
+
+            // Для горизонтальной дороги длина идёт по Z,
+            // для вертикальной — по Y.
+            float detectedLength = Mathf.Max(
+                bounds.size.z,
+                bounds.size.y);
+
+            if (detectedLength > 0.01f)
+                surfaceLength = detectedLength;
+        }
 
         offsetY = 0f;
     }
