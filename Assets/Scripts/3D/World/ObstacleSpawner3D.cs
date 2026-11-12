@@ -1193,7 +1193,8 @@ public class ObstacleSpawner3D : MonoBehaviour
          * плоским пятном. Небольшой наклон назад (18°) совмещает
          * перспективу рисунка с плоскостью дороги.
          */
-        if (isPit)
+        if (isPit &&
+            instance.GetComponentInChildren<SpriteRenderer>(true) != null)
         {
             instance.transform.rotation =
                 Quaternion.Euler(18f, 0f, 0f);
