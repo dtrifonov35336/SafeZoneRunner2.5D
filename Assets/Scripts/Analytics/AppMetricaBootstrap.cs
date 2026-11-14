@@ -25,6 +25,7 @@ public static class AppMetricaBootstrap
     private static void ResetStaticState()
     {
         isInitialized = false;
+        TrackedEventCount = 0;
     }
 
     [RuntimeInitializeOnLoadMethod(
@@ -180,10 +181,15 @@ public static class AppMetricaBootstrap
 #endif
     }
 
+    /// <summary>
+    /// Диагностический счётчик событий, прошедших проверки согласия.
+    /// Не является доказательством сетевой доставки и не заменяет
+    /// проверку на устройстве.
+    /// </summary>
+    public static int TrackedEventCount { get; private set; }
+
     public static void TrackEvent(string eventName)
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
-
         if (!isInitialized ||
             !PrivacyConsent3D.HasAnalyticsConsent ||
             string.IsNullOrWhiteSpace(eventName))
@@ -191,8 +197,10 @@ public static class AppMetricaBootstrap
             return;
         }
 
-        AppMetrica.ReportEvent(eventName);
+        TrackedEventCount++;
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+        AppMetrica.ReportEvent(eventName);
 #endif
     }
 
@@ -200,8 +208,6 @@ public static class AppMetricaBootstrap
         string eventName,
         string jsonValue)
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
-
         if (!isInitialized ||
             !PrivacyConsent3D.HasAnalyticsConsent ||
             string.IsNullOrWhiteSpace(eventName))
@@ -209,13 +215,15 @@ public static class AppMetricaBootstrap
             return;
         }
 
+        TrackedEventCount++;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
         AppMetrica.ReportEvent(
             eventName,
             string.IsNullOrWhiteSpace(jsonValue)
                 ? "{}"
                 : jsonValue
         );
-
 #endif
     }
 }

@@ -57,12 +57,23 @@ public class RewardedAdsConsentPlayModeTests
     private FieldInfo fRewardCallback;
     private FieldInfo fFailureCallback;
     private FieldInfo fWatchdogSeconds;
+    private FieldInfo fLoadGeneration;
+    private FieldInfo fRewardedAd;
 
     private MethodInfo mOnConsent;
     private MethodInfo mHandleRewarded;
     private MethodInfo mHandleDismissed;
     private MethodInfo mHandleFailedToShow;
+    private MethodInfo mHandleAdLoaded;
+    private MethodInfo mHandleAdFailedToLoad;
+    private MethodInfo mTryBeginLoad;
+    private MethodInfo mTrackAdEvent;
     private MethodInfo mShowRewardedAd;
+
+    private Type appMetricaType;
+    private MethodInfo appTrackEvent;
+    private PropertyInfo appTrackedCount;
+    private PropertyInfo consentHasAnalytics;
 
     private MethodInfo consentReset;
     private MethodInfo consentInitialize;
@@ -117,6 +128,8 @@ public class RewardedAdsConsentPlayModeTests
         fRewardCallback = Field("rewardCallback");
         fFailureCallback = Field("failureCallback");
         fWatchdogSeconds = Field("revokeWatchdogSeconds");
+        fLoadGeneration = Field("loadGeneration");
+        fRewardedAd = Field("rewardedAd");
 
         Assert.IsNotNull(fIsShowing);
         Assert.IsNotNull(fShowUnresolved);
@@ -124,6 +137,8 @@ public class RewardedAdsConsentPlayModeTests
         Assert.IsNotNull(fRewardEarned);
         Assert.IsNotNull(fRewardBlocked);
         Assert.IsNotNull(fWatchdogSeconds);
+        Assert.IsNotNull(fLoadGeneration);
+        Assert.IsNotNull(fRewardedAd);
 
         mOnConsent = managerType.GetMethod(
             "OnAdsConsentChanged", InstanceFlags);
@@ -136,6 +151,46 @@ public class RewardedAdsConsentPlayModeTests
 
         mHandleFailedToShow = managerType.GetMethod(
             "HandleAdFailedToShow", InstanceFlags);
+
+        mHandleAdLoaded = managerType.GetMethod(
+            "HandleAdLoaded", InstanceFlags);
+
+        mHandleAdFailedToLoad = managerType.GetMethod(
+            "HandleAdFailedToLoad", InstanceFlags);
+
+        mTryBeginLoad = managerType.GetMethod(
+            "TryBeginLoad", InstanceFlags);
+
+        mTrackAdEvent = managerType.GetMethod(
+            "TrackAdEvent",
+            BindingFlags.Static |
+            BindingFlags.NonPublic,
+            null,
+            new[] { typeof(string), typeof(string) },
+            null);
+
+        appMetricaType = Type.GetType(
+            "AppMetricaBootstrap, Assembly-CSharp");
+
+        Assert.IsNotNull(
+            appMetricaType,
+            "AppMetricaBootstrap не найден в Assembly-CSharp.");
+
+        appTrackEvent = appMetricaType.GetMethod(
+            "TrackEvent",
+            BindingFlags.Static |
+            BindingFlags.Public,
+            null,
+            new[] { typeof(string) },
+            null);
+
+        appTrackedCount = appMetricaType.GetProperty(
+            "TrackedEventCount",
+            BindingFlags.Static |
+            BindingFlags.Public);
+
+        consentHasAnalytics = consentType.GetProperty(
+            "HasAnalyticsConsent", StaticFlags);
 
         mShowRewardedAd = managerType.GetMethod(
             "ShowRewardedAd",
@@ -153,6 +208,13 @@ public class RewardedAdsConsentPlayModeTests
         Assert.IsNotNull(mHandleRewarded);
         Assert.IsNotNull(mHandleDismissed);
         Assert.IsNotNull(mHandleFailedToShow);
+        Assert.IsNotNull(mHandleAdLoaded);
+        Assert.IsNotNull(mHandleAdFailedToLoad);
+        Assert.IsNotNull(mTryBeginLoad);
+        Assert.IsNotNull(mTrackAdEvent);
+        Assert.IsNotNull(appTrackEvent);
+        Assert.IsNotNull(appTrackedCount);
+        Assert.IsNotNull(consentHasAnalytics);
         Assert.IsNotNull(mShowRewardedAd);
 
         SavePrefs();
@@ -398,6 +460,214 @@ public class RewardedAdsConsentPlayModeTests
     }
 
     // =========================================================
+    // 8. ПОЗДНИЙ CALLBACK ЗАГРУЗКИ ПОСЛЕ ОТЗЫВА И ПОВТОРНОГО РАЗРЕШЕНИЯ
+    // =========================================================
+
+    [Test]
+    public void StaleAdLoaded_DestroysAdAndKeepsCurrentState()
+    {
+        object staleAd = CreateFakeAd();
+        object currentAd = CreateFakeAd();
+
+        SetAdShownHandler(staleAd);
+
+        Assert.IsNotNull(
+            GetAdShownField(staleAd).GetValue(staleAd),
+            "Тестовое событие объявления должно быть установлено.");
+
+        SetField("isLoading", true);
+        fLoadGeneration.SetValue(manager, 10);
+        fRewardedAd.SetValue(manager, currentAd);
+
+        mHandleAdLoaded.Invoke(
+            manager,
+            new[] { staleAd, (object)9 });
+
+        Assert.IsNull(
+            GetAdShownField(staleAd).GetValue(staleAd),
+            "Старое объявление должно быть уничтожено (Destroy обнуляет события).");
+
+        Assert.AreSame(
+            currentAd,
+            fRewardedAd.GetValue(manager),
+            "Старый callback не должен перезаписывать rewardedAd.");
+
+        Assert.IsTrue(
+            Bool("isLoading"),
+            "Старый callback не должен сбрасывать isLoading.");
+
+        Assert.AreEqual(
+            10,
+            (int)fLoadGeneration.GetValue(manager));
+    }
+
+    [Test]
+    public void StaleAdFailedToLoad_DoesNotResetCurrentLoad()
+    {
+        SetField("isLoading", true);
+        fLoadGeneration.SetValue(manager, 7);
+
+        Type argsType =
+            mHandleAdFailedToLoad.GetParameters()[0].ParameterType;
+
+        object args = Activator.CreateInstance(argsType);
+
+        argsType
+            .GetProperty("Message")
+            .SetValue(args, "late failure");
+
+        mHandleAdFailedToLoad.Invoke(
+            manager,
+            new[] { args, (object)6 });
+
+        Assert.IsTrue(
+            Bool("isLoading"),
+            "Старая ошибка не должна сбрасывать isLoading новой загрузки.");
+
+        Assert.AreEqual(
+            7,
+            (int)fLoadGeneration.GetValue(manager));
+    }
+
+    [Test]
+    public void ReAllow_RunsOnlyOneActiveLoad()
+    {
+        SetField("isLoading", false);
+        SetField("isShowing", false);
+        SetField("showUnresolved", false);
+        fRewardedAd.SetValue(manager, null);
+
+        bool first = TryBeginLoad(out int firstGeneration);
+
+        Assert.IsTrue(first);
+        Assert.IsTrue(Bool("isLoading"));
+
+        bool second = TryBeginLoad(out int secondGeneration);
+
+        Assert.IsFalse(
+            second,
+            "Параллельная актуальная загрузка запрещена.");
+        Assert.AreEqual(firstGeneration, secondGeneration);
+        Assert.IsTrue(Bool("isLoading"));
+
+        SetAdsConsent(false);
+        CallConsent(false);
+
+        Assert.IsFalse(
+            Bool("isLoading"),
+            "Отзыв согласия отменяет текущую загрузку.");
+
+        SetAdsConsent(true);
+        CallConsent(true);
+
+        bool third = TryBeginLoad(out int thirdGeneration);
+
+        Assert.IsTrue(
+            third,
+            "После повторного разрешения загрузка должна начинаться.");
+        Assert.Greater(thirdGeneration, firstGeneration);
+        Assert.IsTrue(Bool("isLoading"));
+
+        bool fourth = TryBeginLoad(out int fourthGeneration);
+
+        Assert.IsFalse(
+            fourth,
+            "Повторное разрешение не должно запускать вторую загрузку.");
+        Assert.AreEqual(thirdGeneration, fourthGeneration);
+    }
+
+    // =========================================================
+    // 9. РЕКЛАМНЫЕ И ИГРОВЫЕ СОБЫТИЯ APPMETRICA
+    // =========================================================
+
+    [Test]
+    public void AdEvents_Blocked_WhenAdsConsentFalse_AnalyticsTrue()
+    {
+        SetAdsConsent(false);
+
+        Assert.IsTrue(
+            (bool)consentHasAnalytics.GetValue(null),
+            "Для теста аналитика должна быть разрешена.");
+
+        int before = (int)appTrackedCount.GetValue(null);
+
+        string[] adEvents =
+        {
+            "rewarded_ad_shown",
+            "rewarded_ad_clicked",
+            "rewarded_ad_impression",
+            "rewarded_ad_completed",
+            "rewarded_ad_failed",
+            "rewarded_ad_loaded",
+            "rewarded_ad_show_requested"
+        };
+
+        foreach (string eventName in adEvents)
+        {
+            bool forwarded = (bool)mTrackAdEvent.Invoke(
+                null,
+                new object[] { eventName, "{}" });
+
+            Assert.IsFalse(
+                forwarded,
+                eventName + " не должен уходить без согласия на рекламу.");
+        }
+
+        Assert.AreEqual(
+            before,
+            (int)appTrackedCount.GetValue(null),
+            "Счётчик AppMetrica не должен меняться.");
+
+        SetAdsConsent(true);
+
+        int afterReAllow = (int)appTrackedCount.GetValue(null);
+
+        bool forwardedAfterReAllow = (bool)mTrackAdEvent.Invoke(
+            null,
+            new object[] { "rewarded_ad_shown", "{}" });
+
+        Assert.IsTrue(forwardedAfterReAllow);
+        Assert.AreEqual(
+            afterReAllow + 1,
+            (int)appTrackedCount.GetValue(null),
+            "После повторного разрешения событие снова проходит гейт.");
+    }
+
+    [Test]
+    public void GameEvents_NotBlocked_WhenAnalyticsTrue_AdsFalse()
+    {
+        SetConsentPrefs(true, false);
+
+        Assert.IsTrue(
+            (bool)consentHasAnalytics.GetValue(null));
+
+        int before = (int)appTrackedCount.GetValue(null);
+
+        appTrackEvent.Invoke(
+            null,
+            new object[] { "game_test_event" });
+
+        Assert.AreEqual(
+            before + 1,
+            (int)appTrackedCount.GetValue(null),
+            "Игровое событие не должно блокироваться отказом от рекламы.");
+
+        SetConsentPrefs(false, false);
+
+        int afterAnalyticsRevoke =
+            (int)appTrackedCount.GetValue(null);
+
+        appTrackEvent.Invoke(
+            null,
+            new object[] { "game_test_event" });
+
+        Assert.AreEqual(
+            afterAnalyticsRevoke,
+            (int)appTrackedCount.GetValue(null),
+            "Без согласия на аналитику игровое событие не проходит гейт.");
+    }
+
+    // =========================================================
     // ВСПОМОГАТЕЛЬНОЕ
     // =========================================================
 
@@ -481,18 +751,70 @@ public class RewardedAdsConsentPlayModeTests
             new object[] { granted });
     }
 
-    private void SetAdsConsent(bool allowed)
+    private bool TryBeginLoad(out int generation)
     {
-        PlayerPrefs.SetInt("SafeZone_AnalyticsConsent", 1);
+        object[] args = { null };
+
+        bool result = (bool)mTryBeginLoad.Invoke(
+            manager,
+            args);
+
+        generation = (int)args[0];
+
+        return result;
+    }
+
+    private object CreateFakeAd()
+    {
+        Type adType =
+            mHandleAdLoaded.GetParameters()[0].ParameterType;
+
+        return Activator.CreateInstance(
+            adType,
+            BindingFlags.Instance |
+            BindingFlags.NonPublic,
+            null,
+            new object[] { null },
+            null);
+    }
+
+    private static FieldInfo GetAdShownField(object ad)
+    {
+        return ad.GetType().GetField(
+            "OnAdShown",
+            BindingFlags.Instance |
+            BindingFlags.NonPublic);
+    }
+
+    private static void SetAdShownHandler(object ad)
+    {
+        EventHandler<EventArgs> handler = (sender, args) => { };
+
+        GetAdShownField(ad).SetValue(ad, handler);
+    }
+
+    private void SetConsentPrefs(bool analytics, bool ads)
+    {
+        PlayerPrefs.SetInt(
+            "SafeZone_AnalyticsConsent",
+            analytics ? 1 : 0);
+
         PlayerPrefs.SetInt(
             "SafeZone_AdsConsent",
-            allowed ? 1 : 0);
+            ads ? 1 : 0);
+
         PlayerPrefs.SetInt(
             "SafeZone_PrivacyConsentVersion",
             3);
+
         PlayerPrefs.Save();
 
         ReloadConsent();
+    }
+
+    private void SetAdsConsent(bool allowed)
+    {
+        SetConsentPrefs(true, allowed);
     }
 
     private void ReloadConsent()

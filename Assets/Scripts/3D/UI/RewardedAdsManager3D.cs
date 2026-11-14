@@ -33,6 +33,13 @@ public class RewardedAdsManager3D : MonoBehaviour
 
     private bool adsInitialized;
 
+    /*
+     * Поколение загрузки. Каждый реальный запрос получает новый номер;
+     * отзыв согласия тоже увеличивает поколение. Callback-и старого
+     * запроса не имеют права менять состояние актуальной загрузки.
+     */
+    private int loadGeneration;
+
     #pragma warning disable 0414
     private bool isLoading;
     #pragma warning restore 0414
@@ -217,6 +224,13 @@ public class RewardedAdsManager3D : MonoBehaviour
 
     private void DisableAds()
     {
+        /*
+         * Инвалидируем все незавершённые callback-и загрузки: даже если
+         * SDK пришлёт ответ старого запроса после повторного разрешения,
+         * он не должен приниматься за текущую загрузку.
+         */
+        loadGeneration++;
+
         if (isShowing)
         {
             /*
@@ -324,7 +338,7 @@ public class RewardedAdsManager3D : MonoBehaviour
         rewardCallback = null;
         failureCallback = null;
 
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_failed",
             PlacementPayload("\"stage\":\"unconfirmed\""));
 
@@ -346,38 +360,68 @@ public class RewardedAdsManager3D : MonoBehaviour
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
 
-        if (!PrivacyConsent3D.HasAdsConsent)
+        if (!TryBeginLoad(out int generation))
             return;
 
         if (!adsInitialized)
             InitializeAdsSystem();
 
         if (rewardedAdLoader == null)
-            return;
+        {
+            if (generation == loadGeneration)
+                isLoading = false;
 
-        if (isLoading || isShowing || showUnresolved || rewardedAd != null)
             return;
+        }
 
         if (string.IsNullOrWhiteSpace(rewardedAdUnitId))
         {
+            if (generation == loadGeneration)
+                isLoading = false;
+
             Debug.LogError(
                 "[RewardedAds] Не задан ID рекламного блока."
             );
             return;
         }
 
-        isLoading = true;
-
-        Debug.Log("[Privacy] Rewarded ad loading started");
+        Debug.Log(
+            "[Privacy] Rewarded ad loading started (generation " +
+            generation + ")");
         Debug.Log("[RewardedAds] Начинаем загрузку рекламы.");
 
+        /*
+         * В callback передаётся номер поколения. Поздний ответ старого
+         * запроса не должен приниматься за результат текущего.
+         */
         rewardedAdLoader.LoadAd(
             new AdRequest(rewardedAdUnitId),
-            HandleAdLoaded,
-            HandleAdFailedToLoad
+            ad => HandleAdLoaded(ad, generation),
+            args => HandleAdFailedToLoad(args, generation)
         );
 
 #endif
+    }
+
+    /// <summary>
+    /// Переводит менеджер в состояние загрузки и выдаёт новое поколение.
+    /// Не содержит вызовов SDK, поэтому проверяется тестами в редакторе.
+    /// </summary>
+    private bool TryBeginLoad(out int generation)
+    {
+        // При отказе новое поколение не выдаётся — возвращаем текущее.
+        generation = loadGeneration;
+
+        if (!PrivacyConsent3D.HasAdsConsent)
+            return false;
+
+        if (isLoading || isShowing || showUnresolved || rewardedAd != null)
+            return false;
+
+        generation = ++loadGeneration;
+        isLoading = true;
+
+        return true;
     }
 
     // =========================================================
@@ -435,7 +479,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         if (!HasConfiguredAdUnit)
         {
-            AppMetricaBootstrap.TrackEvent(
+            TrackAdEvent(
                 "rewarded_ad_not_configured",
                 PlacementPayload()
             );
@@ -449,7 +493,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         if (rewardedAd == null)
         {
-            AppMetricaBootstrap.TrackEvent(
+            TrackAdEvent(
                 "rewarded_ad_unavailable",
                 PlacementPayload()
             );
@@ -475,7 +519,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         SubscribeToAdEvents();
 
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_show_requested",
             PlacementPayload()
         );
@@ -513,8 +557,26 @@ public class RewardedAdsManager3D : MonoBehaviour
     // СОБЫТИЯ SDK
     // =========================================================
 
-    private void HandleAdLoaded(RewardedAd ad)
+    private void HandleAdLoaded(
+        RewardedAd ad,
+        int generation)
     {
+        if (generation != loadGeneration)
+        {
+            /*
+             * Ответ отменённого запроса. Уничтожаем объявление и
+             * не трогаем isLoading/rewardedAd актуальной загрузки.
+             */
+            if (ad != null)
+                ad.Destroy();
+
+            Debug.Log(
+                "[RewardedAds] Stale ad load ignored (generation " +
+                generation + ", current " + loadGeneration + ")");
+
+            return;
+        }
+
         isLoading = false;
 
         if (ad == null)
@@ -547,23 +609,33 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         Debug.Log("[RewardedAds] Реклама загружена.");
 
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_loaded",
             PlacementPayload()
         );
     }
 
     private void HandleAdFailedToLoad(
-        AdFailedToLoadEventArgs args)
+        AdFailedToLoadEventArgs args,
+        int generation)
     {
+        if (generation != loadGeneration)
+        {
+            Debug.Log(
+                "[RewardedAds] Stale load failure ignored (generation " +
+                generation + ", current " + loadGeneration + ")");
+
+            return;
+        }
+
         isLoading = false;
 
         Debug.LogWarning(
             "[RewardedAds] Не удалось загрузить рекламу: " +
-            args.Message
+            (args != null ? args.Message : "unknown")
         );
 
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_failed",
             PlacementPayload("\"stage\":\"load\"")
         );
@@ -602,7 +674,7 @@ public class RewardedAdsManager3D : MonoBehaviour
     {
         Debug.Log("[RewardedAds] Реклама показана.");
 
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_shown",
             PlacementPayload()
         );
@@ -610,7 +682,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
     private void HandleAdClicked(object sender, EventArgs args)
     {
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_clicked",
             PlacementPayload()
         );
@@ -620,7 +692,7 @@ public class RewardedAdsManager3D : MonoBehaviour
         object sender,
         ImpressionData impressionData)
     {
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_impression",
             PlacementPayload()
         );
@@ -657,7 +729,7 @@ public class RewardedAdsManager3D : MonoBehaviour
             args.type + ", количество: " + args.amount
         );
 
-        AppMetricaBootstrap.TrackEvent(
+        TrackAdEvent(
             "rewarded_ad_completed",
             PlacementPayload()
         );
@@ -757,7 +829,7 @@ public class RewardedAdsManager3D : MonoBehaviour
         }
         else if (!alreadyNotified)
         {
-            AppMetricaBootstrap.TrackEvent(
+            TrackAdEvent(
                 "rewarded_ad_failed",
                 PlacementPayload("\"stage\":\"show\"")
             );
@@ -788,6 +860,8 @@ public class RewardedAdsManager3D : MonoBehaviour
             revokeWatchdog = null;
         }
 
+        loadGeneration++;
+
         UnsubscribeFromAdEvents();
 
         if (rewardedAd != null)
@@ -797,6 +871,34 @@ public class RewardedAdsManager3D : MonoBehaviour
         }
 
         Instance = null;
+    }
+
+    /// <summary>
+    /// Рекламные события отправляются только при действующем согласии
+    /// на рекламу. За согласие на аналитику по-прежнему отвечает
+    /// AppMetricaBootstrap.TrackEvent.
+    ///
+    /// Возвращает true, если событие передано в AppMetricaBootstrap.
+    /// </summary>
+    private static bool TrackAdEvent(
+        string eventName,
+        string jsonValue = null)
+    {
+        if (!PrivacyConsent3D.HasAdsConsent)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(jsonValue))
+        {
+            AppMetricaBootstrap.TrackEvent(eventName);
+        }
+        else
+        {
+            AppMetricaBootstrap.TrackEvent(
+                eventName,
+                jsonValue);
+        }
+
+        return true;
     }
 
     private string PlacementPayload(string extraFields = null)
