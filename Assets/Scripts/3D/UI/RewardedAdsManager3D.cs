@@ -22,6 +22,12 @@ public class RewardedAdsManager3D : MonoBehaviour
     private string rewardedAdUnitId = "demo-rewarded-yandex";
     #pragma warning restore 0414
 
+    /*
+     * Yandex Mobile Ads 8.5.0 не предоставляет публичного Destroy/Dispose
+     * для RewardedAdLoader (в исходниках есть только LoadAd и
+     * CancelLoading). Поэтому загрузчик создаётся один раз и
+     * переиспользуется; при отзыве согласия блокируются все запросы.
+     */
     private RewardedAdLoader rewardedAdLoader;
     private RewardedAd rewardedAd;
 
@@ -30,9 +36,26 @@ public class RewardedAdsManager3D : MonoBehaviour
     #pragma warning disable 0414
     private bool isLoading;
     #pragma warning restore 0414
+
+    /*
+     * isShowing — рекламное окно открыто и ещё не подтверждено, что оно
+     * закрыто. showUnresolved — аварийное состояние: SDK не прислал
+     * событие завершения, новые запросы запрещены до позднего события
+     * или перезапуска приложения.
+     */
     private bool isShowing;
+    private bool showUnresolved;
+    private bool attemptNotified;
     private bool rewardEarned;
     private bool rewardBlockedByConsent;
+
+    /*
+     * Сколько ждать подтверждения закрытия рекламы после отзыва согласия.
+     * По истечении срока показ НЕ считается завершённым: менеджер
+     * переходит в безопасное аварийное состояние.
+     */
+    [SerializeField]
+    private float revokeWatchdogSeconds = 6f;
 
     private Coroutine revokeWatchdog;
 
@@ -61,6 +84,14 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        /*
+         * Защита от нулевого значения в старых сериализованных данных:
+         * слишком короткий таймаут превращал бы любой отзыв во время
+         * показа в мгновенное аварийное состояние.
+         */
+        if (revokeWatchdogSeconds <= 0.1f)
+            revokeWatchdogSeconds = 6f;
 
         /*
          * Состояние согласия уже загружено на этапе BeforeSceneLoad.
@@ -125,6 +156,19 @@ public class RewardedAdsManager3D : MonoBehaviour
             Debug.Log(
                 "[Privacy] Ads consent granted; enabling ads");
 
+            /*
+             * Пока старое рекламное окно не закрыто достоверно,
+             * новые загрузки и показы запрещены.
+             */
+            if (isShowing || showUnresolved)
+            {
+                Debug.Log(
+                    "[RewardedAds] Previous ad show is not finished; " +
+                    "new requests postponed");
+
+                return;
+            }
+
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (!HasConfiguredAdUnit)
                 return;
@@ -173,14 +217,13 @@ public class RewardedAdsManager3D : MonoBehaviour
 
     private void DisableAds()
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
-
         if (isShowing)
         {
             /*
-             * Прервать уже показанное объявление средствами SDK нельзя.
-             * Помечаем попытку недействительной: награда не выдаётся,
-             * а завершение показа обрабатывается событиями SDK.
+             * Прервать уже открытое рекламное окно средствами SDK нельзя.
+             * Немедленно блокируем награду, но показ НЕ считаем
+             * завершённым: ждём событие SDK, а по таймауту переходим
+             * в аварийное состояние, не освобождая попытку.
              */
             rewardBlockedByConsent = true;
             rewardEarned = false;
@@ -195,10 +238,15 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         if (isLoading)
         {
+#if UNITY_ANDROID && !UNITY_EDITOR
             if (rewardedAdLoader != null)
                 rewardedAdLoader.CancelLoading();
+#endif
 
             isLoading = false;
+
+            Debug.Log(
+                "[RewardedAds] Ad loading cancelled after consent revoke");
         }
 
         UnsubscribeFromAdEvents();
@@ -207,21 +255,41 @@ public class RewardedAdsManager3D : MonoBehaviour
         {
             rewardedAd.Destroy();
             rewardedAd = null;
+
+            Debug.Log(
+                "[RewardedAds] Loaded ad destroyed after consent revoke");
         }
 
         isShowing = false;
+        showUnresolved = false;
+        attemptNotified = false;
         rewardEarned = false;
         rewardBlockedByConsent = false;
         rewardCallback = null;
         failureCallback = null;
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+        /*
+         * RewardedAdLoader в SDK 8.5.0 не имеет публичного Destroy:
+         * освободить его нельзя. Оставляем экземпляр, но все запросы
+         * блокируются проверками согласия до повторного разрешения.
+         */
+        if (rewardedAdLoader != null)
+        {
+            Debug.Log(
+                "[Privacy] RewardedAdLoader retained: Yandex SDK 8.5.0 " +
+                "has no public loader disposal; requests blocked");
+        }
 #endif
     }
 
     private void StartRevokeWatchdog()
     {
+        if (attemptNotified)
+            return;
+
         if (revokeWatchdog != null)
-            StopCoroutine(revokeWatchdog);
+            return;
 
         revokeWatchdog = StartCoroutine(
             RevokeWatchdogRoutine());
@@ -229,20 +297,45 @@ public class RewardedAdsManager3D : MonoBehaviour
 
     private IEnumerator RevokeWatchdogRoutine()
     {
-        /*
-         * Страховка от зависания: если SDK не пришлёт событие закрытия
-         * после отзыва согласия, менеджер всё равно завершит попытку
-         * без награды и освободит состояние.
-         */
-        yield return new WaitForSecondsRealtime(6f);
+        yield return new WaitForSecondsRealtime(
+            Mathf.Max(0.1f, revokeWatchdogSeconds));
 
         revokeWatchdog = null;
 
-        if (!isShowing)
+        if (!isShowing || attemptNotified)
             yield break;
 
-        FinishAdAttempt(
-            "Согласие на обработку данных отозвано.");
+        /*
+         * Показ не подтверждён, но и не завершён. НЕ уничтожаем
+         * объявление и НЕ сбрасываем isShowing: иначе поздние события
+         * SDK потеряются, а новый показ мог бы пересечься с открытым
+         * рекламным окном.
+         *
+         * Переходим в аварийное состояние: вызывающий получает отказ
+         * один раз, новые запросы блокируются до позднего события
+         * завершения или перезапуска приложения.
+         */
+        attemptNotified = true;
+        showUnresolved = true;
+        rewardEarned = false;
+
+        Action<string> failure = failureCallback;
+
+        rewardCallback = null;
+        failureCallback = null;
+
+        AppMetricaBootstrap.TrackEvent(
+            "rewarded_ad_failed",
+            PlacementPayload("\"stage\":\"unconfirmed\""));
+
+        Debug.LogWarning(
+            "[RewardedAds] Ad close not confirmed; emergency state: " +
+            "new ad requests are blocked until the SDK reports " +
+            "completion or the app restarts");
+
+        failure?.Invoke(
+            "Не удалось подтвердить завершение показа рекламы. " +
+            "Новые показы временно недоступны.");
     }
 
     // =========================================================
@@ -262,7 +355,7 @@ public class RewardedAdsManager3D : MonoBehaviour
         if (rewardedAdLoader == null)
             return;
 
-        if (isLoading || isShowing || rewardedAd != null)
+        if (isLoading || isShowing || showUnresolved || rewardedAd != null)
             return;
 
         if (string.IsNullOrWhiteSpace(rewardedAdUnitId))
@@ -307,6 +400,14 @@ public class RewardedAdsManager3D : MonoBehaviour
         Action<string> onFailed,
         string placement)
     {
+        if (showUnresolved)
+        {
+            onFailed?.Invoke(
+                "Предыдущий показ рекламы ещё не завершён. " +
+                "Попробуйте позже.");
+            return false;
+        }
+
         if (isShowing)
         {
             onFailed?.Invoke(
@@ -368,6 +469,8 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         rewardEarned = false;
         rewardBlockedByConsent = false;
+        showUnresolved = false;
+        attemptNotified = false;
         isShowing = true;
 
         SubscribeToAdEvents();
@@ -422,10 +525,11 @@ public class RewardedAdsManager3D : MonoBehaviour
             return;
         }
 
-        if (!PrivacyConsent3D.HasAdsConsent)
+        if (!PrivacyConsent3D.HasAdsConsent || showUnresolved)
         {
             /*
-             * Согласие отозвали, пока шла загрузка.
+             * Согласие отозвали, пока шла загрузка, либо менеджер
+             * находится в аварийном состоянии.
              * Объявление уничтожаем и не используем.
              */
             ad.Destroy();
@@ -527,7 +631,15 @@ public class RewardedAdsManager3D : MonoBehaviour
         if (rewardEarned)
             return;
 
-        if (!PrivacyConsent3D.HasAdsConsent)
+        /*
+         * Награда запрещена, если согласие отозвано, показ попал
+         * в аварийное состояние или вызывающий уже получил отказ.
+         * Проверка выполняется и для поздних событий SDK.
+         */
+        if (rewardBlockedByConsent ||
+            showUnresolved ||
+            attemptNotified ||
+            !PrivacyConsent3D.HasAdsConsent)
         {
             rewardBlockedByConsent = true;
             rewardEarned = false;
@@ -553,18 +665,26 @@ public class RewardedAdsManager3D : MonoBehaviour
 
     private void HandleAdDismissed(object sender, EventArgs args)
     {
-        if (rewardEarned && !rewardBlockedByConsent)
+        string failureMessage;
+
+        if (rewardBlockedByConsent ||
+            !PrivacyConsent3D.HasAdsConsent)
         {
-            FinishAdAttempt(null);
+            failureMessage =
+                "Согласие на обработку данных отозвано.";
+        }
+        else if (showUnresolved || attemptNotified)
+        {
+            failureMessage =
+                "Завершение показа рекламы не было подтверждено.";
         }
         else
         {
-            FinishAdAttempt(
-                rewardBlockedByConsent
-                    ? "Согласие на обработку данных отозвано."
-                    : "Реклама закрыта до получения награды."
-            );
+            failureMessage =
+                "Реклама закрыта до получения награды.";
         }
+
+        FinishAdAttempt(failureMessage);
     }
 
     private void HandleAdFailedToShow(
@@ -572,7 +692,8 @@ public class RewardedAdsManager3D : MonoBehaviour
         AdFailureEventArgs args)
     {
         Debug.LogWarning(
-            "[RewardedAds] Ошибка показа: " + args.Message
+            "[RewardedAds] Ошибка показа: " +
+            (args != null ? args.Message : "unknown")
         );
 
         FinishAdAttempt(
@@ -591,15 +712,31 @@ public class RewardedAdsManager3D : MonoBehaviour
             revokeWatchdog = null;
         }
 
+        bool alreadyNotified = attemptNotified;
+
+        /*
+         * Награда возможна только в том случае, если показ завершился,
+         * согласие ни разу не отзывалось во время показа и вызывающий
+         * ещё не получил результат по таймауту.
+         */
         bool succeeded =
+            !alreadyNotified &&
+            !showUnresolved &&
             rewardEarned &&
             !rewardBlockedByConsent &&
             PrivacyConsent3D.HasAdsConsent;
 
-        Action success = rewardCallback;
-        Action<string> failure = failureCallback;
+        Action success = alreadyNotified
+            ? null
+            : rewardCallback;
+
+        Action<string> failure = alreadyNotified
+            ? null
+            : failureCallback;
 
         isShowing = false;
+        showUnresolved = false;
+        attemptNotified = false;
         rewardEarned = false;
         rewardBlockedByConsent = false;
 
@@ -618,7 +755,7 @@ public class RewardedAdsManager3D : MonoBehaviour
         {
             success?.Invoke();
         }
-        else
+        else if (!alreadyNotified)
         {
             AppMetricaBootstrap.TrackEvent(
                 "rewarded_ad_failed",

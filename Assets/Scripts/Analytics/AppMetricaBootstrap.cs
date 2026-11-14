@@ -50,8 +50,16 @@ public static class AppMetricaBootstrap
 
     /// <summary>
     /// Применяет изменение согласия на аналитику.
-    /// false — прекращает отправку данных (SDK остаётся активированным,
-    /// если был активирован ранее); true — активирует или возобновляет.
+    ///
+    /// ВАЖНО (AppMetrica Unity SDK 6.10.0):
+    ///  * SetDataSendingEnabled(false) отключает только отправку на сервер;
+    ///    активированный SDK продолжает локальный сбор/буферизацию данных;
+    ///  * API полной деактивации и очистки буфера событий в SDK нет
+    ///    (есть только ClearAppEnvironment — это не буфер событий);
+    ///  * после повторного включения накопленные события могут быть
+    ///    отправлены. Это ограничение SDK, а не гарантия полной остановки.
+    ///  * собственные события приложения блокируются в TrackEvent
+    ///    проверкой действующего согласия.
     /// </summary>
     public static void ApplyAnalyticsConsent(bool consent)
     {
@@ -65,7 +73,8 @@ public static class AppMetricaBootstrap
             {
                 AppMetrica.SetDataSendingEnabled(false);
                 Debug.Log(
-                    "[Privacy] AppMetrica data sending disabled");
+                    "[Privacy] AppMetrica sending disabled; SDK remains " +
+                    "activated and may keep collecting locally (SDK limitation)");
             }
             catch (Exception exception)
             {
@@ -75,7 +84,8 @@ public static class AppMetricaBootstrap
             }
 #else
             Debug.Log(
-                "[Privacy] AppMetrica data sending disabled (editor stub)");
+                "[Privacy] AppMetrica sending disabled; SDK remains " +
+                "activated and may keep collecting locally (editor stub)");
 #endif
             return;
         }
@@ -91,7 +101,8 @@ public static class AppMetricaBootstrap
         {
             AppMetrica.SetDataSendingEnabled(true);
             Debug.Log(
-                "[Privacy] AppMetrica data sending enabled");
+                "[Privacy] AppMetrica sending enabled; buffered events " +
+                "collected by the SDK may be sent");
         }
         catch (Exception exception)
         {
@@ -101,7 +112,8 @@ public static class AppMetricaBootstrap
         }
 #else
         Debug.Log(
-            "[Privacy] AppMetrica data sending enabled (editor stub)");
+            "[Privacy] AppMetrica sending enabled; buffered events " +
+            "may be sent (editor stub)");
 #endif
     }
 
