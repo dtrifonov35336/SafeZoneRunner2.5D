@@ -1,9 +1,17 @@
-
 using System;
+using System.Collections;
 using UnityEngine;
 using YandexMobileAds;
 using YandexMobileAds.Base;
 
+/// <summary>
+/// Вознаграждаемая реклама Яндекс Рекламы.
+///
+/// Рекламный SDK и загрузчик создаются только при действующем согласии
+/// на рекламу. До согласия не создаётся RewardedAdLoader, не выполняются
+/// запросы и не запускается предзагрузка. При отзыве согласия загрузка
+/// отменяется, загруженное объявление уничтожается, награда не выдаётся.
+/// </summary>
 public class RewardedAdsManager3D : MonoBehaviour
 {
     public static RewardedAdsManager3D Instance { get; private set; }
@@ -17,11 +25,16 @@ public class RewardedAdsManager3D : MonoBehaviour
     private RewardedAdLoader rewardedAdLoader;
     private RewardedAd rewardedAd;
 
+    private bool adsInitialized;
+
     #pragma warning disable 0414
     private bool isLoading;
     #pragma warning restore 0414
     private bool isShowing;
     private bool rewardEarned;
+    private bool rewardBlockedByConsent;
+
+    private Coroutine revokeWatchdog;
 
     private string currentPlacement = "revive";
 
@@ -34,6 +47,10 @@ public class RewardedAdsManager3D : MonoBehaviour
             "demo-",
             StringComparison.OrdinalIgnoreCase);
 
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -45,7 +62,15 @@ public class RewardedAdsManager3D : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        /*
+         * Состояние согласия уже загружено на этапе BeforeSceneLoad.
+         * Дополнительный вызов идемпотентен и страхует порядок
+         * инициализации на всех платформах.
+         */
+        PrivacyConsent3D.InitializeConsentState();
+
 #if UNITY_ANDROID && !UNITY_EDITOR
+
         if (!HasConfiguredAdUnit)
         {
             Debug.LogError(
@@ -56,28 +81,185 @@ public class RewardedAdsManager3D : MonoBehaviour
             return;
         }
 
-        if (!PrivacyPolicy3D.HasConsent)
+        if (!PrivacyConsent3D.HasAdsConsent)
         {
             Debug.Log(
-                "[RewardedAds] Реклама не загружается: нет согласия на обработку данных."
-            );
+                "[Privacy] Yandex Ads initialization blocked");
+            return;
+        }
+
+        InitializeAdsSystem();
+        LoadRewardedAd();
+
+#else
+
+        if (!PrivacyConsent3D.HasAdsConsent)
+        {
+            Debug.Log(
+                "[Privacy] Yandex Ads initialization blocked");
+        }
+        else
+        {
+            Debug.Log(
+                "[Privacy] Ads system initialized (editor stub)");
+        }
+
+        Debug.Log(
+            "[RewardedAds] Рекламу проверяем в Android-сборке."
+        );
+
+#endif
+    }
+
+    // =========================================================
+    // СОГЛАСИЕ
+    // =========================================================
+
+    /// <summary>
+    /// Вызывается при изменении согласия на рекламу во время работы игры.
+    /// </summary>
+    public void OnAdsConsentChanged(bool granted)
+    {
+        if (granted)
+        {
+            Debug.Log(
+                "[Privacy] Ads consent granted; enabling ads");
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!HasConfiguredAdUnit)
+                return;
+
+            InitializeAdsSystem();
+            LoadRewardedAd();
+#endif
+        }
+        else
+        {
+            Debug.Log(
+                "[Privacy] Ads consent revoked; disabling ads");
+
+            DisableAds();
+        }
+    }
+
+    private void InitializeAdsSystem()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+
+        if (adsInitialized)
+            return;
+
+        if (!PrivacyConsent3D.HasAdsConsent)
+        {
+            Debug.Log(
+                "[Privacy] Yandex Ads initialization blocked");
+            return;
+        }
+
+        if (rewardedAdLoader == null)
+            rewardedAdLoader = new RewardedAdLoader();
+
+        adsInitialized = true;
+
+        Debug.Log("[Privacy] Ads system initialized");
+
+#else
+
+        Debug.Log(
+            "[Privacy] Ads system initialized (editor stub)");
+
+#endif
+    }
+
+    private void DisableAds()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+
+        if (isShowing)
+        {
+            /*
+             * Прервать уже показанное объявление средствами SDK нельзя.
+             * Помечаем попытку недействительной: награда не выдаётся,
+             * а завершение показа обрабатывается событиями SDK.
+             */
+            rewardBlockedByConsent = true;
+            rewardEarned = false;
+
+            Debug.Log(
+                "[Privacy] Reward blocked: consent revoked during ad show");
+
+            StartRevokeWatchdog();
 
             return;
         }
 
-        rewardedAdLoader = new RewardedAdLoader();
-        LoadRewardedAd();
-#else
-        Debug.Log(
-            "[RewardedAds] Рекламу проверяем в Android-сборке."
-        );
+        if (isLoading)
+        {
+            if (rewardedAdLoader != null)
+                rewardedAdLoader.CancelLoading();
+
+            isLoading = false;
+        }
+
+        UnsubscribeFromAdEvents();
+
+        if (rewardedAd != null)
+        {
+            rewardedAd.Destroy();
+            rewardedAd = null;
+        }
+
+        isShowing = false;
+        rewardEarned = false;
+        rewardBlockedByConsent = false;
+        rewardCallback = null;
+        failureCallback = null;
+
 #endif
     }
+
+    private void StartRevokeWatchdog()
+    {
+        if (revokeWatchdog != null)
+            StopCoroutine(revokeWatchdog);
+
+        revokeWatchdog = StartCoroutine(
+            RevokeWatchdogRoutine());
+    }
+
+    private IEnumerator RevokeWatchdogRoutine()
+    {
+        /*
+         * Страховка от зависания: если SDK не пришлёт событие закрытия
+         * после отзыва согласия, менеджер всё равно завершит попытку
+         * без награды и освободит состояние.
+         */
+        yield return new WaitForSecondsRealtime(6f);
+
+        revokeWatchdog = null;
+
+        if (!isShowing)
+            yield break;
+
+        FinishAdAttempt(
+            "Согласие на обработку данных отозвано.");
+    }
+
+    // =========================================================
+    // ЗАГРУЗКА
+    // =========================================================
 
     public void LoadRewardedAd()
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        if (!PrivacyPolicy3D.HasConsent)
+
+        if (!PrivacyConsent3D.HasAdsConsent)
+            return;
+
+        if (!adsInitialized)
+            InitializeAdsSystem();
+
+        if (rewardedAdLoader == null)
             return;
 
         if (isLoading || isShowing || rewardedAd != null)
@@ -93,6 +275,7 @@ public class RewardedAdsManager3D : MonoBehaviour
 
         isLoading = true;
 
+        Debug.Log("[Privacy] Rewarded ad loading started");
         Debug.Log("[RewardedAds] Начинаем загрузку рекламы.");
 
         rewardedAdLoader.LoadAd(
@@ -100,12 +283,17 @@ public class RewardedAdsManager3D : MonoBehaviour
             HandleAdLoaded,
             HandleAdFailedToLoad
         );
+
 #endif
     }
 
+    // =========================================================
+    // ПОКАЗ
+    // =========================================================
+
     public bool ShowRewardedAd(
-    Action onRewarded,
-    Action<string> onFailed)
+        Action onRewarded,
+        Action<string> onFailed)
     {
         return ShowRewardedAd(
             onRewarded,
@@ -121,7 +309,8 @@ public class RewardedAdsManager3D : MonoBehaviour
     {
         if (isShowing)
         {
-            onFailed?.Invoke("Показ рекламы уже выполняется.");
+            onFailed?.Invoke(
+                "Показ рекламы уже выполняется.");
             return false;
         }
 
@@ -129,33 +318,36 @@ public class RewardedAdsManager3D : MonoBehaviour
             ? "other"
             : placement;
 
+        if (!PrivacyConsent3D.HasAdsConsent)
+        {
+            onFailed?.Invoke(
+                "Реклама доступна после согласия на обработку данных."
+            );
+
+            return false;
+        }
+
 #if UNITY_ANDROID && !UNITY_EDITOR
 
-    if (!PrivacyPolicy3D.HasConsent)
-    {
-        onFailed?.Invoke(
-            "Реклама доступна после согласия на обработку данных."
-        );
+        if (!adsInitialized)
+            InitializeAdsSystem();
 
-        return false;
-    }
+        if (!HasConfiguredAdUnit)
+        {
+            AppMetricaBootstrap.TrackEvent(
+                "rewarded_ad_not_configured",
+                PlacementPayload()
+            );
 
-    if (!HasConfiguredAdUnit)
-    {
-        AppMetricaBootstrap.TrackEvent(
-            "rewarded_ad_not_configured",
-            PlacementPayload()
-        );
+            onFailed?.Invoke(
+                "Реклама временно недоступна."
+            );
 
-        onFailed?.Invoke(
-            "Реклама временно недоступна."
-        );
+            return false;
+        }
 
-        return false;
-    }
-
-    if (rewardedAd == null)
-    {
+        if (rewardedAd == null)
+        {
             AppMetricaBootstrap.TrackEvent(
                 "rewarded_ad_unavailable",
                 PlacementPayload()
@@ -175,6 +367,7 @@ public class RewardedAdsManager3D : MonoBehaviour
         failureCallback = onFailed;
 
         rewardEarned = false;
+        rewardBlockedByConsent = false;
         isShowing = true;
 
         SubscribeToAdEvents();
@@ -201,14 +394,21 @@ public class RewardedAdsManager3D : MonoBehaviour
 
             return false;
         }
+
 #else
+
         onFailed?.Invoke(
             "Реклама доступна только в Android-сборке."
         );
 
         return false;
+
 #endif
     }
+
+    // =========================================================
+    // СОБЫТИЯ SDK
+    // =========================================================
 
     private void HandleAdLoaded(RewardedAd ad)
     {
@@ -219,6 +419,20 @@ public class RewardedAdsManager3D : MonoBehaviour
             Debug.LogWarning(
                 "[RewardedAds] SDK вернул пустое объявление."
             );
+            return;
+        }
+
+        if (!PrivacyConsent3D.HasAdsConsent)
+        {
+            /*
+             * Согласие отозвали, пока шла загрузка.
+             * Объявление уничтожаем и не используем.
+             */
+            ad.Destroy();
+
+            Debug.Log(
+                "[Privacy] Loaded ad discarded: ads consent revoked");
+
             return;
         }
 
@@ -313,6 +527,17 @@ public class RewardedAdsManager3D : MonoBehaviour
         if (rewardEarned)
             return;
 
+        if (!PrivacyConsent3D.HasAdsConsent)
+        {
+            rewardBlockedByConsent = true;
+            rewardEarned = false;
+
+            Debug.Log(
+                "[Privacy] Reward blocked: ads consent revoked");
+
+            return;
+        }
+
         rewardEarned = true;
 
         Debug.Log(
@@ -328,14 +553,16 @@ public class RewardedAdsManager3D : MonoBehaviour
 
     private void HandleAdDismissed(object sender, EventArgs args)
     {
-        if (rewardEarned)
+        if (rewardEarned && !rewardBlockedByConsent)
         {
             FinishAdAttempt(null);
         }
         else
         {
             FinishAdAttempt(
-                "Реклама закрыта до получения награды."
+                rewardBlockedByConsent
+                    ? "Согласие на обработку данных отозвано."
+                    : "Реклама закрыта до получения награды."
             );
         }
     }
@@ -358,13 +585,23 @@ public class RewardedAdsManager3D : MonoBehaviour
         if (!isShowing)
             return;
 
-        bool succeeded = rewardEarned;
+        if (revokeWatchdog != null)
+        {
+            StopCoroutine(revokeWatchdog);
+            revokeWatchdog = null;
+        }
+
+        bool succeeded =
+            rewardEarned &&
+            !rewardBlockedByConsent &&
+            PrivacyConsent3D.HasAdsConsent;
 
         Action success = rewardCallback;
         Action<string> failure = failureCallback;
 
         isShowing = false;
         rewardEarned = false;
+        rewardBlockedByConsent = false;
 
         rewardCallback = null;
         failureCallback = null;
@@ -395,14 +632,24 @@ public class RewardedAdsManager3D : MonoBehaviour
             );
         }
 
-        // Загружаем следующее объявление для будущего возрождения.
-        LoadRewardedAd();
+        /*
+         * Следующее объявление загружаем только при действующем
+         * согласии на рекламу.
+         */
+        if (PrivacyConsent3D.HasAdsConsent)
+            LoadRewardedAd();
     }
 
     private void OnDestroy()
     {
         if (Instance != this)
             return;
+
+        if (revokeWatchdog != null)
+        {
+            StopCoroutine(revokeWatchdog);
+            revokeWatchdog = null;
+        }
 
         UnsubscribeFromAdEvents();
 

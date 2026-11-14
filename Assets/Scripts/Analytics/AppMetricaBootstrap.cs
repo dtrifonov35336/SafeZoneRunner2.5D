@@ -2,6 +2,12 @@ using System;
 using Io.AppMetrica;
 using UnityEngine;
 
+/// <summary>
+/// Инициализация AppMetrica строго после действующего согласия на аналитику.
+///
+/// До согласия SDK не активируется: AppMetrica.Activate() не вызывается,
+/// события не отправляются и не буферизуются приложением.
+/// </summary>
 public static class AppMetricaBootstrap
 {
     // Вставь API-ключ приложения из кабинета AppMetrica.
@@ -10,37 +16,67 @@ public static class AppMetricaBootstrap
 
     private static bool isInitialized;
 
+    /*
+     * Сброс при отключённом Domain Reload: статическое состояние
+     * не должно переживать перезапуск Play Mode.
+     */
+    [RuntimeInitializeOnLoadMethod(
+        RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        isInitialized = false;
+    }
+
     [RuntimeInitializeOnLoadMethod(
         RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Activate()
     {
-        // Аналитика запускается только после согласия пользователя
-        // и только для актуальной версии политики.
-        if (PlayerPrefs.GetInt(
-                PrivacyPolicy3D.ConsentVersionKey,
-                0) != PrivacyPolicy3D.ConsentVersion)
+        /*
+         * Гарантируем, что состояние согласия загружено раньше,
+         * чем любой SDK получит управление, независимо от порядка
+         * RuntimeInitializeOnLoadMethod между классами.
+         */
+        PrivacyConsent3D.InitializeConsentState();
+
+        if (!PrivacyConsent3D.HasAnalyticsConsent)
         {
+            Debug.Log(
+                "[Privacy] AppMetrica initialization blocked");
             return;
         }
-
-        if (PlayerPrefs.GetInt(PrivacyPolicy3D.ConsentKey, 0) != 1)
-            return;
 
         ActivateInternal();
     }
 
     /// <summary>
-    /// Включает или выключает отправку аналитики в зависимости от согласия.
+    /// Применяет изменение согласия на аналитику.
+    /// false — прекращает отправку данных (SDK остаётся активированным,
+    /// если был активирован ранее); true — активирует или возобновляет.
     /// </summary>
-    public static void SetConsent(bool consent)
+    public static void ApplyAnalyticsConsent(bool consent)
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
-
         if (!consent)
         {
-            if (isInitialized)
-                AppMetrica.SetDataSendingEnabled(false);
+            if (!isInitialized)
+                return;
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                AppMetrica.SetDataSendingEnabled(false);
+                Debug.Log(
+                    "[Privacy] AppMetrica data sending disabled");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[Privacy] Failed to disable AppMetrica sending: " +
+                    exception);
+            }
+#else
+            Debug.Log(
+                "[Privacy] AppMetrica data sending disabled (editor stub)");
+#endif
             return;
         }
 
@@ -50,8 +86,22 @@ public static class AppMetricaBootstrap
             return;
         }
 
-        AppMetrica.SetDataSendingEnabled(true);
-
+#if UNITY_ANDROID && !UNITY_EDITOR
+        try
+        {
+            AppMetrica.SetDataSendingEnabled(true);
+            Debug.Log(
+                "[Privacy] AppMetrica data sending enabled");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError(
+                "[Privacy] Failed to enable AppMetrica sending: " +
+                exception);
+        }
+#else
+        Debug.Log(
+            "[Privacy] AppMetrica data sending enabled (editor stub)");
 #endif
     }
 
@@ -60,14 +110,20 @@ public static class AppMetricaBootstrap
         if (isInitialized)
             return;
 
+        if (!PrivacyConsent3D.HasAnalyticsConsent)
+        {
+            Debug.Log(
+                "[Privacy] AppMetrica initialization blocked");
+            return;
+        }
+
 #if UNITY_ANDROID && !UNITY_EDITOR
 
         if (string.IsNullOrWhiteSpace(ApiKey) ||
             ApiKey == "PASTE_YOUR_APP_METRICA_API_KEY_HERE")
         {
             Debug.LogError(
-                "[Analytics] Не задан API-ключ AppMetrica."
-            );
+                "[Privacy] AppMetrica API key is not configured.");
             return;
         }
 
@@ -75,7 +131,10 @@ public static class AppMetricaBootstrap
         {
             AppMetrica.Activate(
                 new AppMetricaConfig(ApiKey)
-            );
+                {
+                    DataSendingEnabled = true,
+                    LocationTracking = false
+                });
 
             isInitialized = true;
 
@@ -89,24 +148,22 @@ public static class AppMetricaBootstrap
 #endif
 
             Debug.Log(
-                "[Analytics] AppMetrica активирована. Версия SDK: " +
-                AppMetrica.GetLibraryVersion()
-            );
+                "[Privacy] AppMetrica initialized. SDK: " +
+                AppMetrica.GetLibraryVersion());
         }
         catch (Exception exception)
         {
             Debug.LogError(
-                "[Analytics] Ошибка инициализации AppMetrica: " +
-                exception
-            );
+                "[Privacy] AppMetrica initialization failed: " +
+                exception);
         }
 
 #else
 
+        isInitialized = true;
+
         Debug.Log(
-            "[Analytics] Отправка событий проверяется " +
-            "в Android-сборке, а не в Unity Editor."
-        );
+            "[Privacy] AppMetrica initialized (editor stub)");
 
 #endif
     }
@@ -116,6 +173,7 @@ public static class AppMetricaBootstrap
 #if UNITY_ANDROID && !UNITY_EDITOR
 
         if (!isInitialized ||
+            !PrivacyConsent3D.HasAnalyticsConsent ||
             string.IsNullOrWhiteSpace(eventName))
         {
             return;
@@ -133,6 +191,7 @@ public static class AppMetricaBootstrap
 #if UNITY_ANDROID && !UNITY_EDITOR
 
         if (!isInitialized ||
+            !PrivacyConsent3D.HasAnalyticsConsent ||
             string.IsNullOrWhiteSpace(eventName))
         {
             return;

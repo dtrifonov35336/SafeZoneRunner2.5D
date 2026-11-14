@@ -7,40 +7,47 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Политика конфиденциальности и согласие на обработку персональных данных.
+/// Экраны конфиденциальности Safe Zone Runner.
 ///
-/// Согласие хранится в PlayerPrefs, запрашивается один раз для каждой версии
-/// политики и может быть отозвано из панели политики.
+///  * первый запуск — «НАСТРОЙКИ КОНФИДЕНЦИАЛЬНОСТИ» с двумя
+///    независимыми переключателями (аналитика и реклама), без крестика;
+///  * настройки — «КОНФИДЕНЦИАЛЬНОСТЬ» с редактированием сохранённого
+///    выбора; закрытие без сохранения отменяет изменения;
+///  * просмотр политики и отдельных текстов согласий.
+///
+/// Состояние хранится в PrivacyConsent3D. UI ничего не применяет к SDK
+/// напрямую — только сохраняет решение через единый API.
 /// </summary>
 public class PrivacyPolicy3D : MonoBehaviour
 {
-    public const string ConsentKey = "SafeZone_PrivacyConsent";
-    public const string ConsentVersionKey = "SafeZone_PrivacyConsentVersion";
-    public const string ConsentDateKey = "SafeZone_PrivacyConsentDate";
+    private const string PolicyResourcePath =
+        "Privacy/privacy_policy";
 
-    // Меняйте при существенном изменении текста политики.
-    public const int ConsentVersion = 2;
+    private const string AnalyticsConsentResourcePath =
+        "Privacy/consent_analytics";
 
-    private const string PolicyResourcePath = "Privacy/privacy_policy";
+    private const string AdsConsentResourcePath =
+        "Privacy/consent_ads";
+
+    private enum DocumentKind
+    {
+        Policy,
+        AnalyticsConsent,
+        AdsConsent
+    }
 
     private static PrivacyPolicy3D instance;
 
-    /*
-     * Крестик закрытия показывается только когда окно согласия
-     * открывают из настроек. При первом запуске игры окно
-     * согласия обязано остаться без закрытия: пользователь
-     * должен явно выбрать «ДАЮ СОГЛАСИЕ» или «ТОЛЬКО НЕОБХОДИМОЕ».
-     */
-    private static bool showCloseButton;
-
     private GameObject consentOverlay;
-    private GameObject policyOverlay;
+    private GameObject settingsOverlay;
+    private GameObject documentOverlay;
 
-    public static bool HasConsent =>
-        PlayerPrefs.GetInt(ConsentKey, 0) == 1;
+    private bool draftAnalytics;
+    private bool draftAds;
 
-    public static bool HasDecision =>
-        PlayerPrefs.GetInt(ConsentVersionKey, 0) == ConsentVersion;
+    // =========================================================
+    // ЗАПУСК
+    // =========================================================
 
     [RuntimeInitializeOnLoadMethod(
         RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -75,24 +82,12 @@ public class PrivacyPolicy3D : MonoBehaviour
     {
         instance = this;
 
-        /*
-         * Если текст политики изменился, старое согласие больше
-         * не действует — запрашиваем его заново.
-         */
-        if (!HasDecision &&
-            PlayerPrefs.GetInt(ConsentKey, 0) == 1)
-        {
-            PlayerPrefs.SetInt(ConsentKey, 0);
-            PlayerPrefs.Save();
-        }
-
-        // Передаём сохранённый выбор в SDK при каждом запуске.
-        ApplyConsent(HasConsent);
+        PrivacyConsent3D.InitializeConsentState();
 
         yield return new WaitForSecondsRealtime(0.35f);
 
-        if (!HasDecision)
-            ShowConsent();
+        if (!PrivacyConsent3D.HasDecision)
+            ShowFirstRunInternal();
     }
 
     // =========================================================
@@ -102,74 +97,53 @@ public class PrivacyPolicy3D : MonoBehaviour
     public static void ShowPolicy()
     {
         EnsureInstance();
-        instance.ShowPolicyInternal();
+        instance.ShowDocumentInternal(DocumentKind.Policy);
     }
 
-    public static void ShowConsent()
+    public static void ShowAnalyticsConsentDocument()
     {
         EnsureInstance();
-        instance.ShowConsentInternal();
+        instance.ShowDocumentInternal(
+            DocumentKind.AnalyticsConsent);
+    }
+
+    public static void ShowAdsConsentDocument()
+    {
+        EnsureInstance();
+        instance.ShowDocumentInternal(
+            DocumentKind.AdsConsent);
     }
 
     /// <summary>
-    /// Открывает окно согласия из панели настроек — с крестиком закрытия.
-    /// Первый запуск игры продолжает пользоваться ShowConsent без крестика.
+    /// Экран первого запуска. Показывается только при отсутствии
+    /// актуального решения. Без крестика закрытия.
+    /// </summary>
+    public static void ShowConsent()
+    {
+        EnsureInstance();
+        instance.ShowFirstRunInternal();
+    }
+
+    /// <summary>
+    /// Окно управления согласиями из настроек.
     /// </summary>
     public static void ShowConsentFromSettings()
     {
         EnsureInstance();
-
-        showCloseButton = true;
-
-        instance.ShowConsentInternal();
-    }
-
-    public static void SetConsent(bool consent)
-    {
-        PlayerPrefs.SetInt(ConsentKey, consent ? 1 : 0);
-        PlayerPrefs.SetInt(ConsentVersionKey, ConsentVersion);
-        PlayerPrefs.SetString(
-            ConsentDateKey,
-            DateTime.UtcNow.ToString("o"));
-        PlayerPrefs.Save();
-
-        ApplyConsent(consent);
-
-        if (consent &&
-            RewardedAdsManager3D.Instance != null)
-        {
-            RewardedAdsManager3D.Instance.LoadRewardedAd();
-        }
-
-        /*
-         * Если согласие меняют из окна политики, окно согласия
-         * под ним уже неактуально — закрываем его.
-         */
-        if (instance != null)
-            instance.CloseConsent();
-    }
-
-    private static void ApplyConsent(bool consent)
-    {
-        AppMetricaBootstrap.SetConsent(consent);
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-        YandexMobileAds.YandexAds.SetUserConsent(consent);
-#endif
+        instance.ShowSettingsInternal();
     }
 
     // =========================================================
-    // ОКНО СОГЛАСИЯ
+    // ПЕРВЫЙ ЗАПУСК
     // =========================================================
 
-    private void ShowConsentInternal()
+    private void ShowFirstRunInternal()
     {
-        bool withCloseButton = showCloseButton;
-
-        showCloseButton = false;
-
         if (consentOverlay != null)
             return;
+
+        draftAnalytics = false;
+        draftAds = false;
 
         Canvas canvas = CreateCanvas("PrivacyConsent", 30000);
 
@@ -177,166 +151,127 @@ public class PrivacyPolicy3D : MonoBehaviour
 
         RectTransform card = CreateCard(
             canvas.transform,
-            new Vector2(0.06f, 0.16f),
-            new Vector2(0.94f, 0.84f));
+            new Vector2(0.05f, 0.035f),
+            new Vector2(0.95f, 0.965f));
 
         TextMeshProUGUI title = CreateText(
             card,
-            "СОГЛАСИЕ НА ОБРАБОТКУ ДАННЫХ",
-            34f,
+            "НАСТРОЙКИ КОНФИДЕНЦИАЛЬНОСТИ",
+            32f,
             FontStyles.Bold);
 
         SetRect(
             title.rectTransform,
-            new Vector2(0.05f, 0.87f),
-            new Vector2(0.95f, 0.96f));
+            new Vector2(0.04f, 0.945f),
+            new Vector2(0.96f, 0.99f));
 
-        string statusText;
-        Color statusColor;
+        EnableAutoSize(title, 20f, 32f);
 
-        if (!HasDecision)
-        {
-            statusText = "Решение ещё не принято";
-            statusColor = new Color32(255, 203, 76, 255);
-        }
-        else if (HasConsent)
-        {
-            statusText = "Текущий статус: согласие дано";
-            statusColor = new Color32(120, 210, 140, 255);
-        }
-        else
-        {
-            statusText = "Текущий статус: согласие не дано";
-            statusColor = new Color32(230, 150, 120, 255);
-        }
-
-        TextMeshProUGUI status = CreateText(
+        TextMeshProUGUI intro = CreateText(
             card,
-            statusText,
-            20f,
+            "Мы используем технические данные устройства для " +
+            "анализа работы игры и показа рекламы. Вы можете " +
+            "самостоятельно выбрать, какие виды обработки " +
+            "разрешить. Отказ не ограничивает доступ к основным " +
+            "функциям игры.",
+            19f,
             FontStyles.Normal);
 
-        status.color = statusColor;
+        intro.alignment = TextAlignmentOptions.TopLeft;
 
         SetRect(
-            status.rectTransform,
-            new Vector2(0.05f, 0.80f),
-            new Vector2(0.95f, 0.855f));
+            intro.rectTransform,
+            new Vector2(0.05f, 0.855f),
+            new Vector2(0.95f, 0.94f));
 
-        TextMeshProUGUI message = CreateText(
+        RectTransform content;
+
+        ScrollRect scroll = CreateVerticalScroll(
             card,
-            "Оператор: Индивидуальный предприниматель Трифонов Дмитрий " +
-            "Дмитриевич, ИНН 223203530261, ОГРНИП 324220200008012, " +
-            "e-mail: Z.Games0@yandex.ru.\n\n" +
-            "Я даю согласие на обработку моих персональных данных: " +
-            "технических данных устройства, идентификаторов (включая " +
-            "рекламный идентификатор), данных об использовании игры и " +
-            "данных о покупках — в целях работы игры, аналитики, показа " +
-            "рекламы и обработки покупок.\n\n" +
-            "Согласие действует до его отзыва. Отозвать согласие можно " +
-            "в настройках игры или по указанному e-mail.\n\n" +
-            "Отказ от согласия не ограничивает доступ к игре: аналитика " +
-            "и реклама отключаются.\n\n" +
-            "Согласие оформляется отдельно от иных документов " +
-            "(ст. 9 152-ФЗ). Условия обработки — в Политике " +
-            "конфиденциальности.",
-            22f,
-            FontStyles.Normal);
+            new Vector2(0.035f, 0.225f),
+            new Vector2(0.965f, 0.845f),
+            out content);
 
-        message.alignment = TextAlignmentOptions.TopLeft;
+        AddSection(
+            content,
+            "АНАЛИТИКА ИГРЫ",
+            "AppMetrica: сведения об устройстве, технические " +
+            "идентификаторы, события использования игры и " +
+            "технические ошибки. Данные используются для анализа " +
+            "и улучшения игры.",
+            "Разрешить аналитику",
+            false,
+            value => draftAnalytics = value);
 
-        SetRect(
-            message.rectTransform,
-            new Vector2(0.06f, 0.235f),
-            new Vector2(0.94f, 0.785f));
+        AddSpacer(content, 18f);
 
-        CreateButton(
-            card,
-            "ДАЮ СОГЛАСИЕ",
-            new Vector2(0.07f, 0.13f),
-            new Vector2(0.49f, 0.22f),
-            new Color32(56, 117, 76, 255),
-            () =>
-            {
-                SetConsent(true);
-                CloseConsent();
-            });
+        AddSection(
+            content,
+            "РЕКЛАМА",
+            "Яндекс Реклама: технические идентификаторы и " +
+            "сведения, необходимые для загрузки, показа и учёта " +
+            "рекламы, включая вознаграждаемую рекламу.",
+            "Разрешить рекламу",
+            false,
+            value => draftAds = value);
 
-        CreateButton(
-            card,
-            "ТОЛЬКО НЕОБХОДИМОЕ",
-            new Vector2(0.51f, 0.13f),
-            new Vector2(0.93f, 0.22f),
-            new Color32(62, 72, 78, 255),
-            () =>
-            {
-                SetConsent(false);
-                CloseConsent();
-            });
+        AddSpacer(content, 14f);
 
-        CreateButton(
-            card,
-            "ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ",
-            new Vector2(0.10f, 0.035f),
-            new Vector2(0.90f, 0.105f),
-            new Color32(30, 66, 76, 255),
+        AddLinkButton(
+            content,
+            "Политика конфиденциальности",
             ShowPolicy);
 
-        if (withCloseButton)
-        {
-            CreateCloseConsentButton(card);
-        }
+        AddLinkButton(
+            content,
+            "Согласие на аналитику",
+            ShowAnalyticsConsentDocument);
+
+        AddLinkButton(
+            content,
+            "Согласие на рекламу",
+            ShowAdsConsentDocument);
+
+        CreateButton(
+            card,
+            "СОХРАНИТЬ ВЫБРАННОЕ",
+            new Vector2(0.05f, 0.125f),
+            new Vector2(0.95f, 0.205f),
+            new Color32(56, 117, 76, 255),
+            SaveFirstRunChoice);
+
+        CreateButton(
+            card,
+            "ОТКАЗАТЬСЯ ОТ ВСЕГО",
+            new Vector2(0.05f, 0.025f),
+            new Vector2(0.95f, 0.105f),
+            new Color32(62, 72, 78, 255),
+            RefuseAllFirstRun);
+
+        FinishLayout(scroll, content);
     }
 
-    /*
-     * Крестик в правом верхнем углу карточки согласия.
-     *
-     * Использует PrivacyPointerClick вместо Button/Selectable —
-     * экран приветствия обучения отключает все Selectable в сцене,
-     * и обычная кнопка стала бы некликабельной.
-     * Закрывает окно без изменения состояния согласия.
-     */
-    private void CreateCloseConsentButton(
-        RectTransform card)
+    private void SaveFirstRunChoice()
     {
-        GameObject closeObject = new GameObject(
-            "CloseConsent",
-            typeof(RectTransform),
-            typeof(Image));
+        PrivacyConsent3D.SaveDecision(
+            draftAnalytics,
+            draftAds);
 
-        closeObject.transform.SetParent(card, false);
+        ShowToast(
+            draftAnalytics || draftAds
+                ? "Настройки конфиденциальности сохранены."
+                : "Аналитика и реклама отключены.");
 
-        RectTransform closeRect =
-            closeObject.GetComponent<RectTransform>();
+        CloseConsent();
+    }
 
-        closeRect.anchorMin = new Vector2(1f, 1f);
-        closeRect.anchorMax = new Vector2(1f, 1f);
-        closeRect.pivot = new Vector2(1f, 1f);
-        closeRect.anchoredPosition = new Vector2(-16f, -16f);
-        closeRect.sizeDelta = new Vector2(84f, 84f);
+    private void RefuseAllFirstRun()
+    {
+        PrivacyConsent3D.SaveDecision(false, false);
 
-        Image closeImage = closeObject.GetComponent<Image>();
+        ShowToast("Аналитика и реклама отключены.");
 
-        closeImage.sprite = RuntimeUISprite3D.GetRoundedSprite();
-        closeImage.type = Image.Type.Sliced;
-        closeImage.color = new Color32(62, 72, 78, 255);
-        closeImage.raycastTarget = true;
-
-        PrivacyPointerClick closeClick =
-            closeObject.AddComponent<PrivacyPointerClick>();
-
-        closeClick.onClick = CloseConsent;
-
-        TextMeshProUGUI cross = CreateText(
-            closeRect,
-            "×",
-            40f,
-            FontStyles.Bold);
-
-        SetRect(
-            cross.rectTransform,
-            Vector2.zero,
-            Vector2.one);
+        CloseConsent();
     }
 
     private void CloseConsent()
@@ -348,17 +283,168 @@ public class PrivacyPolicy3D : MonoBehaviour
     }
 
     // =========================================================
-    // ОКНО ПОЛИТИКИ
+    // НАСТРОЙКИ
     // =========================================================
 
-    private void ShowPolicyInternal()
+    private void ShowSettingsInternal()
     {
-        if (policyOverlay != null)
+        if (settingsOverlay != null)
             return;
 
-        Canvas canvas = CreateCanvas("PrivacyPolicy", 30001);
+        draftAnalytics = PrivacyConsent3D.HasAnalyticsConsent;
+        draftAds = PrivacyConsent3D.HasAdsConsent;
 
-        policyOverlay = canvas.gameObject;
+        Canvas canvas = CreateCanvas("PrivacySettings", 30000);
+
+        settingsOverlay = canvas.gameObject;
+
+        RectTransform card = CreateCard(
+            canvas.transform,
+            new Vector2(0.06f, 0.09f),
+            new Vector2(0.94f, 0.91f));
+
+        TextMeshProUGUI title = CreateText(
+            card,
+            "КОНФИДЕНЦИАЛЬНОСТЬ",
+            32f,
+            FontStyles.Bold);
+
+        SetRect(
+            title.rectTransform,
+            new Vector2(0.06f, 0.93f),
+            new Vector2(0.86f, 0.985f));
+
+        EnableAutoSize(title, 18f, 32f);
+
+        CreateCloseButton(card, CloseSettings);
+
+        TextMeshProUGUI intro = CreateText(
+            card,
+            "Здесь можно изменить ранее выданные согласия. " +
+            "Изменения применяются только после нажатия " +
+            "«СОХРАНИТЬ ИЗМЕНЕНИЯ».",
+            17f,
+            FontStyles.Normal);
+
+        intro.alignment = TextAlignmentOptions.TopLeft;
+
+        SetRect(
+            intro.rectTransform,
+            new Vector2(0.06f, 0.845f),
+            new Vector2(0.94f, 0.92f));
+
+        RectTransform content;
+
+        ScrollRect scroll = CreateVerticalScroll(
+            card,
+            new Vector2(0.035f, 0.265f),
+            new Vector2(0.965f, 0.835f),
+            out content);
+
+        AddSection(
+            content,
+            "АНАЛИТИКА — APPMETRICA",
+            "Сведения об устройстве, технические идентификаторы, " +
+            "события использования игры и технические ошибки. " +
+            "Используются для анализа и улучшения игры.",
+            "Разрешить аналитику",
+            draftAnalytics,
+            value => draftAnalytics = value);
+
+        AddSpacer(content, 18f);
+
+        AddSection(
+            content,
+            "РЕКЛАМА — ЯНДЕКС РЕКЛАМА",
+            "Технические идентификаторы и сведения, необходимые " +
+            "для загрузки, показа и учёта рекламы, включая " +
+            "вознаграждаемую рекламу.",
+            "Разрешить рекламу",
+            draftAds,
+            value => draftAds = value);
+
+        AddSpacer(content, 14f);
+
+        AddLinkButton(
+            content,
+            "Политика конфиденциальности",
+            ShowPolicy);
+
+        CreateButton(
+            card,
+            "СОХРАНИТЬ ИЗМЕНЕНИЯ",
+            new Vector2(0.06f, 0.17f),
+            new Vector2(0.94f, 0.245f),
+            new Color32(56, 117, 76, 255),
+            SaveSettings);
+
+        CreateButton(
+            card,
+            "ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ",
+            new Vector2(0.06f, 0.06f),
+            new Vector2(0.94f, 0.135f),
+            new Color32(30, 66, 76, 255),
+            ShowPolicy);
+
+        FinishLayout(scroll, content);
+    }
+
+    private void SaveSettings()
+    {
+        PrivacyConsent3D.SaveDecision(
+            draftAnalytics,
+            draftAds);
+
+        ShowToast("Настройки конфиденциальности сохранены.");
+
+        CloseSettings();
+    }
+
+    private void CloseSettings()
+    {
+        /*
+         * Закрытие без сохранения не меняет PlayerPrefs:
+         * несохранённые изменения отменяются.
+         */
+        if (settingsOverlay != null)
+            Destroy(settingsOverlay);
+
+        settingsOverlay = null;
+    }
+
+    // =========================================================
+    // ДОКУМЕНТЫ
+    // =========================================================
+
+    private void ShowDocumentInternal(DocumentKind kind)
+    {
+        if (documentOverlay != null)
+            return;
+
+        string resourcePath;
+        string titleText;
+
+        switch (kind)
+        {
+            case DocumentKind.AnalyticsConsent:
+                resourcePath = AnalyticsConsentResourcePath;
+                titleText = "СОГЛАСИЕ НА АНАЛИТИКУ";
+                break;
+
+            case DocumentKind.AdsConsent:
+                resourcePath = AdsConsentResourcePath;
+                titleText = "СОГЛАСИЕ НА РЕКЛАМУ";
+                break;
+
+            default:
+                resourcePath = PolicyResourcePath;
+                titleText = "ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ";
+                break;
+        }
+
+        Canvas canvas = CreateCanvas("PrivacyDocument", 30001);
+
+        documentOverlay = canvas.gameObject;
 
         RectTransform card = CreateCard(
             canvas.transform,
@@ -367,117 +453,290 @@ public class PrivacyPolicy3D : MonoBehaviour
 
         TextMeshProUGUI title = CreateText(
             card,
-            "ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ",
-            34f,
+            titleText,
+            30f,
             FontStyles.Bold);
 
         SetRect(
             title.rectTransform,
-            new Vector2(0.05f, 0.925f),
-            new Vector2(0.95f, 0.98f));
+            new Vector2(0.04f, 0.92f),
+            new Vector2(0.96f, 0.975f));
 
-        TextMeshProUGUI status = CreateText(
+        EnableAutoSize(title, 18f, 30f);
+
+        RectTransform content;
+
+        ScrollRect scroll = CreateVerticalScroll(
             card,
-            HasConsent
-                ? "Согласие на обработку данных: ДАНО"
-                : "Согласие на обработку данных: НЕ ДАНО",
-            20f,
-            FontStyles.Normal);
+            new Vector2(0.035f, 0.115f),
+            new Vector2(0.965f, 0.905f),
+            out content);
 
-        status.color = HasConsent
-            ? new Color32(120, 210, 140, 255)
-            : new Color32(230, 150, 120, 255);
-
-        SetRect(
-            status.rectTransform,
-            new Vector2(0.05f, 0.885f),
-            new Vector2(0.95f, 0.92f));
-
-        ScrollRect scroll = CreateScroll(
-            card,
-            new Vector2(0.04f, 0.245f),
-            new Vector2(0.96f, 0.875f),
-            LoadPolicyText());
+        AddParagraph(
+            content,
+            LoadText(resourcePath),
+            22f);
 
         CreateButton(
             card,
             "ЗАКРЫТЬ",
-            new Vector2(0.06f, 0.03f),
-            new Vector2(0.94f, 0.11f),
+            new Vector2(0.06f, 0.025f),
+            new Vector2(0.94f, 0.095f),
             new Color32(62, 72, 78, 255),
-            ClosePolicy);
+            CloseDocument);
 
-        if (HasConsent)
-        {
-            CreateButton(
-                card,
-                "ОТОЗВАТЬ СОГЛАСИЕ",
-                new Vector2(0.06f, 0.13f),
-                new Vector2(0.94f, 0.21f),
-                new Color32(120, 52, 52, 255),
-                () =>
-                {
-                    SetConsent(false);
-
-                    if (ToastNotification.Instance != null)
-                    {
-                        ToastNotification.Instance.Show(
-                            "Согласие отозвано. Аналитика и реклама отключены.");
-                    }
-
-                    ClosePolicy();
-                });
-        }
-        else
-        {
-            CreateButton(
-                card,
-                "ДАЮ СОГЛАСИЕ",
-                new Vector2(0.06f, 0.13f),
-                new Vector2(0.94f, 0.21f),
-                new Color32(56, 117, 76, 255),
-                () =>
-                {
-                    SetConsent(true);
-
-                    if (ToastNotification.Instance != null)
-                    {
-                        ToastNotification.Instance.Show(
-                            "Согласие получено. Аналитика и реклама включены.");
-                    }
-
-                    ClosePolicy();
-                });
-        }
+        FinishLayout(scroll, content);
     }
 
-    private void ClosePolicy()
+    private void CloseDocument()
     {
-        if (policyOverlay != null)
-            Destroy(policyOverlay);
+        if (documentOverlay != null)
+            Destroy(documentOverlay);
 
-        policyOverlay = null;
+        documentOverlay = null;
     }
 
-    private static string LoadPolicyText()
+    private static string LoadText(string resourcePath)
     {
-        TextAsset asset =
-            Resources.Load<TextAsset>(PolicyResourcePath);
+        TextAsset asset = Resources.Load<TextAsset>(resourcePath);
 
         if (asset == null || string.IsNullOrWhiteSpace(asset.text))
         {
             Debug.LogError(
-                "[Privacy] Не найден текст политики: Resources/" +
-                PolicyResourcePath);
+                "[Privacy] Не найден текст документа: Resources/" +
+                resourcePath);
 
-            return "Текст политики конфиденциальности недоступен.";
+            return "Текст документа недоступен.";
         }
 
         return asset.text;
     }
 
     // =========================================================
-    // UI ХЕЛПЕРЫ
+    // UI: КОНТЕНТ
+    // =========================================================
+
+    private static void AddSection(
+        RectTransform content,
+        string header,
+        string description,
+        string toggleLabel,
+        bool initialValue,
+        UnityAction<bool> onChanged)
+    {
+        AddHeader(content, header);
+        AddParagraph(content, description, 18f, 205, 215, 220);
+        AddToggleRow(
+            content,
+            toggleLabel,
+            initialValue,
+            onChanged);
+    }
+
+    private static void AddHeader(
+        RectTransform content,
+        string value)
+    {
+        TextMeshProUGUI header = CreateText(
+            content,
+            value,
+            24f,
+            FontStyles.Bold);
+
+        header.color = new Color32(120, 210, 140, 255);
+        header.faceColor = new Color32(120, 210, 140, 255);
+        header.alignment = TextAlignmentOptions.TopLeft;
+
+        LayoutElement layout =
+            header.gameObject.AddComponent<LayoutElement>();
+
+        layout.minHeight = 30f;
+        layout.preferredHeight = 34f;
+    }
+
+    private static void AddParagraph(
+        RectTransform content,
+        string value,
+        float fontSize,
+        byte r = 255,
+        byte g = 255,
+        byte b = 255)
+    {
+        TextMeshProUGUI text = CreateText(
+            content,
+            value,
+            fontSize,
+            FontStyles.Normal);
+
+        text.color = new Color32(r, g, b, 255);
+        text.faceColor = new Color32(r, g, b, 255);
+        text.alignment = TextAlignmentOptions.TopLeft;
+        text.margin = new Vector4(4f, 2f, 4f, 2f);
+    }
+
+    private static void AddSpacer(
+        RectTransform content,
+        float height)
+    {
+        GameObject spacer = new GameObject(
+            "Spacer",
+            typeof(RectTransform),
+            typeof(LayoutElement));
+
+        spacer.transform.SetParent(content, false);
+
+        LayoutElement layout =
+            spacer.GetComponent<LayoutElement>();
+
+        layout.minHeight = height;
+        layout.preferredHeight = height;
+    }
+
+    private static void AddToggleRow(
+        RectTransform content,
+        string label,
+        bool initialValue,
+        UnityAction<bool> onChanged)
+    {
+        GameObject row = new GameObject(
+            "Toggle_" + label,
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(LayoutElement));
+
+        row.transform.SetParent(content, false);
+
+        LayoutElement layout =
+            row.GetComponent<LayoutElement>();
+
+        layout.minHeight = 84f;
+        layout.preferredHeight = 84f;
+
+        Image hitArea = row.GetComponent<Image>();
+
+        hitArea.color = new Color(0f, 0f, 0f, 0f);
+        hitArea.raycastTarget = true;
+
+        RectTransform rowRect =
+            row.GetComponent<RectTransform>();
+
+        TextMeshProUGUI text = CreateText(
+            rowRect,
+            label,
+            24f,
+            FontStyles.Normal);
+
+        text.alignment = TextAlignmentOptions.MidlineLeft;
+
+        RectTransform textRect = text.rectTransform;
+
+        textRect.anchorMin = new Vector2(0f, 0f);
+        textRect.anchorMax = new Vector2(0.64f, 1f);
+        textRect.offsetMin = new Vector2(2f, 0f);
+        textRect.offsetMax = Vector2.zero;
+
+        EnableAutoSize(text, 16f, 24f);
+
+        GameObject switchObject = new GameObject(
+            "Switch",
+            typeof(RectTransform),
+            typeof(Image));
+
+        switchObject.transform.SetParent(rowRect, false);
+
+        RectTransform switchRect =
+            switchObject.GetComponent<RectTransform>();
+
+        switchRect.anchorMin = new Vector2(1f, 0.5f);
+        switchRect.anchorMax = new Vector2(1f, 0.5f);
+        switchRect.pivot = new Vector2(1f, 0.5f);
+        switchRect.sizeDelta = new Vector2(140f, 60f);
+        switchRect.anchoredPosition = new Vector2(-4f, 0f);
+
+        Image switchImage = switchObject.GetComponent<Image>();
+
+        switchImage.sprite = RuntimeUISprite3D.GetRoundedSprite();
+        switchImage.type = Image.Type.Sliced;
+        switchImage.color = new Color32(62, 72, 78, 255);
+        switchImage.raycastTarget = false;
+
+        GameObject knobObject = new GameObject(
+            "Knob",
+            typeof(RectTransform),
+            typeof(Image));
+
+        knobObject.transform.SetParent(switchRect, false);
+
+        RectTransform knobRect =
+            knobObject.GetComponent<RectTransform>();
+
+        knobRect.sizeDelta = new Vector2(46f, 46f);
+
+        Image knobImage = knobObject.GetComponent<Image>();
+
+        knobImage.sprite = RuntimeUISprite3D.GetRoundedSprite();
+        knobImage.type = Image.Type.Sliced;
+        knobImage.color = Color.white;
+        knobImage.raycastTarget = false;
+
+        PrivacyToggle3D toggle =
+            row.AddComponent<PrivacyToggle3D>();
+
+        toggle.background = switchImage;
+        toggle.knob = knobRect;
+
+        toggle.Configure(initialValue, onChanged);
+    }
+
+    private static void AddLinkButton(
+        RectTransform content,
+        string label,
+        UnityAction onClick)
+    {
+        GameObject go = new GameObject(
+            "Link_" + label,
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(LayoutElement));
+
+        go.transform.SetParent(content, false);
+
+        LayoutElement layout =
+            go.GetComponent<LayoutElement>();
+
+        layout.minHeight = 54f;
+        layout.preferredHeight = 54f;
+
+        Image image = go.GetComponent<Image>();
+
+        image.sprite = RuntimeUISprite3D.GetRoundedSprite();
+        image.type = Image.Type.Sliced;
+        image.color = new Color32(30, 66, 76, 255);
+        image.raycastTarget = true;
+
+        PrivacyPointerClick click =
+            go.AddComponent<PrivacyPointerClick>();
+
+        click.onClick = onClick;
+
+        TextMeshProUGUI text = CreateText(
+            go.GetComponent<RectTransform>(),
+            label,
+            20f,
+            FontStyles.Bold);
+
+        SetRect(
+            text.rectTransform,
+            new Vector2(0.03f, 0.08f),
+            new Vector2(0.97f, 0.92f));
+
+        EnableAutoSize(text, 13f, 20f);
+
+        text.alignment = TextAlignmentOptions.Center;
+    }
+
+    // =========================================================
+    // UI: ХЕЛПЕРЫ
     // =========================================================
 
     private static Canvas CreateCanvas(
@@ -555,6 +814,107 @@ public class PrivacyPolicy3D : MonoBehaviour
         return rect;
     }
 
+    private static ScrollRect CreateVerticalScroll(
+        RectTransform parent,
+        Vector2 anchorMin,
+        Vector2 anchorMax,
+        out RectTransform content)
+    {
+        GameObject scrollObject = new GameObject(
+            "Scroll",
+            typeof(RectTransform),
+            typeof(ScrollRect));
+
+        scrollObject.transform.SetParent(parent, false);
+
+        RectTransform scrollRect =
+            scrollObject.GetComponent<RectTransform>();
+
+        SetRect(scrollRect, anchorMin, anchorMax);
+
+        GameObject viewportObject = new GameObject(
+            "Viewport",
+            typeof(RectTransform),
+            typeof(RectMask2D),
+            typeof(Image));
+
+        viewportObject.transform.SetParent(
+            scrollObject.transform,
+            false);
+
+        RectTransform viewport =
+            viewportObject.GetComponent<RectTransform>();
+
+        SetRect(viewport, Vector2.zero, Vector2.one);
+
+        Image viewportImage =
+            viewportObject.GetComponent<Image>();
+
+        viewportImage.color = new Color(0f, 0f, 0f, 0f);
+        viewportImage.raycastTarget = true;
+
+        GameObject contentObject = new GameObject(
+            "Content",
+            typeof(RectTransform),
+            typeof(VerticalLayoutGroup),
+            typeof(ContentSizeFitter));
+
+        contentObject.transform.SetParent(
+            viewportObject.transform,
+            false);
+
+        content = contentObject.GetComponent<RectTransform>();
+
+        content.anchorMin = new Vector2(0f, 1f);
+        content.anchorMax = new Vector2(1f, 1f);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.anchoredPosition = Vector2.zero;
+        content.sizeDelta = Vector2.zero;
+
+        VerticalLayoutGroup layout =
+            contentObject.GetComponent<VerticalLayoutGroup>();
+
+        layout.padding = new RectOffset(16, 16, 12, 16);
+        layout.spacing = 12f;
+        layout.childAlignment = TextAnchor.UpperLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+
+        ContentSizeFitter fitter =
+            contentObject.GetComponent<ContentSizeFitter>();
+
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        ScrollRect scroll =
+            scrollObject.GetComponent<ScrollRect>();
+
+        scroll.viewport = viewport;
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity = 40f;
+        scroll.verticalNormalizedPosition = 1f;
+
+        return scroll;
+    }
+
+    private static void FinishLayout(
+        ScrollRect scroll,
+        RectTransform content)
+    {
+        Canvas.ForceUpdateCanvases();
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+
+        Canvas.ForceUpdateCanvases();
+
+        scroll.verticalNormalizedPosition = 1f;
+    }
+
     private static TextMeshProUGUI CreateText(
         RectTransform parent,
         string value,
@@ -605,6 +965,16 @@ public class PrivacyPolicy3D : MonoBehaviour
         rect.offsetMax = Vector2.zero;
     }
 
+    private static void EnableAutoSize(
+        TextMeshProUGUI text,
+        float min,
+        float max)
+    {
+        text.enableAutoSizing = true;
+        text.fontSizeMin = min;
+        text.fontSizeMax = max;
+    }
+
     private static void CreateButton(
         RectTransform parent,
         string label,
@@ -644,7 +1014,7 @@ public class PrivacyPolicy3D : MonoBehaviour
         TextMeshProUGUI text = CreateText(
             rect,
             label,
-            26f,
+            24f,
             FontStyles.Bold);
 
         SetRect(
@@ -652,126 +1022,57 @@ public class PrivacyPolicy3D : MonoBehaviour
             new Vector2(0.04f, 0.10f),
             new Vector2(0.96f, 0.90f));
 
-        text.enableAutoSizing = true;
-        text.fontSizeMin = 16f;
-        text.fontSizeMax = 26f;
+        EnableAutoSize(text, 13f, 24f);
     }
 
-    private static ScrollRect CreateScroll(
-        RectTransform parent,
-        Vector2 anchorMin,
-        Vector2 anchorMax,
-        string contentText)
+    private static void CreateCloseButton(
+        RectTransform card,
+        UnityAction onClose)
     {
-        GameObject scrollObject = new GameObject(
-            "Scroll",
+        GameObject closeObject = new GameObject(
+            "ClosePrivacy",
             typeof(RectTransform),
-            typeof(ScrollRect));
-
-        scrollObject.transform.SetParent(parent, false);
-
-        RectTransform scrollRect =
-            scrollObject.GetComponent<RectTransform>();
-
-        SetRect(scrollRect, anchorMin, anchorMax);
-
-        GameObject viewportObject = new GameObject(
-            "Viewport",
-            typeof(RectTransform),
-            typeof(RectMask2D),
             typeof(Image));
 
-        viewportObject.transform.SetParent(
-            scrollObject.transform,
-            false);
+        closeObject.transform.SetParent(card, false);
 
-        RectTransform viewport =
-            viewportObject.GetComponent<RectTransform>();
+        RectTransform closeRect =
+            closeObject.GetComponent<RectTransform>();
 
-        SetRect(viewport, Vector2.zero, Vector2.one);
+        closeRect.anchorMin = new Vector2(1f, 1f);
+        closeRect.anchorMax = new Vector2(1f, 1f);
+        closeRect.pivot = new Vector2(1f, 1f);
+        closeRect.anchoredPosition = new Vector2(-14f, -14f);
+        closeRect.sizeDelta = new Vector2(76f, 76f);
 
-        Image viewportImage =
-            viewportObject.GetComponent<Image>();
+        Image closeImage = closeObject.GetComponent<Image>();
 
-        viewportImage.color = new Color(0f, 0f, 0f, 0f);
-        viewportImage.raycastTarget = true;
+        closeImage.sprite = RuntimeUISprite3D.GetRoundedSprite();
+        closeImage.type = Image.Type.Sliced;
+        closeImage.color = new Color32(62, 72, 78, 255);
+        closeImage.raycastTarget = true;
 
-        GameObject contentObject = new GameObject(
-            "Content",
-            typeof(RectTransform),
-            typeof(TextMeshProUGUI));
+        PrivacyPointerClick closeClick =
+            closeObject.AddComponent<PrivacyPointerClick>();
 
-        contentObject.transform.SetParent(
-            viewportObject.transform,
-            false);
+        closeClick.onClick = onClose;
 
-        RectTransform content =
-            contentObject.GetComponent<RectTransform>();
+        TextMeshProUGUI cross = CreateText(
+            closeRect,
+            "×",
+            38f,
+            FontStyles.Bold);
 
-        content.anchorMin = new Vector2(0f, 1f);
-        content.anchorMax = new Vector2(1f, 1f);
-        content.pivot = new Vector2(0.5f, 1f);
-        content.anchoredPosition = Vector2.zero;
-        content.sizeDelta = Vector2.zero;
+        SetRect(
+            cross.rectTransform,
+            Vector2.zero,
+            Vector2.one);
+    }
 
-        TextMeshProUGUI text =
-            contentObject.GetComponent<TextMeshProUGUI>();
-
-        TMP_FontAsset font = GetFont();
-
-        if (font != null)
-        {
-            text.font = font;
-
-            if (font.material != null)
-                text.fontSharedMaterial = font.material;
-        }
-
-        text.text = contentText;
-        text.fontSize = 24f;
-        text.lineSpacing = 6f;
-        text.margin = new Vector4(10f, 6f, 10f, 6f);
-        text.color = Color.white;
-        text.alignment = TextAlignmentOptions.TopLeft;
-        text.textWrappingMode = TextWrappingModes.Normal;
-        text.overflowMode = TextOverflowModes.Overflow;
-        text.raycastTarget = false;
-
-        /*
-         * Ширина и высота контента должны быть известны до расчёта
-         * preferredHeight, иначе TMP считает высоту для нулевой ширины
-         * и часть текста обрезается.
-         */
-        Canvas.ForceUpdateCanvases();
-
-        if (viewport.rect.width <= 1f)
-        {
-            viewport.ForceUpdateRectTransforms();
-            Canvas.ForceUpdateCanvases();
-        }
-
-        content.sizeDelta = new Vector2(-8f, 0f);
-
-        text.ForceMeshUpdate();
-
-        float height = Mathf.Max(100f, text.preferredHeight + 24f);
-
-        content.sizeDelta = new Vector2(-8f, height);
-
-        ScrollRect scroll =
-            scrollObject.GetComponent<ScrollRect>();
-
-        scroll.viewport = viewport;
-        scroll.content = content;
-        scroll.horizontal = false;
-        scroll.vertical = true;
-        scroll.movementType = ScrollRect.MovementType.Clamped;
-        scroll.scrollSensitivity = 40f;
-        scroll.verticalNormalizedPosition = 1f;
-
-        Canvas.ForceUpdateCanvases();
-
-        return scroll;
+    private static void ShowToast(string message)
+    {
+        if (ToastNotification.Instance != null)
+            ToastNotification.Instance.Show(message);
     }
 
     private static TMP_FontAsset GetFont()
@@ -806,5 +1107,59 @@ public class PrivacyPointerClick : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData)
     {
         onClick?.Invoke();
+    }
+}
+
+/// <summary>
+/// Переключатель согласия: визуальный тумблер и клик по всей строке.
+/// </summary>
+public class PrivacyToggle3D : MonoBehaviour, IPointerClickHandler
+{
+    public Image background;
+    public RectTransform knob;
+
+    private static readonly Color OffColor =
+        new Color32(62, 72, 78, 255);
+
+    private static readonly Color OnColor =
+        new Color32(56, 117, 76, 255);
+
+    private bool isOn;
+    private UnityAction<bool> onChanged;
+
+    public bool IsOn => isOn;
+
+    public void Configure(
+        bool value,
+        UnityAction<bool> changed)
+    {
+        onChanged = changed;
+        SetValue(value, false);
+    }
+
+    public void SetValue(bool value, bool notify)
+    {
+        isOn = value;
+
+        if (background != null)
+            background.color = value ? OnColor : OffColor;
+
+        if (knob != null)
+        {
+            knob.anchorMin = new Vector2(value ? 1f : 0f, 0.5f);
+            knob.anchorMax = new Vector2(value ? 1f : 0f, 0.5f);
+            knob.pivot = new Vector2(value ? 1f : 0f, 0.5f);
+            knob.anchoredPosition = new Vector2(
+                value ? -8f : 8f,
+                0f);
+        }
+
+        if (notify)
+            onChanged?.Invoke(value);
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        SetValue(!isOn, true);
     }
 }

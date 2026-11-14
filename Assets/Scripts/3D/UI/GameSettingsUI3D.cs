@@ -1620,11 +1620,14 @@ public class GameSettingsUI3D : MonoBehaviour
             TextMeshProUGUI label =
                 labelObject.GetComponent<TextMeshProUGUI>();
 
-            label.text = "СОГЛАСИЕ";
-            label.fontSize = 16;
+            label.text = "НАСТРОЙКИ ДАННЫХ";
+            label.fontSize = 14;
             label.alignment = TextAlignmentOptions.Center;
             label.color = Color.white;
             label.raycastTarget = false;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 10;
+            label.fontSizeMax = 15;
 
             if (TMP_Settings.defaultFontAsset != null)
                 label.font = TMP_Settings.defaultFontAsset;
@@ -1634,6 +1637,17 @@ public class GameSettingsUI3D : MonoBehaviour
             return;
 
         ConfigureButton(button);
+
+        TextMeshProUGUI buttonLabel =
+            button.GetComponentInChildren<TextMeshProUGUI>(true);
+
+        if (buttonLabel != null)
+        {
+            buttonLabel.text = "НАСТРОЙКИ ДАННЫХ";
+            buttonLabel.enableAutoSizing = true;
+            buttonLabel.fontSizeMin = 10;
+            buttonLabel.fontSizeMax = 15;
+        }
 
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(PrivacyPolicy3D.ShowConsentFromSettings);
