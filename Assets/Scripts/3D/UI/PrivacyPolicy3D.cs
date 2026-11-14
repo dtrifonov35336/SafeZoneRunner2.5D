@@ -25,6 +25,14 @@ public class PrivacyPolicy3D : MonoBehaviour
 
     private static PrivacyPolicy3D instance;
 
+    /*
+     * Крестик закрытия показывается только когда окно согласия
+     * открывают из настроек. При первом запуске игры окно
+     * согласия обязано остаться без закрытия: пользователь
+     * должен явно выбрать «ДАЮ СОГЛАСИЕ» или «ТОЛЬКО НЕОБХОДИМОЕ».
+     */
+    private static bool showCloseButton;
+
     private GameObject consentOverlay;
     private GameObject policyOverlay;
 
@@ -103,6 +111,19 @@ public class PrivacyPolicy3D : MonoBehaviour
         instance.ShowConsentInternal();
     }
 
+    /// <summary>
+    /// Открывает окно согласия из панели настроек — с крестиком закрытия.
+    /// Первый запуск игры продолжает пользоваться ShowConsent без крестика.
+    /// </summary>
+    public static void ShowConsentFromSettings()
+    {
+        EnsureInstance();
+
+        showCloseButton = true;
+
+        instance.ShowConsentInternal();
+    }
+
     public static void SetConsent(bool consent)
     {
         PlayerPrefs.SetInt(ConsentKey, consent ? 1 : 0);
@@ -143,6 +164,10 @@ public class PrivacyPolicy3D : MonoBehaviour
 
     private void ShowConsentInternal()
     {
+        bool withCloseButton = showCloseButton;
+
+        showCloseButton = false;
+
         if (consentOverlay != null)
             return;
 
@@ -256,6 +281,62 @@ public class PrivacyPolicy3D : MonoBehaviour
             new Vector2(0.90f, 0.105f),
             new Color32(30, 66, 76, 255),
             ShowPolicy);
+
+        if (withCloseButton)
+        {
+            CreateCloseConsentButton(card);
+        }
+    }
+
+    /*
+     * Крестик в правом верхнем углу карточки согласия.
+     *
+     * Использует PrivacyPointerClick вместо Button/Selectable —
+     * экран приветствия обучения отключает все Selectable в сцене,
+     * и обычная кнопка стала бы некликабельной.
+     * Закрывает окно без изменения состояния согласия.
+     */
+    private void CreateCloseConsentButton(
+        RectTransform card)
+    {
+        GameObject closeObject = new GameObject(
+            "CloseConsent",
+            typeof(RectTransform),
+            typeof(Image));
+
+        closeObject.transform.SetParent(card, false);
+
+        RectTransform closeRect =
+            closeObject.GetComponent<RectTransform>();
+
+        closeRect.anchorMin = new Vector2(1f, 1f);
+        closeRect.anchorMax = new Vector2(1f, 1f);
+        closeRect.pivot = new Vector2(1f, 1f);
+        closeRect.anchoredPosition = new Vector2(-16f, -16f);
+        closeRect.sizeDelta = new Vector2(84f, 84f);
+
+        Image closeImage = closeObject.GetComponent<Image>();
+
+        closeImage.sprite = RuntimeUISprite3D.GetRoundedSprite();
+        closeImage.type = Image.Type.Sliced;
+        closeImage.color = new Color32(62, 72, 78, 255);
+        closeImage.raycastTarget = true;
+
+        PrivacyPointerClick closeClick =
+            closeObject.AddComponent<PrivacyPointerClick>();
+
+        closeClick.onClick = CloseConsent;
+
+        TextMeshProUGUI cross = CreateText(
+            closeRect,
+            "×",
+            40f,
+            FontStyles.Bold);
+
+        SetRect(
+            cross.rectTransform,
+            Vector2.zero,
+            Vector2.one);
     }
 
     private void CloseConsent()

@@ -1636,7 +1636,7 @@ public class GameSettingsUI3D : MonoBehaviour
         ConfigureButton(button);
 
         button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(PrivacyPolicy3D.ShowConsent);
+        button.onClick.AddListener(PrivacyPolicy3D.ShowConsentFromSettings);
     }
 
     private void OpenTutorialSelection()

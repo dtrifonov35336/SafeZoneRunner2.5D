@@ -81,14 +81,47 @@ public class SafeAreaFitter : MonoBehaviour
         // В Play Mode на устройстве — реальный safeArea
         if (Application.isPlaying && Screen.safeArea.width > 10f && Screen.width > 100)
         {
-            safeArea = Screen.safeArea;
-            screenSize = new Vector2(Screen.width, Screen.height);
+            Rect screenSafe = Screen.safeArea;
 
-            if (debugLog && (screenSize != lastScreen || safeArea != lastSafe))
+            /*
+             * В редакторе Game View после изменения размера окна может
+             * какое-то время (а на HiDPI-мониторах — постоянно) отдавать
+             * safeArea в другом масштабе, чем Screen.width/height
+             * (например, safeArea 1170×2289 при экране 321×527).
+             *
+             * Если поделить такое значение на актуальный размер экрана,
+             * получаются якоря больше единицы: SafeArea вырастает в
+             * несколько раз, UI уезжает за экран и клики по кнопкам
+             * проходят мимо (симптом «кнопка срабатывает со второго раза»).
+             *
+             * Поэтому замер принимаем только согласованным с экраном,
+             * иначе считаем safe area равной всему экрану — на десктопе
+             * вырезов нет, так что это корректный результат.
+             */
+            bool consistent =
+                screenSafe.width <= Screen.width * 1.02f &&
+                screenSafe.height <= Screen.height * 1.02f &&
+                screenSafe.xMax <= Screen.width * 1.02f &&
+                screenSafe.yMax <= Screen.height * 1.02f &&
+                screenSafe.width >= Screen.width * 0.5f &&
+                screenSafe.height >= Screen.height * 0.5f;
+
+            if (consistent)
             {
-                lastScreen = screenSize;
-                lastSafe = safeArea;
-                Debug.Log($"[SafeAreaFitter] Real: screen={screenSize}, safeArea={safeArea}");
+                safeArea = screenSafe;
+                screenSize = new Vector2(Screen.width, Screen.height);
+
+                if (debugLog && (screenSize != lastScreen || safeArea != lastSafe))
+                {
+                    lastScreen = screenSize;
+                    lastSafe = safeArea;
+                    Debug.Log($"[SafeAreaFitter] Real: screen={screenSize}, safeArea={safeArea}");
+                }
+            }
+            else
+            {
+                safeArea = new Rect(0f, 0f, Screen.width, Screen.height);
+                screenSize = new Vector2(Screen.width, Screen.height);
             }
         }
         else
@@ -116,6 +149,16 @@ public class SafeAreaFitter : MonoBehaviour
         anchorMin.y += paddingBottom / screenSize.y;
         anchorMax.x -= paddingSide / screenSize.x;
         anchorMax.y -= paddingTop / screenSize.y;
+
+        /*
+         * Финальная страховка: якоря не имеют права выходить за пределы
+         * канваса. Любое неожиданное значение замера больше не способно
+         * разорвать верстку — в худшем случае safe area будет равна нулю.
+         */
+        anchorMin.x = Mathf.Clamp01(anchorMin.x);
+        anchorMin.y = Mathf.Clamp01(anchorMin.y);
+        anchorMax.x = Mathf.Clamp01(anchorMax.x);
+        anchorMax.y = Mathf.Clamp01(anchorMax.y);
 
         // Проверяем, изменилось ли что-то, чтобы не дёргать зря
         if (rect.anchorMin == anchorMin && rect.anchorMax == anchorMax)
