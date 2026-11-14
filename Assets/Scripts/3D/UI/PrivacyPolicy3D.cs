@@ -192,6 +192,15 @@ public class PrivacyPolicy3D : MonoBehaviour
             new Vector2(0.965f, 0.845f),
             out content);
 
+        TextMeshProUGUI analyticsStatus = null;
+        TextMeshProUGUI adsStatus = null;
+
+        System.Action refresh = () =>
+        {
+            UpdateConsentStatus(analyticsStatus, draftAnalytics);
+            UpdateConsentStatus(adsStatus, draftAds);
+        };
+
         AddSection(
             content,
             "АНАЛИТИКА ИГРЫ",
@@ -201,7 +210,12 @@ public class PrivacyPolicy3D : MonoBehaviour
             "и улучшения игры.",
             "Разрешить аналитику",
             false,
-            value => draftAnalytics = value);
+            value =>
+            {
+                draftAnalytics = value;
+                refresh();
+            },
+            out analyticsStatus);
 
         AddSpacer(content, 18f);
 
@@ -213,7 +227,12 @@ public class PrivacyPolicy3D : MonoBehaviour
             "рекламы, включая вознаграждаемую рекламу.",
             "Разрешить рекламу",
             false,
-            value => draftAds = value);
+            value =>
+            {
+                draftAds = value;
+                refresh();
+            },
+            out adsStatus);
 
         AddSpacer(content, 14f);
 
@@ -248,6 +267,8 @@ public class PrivacyPolicy3D : MonoBehaviour
             new Color32(62, 72, 78, 255),
             RefuseAllFirstRun);
 
+        refresh();
+
         FinishLayout(scroll, content);
     }
 
@@ -258,9 +279,7 @@ public class PrivacyPolicy3D : MonoBehaviour
             draftAds);
 
         ShowToast(
-            draftAnalytics || draftAds
-                ? "Настройки конфиденциальности сохранены."
-                : "Аналитика и реклама отключены.");
+            DescribeDecision(draftAnalytics, draftAds));
 
         CloseConsent();
     }
@@ -269,7 +288,7 @@ public class PrivacyPolicy3D : MonoBehaviour
     {
         PrivacyConsent3D.SaveDecision(false, false);
 
-        ShowToast("Аналитика и реклама отключены.");
+        ShowToast(DescribeDecision(false, false));
 
         CloseConsent();
     }
@@ -333,13 +352,50 @@ public class PrivacyPolicy3D : MonoBehaviour
             new Vector2(0.06f, 0.845f),
             new Vector2(0.94f, 0.92f));
 
+        TextMeshProUGUI pendingStatus = CreateText(
+            card,
+            "Все изменения сохранены",
+            16f,
+            FontStyles.Normal);
+
+        pendingStatus.gameObject.name = "PendingStatus";
+        pendingStatus.alignment = TextAlignmentOptions.TopLeft;
+
+        SetRect(
+            pendingStatus.rectTransform,
+            new Vector2(0.06f, 0.803f),
+            new Vector2(0.94f, 0.842f));
+
         RectTransform content;
 
         ScrollRect scroll = CreateVerticalScroll(
             card,
             new Vector2(0.035f, 0.265f),
-            new Vector2(0.965f, 0.835f),
+            new Vector2(0.965f, 0.797f),
             out content);
+
+        TextMeshProUGUI analyticsStatus = null;
+        TextMeshProUGUI adsStatus = null;
+
+        System.Action refresh = () =>
+        {
+            UpdateConsentStatus(analyticsStatus, draftAnalytics);
+            UpdateConsentStatus(adsStatus, draftAds);
+
+            bool pending =
+                draftAnalytics != PrivacyConsent3D.HasAnalyticsConsent ||
+                draftAds != PrivacyConsent3D.HasAdsConsent;
+
+            pendingStatus.text = pending
+                ? "Изменения ожидают сохранения"
+                : "Все изменения сохранены";
+
+            pendingStatus.color = pending
+                ? new Color32(255, 203, 76, 255)
+                : new Color32(150, 165, 175, 255);
+
+            pendingStatus.faceColor = pendingStatus.color;
+        };
 
         AddSection(
             content,
@@ -349,7 +405,12 @@ public class PrivacyPolicy3D : MonoBehaviour
             "Используются для анализа и улучшения игры.",
             "Разрешить аналитику",
             draftAnalytics,
-            value => draftAnalytics = value);
+            value =>
+            {
+                draftAnalytics = value;
+                refresh();
+            },
+            out analyticsStatus);
 
         AddSpacer(content, 18f);
 
@@ -361,9 +422,24 @@ public class PrivacyPolicy3D : MonoBehaviour
             "вознаграждаемую рекламу.",
             "Разрешить рекламу",
             draftAds,
-            value => draftAds = value);
+            value =>
+            {
+                draftAds = value;
+                refresh();
+            },
+            out adsStatus);
 
         AddSpacer(content, 14f);
+
+        AddLinkButton(
+            content,
+            "Прочитать согласие на обработку данных для аналитики",
+            ShowAnalyticsConsentDocument);
+
+        AddLinkButton(
+            content,
+            "Прочитать согласие на обработку данных для рекламы",
+            ShowAdsConsentDocument);
 
         AddLinkButton(
             content,
@@ -386,6 +462,8 @@ public class PrivacyPolicy3D : MonoBehaviour
             new Color32(30, 66, 76, 255),
             ShowPolicy);
 
+        refresh();
+
         FinishLayout(scroll, content);
     }
 
@@ -395,7 +473,8 @@ public class PrivacyPolicy3D : MonoBehaviour
             draftAnalytics,
             draftAds);
 
-        ShowToast("Настройки конфиденциальности сохранены.");
+        ShowToast(
+            DescribeDecision(draftAnalytics, draftAds));
 
         CloseSettings();
     }
@@ -522,7 +601,8 @@ public class PrivacyPolicy3D : MonoBehaviour
         string description,
         string toggleLabel,
         bool initialValue,
-        UnityAction<bool> onChanged)
+        UnityAction<bool> onChanged,
+        out TextMeshProUGUI statusText)
     {
         AddHeader(content, header);
         AddParagraph(content, description, 18f, 205, 215, 220);
@@ -531,6 +611,60 @@ public class PrivacyPolicy3D : MonoBehaviour
             toggleLabel,
             initialValue,
             onChanged);
+        statusText = AddConsentStatus(content);
+    }
+
+    private static TextMeshProUGUI AddConsentStatus(
+        RectTransform content)
+    {
+        TextMeshProUGUI status = CreateText(
+            content,
+            string.Empty,
+            16f,
+            FontStyles.Normal);
+
+        status.gameObject.name = "ConsentStatus";
+        status.alignment = TextAlignmentOptions.TopLeft;
+        status.margin = new Vector4(4f, 0f, 4f, 0f);
+
+        EnableAutoSize(status, 11f, 16f);
+
+        LayoutElement layout =
+            status.gameObject.AddComponent<LayoutElement>();
+
+        layout.minHeight = 26f;
+        layout.preferredHeight = 28f;
+
+        return status;
+    }
+
+    private static void UpdateConsentStatus(
+        TextMeshProUGUI text,
+        bool granted)
+    {
+        if (text == null)
+            return;
+
+        text.text = granted
+            ? "Согласие действует"
+            : "Согласие отсутствует или отозвано";
+
+        Color color = granted
+            ? new Color32(120, 210, 140, 255)
+            : new Color32(230, 150, 120, 255);
+
+        text.color = color;
+        text.faceColor = color;
+    }
+
+    private static string DescribeDecision(
+        bool analytics,
+        bool ads)
+    {
+        return "Сохранено: аналитика — " +
+            (analytics ? "включена" : "отключена") +
+            ", реклама — " +
+            (ads ? "включена" : "отключена") + ".";
     }
 
     private static void AddHeader(

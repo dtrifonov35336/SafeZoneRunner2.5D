@@ -280,6 +280,51 @@ public class PrivacyConsentTests
         Assert.IsFalse(Ads());
     }
 
+    [Test]
+    public void ReopenAndSameSave_DoesNotChangeDates()
+    {
+        saveDecision.Invoke(
+            null,
+            new object[] { true, true });
+
+        string analyticsDate = PlayerPrefs.GetString(
+            "SafeZone_AnalyticsConsentDate", string.Empty);
+
+        string adsDate = PlayerPrefs.GetString(
+            "SafeZone_AdsConsentDate", string.Empty);
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(analyticsDate));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(adsDate));
+
+        // Имитация повторного открытия настроек: только чтение.
+        Reload();
+
+        Assert.AreEqual(
+            analyticsDate,
+            PlayerPrefs.GetString(
+                "SafeZone_AnalyticsConsentDate", string.Empty));
+
+        Assert.AreEqual(
+            adsDate,
+            PlayerPrefs.GetString(
+                "SafeZone_AdsConsentDate", string.Empty));
+
+        // Повторное сохранение тех же значений не должно менять даты.
+        saveDecision.Invoke(
+            null,
+            new object[] { true, true });
+
+        Assert.AreEqual(
+            analyticsDate,
+            PlayerPrefs.GetString(
+                "SafeZone_AnalyticsConsentDate", string.Empty));
+
+        Assert.AreEqual(
+            adsDate,
+            PlayerPrefs.GetString(
+                "SafeZone_AdsConsentDate", string.Empty));
+    }
+
     // =========================================================
     // ВСПОМОГАТЕЛЬНОЕ
     // =========================================================
