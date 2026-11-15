@@ -376,6 +376,40 @@ public class PrivacySettingsUiPlayModeTests
             "Документ рекламы должен упоминать Яндекс.");
     }
 
+    [UnityTest]
+    public IEnumerator Settings_HasSinglePolicyReference()
+    {
+        yield return OpenSettings(true, true);
+
+        GameObject overlay = Overlay();
+        Assert.IsNotNull(overlay);
+
+        int policyReferences = 0;
+
+        foreach (TextMeshProUGUI text
+            in overlay.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (text.text != null &&
+                text.text.IndexOf(
+                    "политик",
+                    StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                policyReferences++;
+            }
+        }
+
+        Assert.AreEqual(
+            1,
+            policyReferences,
+            "В окне настроек должна остаться одна ссылка на политику.");
+
+        Assert.IsNotNull(
+            FindByName(
+                overlay.transform,
+                "ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ"),
+            "Нижняя кнопка политики должна существовать.");
+    }
+
     // =========================================================
     // ВСПОМОГАТЕЛЬНОЕ
     // =========================================================
@@ -577,7 +611,7 @@ public class PrivacySettingsUiPlayModeTests
 
         PlayerPrefs.SetInt(
             "SafeZone_PrivacyConsentVersion",
-            3);
+            4);
 
         PlayerPrefs.Save();
 

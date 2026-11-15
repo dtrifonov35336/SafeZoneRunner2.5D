@@ -72,8 +72,13 @@ public class RewardedAdsConsentPlayModeTests
 
     private Type appMetricaType;
     private MethodInfo appTrackEvent;
+    private MethodInfo appResetStatics;
     private PropertyInfo appTrackedCount;
+    private PropertyInfo appActivationCount;
+    private FieldInfo appIsInitialized;
     private PropertyInfo consentHasAnalytics;
+    private PropertyInfo consentHasAds;
+    private MethodInfo consentSetAdsConsent;
 
     private MethodInfo consentReset;
     private MethodInfo consentInitialize;
@@ -184,6 +189,9 @@ public class RewardedAdsConsentPlayModeTests
             new[] { typeof(string) },
             null);
 
+        appResetStatics = appMetricaType.GetMethod(
+            "ResetStaticState", StaticFlags);
+
         appTrackedCount = appMetricaType.GetProperty(
             "TrackedEventCount",
             BindingFlags.Static |
@@ -191,6 +199,22 @@ public class RewardedAdsConsentPlayModeTests
 
         consentHasAnalytics = consentType.GetProperty(
             "HasAnalyticsConsent", StaticFlags);
+
+        consentHasAds = consentType.GetProperty(
+            "HasAdsConsent", StaticFlags);
+
+        consentSetAdsConsent = consentType.GetMethod(
+            "SetAdsConsent", StaticFlags);
+
+        appActivationCount = appMetricaType.GetProperty(
+            "ActivationCount",
+            BindingFlags.Static |
+            BindingFlags.Public);
+
+        appIsInitialized = appMetricaType.GetField(
+            "isInitialized",
+            BindingFlags.Static |
+            BindingFlags.NonPublic);
 
         mShowRewardedAd = managerType.GetMethod(
             "ShowRewardedAd",
@@ -213,15 +237,20 @@ public class RewardedAdsConsentPlayModeTests
         Assert.IsNotNull(mTryBeginLoad);
         Assert.IsNotNull(mTrackAdEvent);
         Assert.IsNotNull(appTrackEvent);
+        Assert.IsNotNull(appResetStatics);
         Assert.IsNotNull(appTrackedCount);
         Assert.IsNotNull(consentHasAnalytics);
+        Assert.IsNotNull(consentHasAds);
+        Assert.IsNotNull(consentSetAdsConsent);
+        Assert.IsNotNull(appActivationCount);
+        Assert.IsNotNull(appIsInitialized);
         Assert.IsNotNull(mShowRewardedAd);
 
         SavePrefs();
 
         PlayerPrefs.SetInt("SafeZone_AnalyticsConsent", 1);
         PlayerPrefs.SetInt("SafeZone_AdsConsent", 1);
-        PlayerPrefs.SetInt("SafeZone_PrivacyConsentVersion", 3);
+        PlayerPrefs.SetInt("SafeZone_PrivacyConsentVersion", 4);
         PlayerPrefs.Save();
 
         ReloadConsent();
@@ -668,6 +697,155 @@ public class RewardedAdsConsentPlayModeTests
     }
 
     // =========================================================
+    // 10. АКТИВАЦИЯ APPMETRICA И НЕЗАВИСИМОСТЬ СОГЛАСИЙ
+    // =========================================================
+
+    [Test]
+    public void ConsentChanges_DoNotReactivateAppMetrica()
+    {
+        SetConsentPrefs(true, true);
+
+        int activationBefore =
+            (int)appActivationCount.GetValue(null);
+
+        Assert.AreEqual(1, activationBefore);
+
+        consentSetAdsConsent.Invoke(
+            null, new object[] { false });
+
+        consentSetAdsConsent.Invoke(
+            null, new object[] { true });
+
+        Assert.AreEqual(
+            activationBefore,
+            (int)appActivationCount.GetValue(null),
+            "Смена согласия не должна повторно активировать SDK.");
+
+        Assert.IsTrue((bool)appIsInitialized.GetValue(null));
+    }
+
+    [Test]
+    public void NoConsent_DoesNotActivateAppMetricaOrSendEvents()
+    {
+        // Имитируем чистый запуск приложения без согласий.
+        appResetStatics.Invoke(null, null);
+        SetConsentPrefs(false, false);
+
+        Assert.AreEqual(
+            0,
+            (int)appActivationCount.GetValue(null));
+
+        Assert.IsFalse((bool)appIsInitialized.GetValue(null));
+
+        int before = (int)appTrackedCount.GetValue(null);
+
+        appTrackEvent.Invoke(
+            null,
+            new object[] { "game_test_event" });
+
+        Assert.AreEqual(
+            before,
+            (int)appTrackedCount.GetValue(null));
+    }
+
+    [Test]
+    public void AdsAllowedWhenAnalyticsDenied_AdEventsStillBlocked()
+    {
+        SetConsentPrefs(false, true);
+
+        Assert.IsTrue((bool)consentHasAds.GetValue(null));
+        Assert.IsFalse((bool)consentHasAnalytics.GetValue(null));
+
+        SetField("isLoading", false);
+        SetField("isShowing", false);
+        SetField("showUnresolved", false);
+        fRewardedAd.SetValue(manager, null);
+
+        Assert.IsTrue(
+            TryBeginLoad(out _),
+            "Реклама должна проходить гейт по AdsConsent.");
+
+        int before = (int)appTrackedCount.GetValue(null);
+
+        bool forwarded = (bool)mTrackAdEvent.Invoke(
+            null,
+            new object[] { "rewarded_ad_shown", "{}" });
+
+        Assert.IsTrue(
+            forwarded,
+            "Рекламный гейт должен пропустить событие.");
+
+        Assert.AreEqual(
+            before,
+            (int)appTrackedCount.GetValue(null),
+            "Без согласия на аналитику событие не должно доходить до AppMetrica.");
+    }
+
+    [Test]
+    public void ReConsent_OnlyAllowedDirectionSendsEvents()
+    {
+        SetConsentPrefs(false, false);
+
+        int none = (int)appTrackedCount.GetValue(null);
+
+        appTrackEvent.Invoke(
+            null,
+            new object[] { "game_test_event" });
+
+        Assert.AreEqual(
+            none,
+            (int)appTrackedCount.GetValue(null));
+
+        SetConsentPrefs(true, false);
+
+        int analyticsOnly = (int)appTrackedCount.GetValue(null);
+
+        appTrackEvent.Invoke(
+            null,
+            new object[] { "game_test_event" });
+
+        Assert.AreEqual(
+            analyticsOnly + 1,
+            (int)appTrackedCount.GetValue(null));
+
+        bool adForwardedBeforeAds = (bool)mTrackAdEvent.Invoke(
+            null,
+            new object[] { "rewarded_ad_shown", "{}" });
+
+        Assert.IsFalse(adForwardedBeforeAds);
+        Assert.AreEqual(
+            analyticsOnly + 1,
+            (int)appTrackedCount.GetValue(null));
+
+        SetConsentPrefs(true, true);
+
+        int both = (int)appTrackedCount.GetValue(null);
+
+        bool adForwarded = (bool)mTrackAdEvent.Invoke(
+            null,
+            new object[] { "rewarded_ad_shown", "{}" });
+
+        Assert.IsTrue(adForwarded);
+        Assert.AreEqual(
+            both + 1,
+            (int)appTrackedCount.GetValue(null));
+    }
+
+    [Test]
+    public void Load_BlockedWhenAdsConsentFalse()
+    {
+        SetConsentPrefs(true, false);
+
+        SetField("isLoading", false);
+        SetField("isShowing", false);
+        SetField("showUnresolved", false);
+        fRewardedAd.SetValue(manager, null);
+
+        Assert.IsFalse(TryBeginLoad(out _));
+        Assert.IsFalse(Bool("isLoading"));
+    }
+
+    // =========================================================
     // ВСПОМОГАТЕЛЬНОЕ
     // =========================================================
 
@@ -805,7 +983,7 @@ public class RewardedAdsConsentPlayModeTests
 
         PlayerPrefs.SetInt(
             "SafeZone_PrivacyConsentVersion",
-            3);
+            4);
 
         PlayerPrefs.Save();
 

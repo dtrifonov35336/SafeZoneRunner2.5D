@@ -441,11 +441,6 @@ public class PrivacyPolicy3D : MonoBehaviour
             "Прочитать согласие на обработку данных для рекламы",
             ShowAdsConsentDocument);
 
-        AddLinkButton(
-            content,
-            "Политика конфиденциальности",
-            ShowPolicy);
-
         CreateButton(
             card,
             "СОХРАНИТЬ ИЗМЕНЕНИЯ",

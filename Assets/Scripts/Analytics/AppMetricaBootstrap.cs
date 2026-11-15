@@ -16,6 +16,13 @@ public static class AppMetricaBootstrap
 
     private static bool isInitialized;
 
+    /// <summary>
+    /// Диагностический счётчик успешных активаций AppMetrica.
+    /// Нужен для проверки, что смена согласий не вызывает повторную
+    /// активацию SDK. Не является доказательством сетевого поведения.
+    /// </summary>
+    public static int ActivationCount { get; private set; }
+
     /*
      * Сброс при отключённом Domain Reload: статическое состояние
      * не должно переживать перезапуск Play Mode.
@@ -25,6 +32,7 @@ public static class AppMetricaBootstrap
     private static void ResetStaticState()
     {
         isInitialized = false;
+        ActivationCount = 0;
         TrackedEventCount = 0;
     }
 
@@ -118,6 +126,32 @@ public static class AppMetricaBootstrap
 #endif
     }
 
+    /// <summary>
+    /// Конфигурация активации AppMetrica.
+    ///
+    /// Все перечисленные параметры существуют в AppMetrica Unity SDK
+    /// 6.10.0 (класс AppMetricaConfig). Они применяются только в момент
+    /// первой активации; после активации сессии, crash-отчёты,
+    /// app-open и revenue-автотрекинг публичным API не переключаются.
+    ///
+    /// Автоматический сбор установки/базовых технических сведений
+    /// полностью отключить нельзя — SDK обрабатывает их при активации.
+    /// </summary>
+    private static AppMetricaConfig BuildConfig()
+    {
+        return new AppMetricaConfig(ApiKey)
+        {
+            DataSendingEnabled = true,
+            SessionsAutoTrackingEnabled = false,
+            AppOpenTrackingEnabled = false,
+            CrashReporting = false,
+            NativeCrashReporting = false,
+            RevenueAutoTrackingEnabled = false,
+            AdvIdentifiersTracking = false,
+            LocationTracking = false
+        };
+    }
+
     private static void ActivateInternal()
     {
         if (isInitialized)
@@ -142,14 +176,10 @@ public static class AppMetricaBootstrap
 
         try
         {
-            AppMetrica.Activate(
-                new AppMetricaConfig(ApiKey)
-                {
-                    DataSendingEnabled = true,
-                    LocationTracking = false
-                });
+            AppMetrica.Activate(BuildConfig());
 
             isInitialized = true;
+            ActivationCount++;
 
             // Контрольное событие при запуске игры.
             AppMetrica.ReportEvent("game_started");
@@ -161,7 +191,8 @@ public static class AppMetricaBootstrap
 #endif
 
             Debug.Log(
-                "[Privacy] AppMetrica initialized. SDK: " +
+                "[Privacy] AppMetrica initialized with minimal " +
+                "auto-collection. SDK: " +
                 AppMetrica.GetLibraryVersion());
         }
         catch (Exception exception)
@@ -174,9 +205,11 @@ public static class AppMetricaBootstrap
 #else
 
         isInitialized = true;
+        ActivationCount++;
 
         Debug.Log(
-            "[Privacy] AppMetrica initialized (editor stub)");
+            "[Privacy] AppMetrica initialized with minimal " +
+            "auto-collection (editor stub)");
 
 #endif
     }

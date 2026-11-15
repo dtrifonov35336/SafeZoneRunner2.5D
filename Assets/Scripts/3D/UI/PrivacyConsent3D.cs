@@ -40,7 +40,7 @@ public static class PrivacyConsent3D
      * политики или текстов согласий. Согласия предыдущих версий
      * не считаются действующими.
      */
-    public const int DocumentsVersion = 3;
+    public const int DocumentsVersion = 4;
 
     // Старые ключи — только для миграции и диагностики.
     private const string LegacyConsentKey =

@@ -535,11 +535,6 @@ public class ShopManager : MonoBehaviour
 
         RefreshRewardedCoinsCard();
 
-        AppMetricaBootstrap.TrackEvent(
-            "inapp_purchase_started",
-            "{\"product_id\":\"" + pack.id + "\"}"
-        );
-
         Debug.Log("[Shop] Запускаем оплату: " + pack.id);
 
         try
@@ -571,22 +566,12 @@ public class ShopManager : MonoBehaviour
                             "[Shop] Пользователь отменил оплату."
                         );
 
-                        AppMetricaBootstrap.TrackEvent(
-                            "inapp_purchase_cancelled",
-                            "{\"product_id\":\"" + pack.id + "\"}"
-                        );
-
                         ShowMessage("Покупка отменена.");
                     }
                     else
                     {
                         Debug.LogError(
                             "[Shop] Ошибка оплаты: " + error
-                        );
-
-                        AppMetricaBootstrap.TrackEvent(
-                            "inapp_purchase_failed",
-                            "{\"product_id\":\"" + pack.id + "\"}"
                         );
 
                         ShowMessage(
@@ -759,14 +744,6 @@ public class ShopManager : MonoBehaviour
         PlayerPrefs.Save();
 
         UpdateTopCurrencies();
-
-        AppMetricaBootstrap.TrackEvent(
-            "inapp_purchase_granted",
-            "{\"product_id\":\"" + productId +
-            "\",\"sandbox\":" +
-            (sandbox ? "true" : "false") +
-            ",\"quantity\":" + quantity + "}"
-        );
 
         Debug.Log(
             "[Shop] Выдан товар " + productId +
