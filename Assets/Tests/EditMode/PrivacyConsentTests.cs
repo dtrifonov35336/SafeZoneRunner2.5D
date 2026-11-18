@@ -183,7 +183,7 @@ public class PrivacyConsentTests
             0,
             PlayerPrefs.GetInt("SafeZone_AdsConsent", -1));
         Assert.AreEqual(
-            4,
+            5,
             PlayerPrefs.GetInt(
                 "SafeZone_PrivacyConsentVersion", -1));
 
@@ -268,7 +268,7 @@ public class PrivacyConsentTests
         PlayerPrefs.SetInt("SafeZone_AnalyticsConsent", 5);
         PlayerPrefs.SetInt("SafeZone_AdsConsent", 0);
         PlayerPrefs.SetInt(
-            "SafeZone_PrivacyConsentVersion", 4);
+            "SafeZone_PrivacyConsentVersion", 5);
         PlayerPrefs.Save();
 
         Reload();

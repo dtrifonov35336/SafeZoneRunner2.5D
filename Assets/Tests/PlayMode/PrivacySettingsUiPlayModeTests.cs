@@ -372,8 +372,8 @@ public class PrivacySettingsUiPlayModeTests
             HasText(document, "СОГЛАСИЕ НА РЕКЛАМУ"),
             "Должен открыться документ согласия на рекламу.");
         Assert.IsTrue(
-            HasText(document, "Яндекс"),
-            "Документ рекламы должен упоминать Яндекс.");
+            HasText(document, "Yandex Mobile Ads"),
+            "Документ рекламы должен упоминать Yandex Mobile Ads.");
     }
 
     [UnityTest]
@@ -611,7 +611,7 @@ public class PrivacySettingsUiPlayModeTests
 
         PlayerPrefs.SetInt(
             "SafeZone_PrivacyConsentVersion",
-            4);
+            5);
 
         PlayerPrefs.Save();
 

@@ -250,7 +250,7 @@ public class RewardedAdsConsentPlayModeTests
 
         PlayerPrefs.SetInt("SafeZone_AnalyticsConsent", 1);
         PlayerPrefs.SetInt("SafeZone_AdsConsent", 1);
-        PlayerPrefs.SetInt("SafeZone_PrivacyConsentVersion", 4);
+        PlayerPrefs.SetInt("SafeZone_PrivacyConsentVersion", 5);
         PlayerPrefs.Save();
 
         ReloadConsent();
@@ -983,7 +983,7 @@ public class RewardedAdsConsentPlayModeTests
 
         PlayerPrefs.SetInt(
             "SafeZone_PrivacyConsentVersion",
-            4);
+            5);
 
         PlayerPrefs.Save();
 
