@@ -312,11 +312,54 @@ public static class PrivacyConsent3D
         }
     }
 
+    /// <summary>
+    /// Отключает автоматическую отчётность Yandex Mobile Ads
+    /// в AppMetrica. Это не отключает рекламные запросы и показ.
+    /// </summary>
+    private static void DisableYandexAdAnalyticsReporter()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        try
+        {
+            using (var yandexAds =
+                new AndroidJavaClass(
+                    "com.yandex.mobile.ads.common.YandexAds"))
+            {
+                yandexAds.CallStatic(
+                    "setAppAdAnalyticsReporting",
+                    false);
+            }
+
+            Debug.Log(
+                "[Privacy] Yandex ad SDK analytics reporter disabled");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning(
+                "[Privacy] Failed to disable Yandex ad SDK " +
+                "analytics reporter: " + exception);
+        }
+#endif
+    }
+
     private static void ApplyAdsConsent(
         bool value,
         bool notifyManager)
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
+        /*
+         * Это внутренняя отчётность рекламного SDK, а не AppMetrica
+         * приложения. Она управляется отдельно и не должна зависеть
+         * от переключателя аналитики приложения.
+         *
+         * Манифест также содержит
+         * com.yandex.mobile.ads.APPMETRICA_ANALYTICS_ENABLED=false:
+         * этого достаточно, чтобы SDK не активировал собственный
+         * AppMetrica library adapter. Вызов ниже дополнительно
+         * выключает автоматические ad-события на уровне API.
+         */
+        DisableYandexAdAnalyticsReporter();
+
         try
         {
             YandexMobileAds.YandexAds.SetUserConsent(value);

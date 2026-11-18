@@ -4,12 +4,12 @@ using NUnit.Framework;
 using UnityEngine;
 
 /// <summary>
-/// Проверки PlayerScreenBounds3D на синтетической сцене:
-/// крайние полосы, прыжок и разные соотношения сторон.
+/// Проверки PlayerScreenBounds3D на синтетической сцене.
 ///
-/// Тест не загружает MainRoad и не проверяет нативный рендер Android;
-/// он фиксирует геометрию ограничителя по фактическим границам
-/// SpriteRenderer-а.
+/// Компонент больше не смещает игрока по X: горизонтальное
+/// кадрирование выполняет RunnerCameraController. Здесь
+/// фиксируется, что ограничитель не создаёт постоянного
+/// смещения от центра полосы и страхует только нижний край.
 /// </summary>
 public class PlayerScreenBoundsTests
 {
@@ -22,8 +22,11 @@ public class PlayerScreenBoundsTests
     private GameObject playerGo;
     private Camera camera;
     private SpriteRenderer spriteRenderer;
+    private BoxCollider playerCollider;
     private Component boundsComponent;
+    private Component movementComponent;
     private Type boundsType;
+    private Type movementType;
 
     private Texture2D texture;
     private Sprite sprite;
@@ -35,7 +38,7 @@ public class PlayerScreenBoundsTests
         camera = cameraGo.AddComponent<Camera>();
         camera.transform.position = new Vector3(0f, 2.33f, -5.5f);
         camera.transform.rotation = Quaternion.Euler(10f, 0f, 0f);
-        camera.fieldOfView = 50f;
+        camera.fieldOfView = 64.5f;
         camera.orthographic = false;
 
         playerGo = new GameObject("BoundsTestPlayer");
@@ -52,6 +55,20 @@ public class PlayerScreenBoundsTests
 
         spriteRenderer.sprite = sprite;
 
+        playerCollider = playerGo.AddComponent<BoxCollider>();
+        playerCollider.center = Vector3.zero;
+        playerCollider.size = new Vector3(0.9f, 1.8f, 0.9f);
+
+        movementType = Type.GetType(
+            "PlayerMovement3D, Assembly-CSharp");
+
+        Assert.IsNotNull(
+            movementType,
+            "PlayerMovement3D не найден в Assembly-CSharp.");
+
+        movementComponent =
+            playerGo.AddComponent(movementType);
+
         boundsType = Type.GetType(
             "PlayerScreenBounds3D, Assembly-CSharp");
 
@@ -61,12 +78,10 @@ public class PlayerScreenBoundsTests
 
         boundsComponent = playerGo.AddComponent(boundsType);
 
-        SetField("targetCamera", camera);
-        SetField("viewportMargin", 0.04f);
-        SetField("bottomMargin", 0.02f);
-        SetField("maxIterations", 8);
+        SetField(boundsComponent, boundsType, "targetCamera", camera);
+        SetField(boundsComponent, boundsType, "bottomMargin", 0.02f);
 
-        Call("Awake");
+        Call(boundsComponent, boundsType, "Awake");
     }
 
     [TearDown]
@@ -86,42 +101,52 @@ public class PlayerScreenBoundsTests
     }
 
     [Test]
-    public void LeftLane_TallAspect_RemainsInside()
+    public void LeftLane_TallAspect_KeepsLaneCenter()
     {
-        camera.aspect = 0.4621f;
+        SetFramedFov(0.4621f);
         playerGo.transform.position = new Vector3(-1f, 1f, 0f);
 
-        Call("LateUpdate");
+        Call(boundsComponent, boundsType, "LateUpdate");
+
+        Assert.AreEqual(
+            -1f,
+            playerGo.transform.position.x,
+            0.001f,
+            "Ограничитель не должен смещать игрока с левой полосы.");
 
         AssertInside(0.02f);
-        Assert.Greater(
-            playerGo.transform.position.x,
-            -1f,
-            "На узком экране крайняя левая полоса должна сдвигаться внутрь.");
     }
 
     [Test]
-    public void RightLane_TallAspect_RemainsInside()
+    public void RightLane_TallAspect_KeepsLaneCenter()
     {
-        camera.aspect = 0.4621f;
+        SetFramedFov(0.4621f);
         playerGo.transform.position = new Vector3(1f, 1f, 0f);
 
-        Call("LateUpdate");
+        Call(boundsComponent, boundsType, "LateUpdate");
+
+        Assert.AreEqual(
+            1f,
+            playerGo.transform.position.x,
+            0.001f,
+            "Ограничитель не должен смещать игрока с правой полосы.");
 
         AssertInside(0.02f);
-        Assert.Less(
-            playerGo.transform.position.x,
-            1f,
-            "На узком экране крайняя правая полоса должна сдвигаться внутрь.");
     }
 
     [Test]
-    public void JumpApex_RemainsInside()
+    public void JumpApex_KeepsLaneCenter()
     {
-        camera.aspect = 0.4621f;
+        SetFramedFov(0.4621f);
         playerGo.transform.position = new Vector3(1f, 2.5f, 0f);
 
-        Call("LateUpdate");
+        Call(boundsComponent, boundsType, "LateUpdate");
+
+        Assert.AreEqual(
+            1f,
+            playerGo.transform.position.x,
+            0.001f,
+            "В прыжке ограничитель не должен менять X.");
 
         AssertInside(0.02f);
     }
@@ -129,18 +154,122 @@ public class PlayerScreenBoundsTests
     [Test]
     public void WideAspect_KeepsLaneCenter()
     {
-        camera.aspect = 0.625f;
+        SetFramedFov(0.625f);
         playerGo.transform.position = new Vector3(-1f, 1f, 0f);
 
-        Call("LateUpdate");
-
-        AssertInside(0.02f);
+        Call(boundsComponent, boundsType, "LateUpdate");
 
         Assert.AreEqual(
             -1f,
             playerGo.transform.position.x,
             0.001f,
-            "На широком экране крайняя полоса должна оставаться на месте.");
+            "На широком экране полоса должна оставаться на месте.");
+
+        AssertInside(0.02f);
+    }
+
+    [Test]
+    public void LowSprite_IsRaisedWithoutChangingX()
+    {
+        SetFramedFov(0.4621f);
+        playerGo.transform.position = new Vector3(-1f, -0.8f, 0f);
+
+        Call(boundsComponent, boundsType, "LateUpdate");
+
+        Assert.AreEqual(
+            -1f,
+            playerGo.transform.position.x,
+            0.001f,
+            "Подъём по нижнему краю не должен менять X.");
+
+        AssertInside(0.02f);
+    }
+
+    [Test]
+    public void DeadPlayer_IsNotRaised()
+    {
+        SetFramedFov(0.4621f);
+        SetMovementFlag("isDead", true);
+        playerGo.transform.position = new Vector3(-1f, -5f, 0f);
+
+        Call(boundsComponent, boundsType, "LateUpdate");
+
+        Assert.AreEqual(
+            -5f,
+            playerGo.transform.position.y,
+            0.001f,
+            "После смерти персонаж может уходить за экран.");
+    }
+
+    [Test]
+    public void DyingPlayer_IsNotRaised()
+    {
+        SetFramedFov(0.4621f);
+        SetMovementFlag("isDying", true);
+        playerGo.transform.position = new Vector3(1f, -5f, 0f);
+
+        Call(boundsComponent, boundsType, "LateUpdate");
+
+        Assert.AreEqual(
+            -5f,
+            playerGo.transform.position.y,
+            0.001f,
+            "Во время падения персонаж может уходить за экран.");
+    }
+
+    [Test]
+    public void ColliderCenter_MatchesRootAndSprite()
+    {
+        SetFramedFov(0.4621f);
+        playerGo.transform.position = new Vector3(1f, 1f, 0f);
+
+        Call(boundsComponent, boundsType, "LateUpdate");
+
+        Physics.SyncTransforms();
+
+        Assert.AreEqual(
+            playerGo.transform.position.x,
+            playerCollider.bounds.center.x,
+            0.001f,
+            "Центр BoxCollider должен совпадать с корнем игрока.");
+
+        Assert.AreEqual(
+            playerGo.transform.position.x,
+            spriteRenderer.bounds.center.x,
+            0.001f,
+            "Центр спрайта должен совпадать с корнем игрока.");
+    }
+
+    private void SetFramedFov(float aspect)
+    {
+        camera.aspect = aspect;
+
+        Vector3 planePoint = new Vector3(0f, 1f, 0f);
+
+        float depth = Vector3.Dot(
+            planePoint - camera.transform.position,
+            camera.transform.forward);
+
+        float verticalTan =
+            1.65f / depth / aspect;
+
+        camera.fieldOfView =
+            2f *
+            Mathf.Atan(verticalTan) *
+            Mathf.Rad2Deg;
+    }
+
+    private void SetMovementFlag(string name, bool value)
+    {
+        FieldInfo field = movementType.GetField(
+            name,
+            InstanceFlags);
+
+        Assert.IsNotNull(
+            field,
+            "Нет поля PlayerMovement3D." + name);
+
+        field.SetValue(movementComponent, value);
     }
 
     private void AssertInside(float margin)
@@ -150,7 +279,6 @@ public class PlayerScreenBoundsTests
         float minX = float.MaxValue;
         float maxX = float.MinValue;
         float minY = float.MaxValue;
-        float maxY = float.MinValue;
 
         for (int x = -1; x <= 1; x += 2)
         {
@@ -169,7 +297,6 @@ public class PlayerScreenBoundsTests
                     minX = Mathf.Min(minX, viewport.x);
                     maxX = Mathf.Max(maxX, viewport.x);
                     minY = Mathf.Min(minY, viewport.y);
-                    maxY = Mathf.Max(maxY, viewport.y);
                 }
             }
         }
@@ -190,21 +317,28 @@ public class PlayerScreenBoundsTests
             "Спрайт выходит за нижний край viewport.");
     }
 
-    private void SetField(string name, object value)
+    private static void SetField(
+        object target,
+        Type type,
+        string name,
+        object value)
     {
-        FieldInfo field = boundsType.GetField(name, InstanceFlags);
+        FieldInfo field = type.GetField(name, InstanceFlags);
 
         Assert.IsNotNull(field, "Нет поля " + name);
 
-        field.SetValue(boundsComponent, value);
+        field.SetValue(target, value);
     }
 
-    private void Call(string method)
+    private static void Call(
+        object target,
+        Type type,
+        string method)
     {
-        MethodInfo info = boundsType.GetMethod(method, InstanceFlags);
+        MethodInfo info = type.GetMethod(method, InstanceFlags);
 
         Assert.IsNotNull(info, "Нет метода " + method);
 
-        info.Invoke(boundsComponent, null);
+        info.Invoke(target, null);
     }
 }

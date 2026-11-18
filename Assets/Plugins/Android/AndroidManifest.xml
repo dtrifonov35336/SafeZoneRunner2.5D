@@ -17,6 +17,9 @@
                 <data android:scheme="@string/rustore_PayClientSettings_deeplinkScheme" />
             </intent-filter>
         </activity>
+        <!-- Yandex Mobile Ads: отключаем встроенный AppMetrica reporter/library adapter.
+             Рекламные запросы и показ rewarded-рекламы при этом работают. -->
+        <meta-data android:name="com.yandex.mobile.ads.APPMETRICA_ANALYTICS_ENABLED" android:value="false" />
         <meta-data android:name="console_app_id_value" android:value="@string/rustore_PayClientSettings_consoleApplicationId" />
         <meta-data android:name="internal_config_key" android:value="@string/rustore_PayClientSettings_internalConfigKey" />
         <meta-data android:name="sdk_pay_scheme_value" android:value="@string/rustore_PayClientSettings_deeplinkScheme" />

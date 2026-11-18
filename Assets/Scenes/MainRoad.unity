@@ -9378,7 +9378,7 @@ Transform:
   m_GameObject: {fileID: 591714486}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.8, y: 1, z: 0}
+  m_LocalPosition: {x: 0.57225, y: 0.96992, z: 0}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -9401,8 +9401,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement3D
   lanePositions:
-  - -2
-  - 2
+  - -1
+  - 1
   laneChangeSpeed: 9
   laneChangeSmoothTime: 0.08
   baseY: 1
@@ -9503,8 +9503,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerScreenBounds3D
   targetCamera: {fileID: 1482639700}
-  viewportMargin: 0.04
-  playerPlaneY: 1
+  bottomMargin: 0.02
 --- !u!1 &601557511
 GameObject:
   m_ObjectHideFlags: 0
@@ -19786,6 +19785,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RunnerCameraController
   player: {fileID: 591714489}
+  targetHalfWidth: 1.65
+  sideMargin: 0.15
+  jumpWidthPadding: 1.15
+  minFieldOfView: 50
+  maxFieldOfView: 75
 --- !u!1 &2129149653
 GameObject:
   m_ObjectHideFlags: 0

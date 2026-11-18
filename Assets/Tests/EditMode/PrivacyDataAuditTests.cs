@@ -29,6 +29,48 @@ public class PrivacyDataAuditTests
     }
 
     [Test]
+    public void YandexSdkAnalyticsReporter_IsDisabled()
+    {
+        string manifestPath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Assets",
+            "Plugins",
+            "Android",
+            "AndroidManifest.xml");
+
+        Assert.IsTrue(File.Exists(manifestPath));
+
+        string manifest = File.ReadAllText(manifestPath);
+
+        StringAssert.Contains(
+            "com.yandex.mobile.ads.APPMETRICA_ANALYTICS_ENABLED",
+            manifest,
+            "В манифесте должен быть явный переключатель аналитики рекламного SDK.");
+
+        StringAssert.Contains(
+            "android:name=\"com.yandex.mobile.ads.APPMETRICA_ANALYTICS_ENABLED\" android:value=\"false\"",
+            manifest,
+            "Встроенная аналитика Yandex Mobile Ads должна быть выключена.");
+
+        string consentPath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Assets",
+            "Scripts",
+            "3D",
+            "UI",
+            "PrivacyConsent3D.cs");
+
+        Assert.IsTrue(File.Exists(consentPath));
+
+        string consent = File.ReadAllText(consentPath);
+
+        StringAssert.Contains(
+            "setAppAdAnalyticsReporting",
+            consent,
+            "Должен быть явный вызов отключения ad-отчётности SDK.");
+    }
+
+    [Test]
     public void RewardedAds_OnlyUsesConsentGatedAdEventHelper()
     {
         string path = Path.Combine(

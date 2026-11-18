@@ -1,14 +1,16 @@
 using UnityEngine;
 
 /// <summary>
-/// Удерживает визуальный спрайт игрока внутри видимой области камеры.
+/// Страховка по нижнему краю экрана.
 ///
-/// Раньше ограничение считалось по центру игрока на фиксированной
-/// плоскости y = 1 и не учитывало реальные края спрайта. На узких
-/// экранах (например, 1242×2688) левый/правый край спрайта выходил
-/// за viewport. Здесь используются фактические границы активных
-/// SpriteRenderer-ов, включая текущий кадр анимации, и итеративно
-/// корректируется позиция корня.
+/// Горизонтальное положение игрока больше не корректируется:
+/// полосы ±1 и полный спрайт вписывает RunnerCameraController
+/// через адаптивный FOV. Благодаря этому SmoothDamp в
+/// PlayerMovement3D и ограничитель не конкурируют.
+///
+/// Компонент оставляет только подъём по Y, если нижняя видимая
+/// точка спрайта оказалась ниже допустимого отступа. Смерть и
+/// падение в яму намеренно выводят персонажа за экран.
 /// </summary>
 [DisallowMultipleComponent]
 public class PlayerScreenBounds3D : MonoBehaviour
@@ -16,20 +18,9 @@ public class PlayerScreenBounds3D : MonoBehaviour
     [Header("Камера")]
     public Camera targetCamera;
 
-    [Header("Отступы от края экрана")]
-    [Range(0f, 0.2f)]
-    public float viewportMargin = 0.04f;
-
+    [Header("Отступ от нижнего края")]
     [Range(0f, 0.2f)]
     public float bottomMargin = 0.02f;
-
-    [Header("Оставлено для совместимости со старыми сценами")]
-    [Tooltip("Больше не используется: границы считаются по фактическому viewport камеры.")]
-    public float playerPlaneY = 1f;
-
-    [Header("Точность")]
-    [Min(1)]
-    public int maxIterations = 8;
 
     private SpriteRenderer[] spriteRenderers;
     private PlayerMovement3D movement;
@@ -53,68 +44,32 @@ public class PlayerScreenBounds3D : MonoBehaviour
         if (targetCamera == null)
             return;
 
-        /*
-         * Смерть и падение в яму намеренно выводят персонажа за экран.
-         * В обычном беге, прыжке, скольжении и откате ограничиваем.
-         */
         if (movement != null &&
             (movement.IsDead() || movement.IsDying()))
             return;
 
-        for (int iteration = 0;
-             iteration < Mathf.Max(1, maxIterations);
-             iteration++)
-        {
-            if (!TryGetWorldBounds(out Bounds bounds))
-                return;
+        if (!TryGetWorldBounds(out Bounds bounds))
+            return;
 
-            if (!TryGetViewportBounds(
-                    bounds,
-                    out float minX,
-                    out float maxX,
-                    out float minY,
-                    out Vector3 minXPoint,
-                    out Vector3 maxXPoint))
-                return;
+        if (!TryGetViewportMinY(bounds, out float minY))
+            return;
 
-            float shiftX = 0f;
+        if (minY >= bottomMargin)
+            return;
 
-            if (minX < viewportMargin)
-            {
-                shiftX = GetHorizontalDelta(
-                    minXPoint,
-                    minX,
-                    viewportMargin);
-            }
-            else if (maxX > 1f - viewportMargin)
-            {
-                shiftX = GetHorizontalDelta(
-                    maxXPoint,
-                    maxX,
-                    1f - viewportMargin);
-            }
+        float shiftY =
+            GetWorldPointAtPlane(
+                bounds,
+                0.5f,
+                bottomMargin).y -
+            bounds.min.y;
 
-            float shiftY = 0f;
+        if (Mathf.Abs(shiftY) < 0.0005f)
+            return;
 
-            if (minY < bottomMargin)
-            {
-                shiftY =
-                    GetWorldPointAtPlane(
-                        bounds,
-                        0.5f,
-                        bottomMargin).y -
-                    bounds.min.y;
-            }
-
-            if (Mathf.Abs(shiftX) < 0.0005f &&
-                Mathf.Abs(shiftY) < 0.0005f)
-                break;
-
-            Vector3 position = transform.position;
-            position.x += shiftX;
-            position.y += shiftY;
-            transform.position = position;
-        }
+        Vector3 position = transform.position;
+        position.y += shiftY;
+        transform.position = position;
     }
 
     private void CacheRenderers()
@@ -159,19 +114,11 @@ public class PlayerScreenBounds3D : MonoBehaviour
         return hasBounds;
     }
 
-    private bool TryGetViewportBounds(
+    private bool TryGetViewportMinY(
         Bounds bounds,
-        out float minX,
-        out float maxX,
-        out float minY,
-        out Vector3 minXPoint,
-        out Vector3 maxXPoint)
+        out float minY)
     {
-        minX = float.MaxValue;
-        maxX = float.MinValue;
         minY = float.MaxValue;
-        minXPoint = Vector3.zero;
-        maxXPoint = Vector3.zero;
 
         Vector3 center = bounds.center;
         Vector3 extents = bounds.extents;
@@ -193,67 +140,12 @@ public class PlayerScreenBounds3D : MonoBehaviour
                     if (viewport.z <= 0f)
                         return false;
 
-                    if (viewport.x < minX)
-                    {
-                        minX = viewport.x;
-                        minXPoint = point;
-                    }
-
-                    if (viewport.x > maxX)
-                    {
-                        maxX = viewport.x;
-                        maxXPoint = point;
-                    }
-
                     minY = Mathf.Min(minY, viewport.y);
                 }
             }
         }
 
         return true;
-    }
-
-    /*
-     * Точный сдвиг по X для перспективной камеры без рыскания:
-     * смещение мира по X на ту же величину меняет camera-space X,
-     * а глубина точки не меняется. Это позволяет привести край
-     * спрайта ровно к нужному viewport X, а не к точке на плоскости
-     * центра, которая не учитывает высоту анимации.
-     */
-    private float GetHorizontalDelta(
-        Vector3 worldPoint,
-        float currentViewportX,
-        float targetViewportX)
-    {
-        float viewportDelta =
-            targetViewportX - currentViewportX;
-
-        Vector3 cameraSpace =
-            targetCamera.transform.InverseTransformPoint(worldPoint);
-
-        float depth = cameraSpace.z;
-
-        if (depth <= 0f)
-            return 0f;
-
-        if (targetCamera.orthographic)
-        {
-            return viewportDelta *
-                2f *
-                targetCamera.orthographicSize *
-                targetCamera.aspect;
-        }
-
-        float tanHalfFov = Mathf.Tan(
-            targetCamera.fieldOfView *
-            Mathf.Deg2Rad *
-            0.5f);
-
-        return viewportDelta *
-            2f *
-            depth *
-            tanHalfFov *
-            targetCamera.aspect;
     }
 
     private Vector3 GetWorldPointAtPlane(
