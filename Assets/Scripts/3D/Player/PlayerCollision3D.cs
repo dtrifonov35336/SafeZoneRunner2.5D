@@ -19,6 +19,7 @@ public class PlayerCollision : MonoBehaviour
     public PlayerMovement3D playerMovement;
 
     private bool isInvulnerable = false;
+    private bool tutorialInvulnerable = false;
 
     private Coroutine pitRoutine;
     private Coroutine reviveInvulnerabilityRoutine;
@@ -40,6 +41,7 @@ public class PlayerCollision : MonoBehaviour
         bool value
     )
     {
+        tutorialInvulnerable = value;
         isInvulnerable = value;
 
         if (value)
@@ -57,7 +59,7 @@ public class PlayerCollision : MonoBehaviour
 
     public bool IsTutorialInvulnerable()
     {
-        return isInvulnerable;
+        return tutorialInvulnerable;
     }
 
     // =========================================================
@@ -115,7 +117,13 @@ public class PlayerCollision : MonoBehaviour
 
                 case ObstacleType.Normal:
 
-                    if (isInvulnerable)
+                    if (playerMovement != null &&
+                        playerMovement.IsJumping())
+                    {
+                        return;
+                    }
+
+                    if (tutorialInvulnerable)
                     {
                         HandleTutorialHit(
                             mover
@@ -123,6 +131,9 @@ public class PlayerCollision : MonoBehaviour
 
                         return;
                     }
+
+                    if (isInvulnerable)
+                        return;
 
                     HandleNormalObstacle(
                         mover
@@ -132,7 +143,13 @@ public class PlayerCollision : MonoBehaviour
 
                 case ObstacleType.Slide:
 
-                    if (isInvulnerable)
+                    if (playerMovement != null &&
+                        playerMovement.IsSliding())
+                    {
+                        return;
+                    }
+
+                    if (tutorialInvulnerable)
                     {
                         HandleTutorialHit(
                             mover
@@ -140,6 +157,9 @@ public class PlayerCollision : MonoBehaviour
 
                         return;
                     }
+
+                    if (isInvulnerable)
+                        return;
 
                     HandleSlide(
                         mover
@@ -149,7 +169,13 @@ public class PlayerCollision : MonoBehaviour
 
                 case ObstacleType.DoubleJump:
 
-                    if (isInvulnerable)
+                    if (playerMovement != null &&
+                        playerMovement.HasDoubleJumped())
+                    {
+                        return;
+                    }
+
+                    if (tutorialInvulnerable)
                     {
                         HandleTutorialHit(
                             mover
@@ -157,6 +183,9 @@ public class PlayerCollision : MonoBehaviour
 
                         return;
                     }
+
+                    if (isInvulnerable)
+                        return;
 
                     HandleDoubleJump(
                         mover
@@ -170,7 +199,13 @@ public class PlayerCollision : MonoBehaviour
          * Запасной вариант для препятствия без
          * ObstacleType3D.
          */
-        if (isInvulnerable)
+        if (playerMovement != null &&
+            playerMovement.IsJumping())
+        {
+            return;
+        }
+
+        if (tutorialInvulnerable)
         {
             HandleTutorialHit(
                 mover
@@ -178,6 +213,9 @@ public class PlayerCollision : MonoBehaviour
 
             return;
         }
+
+        if (isInvulnerable)
+            return;
 
         HandleNormalObstacle(
             mover

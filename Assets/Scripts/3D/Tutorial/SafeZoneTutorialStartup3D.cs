@@ -668,6 +668,24 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
     // PLAY OVERLAY
     // =========================================================
 
+    /*
+     * Кнопка «Играть» должна оставаться яркой.
+     * Затемнение всего экрана делало её похожей на недоступную.
+     */
+    private void ClearDimForTarget()
+    {
+        if (dimImage == null)
+            return;
+
+        Color color =
+            dimImage.color;
+
+        color.a = 0f;
+
+        dimImage.color =
+            color;
+    }
+
     private void ShowPlayOverlay(
         Button target,
         string text
@@ -677,6 +695,7 @@ public class SafeZoneTutorialStartup3D : MonoBehaviour
             return;
 
         CreateOverlay();
+        ClearDimForTarget();
 
         currentTargetButton =
             target;

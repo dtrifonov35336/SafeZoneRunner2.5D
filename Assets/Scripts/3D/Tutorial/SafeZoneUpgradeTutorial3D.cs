@@ -1130,6 +1130,25 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
         );
     }
 
+    /*
+     * Целевая кнопка не должна оставаться под затемнением:
+     * иначе она выглядит недоступной, пока игрок не нажмёт экран.
+     * Информационные окна продолжают использовать dimColor.
+     */
+    private void ClearDimForTarget()
+    {
+        if (dimImage == null)
+            return;
+
+        Color color =
+            dimImage.color;
+
+        color.a = 0f;
+
+        dimImage.color =
+            color;
+    }
+
     private void ShowFullTutorialOverlay(
         Button target,
         string text
@@ -1139,6 +1158,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
 
         CreateOverlay();
+        ClearDimForTarget();
 
         DisableAllSelectablesExcept(
             target
@@ -1166,6 +1186,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
 
         CreateOverlay();
+        ClearDimForTarget();
 
         DisableAllSelectablesExcept(
             target
@@ -1192,6 +1213,7 @@ public class SafeZoneUpgradeTutorial3D : MonoBehaviour
             return;
 
         CreateOverlay();
+        ClearDimForTarget();
 
         DisableAllSelectablesExcept(
             target

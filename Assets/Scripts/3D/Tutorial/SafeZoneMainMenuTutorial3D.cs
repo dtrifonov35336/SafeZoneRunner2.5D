@@ -1654,6 +1654,24 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
     // TARGET
     // =========================================================
 
+    /*
+     * Не затемняем кнопку, на которую указывает обучение.
+     * Иначе она выглядит недоступной до первого нажатия экрана.
+     */
+    private void ClearDimForTarget()
+    {
+        if (dimImage == null)
+            return;
+
+        Color color =
+            dimImage.color;
+
+        color.a = 0f;
+
+        dimImage.color =
+            color;
+    }
+
     private void ShowTargetOverlay(
     Button target,
     string text)
@@ -1665,6 +1683,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         }
 
         CreateOverlay();
+        ClearDimForTarget();
 
         currentTargetButton =
             target;
@@ -1711,6 +1730,7 @@ public class SafeZoneMainMenuTutorial3D : MonoBehaviour
         }
 
         CreateOverlay();
+        ClearDimForTarget();
 
         DisableAllSelectablesExcept(
             target);
